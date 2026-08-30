@@ -1,11 +1,12 @@
-"""Gerenciador de voz local da STAR V1.9 FINAL.
+"""Gerenciador de voz local da STAR V1.9.1.
 
-Pipeline:
-  microfone -> faster-whisper tiny -> STAR Core -> voz oficial Chatterbox
-                                                   -> Piper/SAPI fallback
+Objetivo do hotfix:
+- modo "official" usa SOMENTE a voz oficial Chatterbox;
+- não cair silenciosamente para Piper quando a referência/Chatterbox falhar;
+- diagnóstico detalha exatamente o componente ausente;
+- modo "fast" continua disponível para Piper quando escolhido explicitamente.
 
-A voz oficial usa a referência local da STAR quando o Chatterbox está preparado.
-Piper permanece como fallback rápido. Nenhum serviço externo de voz é necessário.
+Nenhum serviço externo de voz é necessário.
 """
 from __future__ import annotations
 
@@ -19,8 +20,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 VOICE_DIR = ROOT / "voice"
 PIPER_DIR = VOICE_DIR / "models" / "piper"
-REFERENCE_PATH = VOICE_DIR / "reference" / "star_reference.mp3"
 CHATTERBOX_WORKER = VOICE_DIR / "chatterbox_worker.py"
+
+
+def _resolve_reference_path() -> Path:
+    try:
+        from config import VOICE_REFERENCE
+    except Exception:
+        VOICE_REFERENCE = "voice/reference/star_reference.mp3"
+
+    raw = os.getenv("STAR_VOICE_REFERENCE", VOICE_REFERENCE).strip()
+    path = Path(raw).expanduser()
+    if not path.is_absolute():
+        path = ROOT / path
+    return path.resolve()
 
 
 class LocalSpeechToText:
@@ -95,7 +108,7 @@ class LocalSpeechToText:
 
 
 class FastPiperTTS:
-    """Piper PT-BR carregado uma vez e reproduzido em streaming."""
+    """Piper PT-BR para o modo rápido explicitamente escolhido."""
 
     def __init__(self):
         self.voice = None
@@ -132,7 +145,6 @@ class FastPiperTTS:
                     "Modelo Piper PT-BR não encontrado. Execute INSTALAR_VOZ.bat."
                 )
             from piper import PiperVoice
-
             self.voice = PiperVoice.load(str(self.model_path), use_cuda=False)
 
     def warmup(self) -> None:
@@ -233,14 +245,10 @@ class FastPiperTTS:
 
 
 class ChatterboxOfficialTTS:
-    """Voz oficial da STAR via worker persistente do Chatterbox.
+    """Voz oficial da STAR via worker persistente do Chatterbox."""
 
-    O modelo roda no .voice_venv (Python 3.11) e usa somente a referência local
-    voice/reference/star_reference.mp3. O áudio de referência não é versionado.
-    """
-
-    def __init__(self):
-        self.reference_path = REFERENCE_PATH
+    def __init__(self, reference_path: Path | None = None):
+        self.reference_path = Path(reference_path or _resolve_reference_path())
         self.worker_path = CHATTERBOX_WORKER
         self.python_path = self._find_python()
         self.last_error = None
@@ -262,12 +270,25 @@ class ChatterboxOfficialTTS:
         return candidates[0]
 
     @property
+    def missing_components(self) -> list[str]:
+        missing = []
+        if not self.python_path.exists():
+            missing.append(f"ambiente Chatterbox ausente: {self.python_path}")
+        if not self.worker_path.exists():
+            missing.append(f"worker ausente: {self.worker_path}")
+        if not self.reference_path.exists():
+            missing.append(f"referência de voz ausente: {self.reference_path}")
+        return missing
+
+    @property
     def configured(self) -> bool:
-        return (
-            self.python_path.exists()
-            and self.worker_path.exists()
-            and self.reference_path.exists()
-        )
+        return not self.missing_components
+
+    @property
+    def status_message(self) -> str:
+        if self.configured:
+            return "configurada"
+        return "; ".join(self.missing_components)
 
     @property
     def ready(self) -> bool:
@@ -301,8 +322,7 @@ class ChatterboxOfficialTTS:
             return
         if not self.configured:
             raise RuntimeError(
-                "Voz oficial não configurada. Verifique .voice_venv e "
-                "voice/reference/star_reference.mp3."
+                "Voz oficial não configurada: " + self.status_message
             )
 
         with self._start_lock:
@@ -310,7 +330,14 @@ class ChatterboxOfficialTTS:
                 return
 
             self._cleanup_process()
-            creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+            creationflags = (
+                getattr(subprocess, "CREATE_NO_WINDOW", 0)
+                if os.name == "nt"
+                else 0
+            )
+            env = os.environ.copy()
+            env["STAR_VOICE_REFERENCE"] = str(self.reference_path)
+
             self._process = subprocess.Popen(
                 [str(self.python_path), str(self.worker_path)],
                 cwd=str(ROOT),
@@ -322,6 +349,7 @@ class ChatterboxOfficialTTS:
                 errors="replace",
                 bufsize=1,
                 creationflags=creationflags,
+                env=env,
             )
 
             if self._process.stdout is None:
@@ -334,15 +362,19 @@ class ChatterboxOfficialTTS:
                     raise RuntimeError(
                         f"Worker Chatterbox encerrou antes de ficar pronto (código {code})."
                     )
+
                 line = line.strip()
                 if line == "STAR_CHATTERBOX_MODEL_READY":
                     self._ready = True
                     self.last_error = None
                     return
+
                 if line.startswith("STAR_CHATTERBOX_RESULT="):
                     payload = json.loads(line.split("=", 1)[1])
                     if not payload.get("ok"):
-                        raise RuntimeError(payload.get("error") or "Falha ao carregar Chatterbox.")
+                        raise RuntimeError(
+                            payload.get("error") or "Falha ao carregar Chatterbox."
+                        )
 
     def warmup(self) -> None:
         self._start()
@@ -369,21 +401,32 @@ class ChatterboxOfficialTTS:
                 raise RuntimeError(
                     f"Worker Chatterbox encerrou durante a síntese (código {code})."
                 )
+
             line = line.strip()
             if not line.startswith("STAR_CHATTERBOX_RESULT="):
                 continue
+
             payload = json.loads(line.split("=", 1)[1])
             if not payload.get("ok"):
-                raise RuntimeError(payload.get("error") or "Falha ao gerar voz oficial.")
+                raise RuntimeError(
+                    payload.get("error") or "Falha ao gerar voz oficial."
+                )
             return Path(payload["path"])
 
     @staticmethod
-    def _play_wav(path: Path, cancel_event: threading.Event | None = None) -> bool:
+    def _play_wav(
+        path: Path,
+        cancel_event: threading.Event | None = None,
+    ) -> bool:
         import numpy as np
         import sounddevice as sd
         import soundfile as sf
 
-        data, sample_rate = sf.read(str(path), dtype="float32", always_2d=True)
+        data, sample_rate = sf.read(
+            str(path),
+            dtype="float32",
+            always_2d=True,
+        )
         channels = int(data.shape[1]) if data.ndim == 2 else 1
         block = 4096
 
@@ -395,12 +438,19 @@ class ChatterboxOfficialTTS:
             for start in range(0, len(data), block):
                 if cancel_event is not None and cancel_event.is_set():
                     return False
-                chunk = np.asarray(data[start:start + block], dtype=np.float32)
+                chunk = np.asarray(
+                    data[start:start + block],
+                    dtype=np.float32,
+                )
                 if chunk.size:
                     stream.write(chunk)
         return True
 
-    def speak(self, text: str, cancel_event: threading.Event | None = None) -> bool:
+    def speak(
+        self,
+        text: str,
+        cancel_event: threading.Event | None = None,
+    ) -> bool:
         text = str(text).strip()
         if not text:
             return True
@@ -414,6 +464,7 @@ class ChatterboxOfficialTTS:
 
             with self._io_lock:
                 output_path = self._generate(text)
+
                 if cancel_event is not None and cancel_event.is_set():
                     self.last_error = "cancelled"
                     return False
@@ -443,17 +494,20 @@ class ChatterboxOfficialTTS:
         if process is not None and process.poll() is None:
             try:
                 if process.stdin is not None:
-                    process.stdin.write(json.dumps({"command": "shutdown"}) + "\n")
+                    process.stdin.write(
+                        json.dumps({"command": "shutdown"}) + "\n"
+                    )
                     process.stdin.flush()
                     process.wait(timeout=1.0)
             except Exception:
                 self._cleanup_process()
+
         self._process = None
         self._ready = False
 
 
 class WindowsFallbackTTS:
-    """Último fallback local via SAPI/pyttsx3."""
+    """Último fallback local para o modo rápido."""
 
     def __init__(self):
         self.engine = None
@@ -470,7 +524,6 @@ class WindowsFallbackTTS:
     def _load(self):
         if self.engine is None:
             import pyttsx3
-
             self.engine = pyttsx3.init()
             self.engine.setProperty("rate", 185)
             self.engine.setProperty("volume", 1.0)
@@ -487,25 +540,38 @@ class WindowsFallbackTTS:
 
 
 class VoiceManager:
-    """Orquestra STT e TTS locais da STAR.
+    """Orquestra STT e TTS locais.
 
-    Modo padrão: official.
-      1. Chatterbox + referência da STAR
-      2. Piper PT-BR como fallback rápido
-      3. Windows SAPI como último fallback
+    official:
+        Chatterbox + referência local.
+        Se falhar, ERRO VISÍVEL por padrão. Não usa voz genérica escondida.
 
-    Defina STAR_VOICE_MODE=fast para forçar Piper quando a prioridade for latência.
+    fast:
+        Piper PT-BR e SAPI como último fallback.
     """
 
     def __init__(self):
         try:
-            from config import VOICE_MODE
+            from config import VOICE_FALLBACK_ON_ERROR, VOICE_MODE
         except Exception:
             VOICE_MODE = "official"
+            VOICE_FALLBACK_ON_ERROR = False
 
-        self.mode = os.getenv("STAR_VOICE_MODE", VOICE_MODE).strip().lower()
+        self.mode = os.getenv(
+            "STAR_VOICE_MODE",
+            VOICE_MODE,
+        ).strip().lower()
+
         if self.mode not in {"official", "fast"}:
             self.mode = "official"
+
+        env_fallback = os.getenv("STAR_VOICE_FALLBACK_ON_ERROR")
+        if env_fallback is None:
+            self.fallback_on_error = bool(VOICE_FALLBACK_ON_ERROR)
+        else:
+            self.fallback_on_error = env_fallback.strip().lower() in {
+                "1", "true", "yes", "on"
+            }
 
         self.stt = LocalSpeechToText()
         self.official = ChatterboxOfficialTTS()
@@ -521,11 +587,9 @@ class VoiceManager:
 
     @property
     def configured(self) -> bool:
-        return (
-            self.official.configured
-            or self.piper.configured
-            or self.fallback.configured
-        )
+        if self.mode == "official":
+            return self.official.configured
+        return self.piper.configured or self.fallback.configured
 
     @property
     def piper_configured(self) -> bool:
@@ -541,12 +605,15 @@ class VoiceManager:
 
     @property
     def tts_description(self) -> str:
-        if self.mode == "official" and self.official.configured:
-            return "Voz oficial STAR (Chatterbox local)"
+        if self.mode == "official":
+            if self.official.configured:
+                return "Voz oficial STAR (Chatterbox local)"
+            return "Voz oficial INDISPONÍVEL — " + self.official.status_message
+
         if self.piper.configured:
-            return "Piper PT-BR (fallback rápido)"
+            return "Piper PT-BR (modo rápido)"
         if self.fallback.configured:
-            return "Windows SAPI (fallback)"
+            return "Windows SAPI (modo rápido)"
         return "TTS indisponível"
 
     def set_voice_mode(self, mode: str) -> None:
@@ -558,21 +625,35 @@ class VoiceManager:
 
     def warmup(self) -> None:
         errors = []
+
         try:
             self.stt.warmup()
         except Exception as exc:
             errors.append(f"STT: {type(exc).__name__}: {exc}")
 
-        try:
-            self.piper.warmup()
-        except Exception as exc:
-            errors.append(f"Piper: {type(exc).__name__}: {exc}")
+        if self.mode == "official":
+            if not self.official.configured:
+                errors.append(
+                    "Voz oficial: " + self.official.status_message
+                )
+            else:
+                try:
+                    self.official.warmup()
+                except Exception as exc:
+                    errors.append(
+                        f"Voz oficial: {type(exc).__name__}: {exc}"
+                    )
 
-        if self.mode == "official" and self.official.configured:
+            if self.fallback_on_error:
+                try:
+                    self.piper.warmup()
+                except Exception as exc:
+                    errors.append(f"Piper: {type(exc).__name__}: {exc}")
+        else:
             try:
-                self.official.warmup()
+                self.piper.warmup()
             except Exception as exc:
-                errors.append(f"Voz oficial: {type(exc).__name__}: {exc}")
+                errors.append(f"Piper: {type(exc).__name__}: {exc}")
 
         self.last_error = " | ".join(errors) if errors else None
 
@@ -598,7 +679,39 @@ class VoiceManager:
         if self._speaking.is_set():
             self.official.cancel()
 
-    def speak(self, text: str, cancel_event: threading.Event | None = None) -> bool:
+    def _speak_fast(
+        self,
+        text: str,
+        event: threading.Event,
+    ) -> bool:
+        if self.piper.configured and self.piper.speak(text, event):
+            self.last_error = None
+            self.last_tts_engine = "Piper — modo rápido"
+            return True
+
+        if event.is_set() or self.piper.last_error == "cancelled":
+            self.last_error = "Fala cancelada."
+            return False
+
+        piper_error = self.piper.last_error
+
+        if self.fallback.speak(text):
+            self.last_error = None
+            self.last_tts_engine = "Windows SAPI — modo rápido"
+            return True
+
+        self.last_tts_engine = "indisponível"
+        self.last_error = (
+            piper_error
+            or "Piper e Windows SAPI falharam."
+        )
+        return False
+
+    def speak(
+        self,
+        text: str,
+        cancel_event: threading.Event | None = None,
+    ) -> bool:
         event = cancel_event or self._current_cancel_event()
 
         with self._tts_lock:
@@ -606,38 +719,39 @@ class VoiceManager:
                 self.last_error = "Fala cancelada."
                 return False
 
-            if self.mode == "official" and self.official.configured:
-                if self.official.speak(text, event):
-                    self.last_error = None
-                    self.last_tts_engine = "Chatterbox — voz oficial STAR"
-                    return True
-                if event.is_set() or self.official.last_error == "cancelled":
-                    self.last_error = "Fala cancelada."
-                    return False
-                official_error = self.official.last_error
-            else:
-                official_error = None
+            if self.mode == "fast":
+                return self._speak_fast(text, event)
 
-            if self.piper.configured and self.piper.speak(text, event):
+            if not self.official.configured:
+                self.last_tts_engine = "voz oficial indisponível"
+                self.last_error = (
+                    "A STAR está em modo de voz oficial, mas: "
+                    + self.official.status_message
+                    + ". Piper não foi usado automaticamente."
+                )
+                if self.fallback_on_error:
+                    return self._speak_fast(text, event)
+                return False
+
+            if self.official.speak(text, event):
                 self.last_error = None
-                self.last_tts_engine = "Piper — fallback rápido"
+                self.last_tts_engine = "Chatterbox — voz oficial STAR"
                 return True
-            if event.is_set() or self.piper.last_error == "cancelled":
+
+            if event.is_set() or self.official.last_error == "cancelled":
                 self.last_error = "Fala cancelada."
                 return False
 
-            piper_error = self.piper.last_error
-            if self.fallback.speak(text):
-                self.last_error = None
-                self.last_tts_engine = "Windows SAPI — fallback"
-                return True
-
-            self.last_tts_engine = "indisponível"
+            official_error = self.official.last_error or "erro desconhecido"
+            self.last_tts_engine = "voz oficial falhou"
             self.last_error = (
-                official_error
-                or piper_error
-                or "Voz oficial, Piper e Windows SAPI falharam."
+                "A voz oficial Chatterbox falhou: "
+                + official_error
+                + ". Piper não foi usado automaticamente."
             )
+
+            if self.fallback_on_error:
+                return self._speak_fast(text, event)
             return False
 
     def warmup_async(self):
@@ -660,10 +774,15 @@ class VoiceManager:
                 error = self.last_error
             finally:
                 self._speaking.clear()
+
             if callback:
                 callback(ok, error)
 
-        thread = threading.Thread(target=run, daemon=True, name="STAR-TTS")
+        thread = threading.Thread(
+            target=run,
+            daemon=True,
+            name="STAR-TTS",
+        )
         thread.start()
         return thread
 
