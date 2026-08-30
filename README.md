@@ -1,4 +1,4 @@
-# ⭐ STAR — V1.9 FINAL
+# ⭐ STAR — V1.9.1 VOICE HOTFIX
 
 S.T.A.R. — **System for Thought, Analysis and Response**.
 
@@ -43,17 +43,20 @@ sounddevice
 🔊 Alto-falante
 ```
 
-### Fallbacks locais
+### Política do hotfix V1.9.1
 
-Se a voz oficial não estiver configurada ou falhar:
+No modo `official`, a STAR **não usa mais Piper silenciosamente** se o
+Chatterbox ou a referência de voz estiverem ausentes. Em vez disso, a GUI e o
+diagnóstico mostram a causa real.
 
 ```text
-Chatterbox
-    ↓ fallback
-Piper PT-BR
-    ↓ fallback
-Windows SAPI
+official → Chatterbox + referência local
+fast     → Piper PT-BR → Windows SAPI
 ```
+
+Para escolher o modo rápido explicitamente:
+
+`STAR_VOICE_MODE=fast`
 
 A referência da voz oficial é local e privada:
 
@@ -65,9 +68,6 @@ tenha autorização para utilizar.
 A V1.9 FINAL também cancela falas antigas quando uma nova interação começa,
 evitando que uma resposta atrasada seja reproduzida depois de outra pergunta.
 
-Para forçar o modo rápido temporariamente:
-
-`STAR_VOICE_MODE=fast`
 
 ## Estrutura principal
 
@@ -147,7 +147,7 @@ Nenhuma integração externa de voz é necessária para a V1.9.
 
 ## Estado
 
-**STAR V1.9 FINAL / stable**
+**STAR V1.9.1 — voice hotfix / stable**
 
 Bugs descobertos após a release entram como V1.9.x.
 Novas arquiteturas cognitivas entram na V2.0 MIND.
