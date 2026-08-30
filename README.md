@@ -1,8 +1,12 @@
-# ⭐ STAR — V1.9
+# ⭐ STAR — V1.9 FINAL
 
 S.T.A.R. — **System for Thought, Analysis and Response**.
 
-A STAR é um sistema cognitivo modular em desenvolvimento, com identidade, memória, conhecimento, interface, ambientes e ferramentas. O projeto é organizado para crescer por módulos, sem ficar preso a um único modelo de IA ou serviço externo.
+A STAR é uma plataforma cognitiva modular **offline-first**, com identidade própria,
+memória, conhecimento local, interface, STAR WORLD e ferramentas. A identidade da
+STAR permanece separada dos modelos que ela utiliza.
+
+> **V1.9 é a fundação estável. O desenvolvimento seguinte acontece em V2.0 MIND.**
 
 ## Execução no Windows
 
@@ -10,123 +14,140 @@ Use:
 
 `INICIAR_STAR.bat`
 
-Ou:
+ou:
 
 `\.venv\Scripts\python.exe main.py`
 
-Caso a `.venv` não exista, execute `CRIAR_AMBIENTE.bat` uma vez.
+Se o ambiente principal ainda não existir, execute `CRIAR_AMBIENTE.bat`.
+Para instalar os modelos de voz locais, execute `INSTALAR_VOZ.bat`.
 
-Para preparar a voz local, execute `INSTALAR_VOZ.bat` uma vez.
-
-Para diagnóstico local:
+Diagnóstico:
 
 `DIAGNOSTICO_VOZ.bat`
 
-## Voz V1.9 — arquitetura rápida e local
-
-A V1.9 removeu os serviços externos de voz do caminho ativo. A voz principal funciona localmente:
+## Voz — arquitetura final da V1.9
 
 ```text
 🎤 Microfone
     ↓
 sounddevice / AudioRecorder
     ↓
-faster-whisper tiny (STT PT-BR)
-    ↓
-📝 Texto
+faster-whisper tiny (STT PT-BR, local, CPU INT8)
     ↓
 STAR Core
     ↓
-💬 Resposta
+⭐ Chatterbox — voz oficial da STAR
     ↓
-Piper PT-BR (TTS rápido)
+sounddevice
     ↓
-🔊 sounddevice
-    ↓
-Alto-falante
+🔊 Alto-falante
 ```
 
-O STT e o TTS são pré-carregados em segundo plano para retirar o custo de primeira inicialização da interação. O Piper fica carregado no processo principal e sintetiza por chunks, evitando recarregar o modelo para cada frase.
+### Fallbacks locais
 
-### Voz clonada
+Se a voz oficial não estiver configurada ou falhar:
 
-O **Chatterbox** permanece preparado separadamente para a futura modalidade de voz clonada da STAR. Nesta máquina, que é CPU-only, ele é muito mais pesado que o Piper e por isso não é usado no caminho rápido padrão.
+```text
+Chatterbox
+    ↓ fallback
+Piper PT-BR
+    ↓ fallback
+Windows SAPI
+```
 
-A referência de voz deve permanecer somente na máquina local em:
+A referência da voz oficial é local e privada:
 
 `voice/reference/star_reference.mp3`
 
-O arquivo não é distribuído pelo GitHub.
+Ela **não é distribuída pelo GitHub**. Use apenas uma referência de voz que você
+tenha autorização para utilizar.
 
-## Dependências de voz
+A V1.9 FINAL também cancela falas antigas quando uma nova interação começa,
+evitando que uma resposta atrasada seja reproduzida depois de outra pergunta.
 
-- `faster-whisper` — reconhecimento local de fala, modelo `tiny`, CPU/INT8.
-- `piper-tts` — síntese neural local rápida.
-- `pyttsx3` — fallback de voz do Windows/SAPI.
-- `sounddevice` + `soundfile` — captura e reprodução de áudio.
+Para forçar o modo rápido temporariamente:
 
-As vozes Piper são arquivos `.onnx` + `.onnx.json` baixados localmente pelo instalador. O modelo padrão é `pt_BR-faber-medium`.
+`STAR_VOICE_MODE=fast`
 
 ## Estrutura principal
 
 ```text
 STAR/
-├── core/                  # identidade, cérebro, roteamento, memória e estado
-├── database/              # armazenamento persistente
-├── gui/                   # interface e STAR WORLD
+├── core/                  # identidade, roteamento, memória e cérebro
+├── database/              # persistência
+├── gui/                   # interface 2D atual / STAR WORLD
 ├── knowledge/             # Knowledge Packs
 ├── modules/               # ferramentas e automações
-├── voice/                 # pipeline de áudio local
+├── voice/                 # STT/TTS local
 ├── tests/                 # testes automatizados
-├── docs/                  # documentação
+├── docs/                  # roadmap e documentação
 ├── assets/                # recursos visuais
-├── SKINS/                 # aparências da STAR
-├── main.py                # entrada principal
-├── config.py              # configuração V1.9
-├── requirements.txt       # dependências do ambiente principal
-└── INICIAR_STAR.bat       # inicializador
+├── SKINS/                 # aparências locais
+├── main.py
+├── config.py
+├── STAR_MANIFEST.json
+└── INICIAR_STAR.bat
 ```
+
+## Capacidades da V1.9
+
+- identidade STAR independente do modelo;
+- Core, router e Executive atuais;
+- memória persistente básica;
+- matemática em linguagem natural;
+- Knowledge Packs atuais;
+- chat e interface 2D;
+- HUB, ilhas, Casa e Closet;
+- skins;
+- STT local com faster-whisper tiny;
+- voz oficial local com Chatterbox;
+- Piper e SAPI como fallbacks;
+- controle inicial do computador;
+- navegador, busca e Spotify como primeiras ferramentas;
+- diagnósticos;
+- CI de sintaxe, manifestos e smoke tests.
 
 ## STAR WORLD
 
-O catálogo de ambientes inclui HUB, Casa, Laboratório, Central de Criação, Biblioteca, Estúdio, Observatório, Jardim, Correio, Cura, Heróis e Idiomas. As ilhas podem existir visualmente antes de receberem todo o conhecimento.
+O catálogo atual inclui HUB, Casa, Laboratório, Central de Criação, Biblioteca,
+Estúdio, Observatório, Jardim, Correio, Cura, Heróis e Idiomas.
 
-## Matemática
+Na V1.9 alguns ambientes ainda são representações visuais ou pontos de entrada.
+A transformação em ambientes totalmente funcionais e posteriormente 3D está
+planejada no roadmap.
 
-O motor determinístico interpreta linguagem natural, por exemplo:
+## Offline-first
 
-- dois mais dois
-- três vezes cinco
-- vinte dividido por quatro
-- raiz quadrada de dezesseis
-- metade de vinte
-- dobro de quinze
+A arquitetura segue três estados:
 
-## Controle do computador
+- **LOCAL** — STAR funciona no computador sem internet;
+- **LAN** — adiciona dispositivos da rede local;
+- **ONLINE** — acrescenta recursos externos opcionais.
 
-Existe uma camada inicial para abrir navegador e aplicativos, pesquisar na web, localizar arquivos e receber novas skills. A automação fica separada do núcleo cognitivo para permitir expansão posterior com segurança.
+Internet amplia a STAR; não constitui a STAR.
 
-## Privacidade
+## Desenvolvimento
 
-Ambientes virtuais, modelos, caches, banco local, arquivos temporários, referências de voz e credenciais não devem ser versionados. Nunca coloque chaves ou tokens no GitHub.
+- `main` — releases estáveis;
+- `v1.9-development` — branch histórica da construção da V1.9;
+- a próxima geração é **V2.0 MIND**.
 
-## CI
+Veja:
 
-O GitHub Actions valida a sintaxe Python e os testes de voz que não dependem de hardware. Microfone, alto-falante e desempenho de inferência precisam de validação final no Windows local.
+- `docs/MASTER_ROADMAP.md`
+- `docs/V1_9_PLAN.md`
+- `docs/V1_9_TEST_CHECKLIST.md`
 
-## Estado da V1.9
+## Segurança e privacidade
 
-A branch `v1.9-development` contém:
+Modelos, caches, bancos locais, ambientes virtuais, referências de voz,
+credenciais e arquivos temporários não devem ser versionados.
 
-- pipeline local STT → STAR → TTS;
-- faster-whisper tiny pré-carregado;
-- Piper PT-BR pré-carregado e com streaming de áudio;
-- fallback SAPI do Windows;
-- Chatterbox isolado como backend futuro de voz clonada;
-- diagnóstico de dispositivos e tempo de voz;
-- matemática em linguagem natural;
-- controle inicial do computador;
-- pack inicial da Ilha dos Heróis;
-- Closet/skins;
-- proteção de segredos e arquivos de voz pessoais;
-- CI de qualidade.
+Nenhuma integração externa de voz é necessária para a V1.9.
+
+## Estado
+
+**STAR V1.9 FINAL / stable**
+
+Bugs descobertos após a release entram como V1.9.x.
+Novas arquiteturas cognitivas entram na V2.0 MIND.
