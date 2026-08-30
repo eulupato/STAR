@@ -33,7 +33,25 @@ class StarCore:
             return "Lu"
 
     def process(self, user_input):
-        request_start = time.perf_counter()\n\n        # V1.9: ações locais têm prioridade e não precisam de LLM.\n        try:\n            from modules.computer_control import parse as parse_computer\n            action = parse_computer(user_input)\n            if action:\n                return action\n        except Exception as exc:\n            print(f"⚠️ Ação local indisponível: {exc}")\n\n        try:\n            from core.math_engine import solve_text\n            solved = solve_text(user_input)\n            if solved:\n                expr, value = solved\n                return f"🧠✨ {expr} = {value}"\n        except Exception:\n            pass
+        request_start = time.perf_counter()
+
+        # V1.9: matemática e ações locais têm prioridade e não precisam de LLM.
+        try:
+            from modules.computer_control import parse as parse_computer
+            action = parse_computer(user_input)
+            if action:
+                return action
+        except Exception as exc:
+            print(f"⚠️ Ação local indisponível: {exc}")
+
+        try:
+            from core.math_engine import solve_text
+            solved = solve_text(user_input)
+            if solved:
+                expr, value = solved
+                return f"🧠✨ {expr} = {value}"
+        except Exception:
+            pass
         request = {
             "input": str(user_input or "").strip(),
             "identity": self._get_identity(),
