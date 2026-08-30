@@ -4,9 +4,14 @@ cd /d "%~dp0"
 chcp 65001 >nul
 
 echo ================================================
-echo        STAR V1.9 - INSTALADOR DE VOZ LOCAL
-echo ================================================
+echo        STAR V1.9 - VOZ 100%% LOCAL
+ echo ================================================
 echo.
+echo A STAR nao usa ElevenLabs neste ciclo.
+echo Entrada : faster-whisper local
+ echo Saida   : Chatterbox local
+ echo Audio   : sounddevice
+ echo.
 
 if not exist ".venv\Scripts\python.exe" (
     echo ERRO: .venv da STAR nao foi encontrada.
@@ -20,13 +25,14 @@ if not exist ".voice_venv\Scripts\python.exe" (
     py -3.11 -m venv .voice_venv
     if errorlevel 1 (
         echo ERRO: Python 3.11 nao foi encontrado.
-        echo Instale Python 3.11 e rode novamente.
+        echo O Chatterbox recomenda Python 3.11.
         pause
         exit /b 1
     )
 )
 
-echo Instalando/atualizando dependencias da STAR...
+echo Instalando dependencias de audio e STT local...
+".venv\Scripts\python.exe" -m pip install --upgrade pip
 ".venv\Scripts\python.exe" -m pip install -r requirements.txt
 if errorlevel 1 (
     echo ERRO ao instalar dependencias da STAR.
@@ -34,7 +40,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo Instalando/atualizando Chatterbox...
+echo Instalando Chatterbox no ambiente dedicado...
 ".voice_venv\Scripts\python.exe" -m pip install --upgrade pip
 ".voice_venv\Scripts\python.exe" -m pip install chatterbox-tts
 if errorlevel 1 (
@@ -44,8 +50,15 @@ if errorlevel 1 (
 )
 
 echo.
-echo INSTALACAO DA VOZ LOCAL CONCLUIDA.
-echo O primeiro teste pode baixar o modelo faster-whisper automaticamente.
+echo ================================================
+echo       VOZ LOCAL INSTALADA
+ echo ================================================
+echo.
+echo STT : faster-whisper (modelo base, portugues)
+echo TTS : Chatterbox Multilingual
+ echo.
+echo O modelo do faster-whisper sera baixado na primeira transcricao.
+echo O modelo do Chatterbox sera baixado na primeira fala.
 echo.
 pause
 endlocal
