@@ -1,13 +1,12 @@
 """Worker persistente do Chatterbox para a STAR.
 
-Executa no .voice_venv, mantém o modelo carregado e gera WAVs sob demanda.
-O stdout é reservado ao protocolo STAR_*; logs da biblioteca vão para arquivo.
-A reprodução acontece no processo principal da STAR.
+Executa no .voice_venv, mantém o modelo e a referência de voz preparados e
+recebe pedidos JSON pela entrada padrão. O stdout é reservado ao protocolo
+STAR_*; logs da biblioteca vão para arquivo.
 """
 from __future__ import annotations
 
 import contextlib
-import io
 import json
 import os
 import sys
@@ -18,14 +17,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REF = ROOT / "voice" / "reference" / "star_reference.mp3"
 OUT = ROOT / "voice" / "output"
-LOG = ROOT / "voice" / "output" / "chatterbox_worker.log"
+LOG = OUT / "chatterbox_worker.log"
 
 
 def emit(payload: dict) -> None:
     print("STAR_CHATTERBOX_RESULT=" + json.dumps(payload, ensure_ascii=False), flush=True)
 
 
-def noisy_call(func, *args, **kwargs):
+def quiet_call(func, *args, **kwargs):
     OUT.mkdir(parents=True, exist_ok=True)
     with LOG.open("a", encoding="utf-8") as log:
         with contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):
@@ -49,10 +48,17 @@ def main() -> int:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     try:
         print(f"STAR_CHATTERBOX_READY device={device}", flush=True)
-        model = noisy_call(ChatterboxMultilingualTTS.from_pretrained, device=device)
+        model = quiet_call(ChatterboxMultilingualTTS.from_pretrained, device=device)
+        # Prepara a referência uma vez; chamadas seguintes não precisam
+        # recalcular a identidade vocal inteira.
+        quiet_call(model.prepare_conditionals, str(REF), exaggeration=0.5)
         print("STAR_CHATTERBOX_MODEL_READY", flush=True)
     except Exception as exc:
-        emit({"ok": False, "error": f"Falha ao carregar Chatterbox: {type(exc).__name__}: {exc}"})
+        emit({
+            "ok": False,
+            "error": f"Falha ao preparar Chatterbox: {type(exc).__name__}: {exc}",
+            "trace": traceback.format_exc(limit=3),
+        })
         return 1
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -74,20 +80,25 @@ def main() -> int:
 
             output_name = request.get("output") or f"star_{int(time.time() * 1000)}.wav"
             output_path = OUT / Path(output_name).name
-
-            wav = noisy_call(
+            wav = quiet_call(
                 model.generate,
                 text,
                 language_id="pt",
-                audio_prompt_path=str(REF),
                 exaggeration=float(request.get("exaggeration", 0.5)),
-                cfg_weight=float(request.get("cfg_weight", 0.4)),
-                temperature=float(request.get("temperature", 0.8)),
+                cfg_weight=float(request.get("cfg_weight", 0.35)),
+                temperature=float(request.get("temperature", 0.75)),
+                repetition_penalty=2.0,
+                min_p=0.05,
+                top_p=1.0,
             )
-            noisy_call(ta.save, str(output_path), wav, model.sr)
+            quiet_call(ta.save, str(output_path), wav, model.sr)
             emit({"ok": True, "path": str(output_path), "sample_rate": int(model.sr)})
         except Exception as exc:
-            emit({"ok": False, "error": f"{type(exc).__name__}: {exc}", "trace": traceback.format_exc(limit=3)})
+            emit({
+                "ok": False,
+                "error": f"{type(exc).__name__}: {exc}",
+                "trace": traceback.format_exc(limit=3),
+            })
 
     return 0
 
