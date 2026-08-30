@@ -1,8 +1,7 @@
 """Worker persistente do Chatterbox para a STAR.
 
-Executa no .voice_venv, mantém o modelo e a referência de voz preparados e
-recebe pedidos JSON pela entrada padrão. O stdout é reservado ao protocolo
-STAR_*; logs da biblioteca vão para arquivo.
+A referência é recebida pelo ambiente STAR_VOICE_REFERENCE.
+Isso elimina dependência de um nome hardcoded dentro do worker.
 """
 from __future__ import annotations
 
@@ -15,13 +14,25 @@ import traceback
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-REF = ROOT / "voice" / "reference" / "star_reference.mp3"
+DEFAULT_REF = ROOT / "voice" / "reference" / "star_reference.mp3"
 OUT = ROOT / "voice" / "output"
 LOG = OUT / "chatterbox_worker.log"
 
 
+def reference_path() -> Path:
+    raw = os.getenv("STAR_VOICE_REFERENCE", str(DEFAULT_REF)).strip()
+    path = Path(raw).expanduser()
+    if not path.is_absolute():
+        path = ROOT / path
+    return path.resolve()
+
+
 def emit(payload: dict) -> None:
-    print("STAR_CHATTERBOX_RESULT=" + json.dumps(payload, ensure_ascii=False), flush=True)
+    print(
+        "STAR_CHATTERBOX_RESULT="
+        + json.dumps(payload, ensure_ascii=False),
+        flush=True,
+    )
 
 
 def quiet_call(func, *args, **kwargs):
@@ -33,30 +44,54 @@ def quiet_call(func, *args, **kwargs):
 
 def main() -> int:
     os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+
+    ref = reference_path()
+
     try:
         import torch
         import torchaudio as ta
         from chatterbox.mtl_tts import ChatterboxMultilingualTTS
     except Exception as exc:
-        emit({"ok": False, "error": f"Falha ao importar Chatterbox: {type(exc).__name__}: {exc}"})
+        emit({
+            "ok": False,
+            "error": (
+                "Falha ao importar Chatterbox: "
+                f"{type(exc).__name__}: {exc}"
+            ),
+        })
         return 1
 
-    if not REF.exists():
-        emit({"ok": False, "error": f"Áudio de referência não encontrado: {REF}"})
+    if not ref.exists():
+        emit({
+            "ok": False,
+            "error": f"Áudio de referência não encontrado: {ref}",
+        })
         return 1
 
-    # A versão 0.1.7 instalada na STAR trata strings "cpu"/"cuda" corretamente
-    # para map_location dos checkpoints. Não passar torch.device aqui.
     device = "cuda" if torch.cuda.is_available() else "cpu"
+
     try:
-        print(f"STAR_CHATTERBOX_READY device={device}", flush=True)
-        model = quiet_call(ChatterboxMultilingualTTS.from_pretrained, device=device)
-        quiet_call(model.prepare_conditionals, str(REF), exaggeration=0.5)
+        print(
+            f"STAR_CHATTERBOX_READY device={device} reference={ref}",
+            flush=True,
+        )
+        model = quiet_call(
+            ChatterboxMultilingualTTS.from_pretrained,
+            device=device,
+        )
+        quiet_call(
+            model.prepare_conditionals,
+            str(ref),
+            exaggeration=0.5,
+        )
         print("STAR_CHATTERBOX_MODEL_READY", flush=True)
     except Exception as exc:
         emit({
             "ok": False,
-            "error": f"Falha ao preparar Chatterbox: {type(exc).__name__}: {exc}",
+            "error": (
+                "Falha ao preparar Chatterbox: "
+                f"{type(exc).__name__}: {exc}"
+            ),
             "trace": traceback.format_exc(limit=3),
         })
         return 1
@@ -67,8 +102,10 @@ def main() -> int:
         raw = raw.strip()
         if not raw:
             continue
+
         try:
             request = json.loads(raw)
+
             if request.get("command") == "shutdown":
                 emit({"ok": True, "shutdown": True})
                 return 0
@@ -78,8 +115,12 @@ def main() -> int:
                 emit({"ok": False, "error": "Texto vazio."})
                 continue
 
-            output_name = request.get("output") or f"star_{int(time.time() * 1000)}.wav"
+            output_name = (
+                request.get("output")
+                or f"star_{int(time.time() * 1000)}.wav"
+            )
             output_path = OUT / Path(output_name).name
+
             wav = quiet_call(
                 model.generate,
                 text,
@@ -91,8 +132,20 @@ def main() -> int:
                 min_p=0.05,
                 top_p=1.0,
             )
-            quiet_call(ta.save, str(output_path), wav, model.sr)
-            emit({"ok": True, "path": str(output_path), "sample_rate": int(model.sr)})
+
+            quiet_call(
+                ta.save,
+                str(output_path),
+                wav,
+                model.sr,
+            )
+
+            emit({
+                "ok": True,
+                "path": str(output_path),
+                "sample_rate": int(model.sr),
+            })
+
         except Exception as exc:
             emit({
                 "ok": False,

@@ -1,9 +1,20 @@
 # Referência de voz da STAR
 
-Coloque aqui um áudio de referência que você tenha autorização para usar no clonador de voz.
+A STAR V1.9.1 usa uma referência **local e autorizada** no modo de voz oficial.
 
-Arquivo esperado pela V1.9:
+Arquivo padrão:
 
-`star_reference.mp3`
+`voice/reference/star_reference.mp3`
 
-O áudio de referência não é distribuído pelo repositório público e deve permanecer apenas na máquina local. A STAR usa esse arquivo como `audio_prompt_path` do Chatterbox.
+Também é possível apontar para outro caminho local com:
+
+`STAR_VOICE_REFERENCE`
+
+O áudio não é distribuído pelo repositório público e deve permanecer apenas na
+máquina local.
+
+## Importante
+
+Use somente uma gravação própria ou uma voz para a qual você tenha autorização
+de uso/clonagem. O hotfix V1.9.1 não cai automaticamente para Piper quando a
+voz oficial estiver ausente; o diagnóstico mostra o componente exato que falta.
