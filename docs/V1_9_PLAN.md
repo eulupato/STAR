@@ -1,57 +1,57 @@
-# STAR V1.9 — Arquitetura de voz local
+# STAR V1.9 FINAL — Fundação estável
 
-## Decisão arquitetural
-A V1.9 abandona serviços externos de voz. O subsistema de voz deve funcionar localmente e ser independente do modo ONLINE/OFFLINE da interface.
+## Objetivo
+A V1.9 é a fundação congelada da STAR antes da abertura da geração V2.0 MIND.
 
-## Pipeline definitivo
+## Pipeline de voz definitivo da V1.9
 
 ```text
-🎤 Microfone
-   ↓
+Microfone
+  ↓
 sounddevice / AudioRecorder
-   ↓
-faster-whisper (STT local, português)
-   ↓
-📝 texto
-   ↓
+  ↓
+faster-whisper tiny (local, PT-BR, CPU INT8)
+  ↓
 STAR Core
-   ↓
-💬 resposta
-   ↓
-Chatterbox Multilingual (.voice_venv)
-   ↓
-WAV
-   ↓
-soundfile + sounddevice (.venv principal)
-   ↓
-🔊 alto-falante
+  ↓
+Chatterbox Multilingual + referência local da STAR
+  ↓
+sounddevice
+  ↓
+alto-falante
+
+Fallbacks:
+Chatterbox indisponível → Piper PT-BR → Windows SAPI
 ```
 
-O Chatterbox é um mecanismo de TTS/voice cloning; ele não substitui o reconhecimento de fala. Por isso o STT é separado do TTS.
+A voz oficial é preferida quando `.voice_venv` e
+`voice/reference/star_reference.mp3` existem na máquina local.
+A referência não é distribuída pelo GitHub.
 
-## Chatterbox
-O worker mantém o modelo carregado em processo separado para evitar recarregar o modelo a cada resposta. A instalação oficial é compatível com Python 3.11 e o modelo multilíngue aceita um `audio_prompt_path` para usar uma referência de voz.
+Para priorizar velocidade manualmente:
+`STAR_VOICE_MODE=fast`.
 
-## STT
-A STAR usa faster-whisper local, com modelo `base` por padrão, `device=cpu` e `compute_type=int8`, adequado ao hardware atual sem exigir GPU NVIDIA.
+## Estabilidade de fala
+A V1.9 FINAL cancela fala anterior quando uma nova interação começa.
+Isso evita respostas antigas aparecendo depois de uma nova pergunta.
 
-O tamanho do modelo pode ser alterado pela variável `STAR_STT_MODEL`.
+## Componentes congelados
+- identidade independente dos modelos;
+- roteamento e Executive atuais;
+- memória persistente básica;
+- matemática natural;
+- Knowledge Packs atuais;
+- interface 2D atual;
+- HUB, ilhas, Casa, Closet e skins;
+- STT local;
+- voz oficial local com fallback;
+- controle inicial do computador;
+- CI de sintaxe e smoke tests.
 
-## Reprodução
-A reprodução fica somente no processo principal usando `sounddevice` + `soundfile`. O Chatterbox não controla o alto-falante.
+## Fora do escopo da V1.9
+Novas arquiteturas de memória, metacognição, Knowledge Graph e cérebro modular
+pertencem à V2.0 MIND.
 
-## Arquivos principais
-- `voice/manager.py` — orquestra STT, TTS e playback.
-- `voice/chatterbox_worker.py` — processo persistente do Chatterbox.
-- `voice/audio_input.py` — captura do microfone.
-- `voice/diagnostics.py` — teste real do pipeline de saída.
-- `tests/test_voice_contract.py` — testes leves de contrato.
-
-## Instalação
-Execute `INSTALAR_VOZ.bat` uma vez. Ele prepara o `.venv` da STAR e o `.voice_venv` do Chatterbox.
-
-## Diagnóstico
-Execute `DIAGNOSTICO_VOZ.bat` para verificar microfone/saída, dependências e executar uma fala real.
-
-## Privacidade
-Nenhuma chave de serviço externo é necessária para a voz. Áudios de referência, modelos baixados, banco local e ambientes virtuais ficam fora do versionamento.
+## Regra
+Bugs encontrados na fundação após o merge devem ser corrigidos como V1.9.x
+sem bloquear a abertura do desenvolvimento V2.0 em branch separada.
