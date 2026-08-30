@@ -13,7 +13,7 @@ if not exist ".voice_venv\Scripts\python.exe" (
     if errorlevel 1 (
         echo ERRO: Python 3.11 nao foi encontrado.
         echo Instale Python 3.11 para o motor Chatterbox.
-        pause
+        if not defined STAR_SETUP_CHAIN pause
         exit /b 1
     )
 )
@@ -23,13 +23,14 @@ set "PY=.voice_venv\Scripts\python.exe"
 "%PY%" -m pip install "chatterbox-tts==0.1.7"
 if errorlevel 1 (
     echo ERRO na instalacao do Chatterbox 0.1.7.
-    pause
+    if not defined STAR_SETUP_CHAIN pause
     exit /b 1
 )
 
 echo.
-echo INSTALACAO CONCLUIDA.
-echo O motor Chatterbox sera carregado pela STAR somente quando a voz for usada.
+echo CHATTERBOX PRONTO.
+echo A referencia oficial deve existir em:
+echo voice\reference\star_reference.mp3
 echo.
-pause
+if not defined STAR_SETUP_CHAIN pause
 endlocal
