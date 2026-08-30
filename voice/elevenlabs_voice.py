@@ -1,4 +1,4 @@
-"""Camada de voz da STAR: ElevenLabs TTS + STT."""
+"""Camada de áudio da STAR: ElevenLabs STT em português; TTS local é Chatterbox."""
 from pathlib import Path
 import tempfile, threading, os, time, traceback
 import requests
@@ -106,7 +106,7 @@ class ElevenLabsVoice:
         url='https://api.elevenlabs.io/v1/speech-to-text'
         with open(audio_path,'rb') as f:
             files={'file':(Path(audio_path).name,f,'audio/wav')}
-            data={'model_id':'scribe_v2'}
+            data={'model_id':'scribe_v2','language_code':'pt'}
             r=requests.post(url,headers={'xi-api-key':key},files=files,data=data,timeout=90)
         if not r.ok:
             raise RuntimeError(f'Speech-to-Text respondeu HTTP {r.status_code}: {r.text[:300]}')
