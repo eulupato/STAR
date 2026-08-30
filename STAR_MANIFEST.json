@@ -1,7 +1,7 @@
 {
   "name": "STAR",
   "version": "1.9",
-  "mode": "hybrid",
+  "mode": "offline-first",
   "entrypoint": "main.py",
   "launcher": "INICIAR_STAR.bat",
   "features_active": [
@@ -18,17 +18,19 @@
     "closet_skins",
     "math_engine",
     "computer_commands",
-    "local_chatterbox_tts",
-    "speech_to_text"
+    "local_voice"
   ],
   "features_prepared": [
     "expanded_automation",
     "messaging_integrations",
-    "offline_stt",
+    "web_tools",
     "knowledge_expansion"
   ],
   "voice": {
-    "tts": "local Chatterbox via .voice_venv",
-    "stt": "ElevenLabs speech-to-text when configured"
+    "stt": "faster-whisper local",
+    "tts": "Chatterbox Multilingual local",
+    "playback": "sounddevice local",
+    "external_voice_services": false,
+    "reference_audio": "voice/reference/star_reference.mp3"
   }
 }
