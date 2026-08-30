@@ -1,7 +1,6 @@
 Pillow>=10.0,<13
 SQLAlchemy>=2.0,<3
-requests>=2.31,<3
 numpy>=1.26,<3
 sounddevice>=0.5,<1
 soundfile>=0.12,<1
-faster-whisper>=1.2,<5
+faster-whisper>=1.2,<2
