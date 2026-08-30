@@ -1,5 +1,5 @@
 APP_NAME = "STAR"
-VERSION = "1.8"
+VERSION = "1.9"
 AUTHOR = "Lu"
 THEME = "dark"
 WINDOW_WIDTH = 1100
@@ -9,4 +9,7 @@ MENU_HEIGHT = 700
 MIN_WINDOW_WIDTH = 900
 MIN_WINDOW_HEIGHT = 600
 EXTERNAL_AI_ENABLED = False
-VOICE_ID = "jqcCZkN6Knx8BJ5TBdYR"
+VOICE_ENGINE = "Chatterbox"
+STT_ENGINE = "faster-whisper"
+STT_MODEL = "base"
+VOICE_REFERENCE = "voice/reference/star_reference.mp3"
