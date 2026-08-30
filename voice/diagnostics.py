@@ -18,7 +18,7 @@ def main() -> int:
     print("=" * 60)
     manager = VoiceManager()
     print(f"STT: {'PRONTO' if manager.stt_configured else 'NÃO INSTALADO'}")
-    print(f"TTS rápido: {manager.tts_description}")
+    print(f"TTS selecionado: {manager.tts_description}")
 
     try:
         import sounddevice as sd
@@ -44,7 +44,7 @@ def main() -> int:
     if manager.last_error:
         print(f"⚠️ Warmup avisou: {manager.last_error}")
 
-    print("\nTestando saída de voz. O teste usa Piper; se faltar o modelo, tenta a voz SAPI do Windows.")
+    print("\nTestando a voz configurada da STAR. No modo official, o Chatterbox usa a referência local; Piper/SAPI são fallbacks.")
     started = time.perf_counter()
     ok = manager.speak("Olá! Eu sou a STAR. Este é o teste da minha voz local.")
     elapsed = time.perf_counter() - started
