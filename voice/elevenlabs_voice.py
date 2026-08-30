@@ -10,12 +10,14 @@ class ElevenLabsVoice:
     def __init__(self, voice_id=DEFAULT_VOICE_ID):
         self.voice_id=voice_id
         self.key_path=ROOT/'key.txt'
+        self.env_key=os.getenv('ELEVENLABS_API_KEY','').strip()
         self.enabled=True
         self.last_error=None
         self._mixer_ready=False
         self._lock=threading.Lock()
 
     def _key(self):
+        if self.env_key: return self.env_key
         try: return self.key_path.read_text(encoding='utf-8').strip()
         except Exception: return ''
 
