@@ -15,10 +15,16 @@ __pycache__/
 *.key
 key.txt
 
-# Modelos baixados e cache local
+# Modelos e caches locais de IA
 models/
+voice/models/
 .cache/
 .hf_cache/
+
+# Referências pessoais de voz (manter somente na máquina local)
+voice/reference/*.mp3
+voice/reference/*.wav
+AUDIOS VOICE/
 
 # Saída temporária de voz
 voice/output/
