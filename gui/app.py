@@ -18,7 +18,7 @@ class StarApp:
     def __init__(self, brain):
         self.brain=brain; self.memory=Memory(); self.avatar=AvatarManager(); self.emotion=EmotionManager()
         self.voice=LocalVoiceBridge(); self.stt=ElevenLabsVoice(); self.recorder=AudioRecorder()
-        self.online_mode=self.voice.configured; self.processing=False; self.response_queue=queue.Queue()
+        self.online_mode=False;  # ONLINE/OFFLINE é estado de serviços, não do TTS local. self.processing=False; self.response_queue=queue.Queue()
         self.current_screen=None; self.has_messages=False; self.chat=None; self.recording=False
         self.bg='#0b1018'; self.panel='#131c29'; self.text='#edf3fb'; self.muted='#9aa8bb'; self.star='#8fd0ff'; self.user='#c9b8ff'; self.green='#76e2a0'; self.red='#ff7c87'; self.gold='#ffd36e'
         self.window=tk.Tk(); self.window.title(f'{APP_NAME} V{VERSION}'); self.window.geometry(f'{WINDOW_WIDTH}x{WINDOW_HEIGHT}')
@@ -103,7 +103,7 @@ class StarApp:
 
     def toggle_microphone(self):
         if not self.online_mode:
-            self._activate_conversation(); self._append_system('🎤 O reconhecimento de voz usa o serviço online do ElevenLabs. Ative o modo ONLINE nas configurações.')
+            self._activate_conversation(); self._append_system('🎤 O reconhecimento de voz online está desligado. A saída de voz local continua disponível.')
             return
         if not self.recorder.available:
             self._activate_conversation(); self._append_system('🎤 Módulo de microfone indisponível. Execute o iniciador novamente para instalar as dependências.')
@@ -161,7 +161,7 @@ class StarApp:
                 if kind=='transcript':
                     if self.current_screen=='chat':
                         self.entry.config(state=tk.NORMAL); self.entry.delete(0,tk.END); self.entry.insert(0,res); self.entry.config(fg=self.text)
-                        self._set_status('ONLINE',self.green); self.send_message()
+                        self._set_status('ONLINE' if self.online_mode else 'OFFLINE',self.green if self.online_mode else self.red); self.send_message()
                 elif kind=='voice_error':
                     self._activate_conversation(); self._append_system('🎤 Problema no reconhecimento de voz: '+str(res)); self._set_status('ONLINE' if self.online_mode else 'OFFLINE',self.green if self.online_mode else self.red)
                 elif kind=='voice_test':
@@ -182,7 +182,10 @@ class StarApp:
                     try:self.memory.save('STAR',res)
                     except Exception:pass
                     self._load_avatar('speaking',size=(250,250))
-                    if self.online_mode: self.voice.speak_async(res, lambda ok,err:self.response_queue.put(('speech_result',(ok,err))))
+                    if self.voice.configured:
+                        self.voice.speak_async(res, lambda ok,err:self.response_queue.put(('speech_result',(ok,err))))
+                    else:
+                        self._append_system('🔊 Voz local não configurada. Verifique .voice_venv e voice/reference/star_reference.mp3.')
                     self.processing=False
                     if self.current_screen=='chat':
                         self.entry.config(state=tk.NORMAL); self.send_button.config(state=tk.NORMAL); self._set_status('ONLINE' if self.online_mode else 'OFFLINE',self.green if self.online_mode else self.red); self.entry.focus_set()
