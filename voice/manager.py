@@ -1,11 +1,11 @@
 """Gerenciador de voz da STAR V1.9.
 
-Arquitetura local e de baixa latência:
-  Microfone -> faster-whisper tiny -> STAR Core -> Piper PT-BR -> sounddevice
+Caminho padrão de baixa latência:
+  microfone -> faster-whisper tiny -> STAR Core -> Piper PT-BR -> sounddevice
 
-Chatterbox não participa do caminho padrão porque a máquina atual é CPU-only e a
-síntese neural clonada é muito mais pesada. Ele permanece como etapa opcional
-futura para um modo de alta fidelidade/voz clonada.
+O Chatterbox fica fora do caminho normal porque a máquina atual é CPU-only e a
+síntese clonada é muito mais pesada. Ele pode ser usado posteriormente como
+modo opcional de alta fidelidade.
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ CACHE_DIR = ROOT / "voice" / "cache"
 
 
 class LocalSpeechToText:
-    """Reconhecimento local com faster-whisper, pré-carregado e otimizado para CPU."""
+    """STT local rápido com faster-whisper tiny."""
 
     def __init__(self, model_size: str = "tiny"):
         self.model_size = os.getenv("STAR_STT_MODEL", model_size)
@@ -60,52 +60,59 @@ class LocalSpeechToText:
             raise RuntimeError(f"Gravação não encontrada: {audio_path}")
         started = time.perf_counter()
         with self._lock:
-            self._load()
-            segments, _ = self.model.transcribe(
-                str(audio_path),
-                language="pt",
-                task="transcribe",
-                beam_size=1,
-                best_of=1,
-                temperature=0.0,
-                vad_filter=True,
-                condition_on_previous_text=False,
-                without_timestamps=True,
-            )
-            text = " ".join(seg.text.strip() for seg in segments if seg.text.strip()).strip()
-            if not text:
-                raise RuntimeError("Não consegui entender a fala.")
-            self.last_elapsed = time.perf_counter() - started
-            self.last_error = None
-            return text
+            try:
+                self._load()
+                segments, _ = self.model.transcribe(
+                    str(audio_path),
+                    language="pt",
+                    task="transcribe",
+                    beam_size=1,
+                    best_of=1,
+                    temperature=0.0,
+                    vad_filter=True,
+                    condition_on_previous_text=False,
+                    without_timestamps=True,
+                )
+                text = " ".join(seg.text.strip() for seg in segments if seg.text.strip()).strip()
+                if not text:
+                    raise RuntimeError("Não consegui entender a fala.")
+                self.last_elapsed = time.perf_counter() - started
+                self.last_error = None
+                return text
+            except Exception as exc:
+                self.last_elapsed = time.perf_counter() - started
+                self.last_error = f"{type(exc).__name__}: {exc}"
+                raise
 
 
 class FastPiperTTS:
-    """Piper PT-BR com carregamento único, cache e streaming direto para o áudio."""
+    """Piper PT-BR carregado uma vez, com cache e streaming para o alto-falante."""
 
     def __init__(self):
         self.voice = None
         self.last_error = None
         self.last_elapsed = 0.0
         self.model_path = self._find_model()
-        self._load_lock = threading.Lock()
+        self._lock = threading.Lock()
 
     def _find_model(self) -> Path:
         preferred = PIPER_DIR / "pt_BR-faber-medium.onnx"
         if preferred.exists():
             return preferred
-        matches = list(PIPER_DIR.rglob("pt_BR-faber-medium.onnx")) if PIPER_DIR.exists() else []
-        return matches[0] if matches else preferred
+        if PIPER_DIR.exists():
+            matches = list(PIPER_DIR.rglob("pt_BR-faber-medium.onnx"))
+            if matches:
+                return matches[0]
+        return preferred
 
     @property
     def configured(self) -> bool:
-        p = self.model_path
-        return p.exists() and p.with_suffix(".onnx.json").exists()
+        return self.model_path.exists() and self.model_path.with_suffix(".onnx.json").exists()
 
     def _load(self) -> None:
         if self.voice is not None:
             return
-        with self._load_lock:
+        with self._lock:
             if self.voice is not None:
                 return
             if not self.configured:
@@ -116,60 +123,76 @@ class FastPiperTTS:
     def warmup(self) -> None:
         self._load()
 
-    def _cache_path(self, text: str) -> Path:
-        digest = hashlib.sha256(text.encode("utf-8")).hexdigest()[:20]
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        return CACHE_DIR / f"{digest}.wav"
-
-    def _synthesize_to_file(self, text: str, path: Path) -> None:
-        import wave
-        from piper import SynthesisConfig
-        cfg = SynthesisConfig(
-            volume=1.0,
-            length_scale=0.95,
-            noise_scale=0.667,
-            noise_w_scale=0.8,
-            normalize_audio=True,
-        )
-        with wave.open(str(path), "wb") as wav_file:
-            first = True
-            for chunk in self.voice.synthesize(text, syn_config=cfg):
-                if first:
-                    wav_file.setnchannels(int(chunk.sample_channels))
-                    wav_file.setsampwidth(2)
-                    wav_file.setframerate(int(chunk.sample_rate))
-                    first = False
-                audio = bytes(chunk.audio_int16_bytes)
-                if audio:
-                    wav_file.writeframes(audio)
-            if first:
-                raise RuntimeError("Piper não gerou amostras de áudio.")
-
-    def synthesize(self, text: str) -> Path:
-        text = str(text).strip()
+    @staticmethod
+    def _chunks(text: str, max_chars: int = 220):
+        import re
+        text = " ".join(str(text).split())
         if not text:
-            raise ValueError("Texto vazio para síntese.")
-        self._load()
-        path = self._cache_path(text)
-        if not path.exists() or path.stat().st_size < 1000:
-            temp = path.with_suffix(".tmp.wav")
-            try:
-                self._synthesize_to_file(text, temp)
-                temp.replace(path)
-            finally:
-                temp.unlink(missing_ok=True)
-        return path
+            return []
+        pieces = re.split(r"(?<=[.!?…])\s+", text)
+        result = []
+        for piece in pieces:
+            if len(piece) <= max_chars:
+                result.append(piece)
+                continue
+            words = piece.split()
+            current = []
+            size = 0
+            for word in words:
+                if current and size + len(word) + 1 > max_chars:
+                    result.append(" ".join(current))
+                    current = []
+                    size = 0
+                current.append(word)
+                size += len(word) + (1 if current[:-1] else 0)
+            if current:
+                result.append(" ".join(current))
+        return result
 
     def speak(self, text: str) -> bool:
+        text = str(text).strip()
+        if not text:
+            return True
         started = time.perf_counter()
         try:
-            path = self.synthesize(text)
+            self._load()
+            import numpy as np
             import sounddevice as sd
-            import soundfile as sf
-            data, rate = sf.read(str(path), dtype="float32")
-            if getattr(data, "size", 0) == 0:
-                raise RuntimeError("Áudio Piper vazio.")
-            sd.play(data, rate, blocking=True)
+            from piper import SynthesisConfig
+
+            cfg = SynthesisConfig(
+                volume=1.0,
+                length_scale=0.95,
+                noise_scale=0.667,
+                noise_w_scale=0.8,
+                normalize_audio=True,
+            )
+            for part in self._chunks(text):
+                stream = None
+                channels = 1
+                try:
+                    for chunk in self.voice.synthesize(part, syn_config=cfg):
+                        if stream is None:
+                            channels = max(1, int(chunk.sample_channels))
+                            stream = sd.OutputStream(
+                                samplerate=int(chunk.sample_rate),
+                                channels=channels,
+                                dtype="float32",
+                                blocksize=0,
+                            )
+                            stream.start()
+                        audio = np.asarray(chunk.audio_float_array, dtype=np.float32)
+                        if channels > 1 and audio.ndim == 1:
+                            audio = audio.reshape(-1, channels)
+                        if audio.size:
+                            stream.write(audio)
+                finally:
+                    if stream is not None:
+                        try:
+                            stream.stop()
+                        finally:
+                            stream.close()
+
             self.last_elapsed = time.perf_counter() - started
             self.last_error = None
             return True
@@ -180,7 +203,7 @@ class FastPiperTTS:
 
 
 class WindowsFallbackTTS:
-    """Fallback simples e imediato para Windows SAPI via pyttsx3."""
+    """Fallback de voz local do Windows via SAPI/pyttsx3."""
 
     def __init__(self):
         self.engine = None
@@ -205,7 +228,7 @@ class WindowsFallbackTTS:
 
 
 class VoiceManager:
-    """Controla entrada e saída de voz sem depender de serviços externos."""
+    """Orquestra STT e TTS locais sem ElevenLabs."""
 
     def __init__(self):
         self.stt = LocalSpeechToText()
@@ -264,7 +287,9 @@ class VoiceManager:
             return False
 
     def warmup_async(self):
-        return threading.Thread(target=self.warmup, daemon=True, name="STAR-VoiceWarmup")
+        thread = threading.Thread(target=self.warmup, daemon=True, name="STAR-VoiceWarmup")
+        thread.start()
+        return thread
 
     def speak_async(self, text: str, callback=None):
         def run():
