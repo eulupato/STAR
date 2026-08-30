@@ -1,16 +1,16 @@
-"""Gerenciador único de voz da STAR.
+"""Sistema de voz local da STAR.
 
-STT: faster-whisper local no ambiente principal.
-TTS: Chatterbox local em .voice_venv, geração de WAV.
-Playback: sounddevice no processo principal.
-Não depende de serviços de voz externos.
+Entrada: faster-whisper local.
+Saída: Chatterbox local em .voice_venv.
+Reprodução: sounddevice no .venv principal.
+Nenhum serviço externo de voz é necessário.
 """
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import threading
-import json
 import time
 from pathlib import Path
 
@@ -21,10 +21,10 @@ OUTPUT = ROOT / "voice" / "output"
 
 
 class LocalSpeechToText:
-    """Reconhecimento de fala local com faster-whisper."""
+    """Reconhecimento local em português usando faster-whisper."""
 
-    def __init__(self, model_size: str | None = None):
-        self.model_size = model_size or os.getenv("STAR_STT_MODEL", "base")
+    def __init__(self, model_size: str = "base"):
+        self.model_size = os.getenv("STAR_STT_MODEL", model_size)
         self.model = None
         self.last_error = None
         self._lock = threading.Lock()
@@ -37,7 +37,7 @@ class LocalSpeechToText:
         except Exception:
             return False
 
-    def _load(self) -> None:
+    def _load(self):
         if self.model is not None:
             return
         from faster_whisper import WhisperModel
@@ -50,12 +50,13 @@ class LocalSpeechToText:
         )
 
     def transcribe(self, audio_path: Path) -> str:
-        if not audio_path or not Path(audio_path).exists():
-            raise RuntimeError("Arquivo de áudio da gravação não encontrado.")
+        audio_path = Path(audio_path)
+        if not audio_path.exists():
+            raise RuntimeError(f"Gravação não encontrada: {audio_path}")
         with self._lock:
             try:
                 self._load()
-                segments, _info = self.model.transcribe(
+                segments, _ = self.model.transcribe(
                     str(audio_path),
                     language="pt",
                     beam_size=3,
@@ -73,31 +74,33 @@ class LocalSpeechToText:
 
 
 class ChatterboxTTS:
-    """Geração local persistente via worker Chatterbox."""
+    """Worker persistente do Chatterbox, somente para geração de WAV."""
 
     def __init__(self):
-        self.last_error = None
         self.process = None
+        self.last_error = None
         self._lock = threading.Lock()
 
     @property
     def configured(self) -> bool:
         return VOICE_PYTHON.exists() and REFERENCE.exists()
 
-    def _start(self) -> None:
+    def _worker_error(self) -> str:
+        if not self.process:
+            return "Worker não iniciado."
+        return "O worker do Chatterbox foi encerrado sem confirmar a geração do áudio."
+
+    def _start(self):
         if self.process is not None and self.process.poll() is None:
             return
         if not self.configured:
-            raise RuntimeError(
-                "Chatterbox não configurado. Execute INSTALAR_CHATTERBOX.bat "
-                "e mantenha voice/reference/star_reference.mp3 disponível."
-            )
+            raise RuntimeError("Chatterbox não configurado. Execute INSTALAR_CHATTERBOX.bat e mantenha a referência da voz.")
         self.process = subprocess.Popen(
             [str(VOICE_PYTHON), str(ROOT / "voice" / "chatterbox_worker.py")],
             cwd=str(ROOT),
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
             encoding="utf-8",
             errors="replace",
@@ -110,21 +113,13 @@ class ChatterboxTTS:
                 if self.process.poll() is not None:
                     raise RuntimeError(self._worker_error())
                 continue
-            if line.startswith("STAR_CHATTERBOX_MODEL_READY"):
+            line = line.rstrip()
+            if line == "STAR_CHATTERBOX_MODEL_READY":
                 return
             if line.startswith("STAR_CHATTERBOX_RESULT="):
                 data = json.loads(line.split("=", 1)[1])
-                raise RuntimeError(data.get("error") or "Falha ao inicializar Chatterbox.")
-        raise TimeoutError("Chatterbox demorou mais de 5 minutos para inicializar.")
-
-    def _worker_error(self) -> str:
-        err = ""
-        if self.process is not None and self.process.stderr:
-            try:
-                err = self.process.stderr.read()[-2000:]
-            except Exception:
-                pass
-        return err or "O worker do Chatterbox terminou sem informar o motivo."
+                raise RuntimeError(data.get("error") or "Falha ao carregar o Chatterbox.")
+        raise TimeoutError("Chatterbox levou mais de 5 minutos para carregar.")
 
     def synthesize(self, text: str) -> Path:
         if not str(text).strip():
@@ -133,14 +128,9 @@ class ChatterboxTTS:
             self._start()
             OUTPUT.mkdir(parents=True, exist_ok=True)
             name = f"star_{time.time_ns()}.wav"
-            request = {
-                "text": str(text),
-                "output": name,
-                "exaggeration": 0.5,
-                "cfg_weight": 0.4,
-                "temperature": 0.8,
-            }
-            assert self.process is not None and self.process.stdin and self.process.stdout
+            request = {"text": str(text), "output": name, "exaggeration": 0.5, "cfg_weight": 0.35, "temperature": 0.75}
+            if not self.process or not self.process.stdin or not self.process.stdout:
+                raise RuntimeError("Worker do Chatterbox não está disponível.")
             self.process.stdin.write(json.dumps(request, ensure_ascii=False) + "\n")
             self.process.stdin.flush()
             deadline = time.time() + 300
@@ -154,17 +144,17 @@ class ChatterboxTTS:
                     continue
                 data = json.loads(line.split("=", 1)[1])
                 if not data.get("ok"):
-                    raise RuntimeError(data.get("error") or "Chatterbox falhou ao gerar a voz.")
-                path = Path(data["path"])
-                if not path.exists() or path.stat().st_size < 100:
-                    raise RuntimeError("Chatterbox informou sucesso, mas o WAV não existe ou está vazio.")
+                    raise RuntimeError(data.get("error") or "Chatterbox falhou.")
+                path = Path(data.get("path", ""))
+                if not path.exists() or path.stat().st_size < 1000:
+                    raise RuntimeError("O Chatterbox informou sucesso, mas o WAV não está válido.")
                 self.last_error = None
                 return path
-            raise TimeoutError("Chatterbox demorou mais de 5 minutos para gerar a fala.")
+            raise TimeoutError("Chatterbox levou mais de 5 minutos para gerar a fala.")
 
-    def close(self) -> None:
+    def close(self):
         with self._lock:
-            if self.process is None:
+            if not self.process:
                 return
             try:
                 if self.process.stdin:
@@ -180,7 +170,7 @@ class ChatterboxTTS:
 
 
 class VoiceManager:
-    """Orquestra STT + TTS + reprodução local."""
+    """Pipeline completo: STT local -> STAR -> TTS local -> áudio."""
 
     def __init__(self):
         self.stt = LocalSpeechToText()
@@ -207,11 +197,10 @@ class VoiceManager:
             import soundfile as sf
             data, rate = sf.read(str(path), dtype="float32")
             if getattr(data, "size", 0) == 0:
-                raise RuntimeError("O WAV gerado não contém amostras.")
+                raise RuntimeError("O áudio gerado não contém amostras.")
             with self._play_lock:
                 sd.stop()
-                sd.play(data, rate)
-                sd.wait()
+                sd.play(data, rate, blocking=True)
             self.last_error = None
             return True
         except Exception as exc:
@@ -234,10 +223,7 @@ class VoiceManager:
         return thread
 
     def test_audio_async(self, callback=None):
-        return self.speak_async(
-            "Olá! Eu sou a STAR. Minha voz local está funcionando.",
-            callback,
-        )
+        return self.speak_async("Olá! Eu sou a STAR. Minha voz local está funcionando.", callback)
 
-    def close(self) -> None:
+    def close(self):
         self.tts.close()
