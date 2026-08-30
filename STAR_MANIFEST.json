@@ -1,6 +1,8 @@
 {
   "name": "STAR",
   "version": "1.9",
+  "release_status": "final",
+  "release_channel": "stable",
   "mode": "offline-first",
   "entrypoint": "main.py",
   "launcher": "INICIAR_STAR.bat",
@@ -19,19 +21,21 @@
     "math_engine",
     "computer_commands",
     "local_speech_to_text",
-    "fast_local_tts"
+    "official_local_voice",
+    "fast_local_tts_fallback"
   ],
   "features_prepared": [
     "expanded_automation",
     "messaging_integrations",
     "web_tools",
     "knowledge_expansion",
-    "chatterbox_voice_clone"
+    "star_mind_v2"
   ],
   "voice": {
     "stt": "faster-whisper tiny local PT-BR",
-    "tts_default": "Piper pt_BR-faber-medium local",
-    "tts_clone": "Chatterbox Multilingual local, optional",
+    "tts_default": "Chatterbox Multilingual local com referência autorizada da STAR",
+    "tts_fallback": "Piper pt_BR-faber-medium local; Windows SAPI como último fallback",
+    "voice_mode": "official",
     "playback": "sounddevice local",
     "external_voice_services": false,
     "reference_audio": "local-only: voice/reference/star_reference.mp3"
