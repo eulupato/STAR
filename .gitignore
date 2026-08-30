@@ -1,4 +1,4 @@
-﻿# Ambientes virtuais
+# Ambientes virtuais
 .venv/
 .voice_venv/
 venv/
@@ -9,15 +9,30 @@ __pycache__/
 *.py[cod]
 *.class
 
-# Variáveis e chaves secretas
+# Variáveis, chaves e segredos
 .env
 .env.*
 *.key
+key.txt
+
+# Modelos e caches locais de IA
+models/
+voice/models/
+.cache/
+.hf_cache/
+
+# Referências pessoais de voz (manter somente na máquina local)
+voice/reference/*.mp3
+voice/reference/*.wav
+AUDIOS VOICE/
 
 # Saída temporária de voz
 voice/output/
 voice/cache/
 *.wav
+
+# Banco local e dados da máquina
+star.db
 
 # Logs
 *.log

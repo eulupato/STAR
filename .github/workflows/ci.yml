@@ -1,0 +1,35 @@
+name: STAR CI
+
+on:
+  push:
+    branches: [ main, v1.9-development ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Validate Python syntax
+        run: python -m compileall -q core gui modules voice database tests
+      - name: Validate project JSON manifests
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          files = [
+              Path('config_skin.json'),
+              Path('STAR_MANIFEST.json'),
+              Path('knowledge/packs/matematica_basica/manifest.json'),
+          ]
+          heroes = Path('knowledge/packs/heroes/manifest.json')
+          if heroes.exists():
+              files.append(heroes)
+          for path in files:
+              json.loads(path.read_text(encoding='utf-8'))
+          print('JSON manifests OK')
+          PY

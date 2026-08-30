@@ -1,35 +1,153 @@
-# ⭐ STAR — V1.5 Offline Core
+# ⭐ STAR — V1.9 FINAL
 
-Base consolidada do projeto STAR. Esta versão parte da V.0 funcional, preserva o
-conhecimento fundamental da identidade e incorpora o Hub/STAR WORLD, memória,
-avatar, normalização de linguagem e a camada preparada para voz.
+S.T.A.R. — **System for Thought, Analysis and Response**.
 
-## Execução
+A STAR é uma plataforma cognitiva modular **offline-first**, com identidade própria,
+memória, conhecimento local, interface, STAR WORLD e ferramentas. A identidade da
+STAR permanece separada dos modelos que ela utiliza.
 
-- Se já existe `.venv`: `INICIAR_STAR.bat`
-- Sem ambiente criado: execute `CRIAR_AMBIENTE.bat` uma vez e depois `INICIAR_STAR.bat`.
-- Terminal: `python main.py`
+> **V1.9 é a fundação estável. O desenvolvimento seguinte acontece em V2.0 MIND.**
+
+## Execução no Windows
+
+Use:
+
+`INICIAR_STAR.bat`
+
+ou:
+
+`\.venv\Scripts\python.exe main.py`
+
+Se o ambiente principal ainda não existir, execute `CRIAR_AMBIENTE.bat`.
+Para instalar os modelos de voz locais, execute `INSTALAR_VOZ.bat`.
+
+Diagnóstico:
+
+`DIAGNOSTICO_VOZ.bat`
+
+## Voz — arquitetura final da V1.9
+
+```text
+🎤 Microfone
+    ↓
+sounddevice / AudioRecorder
+    ↓
+faster-whisper tiny (STT PT-BR, local, CPU INT8)
+    ↓
+STAR Core
+    ↓
+⭐ Chatterbox — voz oficial da STAR
+    ↓
+sounddevice
+    ↓
+🔊 Alto-falante
+```
+
+### Fallbacks locais
+
+Se a voz oficial não estiver configurada ou falhar:
+
+```text
+Chatterbox
+    ↓ fallback
+Piper PT-BR
+    ↓ fallback
+Windows SAPI
+```
+
+A referência da voz oficial é local e privada:
+
+`voice/reference/star_reference.mp3`
+
+Ela **não é distribuída pelo GitHub**. Use apenas uma referência de voz que você
+tenha autorização para utilizar.
+
+A V1.9 FINAL também cancela falas antigas quando uma nova interação começa,
+evitando que uma resposta atrasada seja reproduzida depois de outra pergunta.
+
+Para forçar o modo rápido temporariamente:
+
+`STAR_VOICE_MODE=fast`
+
+## Estrutura principal
+
+```text
+STAR/
+├── core/                  # identidade, roteamento, memória e cérebro
+├── database/              # persistência
+├── gui/                   # interface 2D atual / STAR WORLD
+├── knowledge/             # Knowledge Packs
+├── modules/               # ferramentas e automações
+├── voice/                 # STT/TTS local
+├── tests/                 # testes automatizados
+├── docs/                  # roadmap e documentação
+├── assets/                # recursos visuais
+├── SKINS/                 # aparências locais
+├── main.py
+├── config.py
+├── STAR_MANIFEST.json
+└── INICIAR_STAR.bat
+```
+
+## Capacidades da V1.9
+
+- identidade STAR independente do modelo;
+- Core, router e Executive atuais;
+- memória persistente básica;
+- matemática em linguagem natural;
+- Knowledge Packs atuais;
+- chat e interface 2D;
+- HUB, ilhas, Casa e Closet;
+- skins;
+- STT local com faster-whisper tiny;
+- voz oficial local com Chatterbox;
+- Piper e SAPI como fallbacks;
+- controle inicial do computador;
+- navegador, busca e Spotify como primeiras ferramentas;
+- diagnósticos;
+- CI de sintaxe, manifestos e smoke tests.
+
+## STAR WORLD
+
+O catálogo atual inclui HUB, Casa, Laboratório, Central de Criação, Biblioteca,
+Estúdio, Observatório, Jardim, Correio, Cura, Heróis e Idiomas.
+
+Na V1.9 alguns ambientes ainda são representações visuais ou pontos de entrada.
+A transformação em ambientes totalmente funcionais e posteriormente 3D está
+planejada no roadmap.
+
+## Offline-first
+
+A arquitetura segue três estados:
+
+- **LOCAL** — STAR funciona no computador sem internet;
+- **LAN** — adiciona dispositivos da rede local;
+- **ONLINE** — acrescenta recursos externos opcionais.
+
+Internet amplia a STAR; não constitui a STAR.
+
+## Desenvolvimento
+
+- `main` — releases estáveis;
+- `v1.9-development` — branch histórica da construção da V1.9;
+- a próxima geração é **V2.0 MIND**.
+
+Veja:
+
+- `docs/MASTER_ROADMAP.md`
+- `docs/V1_9_PLAN.md`
+- `docs/V1_9_TEST_CHECKLIST.md`
+
+## Segurança e privacidade
+
+Modelos, caches, bancos locais, ambientes virtuais, referências de voz,
+credenciais e arquivos temporários não devem ser versionados.
+
+Nenhuma integração externa de voz é necessária para a V1.9.
 
 ## Estado
 
-- IA externa/Ollama/Qwen: **desativados no fluxo ativo**.
-- Conhecimento próprio: **ativo**.
-- Memória persistente SQLite: **ativa**.
-- GUI: menu visual, chat, configurações, avatar e HUB.
-- Voz: interface preparada, backend definitivo ainda não conectado.
-- Knowledge Packs/pendrives: arquitetura preparada; instalação automática ainda não ativa.
-- Cura: diagnóstico e validação controlados; nenhuma autoalteração irrestrita do código.
+**STAR V1.9 FINAL / stable**
 
-## Arquitetura de conhecimento
-
-`PDF → OCR/parsing → texto estruturado → revisão → Knowledge Pack → ilha → STAR`
-
-As ilhas podem existir no mapa antes de receberem um pacote. O conteúdo é uma
-camada separada da representação do STAR WORLD.
-
-## Pacote distribuído
-
-A versão distribuída inclui um `.venv` de referência para Windows/Python 3.13,
-preservado da base V.0, além dos arquivos-fonte. Se o ambiente embutido não for
-compatível com sua instalação local, `CRIAR_AMBIENTE.bat` recria um ambiente
-novo usando `requirements.txt`.
+Bugs descobertos após a release entram como V1.9.x.
+Novas arquiteturas cognitivas entram na V2.0 MIND.

@@ -1,29 +1,44 @@
 @echo off
 setlocal
 cd /d "%~dp0"
+chcp 65001 >nul
 set "PY=.venv\Scripts\python.exe"
+
 if not exist "%PY%" (
-  echo Ambiente virtual nao encontrado. Criando automaticamente...
-  where py >nul 2>nul
-  if not errorlevel 1 (py -3 -m venv .venv) else (python -m venv .venv)
+    echo Ambiente virtual nao encontrado. Execute CRIAR_AMBIENTE.bat uma vez.
+    pause
+    exit /b 1
 )
-if not exist "%PY%" (
-  echo Nao foi possivel criar o ambiente virtual.
-  pause
-  exit /b 1
-)
-echo Atualizando dependencias da STAR V1.8...
-"%PY%" -m pip install -r requirements.txt
+
+"%PY%" -c "import PIL, sounddevice, soundfile, faster_whisper" >nul 2>&1
 if errorlevel 1 (
-  echo Falha ao instalar dependencias. Verifique sua conexao.
-  pause
-  exit /b 1
+    echo Dependencias da STAR incompletas.
+    echo Execute INSTALAR_VOZ.bat uma vez e tente novamente.
+    pause
+    exit /b 1
 )
-echo Iniciando STAR V1.8...
+
+if not exist ".voice_venv\Scripts\python.exe" (
+    echo Chatterbox nao configurado.
+    echo Execute INSTALAR_VOZ.bat uma vez e tente novamente.
+    pause
+    exit /b 1
+)
+
+if not exist "voice\reference\star_reference.mp3" (
+    echo Audio de referencia da voz nao encontrado.
+    echo Verifique voice\reference\star_reference.mp3
+    pause
+    exit /b 1
+)
+
+echo ============================================
+echo        INICIANDO STAR V1.9
+ echo ============================================
 "%PY%" main.py
 if errorlevel 1 (
-  echo.
-  echo STAR foi encerrada com erro. Veja a mensagem acima.
-  pause
+    echo.
+    echo STAR foi encerrada com erro. Veja a mensagem acima.
+    pause
 )
 endlocal

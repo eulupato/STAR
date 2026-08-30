@@ -1,54 +1,43 @@
 {
   "name": "STAR",
-  "version": "1.7",
-  "mode": "offline",
-  "external_ai_enabled": false,
+  "version": "1.9",
+  "release_status": "final",
+  "release_channel": "stable",
+  "mode": "offline-first",
+  "entrypoint": "main.py",
+  "launcher": "INICIAR_STAR.bat",
   "features_active": [
     "identity",
     "internal_knowledge",
-    "language_normalization",
     "router",
     "executive",
     "persistent_memory",
     "visual_menu",
     "chat",
     "avatar",
-    "emotion_states",
     "hub",
-    "islands_catalog",
-    "controlled_cure_architecture"
+    "islands",
+    "closet_skins",
+    "math_engine",
+    "computer_commands",
+    "local_speech_to_text",
+    "official_local_voice",
+    "fast_local_tts_fallback"
   ],
   "features_prepared": [
-    "voice_tts_stt",
-    "knowledge_packs",
-    "removable_media_knowledge",
-    "external_ai_fallback"
+    "expanded_automation",
+    "messaging_integrations",
+    "web_tools",
+    "knowledge_expansion",
+    "star_mind_v2"
   ],
-  "islands": [
-    "herois",
-    "idiomas",
-    "laboratorio",
-    "central_criacao",
-    "biblioteca",
-    "estudio_musica",
-    "observatorio",
-    "jardim",
-    "casa",
-    "correio",
-    "cura"
-  ],
-  "house_subareas": [
-    "cozinha",
-    "quarto",
-    "closet"
-  ],
-  "entrypoint": "main.py",
-  "launcher": "INICIAR_STAR.bat",
-  "features": [
-    "offline knowledge",
-    "functional math tool",
-    "skills",
-    "knowledge packs",
-    "version status"
-  ]
+  "voice": {
+    "stt": "faster-whisper tiny local PT-BR",
+    "tts_default": "Chatterbox Multilingual local com referência autorizada da STAR",
+    "tts_fallback": "Piper pt_BR-faber-medium local; Windows SAPI como último fallback",
+    "voice_mode": "official",
+    "playback": "sounddevice local",
+    "external_voice_services": false,
+    "reference_audio": "local-only: voice/reference/star_reference.mp3"
+  }
 }

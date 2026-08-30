@@ -1,0 +1,25 @@
+{
+  "heroes_historicos": [
+    "Joana d'Arc",
+    "Harriet Tubman",
+    "Nelson Mandela"
+  ],
+  "mitologia": [
+    "Hércules",
+    "Aquiles",
+    "Odisseu"
+  ],
+  "super_heroes": {
+    "Marvel": [
+      "Homem-Aranha",
+      "Capitão América",
+      "Pantera Negra"
+    ],
+    "DC": [
+      "Superman",
+      "Batman",
+      "Mulher-Maravilha"
+    ]
+  },
+  "note": "Este pack é uma base de organização e será expandido com fontes e conteúdos estruturados."
+}

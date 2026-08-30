@@ -1,18 +1,36 @@
 @echo off
 setlocal
 cd /d "%~dp0"
+chcp 65001 >nul
+
 echo ==========================================
-echo STAR VOICE ENGINE - CHATTERBOX
+echo STAR VOICE ENGINE - CHATTERBOX 0.1.7
 echo ==========================================
+
 if not exist ".voice_venv\Scripts\python.exe" (
-  py -3.11 -m venv .voice_venv
-  if errorlevel 1 (echo ERRO ao criar ambiente Python 3.11.& pause & exit /b 1)
+    echo Criando ambiente Python 3.11...
+    py -3.11 -m venv .voice_venv
+    if errorlevel 1 (
+        echo ERRO: Python 3.11 nao foi encontrado.
+        echo Instale Python 3.11 para o motor Chatterbox.
+        if not defined STAR_SETUP_CHAIN pause
+        exit /b 1
+    )
 )
+
 set "PY=.voice_venv\Scripts\python.exe"
 "%PY%" -m pip install --upgrade pip
-"%PY%" -m pip install chatterbox-tts
-if errorlevel 1 (echo ERRO na instalacao do Chatterbox.& pause & exit /b 1)
+"%PY%" -m pip install "chatterbox-tts==0.1.7"
+if errorlevel 1 (
+    echo ERRO na instalacao do Chatterbox 0.1.7.
+    if not defined STAR_SETUP_CHAIN pause
+    exit /b 1
+)
+
 echo.
-echo INSTALACAO CONCLUIDA.
-echo Execute TESTAR_VOZ_LOCAL.bat
-pause
+echo CHATTERBOX PRONTO.
+echo A referencia oficial deve existir em:
+echo voice\reference\star_reference.mp3
+echo.
+if not defined STAR_SETUP_CHAIN pause
+endlocal

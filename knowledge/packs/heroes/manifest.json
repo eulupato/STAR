@@ -1,0 +1,16 @@
+{
+  "id": "heroes",
+  "name": "Ilha dos Heróis",
+  "version": "1.0",
+  "description": "Conhecimento inicial sobre heróis históricos, mitologia e super-heróis.",
+  "topics": [
+    "conceito de herói",
+    "heróis históricos",
+    "mitologia",
+    "Marvel",
+    "DC",
+    "equipes",
+    "poderes e habilidades",
+    "universos e cronologias"
+  ]
+}
