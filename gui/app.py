@@ -250,7 +250,9 @@ class StarApp:
         self._button(body,'VOLTAR AO CHAT',self.show_chat).pack(anchor='w',pady=10)
 
     def _test_voice(self):
-        self._activate_conversation()
+        # O teste pode ser acionado antes da tela de chat existir em algumas versões.
+        if hasattr(self, 'center'):
+            self._activate_conversation()
         self._append_system('🔊 Gerando e reproduzindo um teste da voz local...')
         self._set_status('TESTANDO VOZ',self.gold)
         self.voice.test_audio_async(lambda ok,err:self.response_queue.put(('voice_test',('ok' if ok else 'erro',err))))
