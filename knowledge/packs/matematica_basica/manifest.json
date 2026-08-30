@@ -1,0 +1,9 @@
+{
+  "id": "matematica_basica",
+  "name": "Matemática Básica",
+  "version": "1.0",
+  "description": "Pack inicial offline da STAR",
+  "skills": [
+    "math"
+  ]
+}

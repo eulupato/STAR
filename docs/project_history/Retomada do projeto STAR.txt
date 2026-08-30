@@ -1,0 +1,25 @@
+olá, sr. Lu! ⭐
+
+Para abrir a STAR pelo **PowerShell**, estando na pasta do projeto:
+
+```powershell id="97rbfv"
+cd C:\Development\Projects\STAR
+.\.venv\Scripts\python.exe main.py
+```
+
+Esse é o jeito que recomendo, porque **não depende de ativar a `.venv`** e evita aquele erro do `customtkinter` que já encontramos. fileciteturn0file13L1-L25
+
+Se a `.venv` já estiver ativada e aparecer `(.venv)` no terminal, pode usar simplesmente:
+
+```powershell id="cbq37n"
+python main.py
+```
+
+### 🚀 Portanto, nosso comando padrão fica:
+
+```powershell id="j0uv9m"
+cd C:\Development\Projects\STAR
+.\.venv\Scripts\python.exe main.py
+```
+
+Isso deve iniciar a **STAR V.1**. ⭐

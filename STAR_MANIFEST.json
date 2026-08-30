@@ -1,0 +1,54 @@
+{
+  "name": "STAR",
+  "version": "1.7",
+  "mode": "offline",
+  "external_ai_enabled": false,
+  "features_active": [
+    "identity",
+    "internal_knowledge",
+    "language_normalization",
+    "router",
+    "executive",
+    "persistent_memory",
+    "visual_menu",
+    "chat",
+    "avatar",
+    "emotion_states",
+    "hub",
+    "islands_catalog",
+    "controlled_cure_architecture"
+  ],
+  "features_prepared": [
+    "voice_tts_stt",
+    "knowledge_packs",
+    "removable_media_knowledge",
+    "external_ai_fallback"
+  ],
+  "islands": [
+    "herois",
+    "idiomas",
+    "laboratorio",
+    "central_criacao",
+    "biblioteca",
+    "estudio_musica",
+    "observatorio",
+    "jardim",
+    "casa",
+    "correio",
+    "cura"
+  ],
+  "house_subareas": [
+    "cozinha",
+    "quarto",
+    "closet"
+  ],
+  "entrypoint": "main.py",
+  "launcher": "INICIAR_STAR.bat",
+  "features": [
+    "offline knowledge",
+    "functional math tool",
+    "skills",
+    "knowledge packs",
+    "version status"
+  ]
+}

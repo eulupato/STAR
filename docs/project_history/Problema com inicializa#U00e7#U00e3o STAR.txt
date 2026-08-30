@@ -1,0 +1,456 @@
+olá, sr. Lu! ⭐
+
+**Fechado. Encerramos o dia 12/08/2026 com um avanço bem concreto.** Hoje saímos de uma interface que apenas abria e conversava para uma primeira estrutura de aplicativo com **menu inicial funcional + chat funcional + comportamento responsivo**.
+
+Vou deixar o registro organizado como uma nova entrada do Diário de Bordo, incluindo **o que foi feito, o que funcionou, o que deu errado e exatamente de onde retomaremos amanhã**. O material anterior do projeto já trata o desenvolvimento como progressivo, preservando a fundação antes de avançar para camadas maiores. fileciteturn3file9L1-L31
+
+---
+
+# 📖 DIÁRIO DE BORDO — PROJETO STAR
+
+## 📅 12 de agosto de 2026
+
+### ⭐ Título do dia
+# **Primeiro Menu Funcional da STAR**
+
+---
+
+## 🟢 1. Estado inicial do dia
+
+A STAR já conseguia:
+
+- abrir a aplicação;
+- apresentar a interface de chat;
+- receber mensagens;
+- enviar mensagens para o `Brain`;
+- registrar mensagens na memória;
+- apresentar respostas;
+- mostrar o avatar da STAR;
+- manter o estado `Online`.
+
+Porém, a aplicação ainda iniciava **diretamente no chat**, sem uma tela inicial própria.
+
+A meta definida para este período foi reduzida propositalmente:
+
+> **Até o final da semana, ter apenas um menu inicial funcional e um chat funcional.**
+
+Não serão priorizados neste momento:
+
+- animações;
+- STAR WORLD;
+- voz;
+- visão;
+- corpo físico;
+- sistemas complexos;
+- efeitos avançados.
+
+A prioridade atual é estabelecer uma **base funcional e visual sólida**.
+
+---
+
+# 🎨 2. Nova identidade visual do menu
+
+Foi escolhida uma arte estática para representar o menu inicial da STAR.
+
+### Resolução da arte:
+
+**1200 × 896 px**
+
+Essa dimensão foi corrigida durante o desenvolvimento, pois inicialmente havia sido considerada incorretamente como 1200 × 800.
+
+A decisão foi utilizar a própria arte como **tela visual do menu**, colocando a lógica de interação sobre ela.
+
+Isso evita reconstruir os elementos pixel art diretamente com widgets do CustomTkinter.
+
+---
+
+# 🖥️ 3. Primeiro problema: tamanho da janela
+
+A primeira tentativa utilizou:
+
+**1200 × 896**
+
+Isso causou problemas porque a dimensão total da janela não levava em consideração adequadamente a área ocupada pela interface do Windows e pela barra de tarefas.
+
+Resultado:
+
+> parte da STAR ficava atrás da barra de tarefas e a interface era cortada.
+
+Foi então decidido abandonar a ideia de uma janela fixa de 1200×896.
+
+---
+
+# 🔄 4. Nova abordagem: interface responsiva
+
+A STAR passou a utilizar uma janela inicialmente menor e redimensionável.
+
+Configuração adotada:
+
+**1100 × 700**
+
+Além disso:
+
+- redimensionamento manual permitido;
+- maximização permitida;
+- `F11` para maximizar/restaurar;
+- `ESC` para retornar ao tamanho normal;
+- imagem mantendo proporção;
+- imagem sem deformação;
+- imagem sem corte.
+
+A arte de **1200×896** passou a ser redimensionada proporcionalmente conforme o espaço disponível.
+
+A solução final utiliza um `Canvas` para renderizar a arte e converter as coordenadas dos cliques para as coordenadas originais da imagem.
+
+---
+
+# 🖱️ 5. Menu passou a ser funcional
+
+O menu agora possui três áreas interativas:
+
+### ▶ INICIAR
+
+Abre o chat da STAR.
+
+### ⚙️ CONFIGURAÇÕES
+
+Abre uma tela provisória informando que as configurações ainda estão em desenvolvimento.
+
+### ✕ SAIR
+
+Fecha a aplicação.
+
+Os botões funcionaram corretamente tanto no tamanho normal quanto maximizado após a correção do sistema de coordenadas.
+
+---
+
+# 💬 6. Chat preservado
+
+O chat que já existia não foi descartado.
+
+O fluxo agora é:
+
+```text id="i0h5ns"
+STAR
+ ↓
+MENU
+ ↓
+INICIAR
+ ↓
+CHAT
+ ↓
+Brain
+ ↓
+Resposta
+```
+
+A funcionalidade existente de:
+
+- entrada de mensagem;
+- envio;
+- processamento pelo Brain;
+- memória;
+- resposta da STAR;
+
+continua funcionando.
+
+---
+
+# 🧠 7. Correção arquitetural importante
+
+Também foi identificada uma questão no código anterior.
+
+`main.py` criava um `Brain`, enquanto `StarApp` criava outro internamente.
+
+Isso poderia resultar em dois objetos `Brain` independentes.
+
+Foi corrigido para:
+
+```text id="9hft12"
+main.py
+   ↓
+cria Brain
+   ↓
+inicializa Brain
+   ↓
+passa Brain para StarApp
+   ↓
+StarApp utiliza o mesmo Brain
+```
+
+Isso deixa a arquitetura mais coerente para as próximas etapas.
+
+---
+
+# 🛠️ 8. Problema encontrado durante o desenvolvimento
+
+Ao iniciar uma versão do programa fora do ambiente virtual, apareceu:
+
+```text id="qc9xh7"
+ModuleNotFoundError:
+No module named 'customtkinter'
+```
+
+Foi identificado que o problema era relacionado ao ambiente Python utilizado.
+
+A execução correta através da `.venv` resolveu o problema.
+
+A STAR voltou a abrir normalmente.
+
+---
+
+# 🟢 9. Resultado final dos testes de hoje
+
+### Tamanho
+
+✅ **Funcionando**
+
+A janela agora possui um tamanho adequado e não fica mais atrás da barra de tarefas.
+
+### Redimensionamento
+
+✅ **Funcionando**
+
+A arte acompanha o tamanho da janela sem deformação.
+
+### Maximização
+
+✅ **Funcionando**
+
+A STAR pode ser maximizada.
+
+### Botões
+
+✅ **Funcionando**
+
+Os três botões do menu respondem corretamente.
+
+### Entrada no chat
+
+✅ **Funcionando**
+
+`INICIAR` leva ao chat.
+
+### Chat
+
+✅ **Funcionando**
+
+A interface atual continua operacional.
+
+### Brain
+
+✅ **Funcionando**
+
+A comunicação com o Brain permanece operacional.
+
+### Memória
+
+✅ **Funcionando**
+
+O sistema existente de memória continua integrado.
+
+---
+
+# 🔴 10. Problema que permanece
+
+Existe **um único problema visual/funcional importante identificado no encerramento de hoje**:
+
+## 🐛 Menu fica preto ao retornar de outra tela enquanto maximizado
+
+Com a STAR maximizada:
+
+```text id="kw49by"
+MENU
+ ↓
+CONFIGURAÇÕES
+ ↓
+MENU
+```
+
+ou outra navegação que retorne ao menu, a tela pode ficar:
+
+> **completamente preta.**
+
+A imagem do menu não é renderizada novamente corretamente enquanto a janela continua maximizada.
+
+Porém:
+
+```text id="yodlyp"
+MAXIMIZADA
+ ↓
+retornar ao menu
+ ↓
+TELA PRETA
+ ↓
+desmaximizar
+ ↓
+MENU VOLTA
+```
+
+Portanto, o problema está relacionado à **re-renderização/redimensionamento do Canvas e da imagem durante a troca de telas em estado maximizado**.
+
+---
+
+# 🔧 11. O que devemos corrigir amanhã
+
+### Prioridade 1 — Tela preta
+
+Investigar:
+
+```text id="w0t3do"
+show_menu()
+       ↓
+clear_screen()
+       ↓
+Canvas
+       ↓
+update_menu_image()
+       ↓
+janela maximizada
+```
+
+Precisamos garantir que a imagem seja renderizada corretamente **depois que o Canvas receber suas dimensões reais**.
+
+---
+
+### Prioridade 2 — Maximização/restauração
+
+Testar todas as combinações:
+
+```text id="hraq76"
+MENU
+ ↓
+F11
+ ↓
+CONFIGURAÇÕES
+ ↓
+MENU
+```
+
+e:
+
+```text id="d2xv7h"
+MENU
+ ↓
+F11
+ ↓
+CHAT
+ ↓
+MENU
+```
+
+Além de:
+
+```text id="hzzho3"
+MENU
+ ↓
+redimensionar
+ ↓
+CHAT
+ ↓
+MENU
+```
+
+---
+
+### Prioridade 3 — Só depois continuar o desenvolvimento
+
+Quando o problema estiver resolvido:
+
+**não vamos mexer mais no menu por enquanto.**
+
+Passaremos para:
+
+# 💬 CHAT V0.2
+
+E então melhorar a experiência do primeiro contato.
+
+---
+
+# 🤖 12. Próxima grande meta
+
+Depois de estabilizar o menu:
+
+```text id="vionqp"
+ABRIR STAR
+      ↓
+MENU
+      ↓
+INICIAR
+      ↓
+CHAT
+      ↓
+"Olá"
+      ↓
+STAR
+```
+
+Queremos que a primeira resposta seja algo mais característico da STAR, por exemplo:
+
+> **"Olá! Eu sou a STAR. É um prazer falar com você. ⭐"**
+
+Isso marcará o primeiro objetivo de comportamento da STAR para o final da semana.
+
+---
+
+# 📌 13. Estado do projeto ao final de 12/08/2026
+
+| Sistema | Estado |
+|---|---|
+| Estrutura do projeto | 🟢 |
+| Ambiente `.venv` | 🟢 |
+| CustomTkinter | 🟢 |
+| Inicialização | 🟢 |
+| Brain | 🟢 |
+| Memória | 🟢 |
+| Chat | 🟢 |
+| Menu | 🟢 |
+| Botões | 🟢 |
+| Redimensionamento | 🟢 |
+| Maximização | 🟢 |
+| `F11` | 🟢 |
+| `ESC` | 🟢 |
+| Arte 1200×896 | 🟢 |
+| Menu responsivo | 🟢 |
+| Retorno ao menu maximizado | 🔴 **corrigir** |
+| Configurações reais | 🟡 placeholder |
+| Personalidade da STAR | 🟡 próxima etapa |
+| Resposta especial para "Olá" | 🟡 próxima etapa |
+| Animações | ⏳ futuro |
+| STAR WORLD | ⏳ futuro |
+| Voz/visão/corpo | ⏳ futuro |
+
+---
+
+# ⭐ MARCO DO DIA
+
+**12/08/2026 — Primeiro Menu Funcional**
+
+Hoje a STAR ganhou algo que pode parecer simples, mas é estruturalmente importante:
+
+> **Ela deixou de ser apenas uma janela que abre diretamente no chat.**
+
+Agora existe:
+
+```text id="43tilk"
+                    ⭐ STAR
+                       │
+                       ▼
+                  MENU INICIAL
+                       │
+              ┌────────┼────────┐
+              ▼        ▼        ▼
+           INICIAR  CONFIG.    SAIR
+              │
+              ▼
+             CHAT
+              │
+              ▼
+             BRAIN
+```
+
+Esse é o primeiro esqueleto real da experiência da STAR.
+
+E amanhã, **12/08 → 13/08**, retomaremos exatamente no bug da tela preta durante a navegação em modo maximizado. Depois disso, seguimos para o comportamento da primeira conversa. 🚀⭐
+
+**Por hoje, missão cumprida.** Descanse — amanhã a gente continua dando vida à STAR. 🌙⭐
