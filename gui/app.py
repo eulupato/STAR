@@ -18,7 +18,9 @@ class StarApp:
     def __init__(self, brain):
         self.brain=brain; self.memory=Memory(); self.avatar=AvatarManager(); self.emotion=EmotionManager()
         self.voice=LocalVoiceBridge(); self.stt=ElevenLabsVoice(); self.recorder=AudioRecorder()
-        self.online_mode=False;  # ONLINE/OFFLINE é estado de serviços, não do TTS local. self.processing=False; self.response_queue=queue.Queue()
+        self.online_mode=False
+        self.processing=False
+        self.response_queue=queue.Queue()
         self.current_screen=None; self.has_messages=False; self.chat=None; self.recording=False
         self.bg='#0b1018'; self.panel='#131c29'; self.text='#edf3fb'; self.muted='#9aa8bb'; self.star='#8fd0ff'; self.user='#c9b8ff'; self.green='#76e2a0'; self.red='#ff7c87'; self.gold='#ffd36e'
         self.window=tk.Tk(); self.window.title(f'{APP_NAME} V{VERSION}'); self.window.geometry(f'{WINDOW_WIDTH}x{WINDOW_HEIGHT}')
@@ -102,8 +104,8 @@ class StarApp:
     def _on_enter(self,e=None): self.send_message(); return 'break'
 
     def toggle_microphone(self):
-        if not self.online_mode:
-            self._activate_conversation(); self._append_system('🎤 O reconhecimento de voz online está desligado. A saída de voz local continua disponível.')
+        if not self.stt.configured:
+            self._activate_conversation(); self._append_system('🎤 Reconhecimento de fala indisponível: configure a chave do serviço de transcrição.')
             return
         if not self.recorder.available:
             self._activate_conversation(); self._append_system('🎤 Módulo de microfone indisponível. Execute o iniciador novamente para instalar as dependências.')
@@ -241,19 +243,18 @@ class StarApp:
         tk.Label(voicebox,text='Use o botão de microfone no chat: 1º clique inicia a gravação; 2º clique para e transcreve.',fg=self.muted,bg=self.panel).pack(anchor='w')
         self._button(voicebox,'TESTAR VOZ DA STAR',self._test_voice).pack(anchor='w',pady=(12,0))
         info=tk.Frame(body,bg=self.panel,padx=22,pady=16); info.pack(fill='x')
-        rows=[('Versão',f'V{VERSION}'),('IA externa','DESATIVADA'),('Conhecimento local','ATIVO'),('Voz ElevenLabs','PRONTA' if self.voice.configured else 'CHAVE NÃO DETECTADA'),('Reconhecimento de fala','PRONTO' if self.voice.configured else 'AGUARDANDO CHAVE')]
+        rows=[('Versão',f'V{VERSION}'),('IA externa','DESATIVADA'),('Conhecimento local','ATIVO'),('Voz local Chatterbox','PRONTA' if self.voice.configured else 'NÃO CONFIGURADA'),('Reconhecimento de fala','PRONTO' if self.stt.configured else 'AGUARDANDO CHAVE')]
         for a,b in rows:
             r=tk.Frame(info,bg=self.panel); r.pack(fill='x',pady=4); tk.Label(r,text=a,fg=self.muted,bg=self.panel).pack(side='left'); tk.Label(r,text=b,fg=self.green if b in {'ATIVO','PRONTA','PRONTO'} else self.text,bg=self.panel,font=('Segoe UI',10,'bold')).pack(side='right')
         self._button(body,'VOLTAR AO CHAT',self.show_chat).pack(anchor='w',pady=10)
 
     def _test_voice(self):
-        self.voice.enabled=True
         self._set_status('TESTANDO VOZ',self.gold)
         self.voice.test_audio_async(lambda ok,err:self.response_queue.put(('voice_test',('ok' if ok else 'erro',err))))
         # handled below by queue branch
 
     def _set_mode(self,online):
-        self.online_mode=bool(online); self.voice.enabled=self.online_mode; self._refresh_mode_buttons()
+        self.online_mode=bool(online); self._refresh_mode_buttons()
     def _refresh_mode_buttons(self):
         if not hasattr(self,'online_btn'):return
         if self.online_mode:
