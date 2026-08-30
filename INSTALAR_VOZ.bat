@@ -4,14 +4,14 @@ cd /d "%~dp0"
 chcp 65001 >nul
 
 echo ================================================
-echo       STAR V1.9 - VOZ LOCAL RAPIDA
+echo      STAR V1.9 - VOZ LOCAL RAPIDA
 echo ================================================
 echo.
-echo STT : faster-whisper tiny (PT-BR, local)
-echo TTS : Piper PT-BR (local, rapido)
-echo CLONE: Chatterbox opcional para voz clonada
- echo AUDIO: sounddevice
- echo.
+echo ENTRADA : faster-whisper tiny (PT-BR, local)
+echo SAIDA   : Piper PT-BR (local, rapido)
+echo FALLBACK: Windows SAPI via pyttsx3
+ echo CLONE   : Chatterbox fica fora do fluxo rapido
+echo.
 
 if not exist ".venv\Scripts\python.exe" (
     echo ERRO: .venv nao encontrada.
@@ -20,7 +20,7 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
-echo Instalando dependencias principais...
+echo Instalando dependencias da STAR...
 ".venv\Scripts\python.exe" -m pip install -r requirements.txt
 if errorlevel 1 (
     echo ERRO ao instalar dependencias.
@@ -29,28 +29,27 @@ if errorlevel 1 (
 )
 
 echo.
-echo Baixando modelo Piper PT-BR...
-".venv\Scripts\python.exe" -m piper.download_voices pt_BR-faber-medium --data-dir "%CD%\voice\models\piper"
+echo Baixando modelo Piper PT-BR apenas se necessario...
+".venv\Scripts\python.exe" voice\install_models.py
 if errorlevel 1 (
-    echo ERRO ao baixar a voz Piper.
+    echo ERRO ao preparar o Piper.
     pause
     exit /b 1
 )
 
 echo.
-echo Preparando Whisper Tiny para evitar download na primeira fala...
+echo Preparando Whisper Tiny para a primeira fala...
 ".venv\Scripts\python.exe" -c "from faster_whisper import WhisperModel; WhisperModel('tiny',device='cpu',compute_type='int8')"
 if errorlevel 1 (
-    echo AVISO: nao foi possivel preparar o Whisper agora. Ele tentara baixar na primeira fala.
+    echo AVISO: nao foi possivel preparar o Whisper agora.
 )
 
 echo.
 echo ================================================
-echo       VOZ RAPIDA INSTALADA
+echo          VOZ V1.9 PRONTA
  echo ================================================
-echo.
-echo A voz padrao agora e Piper e nao depende de servico externo.
-echo O Chatterbox continua disponivel para futuras falas clonadas.
+echo Piper sera o TTS padrao porque responde muito mais rapido em CPU.
+echo O reconhecimento e totalmente local.
 echo.
 pause
 endlocal
