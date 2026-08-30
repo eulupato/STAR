@@ -12,7 +12,7 @@ if not exist "%PY%" (
 
 "%PY%" -c "import PIL, sounddevice, soundfile, faster_whisper" >nul 2>&1
 if errorlevel 1 (
-    echo Dependencias principais incompletas.
+    echo Dependencias da STAR incompletas.
     echo Execute INSTALAR_VOZ.bat uma vez e tente novamente.
     pause
     exit /b 1
