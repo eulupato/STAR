@@ -45,12 +45,12 @@ def main() -> int:
         emit({"ok": False, "error": f"Áudio de referência não encontrado: {REF}"})
         return 1
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # A versão 0.1.7 instalada na STAR trata strings "cpu"/"cuda" corretamente
+    # para map_location dos checkpoints. Não passar torch.device aqui.
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     try:
         print(f"STAR_CHATTERBOX_READY device={device}", flush=True)
         model = quiet_call(ChatterboxMultilingualTTS.from_pretrained, device=device)
-        # Prepara a referência uma vez; chamadas seguintes não precisam
-        # recalcular a identidade vocal inteira.
         quiet_call(model.prepare_conditionals, str(REF), exaggeration=0.5)
         print("STAR_CHATTERBOX_MODEL_READY", flush=True)
     except Exception as exc:
