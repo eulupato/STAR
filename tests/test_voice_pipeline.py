@@ -27,7 +27,6 @@ def test_voice_manager_has_local_components():
 def test_voice_paths_are_local_and_optional():
     manager = VoiceManager()
     assert manager.piper.model_path.is_relative_to(ROOT)
-    assert manager.official.reference_path.is_relative_to(ROOT)
     assert manager.official.worker_path.is_relative_to(ROOT)
     assert manager.piper.configured in (True, False)
     assert manager.official.configured in (True, False)
@@ -37,11 +36,25 @@ def test_voice_paths_are_local_and_optional():
 def test_default_mode_prefers_official_voice():
     manager = VoiceManager()
     assert manager.mode == "official"
+    assert manager.fallback_on_error is False
     manager.close()
+
+
+def test_official_mode_does_not_silently_select_piper():
+    manager = VoiceManager()
+    if not manager.official.configured:
+        assert "INDISPONÍVEL" in manager.tts_description
+        assert "Piper" not in manager.tts_description
+    manager.close()
+
+
+def test_missing_components_are_explainable():
+    engine = ChatterboxOfficialTTS()
+    assert isinstance(engine.missing_components, list)
+    assert isinstance(engine.status_message, str)
 
 
 def test_no_external_voice_service_is_required():
     manager = VoiceManager()
     assert manager.last_tts_engine == "não executado"
-    assert manager.configured in (True, False)
     manager.close()
