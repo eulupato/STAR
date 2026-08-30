@@ -126,6 +126,7 @@ class StarApp:
     def _on_enter(self,_event=None):self.send_message();return "break"
 
     def toggle_microphone(self):
+        self.voice.cancel_speech()
         if not self.voice.stt_configured:self._activate_conversation();self._append_system("🎤 Reconhecimento local ainda não está instalado. Execute INSTALAR_VOZ.bat.");return
         if not self.recorder.available:self._activate_conversation();self._append_system("🎤 Não consegui acessar o microfone. Verifique as configurações de áudio do Windows.");return
         if not self.recording:
@@ -154,6 +155,7 @@ class StarApp:
 
     def send_message(self):
         if self.processing or not hasattr(self,"entry"):return
+        self.voice.cancel_speech()
         text=self.entry.get().strip()
         if not text or text=="Pergunte algo à STAR...":return
         self.entry.delete(0,tk.END);self._activate_conversation();self._append_user(text)
@@ -177,7 +179,7 @@ class StarApp:
                     self._activate_conversation();self._append_system(f"🎤 Falha no reconhecimento: {result}");self.processing=False
                     if self.current_screen=="chat":self.entry.config(state=tk.NORMAL);self.send_button.config(state=tk.NORMAL)
                 elif kind=="voice_test":
-                    ok,error=result;self._set_voice_test_message("🔊 Voz rápida da STAR funcionando." if ok else f"🔊 Falha na voz: {error}",ok)
+                    ok,error=result;self._set_voice_test_message(f"🔊 Voz da STAR funcionando ({self.voice.last_tts_engine})." if ok else f"🔊 Falha na voz: {error}",ok)
                 elif kind=="speech_result":
                     ok,error=result
                     if not ok and self.current_screen=="chat":self._append_system(f"🔊 A resposta foi gerada, mas a voz falhou: {error}")
@@ -234,14 +236,14 @@ class StarApp:
     def show_settings(self):
         self.clear_screen();self.current_screen="settings";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True,padx=80,pady=35);tk.Label(body,text="CONFIGURAÇÕES",fg=self.star,bg=self.bg,font=("Segoe UI",27,"bold")).pack(anchor="w")
         mode=tk.Frame(body,bg=self.panel,padx=22,pady=18);mode.pack(fill="x",pady=(18,12));tk.Label(mode,text="MODO DE FUNCIONAMENTO",fg=self.text,bg=self.panel,font=("Segoe UI",12,"bold")).pack(anchor="w");row=tk.Frame(mode,bg=self.panel);row.pack(anchor="w",pady=12);self.online_btn=self._button(row,"🟢 ONLINE",lambda:self._set_mode(True));self.online_btn.pack(side="left",padx=(0,10));self.offline_btn=self._button(row,"🔴 OFFLINE",lambda:self._set_mode(False));self.offline_btn.pack(side="left");self._refresh_mode_buttons();tk.Label(mode,text="O modo online controla recursos de internet. A voz da STAR é local nos dois modos.",fg=self.muted,bg=self.panel).pack(anchor="w")
-        voicebox=tk.Frame(body,bg=self.panel,padx=22,pady=18);voicebox.pack(fill="x",pady=12);tk.Label(voicebox,text="🎙️ VOZ DA STAR",fg=self.star,bg=self.panel,font=("Segoe UI",13,"bold")).pack(anchor="w");tk.Label(voicebox,text="Entrada: faster-whisper tiny • Voz rápida: Piper PT-BR • Voz clonada preparada: Chatterbox",fg=self.text,bg=self.panel).pack(anchor="w",pady=(8,2));tk.Label(voicebox,text="O modo rápido fica ativo normalmente. O Chatterbox é mantido separado para futura voz clonada, pois é pesado em CPU.",fg=self.muted,bg=self.panel,wraplength=760,justify="left").pack(anchor="w");self._button(voicebox,"TESTAR VOZ DA STAR",self._test_voice).pack(anchor="w",pady=(12,4));self.voice_test_label=tk.Label(voicebox,text="Pronto para testar.",fg=self.muted,bg=self.panel,wraplength=760,justify="left");self.voice_test_label.pack(anchor="w")
+        voicebox=tk.Frame(body,bg=self.panel,padx=22,pady=18);voicebox.pack(fill="x",pady=12);tk.Label(voicebox,text="🎙️ VOZ DA STAR",fg=self.star,bg=self.panel,font=("Segoe UI",13,"bold")).pack(anchor="w");tk.Label(voicebox,text=f"Entrada: faster-whisper tiny • Voz atual: {self.voice.tts_description}",fg=self.text,bg=self.panel).pack(anchor="w",pady=(8,2));tk.Label(voicebox,text="A V1.9 FINAL prioriza a voz oficial local da STAR via Chatterbox quando a referência está disponível. Piper permanece como fallback rápido.",fg=self.muted,bg=self.panel,wraplength=760,justify="left").pack(anchor="w");self._button(voicebox,"TESTAR VOZ DA STAR",self._test_voice).pack(anchor="w",pady=(12,4));self.voice_test_label=tk.Label(voicebox,text="Pronto para testar.",fg=self.muted,bg=self.panel,wraplength=760,justify="left");self.voice_test_label.pack(anchor="w")
         info=tk.Frame(body,bg=self.panel,padx=22,pady=16);info.pack(fill="x",pady=12)
         for name,value in (("Versão",f"V{VERSION}"),("Conhecimento local","ATIVO"),("Voz rápida",self.voice.tts_description),("Reconhecimento local","PRONTO" if self.voice.stt_configured else "INSTALAÇÃO PENDENTE")):
             line=tk.Frame(info,bg=self.panel);line.pack(fill="x",pady=4);tk.Label(line,text=name,fg=self.muted,bg=self.panel).pack(side="left");tk.Label(line,text=value,fg=self.green if value in {"ATIVO","PRONTO","Piper PT-BR (rápido)"} else self.gold,bg=self.panel,font=("Segoe UI",10,"bold")).pack(side="right")
         self._button(body,"VOLTAR AO CHAT",self.show_chat).pack(anchor="w",pady=10)
 
     def _test_voice(self):
-        self._set_voice_test_message("🔊 Gerando teste da voz rápida...",True);self._set_status("TESTANDO VOZ",self.gold);self.voice.test_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
+        self._set_voice_test_message("🔊 Preparando teste da voz oficial...",True);self._set_status("TESTANDO VOZ",self.gold);self.voice.test_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
     def _set_mode(self,online):self.online_mode=bool(online);self._refresh_mode_buttons();self._set_status("ONLINE" if self.online_mode else "OFFLINE",self.green if self.online_mode else self.red)
     def _refresh_mode_buttons(self):
         if hasattr(self,"online_btn"):self.online_btn.config(bg="#1f5a3a" if self.online_mode else "#24313f")
