@@ -22,7 +22,9 @@
     "computer_commands",
     "local_speech_to_text",
     "official_local_voice",
-    "fast_local_tts_fallback"
+    "fast_local_tts_fallback",
+    "voice_degraded_startup",
+    "automatic_spoken_replies"
   ],
   "features_prepared": [
     "expanded_automation",
@@ -38,7 +40,11 @@
     "voice_mode": "official",
     "playback": "sounddevice local",
     "external_voice_services": false,
-    "reference_audio": "local-only: voice/reference/star_reference.mp3",
-    "silent_fallback_to_generic_voice": false
+    "reference_audio": "local-only: resolvida por STAR_VOICE_REFERENCE/config.py/voice/reference/*",
+    "silent_fallback_to_generic_voice": false,
+    "startup_dependency": false,
+    "interface_can_start_without_tts": true,
+    "automatic_reply_from_gui": true,
+    "fast_mode": "Windows SAPI preferencial + Piper PT-BR fallback"
   }
 }
