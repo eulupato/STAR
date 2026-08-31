@@ -1,7 +1,9 @@
 """Captura de áudio do microfone da STAR."""
 from pathlib import Path
+import os
 import tempfile
 import numpy as np
+
 
 class AudioRecorder:
     def __init__(self, samplerate=16000, channels=1):
@@ -15,7 +17,7 @@ class AudioRecorder:
     @property
     def available(self):
         try:
-            import sounddevice
+            import sounddevice  # noqa: F401
             return True
         except Exception:
             return False
@@ -26,26 +28,50 @@ class AudioRecorder:
             return
         self.frames=[]
         self.last_error=None
-        def callback(indata, frames, time, status):
+
+        def callback(indata, frames, time_info, status):
             if status:
                 self.last_error=str(status)
             self.frames.append(indata.copy())
-        self.stream=sd.InputStream(samplerate=self.samplerate, channels=self.channels,
-                                   dtype='float32', callback=callback)
+
+        self.stream=sd.InputStream(
+            samplerate=self.samplerate,
+            channels=self.channels,
+            dtype="float32",
+            callback=callback,
+        )
         self.stream.start()
         self.recording=True
+
+    def stop(self):
+        stream=self.stream
+        self.stream=None
+        self.recording=False
+        if stream is not None:
+            try:
+                stream.stop()
+            finally:
+                stream.close()
 
     def stop_to_wav(self):
         if not self.recording:
             return None
+
         try:
-            self.stream.stop(); self.stream.close()
-        finally:
-            self.stream=None; self.recording=False
+            self.stop()
+        except Exception:
+            self.stream=None
+            self.recording=False
+            raise
+
         if not self.frames:
             raise RuntimeError("Nenhum áudio foi capturado.")
+
         import soundfile as sf
+
         data=np.concatenate(self.frames, axis=0)
-        out=Path(tempfile.mkstemp(suffix='.wav')[1])
-        sf.write(str(out), data, self.samplerate, subtype='PCM_16')
+        fd, name=tempfile.mkstemp(prefix="star_mic_", suffix=".wav")
+        os.close(fd)
+        out=Path(name)
+        sf.write(str(out), data, self.samplerate, subtype="PCM_16")
         return out
