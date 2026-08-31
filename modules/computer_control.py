@@ -1,8 +1,7 @@
 """Ferramentas locais da STAR V1.9.
 
-Somente ações explícitas e reversíveis são executadas automaticamente.
-Integrações de mensagens/chamadas ficam preparadas para uma camada de serviço
-configurada pelo usuário e não disparam contatos silenciosamente.
+Ações locais simples podem funcionar offline. Recursos que abrem serviços da
+internet respeitam o estado ONLINE/OFFLINE recebido pelo STAR Core.
 """
 from __future__ import annotations
 
@@ -31,7 +30,7 @@ def open_app(name: str) -> str:
         try:
             os.startfile("spotify:")
             return "Abri o Spotify."
-        except OSError:
+        except (OSError, AttributeError):
             webbrowser.open("https://open.spotify.com")
             return "Abri o Spotify no navegador."
     command = APP_ALIASES.get(name)
@@ -63,15 +62,14 @@ def find_files(query: str, root: str | Path | None = None, limit: int = 20):
     if not q:
         return []
     hits = []
-    for base in (root_path,):
-        try:
-            for path in base.rglob("*"):
-                if q in path.name.lower():
-                    hits.append(path)
-                    if len(hits) >= limit:
-                        return hits
-        except (PermissionError, OSError):
-            continue
+    try:
+        for path in root_path.rglob("*"):
+            if q in path.name.lower():
+                hits.append(path)
+                if len(hits) >= limit:
+                    break
+    except (PermissionError, OSError):
+        pass
     return hits
 
 
@@ -80,7 +78,11 @@ def local_time() -> str:
     return f"Agora são {now:%H:%M}, {now:%d/%m/%Y}."
 
 
-def parse(text: str):
+def _needs_network_message() -> str:
+    return "Esse comando usa internet. Ative o modo ONLINE nas configurações da STAR."
+
+
+def parse(text: str, allow_network: bool = False):
     s = " ".join(str(text).strip().lower().split())
     if not s:
         return None
@@ -89,6 +91,8 @@ def parse(text: str):
         return local_time()
 
     if "spotify" in s:
+        if not allow_network:
+            return _needs_network_message()
         query = s.split("spotify", 1)[1].strip(" .,:;- ")
         for prefix in ("e toca ", "e toque ", "toca ", "toque ", "procura ", "pesquisa ", "buscar "):
             if query.startswith(prefix):
@@ -97,6 +101,8 @@ def parse(text: str):
 
     browser = any(k in s for k in ("google", "chrome", "navegador"))
     if browser and any(k in s for k in ("abre", "abrir", "abra")):
+        if not allow_network:
+            return _needs_network_message()
         query = ""
         markers = ("e veja", "e pesquise", "e pesquisa", "pesquise", "pesquisa", "veja o", "veja")
         for marker in markers:
@@ -110,6 +116,8 @@ def parse(text: str):
 
     for prefix in ("pesquise ", "pesquisa ", "procure ", "procura ", "buscar ", "busque "):
         if s.startswith(prefix):
+            if not allow_network:
+                return _needs_network_message()
             return web_search(s[len(prefix):])
 
     for marker in ("procure arquivo ", "procurar arquivo ", "encontre o arquivo ", "encontre arquivo "):
