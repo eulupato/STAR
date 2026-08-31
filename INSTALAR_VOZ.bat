@@ -7,10 +7,9 @@ echo =====================================================
 echo        STAR V1.9 FINAL - INSTALACAO DE VOZ
 echo =====================================================
 echo.
-echo ENTRADA  : faster-whisper tiny (PT-BR, local)
-echo OFICIAL  : Chatterbox + referencia local da STAR
-echo FALLBACK : Piper PT-BR
-echo FALLBACK2: Windows SAPI
+echo ENTRADA : faster-whisper tiny (PT-BR, local)
+echo OFICIAL : Chatterbox + referencia local da STAR
+echo RAPIDA  : Piper PT-BR (somente se escolhido)
 echo.
 
 if not exist ".venv\Scripts\python.exe" (
@@ -29,12 +28,10 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/4] Preparando Piper PT-BR como fallback rapido...
+echo [2/4] Preparando Piper PT-BR para o modo rapido...
 ".venv\Scripts\python.exe" voice\install_models.py
 if errorlevel 1 (
-    echo ERRO ao preparar o Piper.
-    pause
-    exit /b 1
+    echo AVISO: Piper nao ficou pronto. Isso nao impede a voz oficial.
 )
 
 echo.
@@ -45,31 +42,27 @@ if errorlevel 1 (
 )
 
 echo.
-echo [4/4] Preparando a voz oficial Chatterbox...
+echo [4/4] Preparando Chatterbox...
 set STAR_SETUP_CHAIN=1
 call INSTALAR_CHATTERBOX.bat
 set STAR_SETUP_CHAIN=
 if errorlevel 1 (
-    echo.
-    echo AVISO: Chatterbox nao ficou pronto.
-    echo A STAR continuara falando pelo Piper ate a voz oficial ser configurada.
+    echo ERRO: Chatterbox nao ficou pronto.
+    echo Execute novamente INSTALAR_CHATTERBOX.bat e veja o erro.
 )
 
 echo.
-if exist "voice\reference\star_reference.mp3" (
-    echo REFERENCIA OFICIAL: ENCONTRADA
-) else (
-    echo AVISO: referencia da voz oficial NAO encontrada.
-    echo Coloque o arquivo autorizado em:
-    echo voice\reference\star_reference.mp3
-    echo Enquanto isso a STAR usara Piper como fallback.
-)
+".venv\Scripts\python.exe" -c "from voice.manager import ChatterboxOfficialTTS; e=ChatterboxOfficialTTS(); print('REFERENCIA OFICIAL:', e.reference_path if e.reference_path.exists() else 'AUSENTE')"
 
 echo.
+echo Se a referencia aparecer como AUSENTE:
+echo execute CONFIGURAR_VOZ_STAR.bat e selecione seu ZIP/MP3/WAV.
+echo O arquivo sera mantido apenas na sua maquina.
+echo.
 echo =====================================================
-echo        INSTALACAO DE VOZ V1.9 FINAL CONCLUIDA
+echo        INSTALACAO V1.9 FINAL CONCLUIDA
 echo =====================================================
-echo Execute DIAGNOSTICO_VOZ.bat para validar.
+echo Depois execute DIAGNOSTICO_VOZ.bat.
 echo.
 pause
 endlocal

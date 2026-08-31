@@ -1,4 +1,4 @@
-"""Gerenciador de voz local da STAR V1.9.1.
+"""Gerenciador de voz local da STAR V1.9 FINAL.
 
 Objetivo do hotfix:
 - modo "official" usa SOMENTE a voz oficial Chatterbox;
@@ -21,19 +21,61 @@ ROOT = Path(__file__).resolve().parent.parent
 VOICE_DIR = ROOT / "voice"
 PIPER_DIR = VOICE_DIR / "models" / "piper"
 CHATTERBOX_WORKER = VOICE_DIR / "chatterbox_worker.py"
+REFERENCE_DIR = VOICE_DIR / "reference"
+SUPPORTED_REFERENCE_EXTENSIONS = (".mp3", ".wav", ".flac", ".ogg", ".m4a", ".aac")
+
+
+def _reference_score(path: Path):
+    """Prefere referências curtas/compactas e nomes explicitamente STAR."""
+    name = path.name.lower()
+    explicit = 0 if name.startswith("star_reference") else 1
+    short_hint = 0 if any(token in name for token in ("35s", "30s", "short", "curta")) else 1
+    try:
+        size = path.stat().st_size
+    except OSError:
+        size = 10**18
+    return (explicit, short_hint, size, name)
 
 
 def _resolve_reference_path() -> Path:
+    """Resolve a referência oficial sem depender do nome original do arquivo.
+
+    Ordem:
+    1. STAR_VOICE_REFERENCE / VOICE_REFERENCE se existir;
+    2. star_reference.* em voice/reference;
+    3. qualquer áudio local em voice/reference, escolhendo de forma determinística.
+
+    O áudio continua privado e não é versionado.
+    """
     try:
         from config import VOICE_REFERENCE
     except Exception:
         VOICE_REFERENCE = "voice/reference/star_reference.mp3"
 
     raw = os.getenv("STAR_VOICE_REFERENCE", VOICE_REFERENCE).strip()
-    path = Path(raw).expanduser()
-    if not path.is_absolute():
-        path = ROOT / path
-    return path.resolve()
+    configured = Path(raw).expanduser()
+    if not configured.is_absolute():
+        configured = ROOT / configured
+    configured = configured.resolve()
+    if configured.exists():
+        return configured
+
+    if REFERENCE_DIR.exists():
+        named = []
+        all_audio = []
+        for path in REFERENCE_DIR.iterdir():
+            if not path.is_file() or path.suffix.lower() not in SUPPORTED_REFERENCE_EXTENSIONS:
+                continue
+            all_audio.append(path.resolve())
+            if path.stem.lower() == "star_reference":
+                named.append(path.resolve())
+
+        if named:
+            return sorted(named, key=_reference_score)[0]
+        if all_audio:
+            return sorted(all_audio, key=_reference_score)[0]
+
+    return configured
 
 
 class LocalSpeechToText:
@@ -248,7 +290,7 @@ class ChatterboxOfficialTTS:
     """Voz oficial da STAR via worker persistente do Chatterbox."""
 
     def __init__(self, reference_path: Path | None = None):
-        self.reference_path = Path(reference_path or _resolve_reference_path())
+        self.reference_path = Path(reference_path or _resolve_reference_path()).resolve()
         self.worker_path = CHATTERBOX_WORKER
         self.python_path = self._find_python()
         self.last_error = None
@@ -607,7 +649,7 @@ class VoiceManager:
     def tts_description(self) -> str:
         if self.mode == "official":
             if self.official.configured:
-                return "Voz oficial STAR (Chatterbox local)"
+                return f"Voz oficial STAR (Chatterbox local • {self.official.reference_path.name})"
             return "Voz oficial INDISPONÍVEL — " + self.official.status_message
 
         if self.piper.configured:

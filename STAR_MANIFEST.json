@@ -38,6 +38,7 @@
     "voice_mode": "official",
     "playback": "sounddevice local",
     "external_voice_services": false,
-    "reference_audio": "local-only: voice/reference/star_reference.mp3"
+    "reference_audio": "local-only: voice/reference/star_reference.mp3",
+    "silent_fallback_to_generic_voice": false
   }
 }
