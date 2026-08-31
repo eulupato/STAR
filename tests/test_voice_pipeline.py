@@ -10,6 +10,7 @@ from voice.manager import (
     FastPiperTTS,
     LocalSpeechToText,
     VoiceManager,
+    prepare_tts_text,
 )
 
 
@@ -58,3 +59,19 @@ def test_no_external_voice_service_is_required():
     manager = VoiceManager()
     assert manager.last_tts_engine == "não executado"
     manager.close()
+
+
+
+def test_tts_text_removes_emojis_without_changing_portuguese():
+    text = "Perfeito! ✨⭐ Vamos continuar amanhã. 😊"
+    assert prepare_tts_text(text) == "Perfeito! Vamos continuar amanhã."
+
+
+def test_tts_text_removes_emoji_sequences_and_flags():
+    text = "Tudo certo 👩‍💻🇧🇷! Seguimos."
+    assert prepare_tts_text(text) == "Tudo certo! Seguimos."
+
+
+def test_tts_text_keeps_normal_punctuation_and_accents():
+    text = "Olá, Lu! Você está bem? Sim: estou ótima."
+    assert prepare_tts_text(text) == text
