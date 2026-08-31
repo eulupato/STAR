@@ -16,6 +16,8 @@ class StarCore:
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
+        # Contexto espacial opcional fornecido pela GUI (ex.: Casa > Cozinha).
+        self.ui_context = ""
 
     def get_name(self):
         if self.identity is None:
@@ -57,6 +59,7 @@ class StarCore:
             "input": str(user_input or "").strip(),
             "identity": self._get_identity(),
             "state": self._get_state(),
+            "ui_context": str(getattr(self, "ui_context", "") or "").strip(),
         }
 
         # Pequena memória de sessão para fatos simples e continuidade imediata.
@@ -80,7 +83,9 @@ class StarCore:
         total_time = time.perf_counter() - request_start
 
         # Diagnóstico curto para o terminal, sem poluir a GUI.
-        print(f"🧭 Rota: {route['response_type'] or 'local'} | {total_time:.3f}s (router {route_time:.3f}s)")
+        context = request.get("ui_context", "")
+        context_info = f" | contexto {context}" if context else ""
+        print(f"🧭 Rota: {route['response_type'] or 'local'}{context_info} | {total_time:.3f}s (router {route_time:.3f}s)")
         return response
 
     def _get_identity(self):

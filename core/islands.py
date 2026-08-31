@@ -135,15 +135,23 @@ ISLANDS = {
     "casa": {
         "name": "Casa",
         "icon": "🏠",
-        "status": "planned",
+        "status": "installed",
         "type": "home",
-        "description": "A casa da STAR dentro do STAR WORLD, com ambientes pessoais e de rotina.",
+        "description": "A primeira ilha funcional da STAR, com ambientes pessoais, mídia, receitas, skins e álbum local.",
         "contents": [
+            "📺 Sala — entretenimento, mídia e conversa",
             "🍳 Cozinha — receitas, pratos e preparo culinário",
             "🛏️ Quarto — espaço pessoal da STAR",
             "👕 Closet — roupas, skins, acessórios e aparência",
+            "📸 Álbum — galeria local de imagens",
         ],
         "subareas": {
+            "sala": {
+                "name": "Sala",
+                "icon": "📺",
+                "description": "Entretenimento, mídia e um espaço confortável para conversar com a STAR.",
+                "contents": ["TV", "YouTube", "mídia", "modo conversa"],
+            },
             "cozinha": {
                 "name": "Cozinha",
                 "icon": "🍳",
@@ -154,13 +162,19 @@ ISLANDS = {
                 "name": "Quarto",
                 "icon": "🛏️",
                 "description": "Espaço pessoal da STAR dentro da Casa.",
-                "contents": ["rotina", "descanso", "organização pessoal", "acesso ao Closet"],
+                "contents": ["rotina", "descanso", "organização pessoal", "acesso ao Closet", "acesso ao Álbum"],
             },
             "closet": {
                 "name": "Closet",
                 "icon": "👕",
                 "description": "Espaço de personalização visual da STAR.",
                 "contents": ["roupas", "skins", "acessórios", "aparências", "itens especiais"],
+            },
+            "album": {
+                "name": "Álbum",
+                "icon": "📸",
+                "description": "Galeria local de imagens e futuras memórias visuais.",
+                "contents": ["imagens locais", "álbuns", "memórias visuais"],
             },
         },
     },
