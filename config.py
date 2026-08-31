@@ -15,6 +15,8 @@ EXTERNAL_AI_ENABLED = False
 VOICE_ENGINE = "Chatterbox"
 VOICE_CLONE_ENGINE = "Chatterbox"
 VOICE_MODE = "official"
+# A interface usa fala rápida por padrão; o Chatterbox oficial continua disponível.
+VOICE_CHAT_MODE = "fast"
 
 # Motor rápido disponível somente quando escolhido explicitamente.
 VOICE_FAST_ENGINE = "Windows SAPI / Piper"
