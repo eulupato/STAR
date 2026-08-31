@@ -1,11 +1,21 @@
 {
   "name": "STAR",
-  "version": "1.9",
-  "release_status": "final",
-  "release_channel": "stable",
+  "version": "2.0",
+  "release_status": "mind-foundation",
+  "release_channel": "development",
   "mode": "offline-first",
   "entrypoint": "main.py",
   "launcher": "INICIAR_STAR.bat",
+  "architecture_domains": [
+    "MIND",
+    "SENSES",
+    "EXPRESSION",
+    "ACTION",
+    "KNOWLEDGE",
+    "HEALTH",
+    "TRUST",
+    "WORLD"
+  ],
   "features_active": [
     "identity",
     "internal_knowledge",
@@ -24,15 +34,34 @@
     "official_local_voice",
     "fast_local_tts_fallback",
     "voice_degraded_startup",
-    "automatic_spoken_replies"
+    "automatic_spoken_replies",
+    "mind_v2_cognitive_loop",
+    "mind_event_bus",
+    "mind_working_memory",
+    "mind_context_engine",
+    "mind_salience_engine",
+    "mind_operational_planner",
+    "mind_capability_registry",
+    "mind_operational_metacognition",
+    "mind_graceful_fallback"
   ],
   "features_prepared": [
+    "memory_architecture_v2_1",
+    "knowledge_graph_v2_2",
+    "model_router_v2_3",
     "expanded_automation",
     "messaging_integrations",
     "web_tools",
-    "knowledge_expansion",
-    "star_mind_v2"
+    "knowledge_expansion"
   ],
+  "mind": {
+    "enabled": true,
+    "version": "2.0",
+    "external_model_required": false,
+    "fallback": "V1.9 stable pipeline",
+    "diagnostics_command": "diagnóstico da mente",
+    "private_chain_of_thought_storage": false
+  },
   "voice": {
     "stt": "faster-whisper tiny local PT-BR",
     "tts_default": "Chatterbox Multilingual local com referência autorizada da STAR",
@@ -45,6 +74,7 @@
     "startup_dependency": false,
     "interface_can_start_without_tts": true,
     "automatic_reply_from_gui": true,
-    "fast_mode": "Windows SAPI preferencial + Piper PT-BR fallback"
+    "fast_mode": "Windows SAPI preferencial + Piper PT-BR fallback",
+    "tts_sanitizes_visual_symbols": true
   }
 }
