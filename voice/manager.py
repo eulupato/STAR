@@ -48,8 +48,8 @@ def prepare_tts_text(text: str) -> str:
         "]+"
     )
     value = emoji_pattern.sub(" ", value)
-    value = re.sub(r"\\s+", " ", value).strip()
-    value = re.sub(r"\\s+([,.;:!?])", r"\\1", value)
+    value = re.sub(r"\s+", " ", value).strip()
+    value = re.sub(r"\s+([,.;:!?])", r"\1", value)
     return value
 
 
