@@ -26,6 +26,33 @@ REFERENCE_DIR = VOICE_DIR / "reference"
 SUPPORTED_REFERENCE_EXTENSIONS = (".mp3", ".wav", ".flac", ".ogg", ".m4a", ".aac")
 
 
+def prepare_tts_text(text: str) -> str:
+    """Remove emojis e símbolos decorativos antes de enviar texto ao TTS.
+
+    A GUI continua exibindo a resposta original; somente a cópia falada é limpa.
+    Isso evita leituras literais como "faísca" ou "estrela branca".
+    """
+    import re
+
+    value = str(text or "")
+    emoji_pattern = re.compile(
+        "["
+        "\\U0001F1E6-\\U0001F1FF"
+        "\\U0001F300-\\U0001FAFF"
+        "\\u2300-\\u23FF"
+        "\\u2600-\\u27BF"
+        "\\u2B00-\\u2BFF"
+        "\\u200D"
+        "\\u20E3"
+        "\\uFE0E-\\uFE0F"
+        "]+"
+    )
+    value = emoji_pattern.sub(" ", value)
+    value = re.sub(r"\\s+", " ", value).strip()
+    value = re.sub(r"\\s+([,.;:!?])", r"\\1", value)
+    return value
+
+
 def _reference_score(path: Path):
     """Prefere referências curtas/compactas e nomes explicitamente STAR."""
     name = path.name.lower()
@@ -859,6 +886,13 @@ class VoiceManager:
         cancel_event: threading.Event | None = None,
     ) -> bool:
         event = cancel_event or self._current_cancel_event()
+        spoken_text = prepare_tts_text(text)
+
+        # A GUI mantém os emojis; apenas o áudio é higienizado.
+        if not spoken_text:
+            self.last_error = None
+            self.last_tts_engine = "nenhuma fala necessária"
+            return True
 
         with self._tts_lock:
             if event.is_set():
@@ -866,7 +900,7 @@ class VoiceManager:
                 return False
 
             if self.mode == "fast":
-                return self._speak_fast(text, event)
+                return self._speak_fast(spoken_text, event)
 
             if not self.official.configured:
                 self.last_tts_engine = "voz oficial indisponível"
@@ -876,10 +910,10 @@ class VoiceManager:
                     + ". Piper não foi usado automaticamente."
                 )
                 if self.fallback_on_error:
-                    return self._speak_fast(text, event)
+                    return self._speak_fast(spoken_text, event)
                 return False
 
-            if self.official.speak(text, event):
+            if self.official.speak(spoken_text, event):
                 self.last_error = None
                 self.last_tts_engine = "Chatterbox — voz oficial STAR"
                 return True
@@ -897,7 +931,7 @@ class VoiceManager:
             )
 
             if self.fallback_on_error:
-                return self._speak_fast(text, event)
+                return self._speak_fast(spoken_text, event)
             return False
 
     def warmup_stt_async(self):
