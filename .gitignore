@@ -24,6 +24,10 @@ voice/models/
 # Referências pessoais de voz (manter somente na máquina local)
 voice/reference/*.mp3
 voice/reference/*.wav
+voice/reference/*.flac
+voice/reference/*.ogg
+voice/reference/*.m4a
+voice/reference/*.aac
 AUDIOS VOICE/
 
 # Saída temporária de voz
@@ -48,3 +52,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Preferências locais da interface
+user_settings.json

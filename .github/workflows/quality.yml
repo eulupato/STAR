@@ -2,7 +2,7 @@ name: STAR quality
 
 on:
   push:
-    branches: [main, v1.9-development]
+    branches: [main, v1.9-development, v2.0-development, v1.9-stability-audit-20260831]
   pull_request:
     branches: [main]
 
@@ -19,6 +19,6 @@ jobs:
       - name: Install project dependencies
         run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt pytest
       - name: Compile project
-        run: python -m compileall -q core gui voice modules database main.py config.py
-      - name: Run voice pipeline smoke tests
-        run: pytest -q tests/test_voice_pipeline.py
+        run: python -m compileall -q core gui voice modules database tests main.py config.py diagnostico.py
+      - name: Run full test suite
+        run: pytest -q tests

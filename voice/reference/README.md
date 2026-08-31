@@ -1,20 +1,30 @@
 # Referência de voz da STAR
 
-A STAR V1.9.1 usa uma referência **local e autorizada** no modo de voz oficial.
+A referência oficial é **local, privada e não versionada**.
 
-Arquivo padrão:
+A V1.9 resolve a referência na seguinte ordem:
 
-`voice/reference/star_reference.mp3`
+1. caminho definido por `STAR_VOICE_REFERENCE`, quando existir;
+2. caminho padrão definido em `config.py`;
+3. qualquer arquivo de áudio compatível dentro de `voice/reference/`.
 
-Também é possível apontar para outro caminho local com:
+Formatos reconhecidos pelo gerenciador:
 
-`STAR_VOICE_REFERENCE`
+- MP3
+- WAV
+- FLAC
+- OGG
+- M4A
+- AAC
 
-O áudio não é distribuído pelo repositório público e deve permanecer apenas na
+Isso significa que um arquivo local como `audiostar35s.mp3` pode ser usado sem
+precisar ser renomeado para um nome fixo.
+
+O áudio não é distribuído pelo repositório público e deve permanecer somente na
 máquina local.
 
 ## Importante
 
-Use somente uma gravação própria ou uma voz para a qual você tenha autorização
-de uso/clonagem. O hotfix V1.9.1 não cai automaticamente para Piper quando a
-voz oficial estiver ausente; o diagnóstico mostra o componente exato que falta.
+Use apenas uma gravação própria ou uma voz para a qual exista autorização de uso.
+No modo `official`, a STAR não troca silenciosamente a voz oficial por uma voz
+genérica se o Chatterbox falhar.

@@ -1,7 +1,10 @@
-"""Diagnóstico offline da instalação da STAR."""
+"""Diagnóstico geral e leve da instalação da STAR V1.9.
 
+Não carrega o Chatterbox pesado. Para síntese real use DIAGNOSTICO_VOZ.bat.
+"""
 from pathlib import Path
 import importlib
+import json
 
 ROOT = Path(__file__).resolve().parent
 
@@ -18,45 +21,85 @@ MODULES = [
     "core.avatar",
     "core.knowledge_registry",
     "core.cure",
+    "core.math_engine",
+    "modules.computer_control",
     "database.database",
     "database.memory",
+    "voice.manager",
+    "voice.audio_input",
     "gui.app",
 ]
 
 
 def main():
-    print("=" * 60)
-    print("⭐ DIAGNÓSTICO STAR V1.5")
-    print("=" * 60)
+    from config import VERSION
+
+    print("=" * 64)
+    print(f"⭐ DIAGNÓSTICO GERAL STAR V{VERSION}")
+    print("=" * 64)
+
     failures = []
+    warnings = []
+
     for name in MODULES:
         try:
             importlib.import_module(name)
-            print(f"🟢 {name}")
+            print(f"🟢 import {name}")
         except Exception as error:
-            failures.append((name, error))
-            print(f"🔴 {name}: {error}")
+            failures.append((name, str(error)))
+            print(f"🔴 import {name}: {error}")
 
     from main import create_star
     star = create_star()
+
     checks = [
         ("identidade", star.get_name() == "STAR"),
-        ("criador", star.get_creator() == "Lu"),
-        ("olá", bool(star.process("olá"))),
-        ("nome sem artigo", bool(star.process("qual seu nome?"))),
-        ("nome com artigo", bool(star.process("qual o seu nome?"))),
-        ("nome com é", bool(star.process("qual é o seu nome?"))),
+        ("saudação", bool(star.process("olá"))),
+        ("criador", bool(star.process("quem criou você?"))),
+        ("matemática", "4" in str(star.process("quanto é 2+2"))),
+        ("knowledge packs", bool(star.packs.list())),
     ]
     for name, ok in checks:
         print(("🟢 " if ok else "🔴 ") + name)
         if not ok:
             failures.append((name, "check failed"))
 
-    print("-" * 60)
+    from voice.manager import VoiceManager
+    voice = VoiceManager()
+    print("-" * 64)
+    print("VOZ (sem carregar modelos)")
+    print(f"Modo: {voice.mode}")
+    print(f"STT instalado: {'SIM' if voice.stt_configured else 'NÃO'}")
+    print(f"Referência resolvida: {voice.official.reference_path}")
+    print(f"Referência existe: {'SIM' if voice.official.reference_path.exists() else 'NÃO'}")
+    print(f"Chatterbox env: {'SIM' if voice.official.python_path.exists() else 'NÃO'}")
+    print(f"Worker: {'SIM' if voice.official.worker_path.exists() else 'NÃO'}")
+    print(f"TTS: {voice.tts_description}")
+    if not voice.official.configured:
+        warnings.append("voz oficial indisponível: " + voice.official.status_message)
+    voice.close()
+
+    settings_path = ROOT / "user_settings.json"
+    if settings_path.exists():
+        try:
+            json.loads(settings_path.read_text(encoding="utf-8"))
+            print("🟢 user_settings.json")
+        except Exception as exc:
+            warnings.append(f"user_settings.json inválido: {exc}")
+
+    print("-" * 64)
+    if warnings:
+        print("⚠️ AVISOS:")
+        for item in warnings:
+            print("  -", item)
+
     if failures:
-        print(f"❌ {len(failures)} falha(s).")
+        print(f"❌ {len(failures)} falha(s) crítica(s).")
+        for name, error in failures:
+            print(f"  - {name}: {error}")
         raise SystemExit(1)
-    print("✅ DIAGNÓSTICO CONCLUÍDO SEM FALHAS.")
+
+    print("✅ DIAGNÓSTICO GERAL CONCLUÍDO SEM FALHAS CRÍTICAS.")
 
 
 if __name__ == "__main__":

@@ -29,8 +29,8 @@ if errorlevel 1 (
 
 echo.
 echo CHATTERBOX PRONTO.
-echo A referencia oficial deve existir em:
-echo voice\reference\star_reference.mp3
+echo A referencia oficial deve ficar em voice\reference\
+echo O nome pode variar; a STAR detecta os formatos de audio suportados.
 echo.
 if not defined STAR_SETUP_CHAIN pause
 endlocal

@@ -2,29 +2,26 @@
 setlocal
 cd /d "%~dp0"
 chcp 65001 >nul
+
 if not exist ".venv\Scripts\python.exe" (
-  echo .venv nao encontrada. Execute CRIAR_AMBIENTE.bat.
+  echo ERRO: .venv nao encontrada. Execute CRIAR_AMBIENTE.bat.
   pause
   exit /b 1
 )
-if not exist ".voice_venv\Scripts\python.exe" (
-  echo .voice_venv nao encontrada. Execute INSTALAR_VOZ.bat.
-  pause
-  exit /b 1
-)
-if not exist "voice\reference\star_reference.mp3" (
-  echo Referencia de voz nao encontrada em voice\reference\star_reference.mp3.
-  pause
-  exit /b 1
-)
+
 echo ============================================
 echo       STAR V1.9 - TESTE DE VOZ LOCAL
 echo ============================================
 echo.
-".venv\Scripts\python.exe" voice\diagnostics.py
-set "RC=%ERRORLEVEL%"
+echo O diagnostico usa o mesmo resolvedor de referencia da interface.
+echo Nao ha nome de arquivo de audio fixo neste launcher.
 echo.
-if not "%RC%"=="0" echo O teste falhou. Veja a mensagem acima.
+
+".venv\Scripts\python.exe" -m voice.diagnostics
+set "RC=%ERRORLEVEL%"
+
+echo.
+if not "%RC%"=="0" echo O teste encontrou uma falha. Veja a etapa indicada acima.
 if "%RC%"=="0" echo TESTE CONCLUIDO COM SUCESSO.
 pause
 exit /b %RC%

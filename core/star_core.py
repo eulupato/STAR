@@ -15,6 +15,7 @@ class StarCore:
         self.packs = None
         self.last_intent = None
         self.user_name = None
+        self.network_enabled = False
 
     def get_name(self):
         if self.identity is None:
@@ -38,7 +39,7 @@ class StarCore:
         # V1.9: matemática e ações locais têm prioridade e não precisam de LLM.
         try:
             from modules.computer_control import parse as parse_computer
-            action = parse_computer(user_input)
+            action = parse_computer(user_input, allow_network=self.network_enabled)
             if action:
                 return action
         except Exception as exc:
@@ -73,19 +74,9 @@ class StarCore:
         route = self.router.route(request)
         self.last_intent = route.get("response_type")
         route_time = time.perf_counter() - route_start
-        # Ferramentas determinísticas têm prioridade quando a intenção é explícita.
-        response = None
-        if self.tools is not None:
-            try:
-                from core.tools import extract_math, calculate_expression
-                expr = extract_math(request["input"])
-                if expr and "math" in self.tools.available():
-                    value = calculate_expression(expr)
-                    response = f"Deixa eu calcular... 🧠✨ {expr} = {value}."
-            except Exception:
-                response = "Hmm, tente escrever a conta novamente usando apenas números e operações matemáticas. 😊"
-        if response is None:
-            response = self.executive.execute(request=request, route=route)
+        # A matemática já foi tratada pelo math_engine no início do pipeline.
+        # Evitamos manter dois interpretadores matemáticos concorrentes.
+        response = self.executive.execute(request=request, route=route)
         total_time = time.perf_counter() - request_start
 
         # Diagnóstico curto para o terminal, sem poluir a GUI.

@@ -51,16 +51,16 @@ diagnóstico mostram a causa real.
 
 ```text
 official → Chatterbox + referência local
-fast     → Piper PT-BR → Windows SAPI
+fast     → Windows SAPI PT-BR/feminina quando disponível → Piper PT-BR
 ```
 
 Para escolher o modo rápido explicitamente:
 
 `STAR_VOICE_MODE=fast`
 
-A referência da voz oficial é local e privada:
-
-`voice/reference/star_reference.mp3`
+A referência da voz oficial é local e privada. A V1.9 aceita um caminho definido
+por `STAR_VOICE_REFERENCE` e também detecta arquivos de áudio compatíveis dentro
+de `voice/reference/`, portanto o nome do arquivo não precisa ser fixo.
 
 Ela **não é distribuída pelo GitHub**. Use apenas uma referência de voz que você
 tenha autorização para utilizar.
@@ -151,3 +151,17 @@ Nenhuma integração externa de voz é necessária para a V1.9.
 
 Bugs descobertos após a release entram como V1.9.x.
 Novas arquiteturas cognitivas entram na V2.0 MIND.
+
+
+## Auditoria de estabilidade — 31/08/2026
+
+A interface não depende mais da existência de um nome fixo de referência de voz
+para iniciar. O STT é pré-carregado em segundo plano, enquanto o Chatterbox
+oficial só é carregado quando solicitado.
+
+A conversa da GUI usa o modo rápido por padrão para que toda resposta textual
+também tenha retorno falado em baixa latência. O modo oficial Chatterbox continua
+disponível nas Configurações para testes e uso de alta fidelidade.
+
+O modo OFFLINE agora bloqueia comandos de internet; ações locais continuam
+disponíveis.
