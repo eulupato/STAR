@@ -1,4 +1,4 @@
-# ⭐ STAR — V1.9.1 VOICE HOTFIX
+# ⭐ STAR — V1.9 FINAL
 
 S.T.A.R. — **System for Thought, Analysis and Response**.
 
@@ -43,7 +43,7 @@ sounddevice
 🔊 Alto-falante
 ```
 
-### Política do hotfix V1.9.1
+### Política definitiva da voz na V1.9
 
 No modo `official`, a STAR **não usa mais Piper silenciosamente** se o
 Chatterbox ou a referência de voz estiverem ausentes. Em vez disso, a GUI e o
@@ -147,7 +147,7 @@ Nenhuma integração externa de voz é necessária para a V1.9.
 
 ## Estado
 
-**STAR V1.9.1 — voice hotfix / stable**
+**STAR V1.9 FINAL / stable**
 
 Bugs descobertos após a release entram como V1.9.x.
 Novas arquiteturas cognitivas entram na V2.0 MIND.
