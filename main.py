@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config import EXTERNAL_AI_ENABLED, VERSION
+from config import EXTERNAL_AI_ENABLED, MIND_ENABLED, VERSION
 from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
@@ -25,7 +25,7 @@ def create_star():
     state = StarState()
     router = Router(internal_knowledge=knowledge)
     executive = Executive(model_manager=None, internal_knowledge=knowledge)
-    mind = StarMind()
+    mind = StarMind() if MIND_ENABLED else None
 
     star = StarCore(
         router=router,
@@ -52,10 +52,11 @@ def main():
     star = create_star()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
-    print("🧠 MIND V2: ATIVA")
-    print("🚌 Event Bus: ATIVO")
-    print("💭 Working Memory: ATIVA")
-    print("🎯 Salience + Planner: ATIVOS")
+    print("🧠 MIND V2:", "ATIVA" if star.mind is not None else "FALLBACK V1.9")
+    if star.mind is not None:
+        print("🚌 Event Bus: ATIVO")
+        print("💭 Working Memory: ATIVA")
+        print("🎯 Salience + Planner: ATIVOS")
     print("📚 Conhecimento interno: ATIVO")
     print("🧩 Skills: PREPARADAS")
     print("🛠️ Ferramentas: ATIVAS (matemática offline)")
