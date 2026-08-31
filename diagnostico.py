@@ -8,6 +8,17 @@ import json
 
 ROOT = Path(__file__).resolve().parent
 
+
+def _configure_console_utf8():
+    """Evita falhas de Unicode em consoles Windows com code page antiga."""
+    import sys
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError, OSError):
+            pass
+
+
 MODULES = [
     "config",
     "core.star_identity",
@@ -32,6 +43,7 @@ MODULES = [
 
 
 def main():
+    _configure_console_utf8()
     from config import VERSION
 
     print("=" * 64)
