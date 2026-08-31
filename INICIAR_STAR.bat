@@ -4,41 +4,39 @@ cd /d "%~dp0"
 chcp 65001 >nul
 set "PY=.venv\Scripts\python.exe"
 
+echo ============================================
+echo        INICIANDO STAR V1.9 FINAL
+echo ============================================
+echo.
+
 if not exist "%PY%" (
-    echo Ambiente virtual nao encontrado. Execute CRIAR_AMBIENTE.bat uma vez.
+    echo ERRO: ambiente virtual principal nao encontrado.
+    echo Execute CRIAR_AMBIENTE.bat uma vez.
     pause
     exit /b 1
 )
 
 "%PY%" -c "import PIL, sounddevice, soundfile, faster_whisper" >nul 2>&1
 if errorlevel 1 (
-    echo Dependencias da STAR incompletas.
+    echo ERRO: dependencias principais incompletas.
     echo Execute INSTALAR_VOZ.bat uma vez e tente novamente.
     pause
     exit /b 1
 )
 
-if not exist ".voice_venv\Scripts\python.exe" (
-    echo Chatterbox nao configurado.
-    echo Execute INSTALAR_VOZ.bat uma vez e tente novamente.
-    pause
-    exit /b 1
-)
+rem A voz e uma capacidade da STAR, nao uma condicao para abrir a interface.
+rem O proprio VoiceManager resolve a referencia local e mostra estado degradado
+rem caso Chatterbox/referencia ainda nao estejam disponiveis.
+"%PY%" -c "from voice.manager import VoiceManager; v=VoiceManager(); print('Voz:', v.tts_description); v.close()" 2>nul
 
-if not exist "voice\reference\star_reference.mp3" (
-    echo Audio de referencia da voz nao encontrado.
-    echo Verifique voice\reference\star_reference.mp3
-    pause
-    exit /b 1
-)
-
-echo ============================================
-echo        INICIANDO STAR V1.9
- echo ============================================
+echo.
 "%PY%" main.py
-if errorlevel 1 (
+set "RC=%ERRORLEVEL%"
+
+if not "%RC%"=="0" (
     echo.
     echo STAR foi encerrada com erro. Veja a mensagem acima.
     pause
 )
-endlocal
+
+exit /b %RC%
