@@ -15,7 +15,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import APP_NAME, VERSION, WINDOW_HEIGHT, WINDOW_WIDTH, MENU_HEIGHT, MENU_WIDTH
+from config import APP_NAME, VERSION, WINDOW_HEIGHT, WINDOW_WIDTH, MENU_HEIGHT, MENU_WIDTH, VOICE_CHAT_MODE
 from core.avatar import AvatarManager
 from core.emotion import EmotionManager
 from database.memory import Memory
@@ -30,6 +30,7 @@ class StarApp:
         self.avatar = AvatarManager()
         self.emotion = EmotionManager()
         self.voice = VoiceManager()
+        self.voice.set_voice_mode(self._load_voice_mode())
         self.recorder = AudioRecorder()
         self.online_mode = False
         self.processing = False
@@ -59,20 +60,49 @@ class StarApp:
         self.normal_size = (WINDOW_WIDTH, WINDOW_HEIGHT)
         self.show_menu()
         self.window.after(60, self._check_response_queue)
-        # Pré-carrega STT/TTS em segundo plano para que a primeira interação não pague o custo de inicialização.
-        self.voice.warmup_async()
+        # Pré-carrega somente o STT. O Chatterbox oficial leva minutos em CPU e
+        # não deve atrasar nem sobrecarregar a abertura da interface.
+        self.voice.warmup_stt_async()
+
+    @property
+    def _user_settings_path(self):
+        return PROJECT_ROOT / "user_settings.json"
+
+    def _read_user_settings(self):
+        try:
+            return json.loads(self._user_settings_path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+
+    def _write_user_settings(self, **values):
+        try:
+            data = self._read_user_settings()
+            data.update(values)
+            self._user_settings_path.write_text(
+                json.dumps(data, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+
+    def _load_voice_mode(self):
+        mode = str(self._read_user_settings().get("voice_mode", VOICE_CHAT_MODE)).lower()
+        return mode if mode in {"official", "fast"} else VOICE_CHAT_MODE
 
     def _load_skin_selection(self):
+        local = self._read_user_settings().get("skin")
+        if local:
+            return str(local)
         try:
             return json.loads((PROJECT_ROOT / "config_skin.json").read_text(encoding="utf-8")).get("skin", "original.jpeg")
         except Exception:
             return "original.jpeg"
 
     def _save_skin_selection(self):
-        try:
-            (PROJECT_ROOT / "config_skin.json").write_text(json.dumps({"skin": self.selected_skin}, ensure_ascii=False, indent=2), encoding="utf-8")
-        except Exception:
-            pass
+        self._write_user_settings(skin=self.selected_skin)
+
+    def _save_voice_mode(self):
+        self._write_user_settings(voice_mode=self.voice.mode)
 
     def clear_screen(self):
         for widget in self.window.winfo_children():
@@ -183,6 +213,7 @@ class StarApp:
                 elif kind=="speech_result":
                     ok,error=result
                     if not ok and self.current_screen=="chat":self._append_system(f"🔊 A resposta foi gerada, mas a voz falhou: {error}")
+                    self._load_avatar("neutral")
                     if self.current_screen=="chat":self._set_status("OFFLINE" if not self.online_mode else "ONLINE",self.red if not self.online_mode else self.green)
                 elif kind=="success":
                     response=str(result);self._append_star(response)
@@ -222,7 +253,7 @@ class StarApp:
         self._load_avatar("neutral")
     def _load_avatar(self,emotion="neutral"):
         path=self.avatar.avatar_dir/f"{emotion}.png"
-        if not path.exists():path=self.avatar.avatar_dir/"neutral.png"
+        if not path.exists() or path.stat().st_size == 0:path=self.avatar.avatar_dir/"neutral.png"
         try:image=Image.open(path).convert("RGBA");image.thumbnail((250,250),Image.Resampling.LANCZOS);self.avatar_photo=ImageTk.PhotoImage(image);self.avatar_label.config(image=self.avatar_photo,text="")
         except Exception:
             try:self.avatar_label.config(text="⭐\nSTAR",fg=self.star,font=("Segoe UI",28,"bold"))
@@ -236,18 +267,32 @@ class StarApp:
     def show_settings(self):
         self.clear_screen();self.current_screen="settings";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True,padx=80,pady=35);tk.Label(body,text="CONFIGURAÇÕES",fg=self.star,bg=self.bg,font=("Segoe UI",27,"bold")).pack(anchor="w")
         mode=tk.Frame(body,bg=self.panel,padx=22,pady=18);mode.pack(fill="x",pady=(18,12));tk.Label(mode,text="MODO DE FUNCIONAMENTO",fg=self.text,bg=self.panel,font=("Segoe UI",12,"bold")).pack(anchor="w");row=tk.Frame(mode,bg=self.panel);row.pack(anchor="w",pady=12);self.online_btn=self._button(row,"🟢 ONLINE",lambda:self._set_mode(True));self.online_btn.pack(side="left",padx=(0,10));self.offline_btn=self._button(row,"🔴 OFFLINE",lambda:self._set_mode(False));self.offline_btn.pack(side="left");self._refresh_mode_buttons();tk.Label(mode,text="O modo online controla recursos de internet. A voz da STAR é local nos dois modos.",fg=self.muted,bg=self.panel).pack(anchor="w")
-        voicebox=tk.Frame(body,bg=self.panel,padx=22,pady=18);voicebox.pack(fill="x",pady=12);tk.Label(voicebox,text="🎙️ VOZ DA STAR",fg=self.star,bg=self.panel,font=("Segoe UI",13,"bold")).pack(anchor="w");tk.Label(voicebox,text=f"Entrada: faster-whisper tiny • Voz atual: {self.voice.tts_description}",fg=self.text,bg=self.panel).pack(anchor="w",pady=(8,2));tk.Label(voicebox,text="A V1.9 FINAL prioriza a voz oficial local da STAR via Chatterbox quando a referência está disponível. Piper permanece como fallback rápido.",fg=self.muted,bg=self.panel,wraplength=760,justify="left").pack(anchor="w");self._button(voicebox,"TESTAR VOZ DA STAR",self._test_voice).pack(anchor="w",pady=(12,4));self.voice_test_label=tk.Label(voicebox,text="Pronto para testar.",fg=self.muted,bg=self.panel,wraplength=760,justify="left");self.voice_test_label.pack(anchor="w")
+        voicebox=tk.Frame(body,bg=self.panel,padx=22,pady=18);voicebox.pack(fill="x",pady=12)
+        tk.Label(voicebox,text="🎙️ VOZ DA STAR",fg=self.star,bg=self.panel,font=("Segoe UI",13,"bold")).pack(anchor="w")
+        tk.Label(voicebox,text=f"Entrada: faster-whisper tiny • Conversa: {self.voice.tts_description}",fg=self.text,bg=self.panel).pack(anchor="w",pady=(8,6))
+        voice_row=tk.Frame(voicebox,bg=self.panel);voice_row.pack(anchor="w",pady=(2,8))
+        self._button(voice_row,"⚡ CONVERSA RÁPIDA",lambda:self._set_voice_mode("fast"),small=True).pack(side="left",padx=(0,8))
+        self._button(voice_row,"⭐ VOZ OFICIAL",lambda:self._set_voice_mode("official"),small=True).pack(side="left")
+        tk.Label(voicebox,text="O modo rápido responde imediatamente usando uma voz local do Windows quando disponível. O modo oficial usa a referência Chatterbox e pode levar minutos neste computador.",fg=self.muted,bg=self.panel,wraplength=760,justify="left").pack(anchor="w")
+        self._button(voicebox,"TESTAR VOZ OFICIAL",self._test_voice).pack(anchor="w",pady=(12,4))
+        self.voice_test_label=tk.Label(voicebox,text="Pronto para testar.",fg=self.muted,bg=self.panel,wraplength=760,justify="left");self.voice_test_label.pack(anchor="w")
         info=tk.Frame(body,bg=self.panel,padx=22,pady=16);info.pack(fill="x",pady=12)
-        for name,value in (("Versão",f"V{VERSION}"),("Conhecimento local","ATIVO"),("Voz rápida",self.voice.tts_description),("Reconhecimento local","PRONTO" if self.voice.stt_configured else "INSTALAÇÃO PENDENTE")):
+        for name,value in (("Versão",f"V{VERSION}"),("Conhecimento local","ATIVO"),("Modo de voz",self.voice.mode.upper()),("Reconhecimento local","PRONTO" if self.voice.stt_configured else "INSTALAÇÃO PENDENTE")):
             line=tk.Frame(info,bg=self.panel);line.pack(fill="x",pady=4);tk.Label(line,text=name,fg=self.muted,bg=self.panel).pack(side="left");tk.Label(line,text=value,fg=self.green if value in {"ATIVO","PRONTO","Piper PT-BR (rápido)"} else self.gold,bg=self.panel,font=("Segoe UI",10,"bold")).pack(side="right")
         self._button(body,"VOLTAR AO CHAT",self.show_chat).pack(anchor="w",pady=10)
 
     def _test_voice(self):
-        self._set_voice_test_message("🔊 Preparando teste da voz oficial...",True);self._set_status("TESTANDO VOZ",self.gold);self.voice.test_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
-    def _set_mode(self,online):self.online_mode=bool(online);self._refresh_mode_buttons();self._set_status("ONLINE" if self.online_mode else "OFFLINE",self.green if self.online_mode else self.red)
+        self._set_voice_test_message("🔊 Preparando teste da voz oficial...",True);self._set_status("TESTANDO VOZ",self.gold);self.voice.test_official_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
+    def _set_voice_mode(self,mode):
+        self.voice.set_voice_mode(mode);self._save_voice_mode();self.show_settings()
+    def _set_mode(self,online):
+        self.online_mode=bool(online)
+        try:self.brain.network_enabled=self.online_mode
+        except Exception:pass
+        self._refresh_mode_buttons();self._set_status("ONLINE" if self.online_mode else "OFFLINE",self.green if self.online_mode else self.red)
     def _refresh_mode_buttons(self):
         if hasattr(self,"online_btn"):self.online_btn.config(bg="#1f5a3a" if self.online_mode else "#24313f")
-        if hasattr(self,"offline_btn"):self.offline_btn.config(bg="#5a2630")
+        if hasattr(self,"offline_btn"):self.offline_btn.config(bg="#5a2630" if not self.online_mode else "#24313f")
 
     def show_islands(self):
         self.clear_screen();self.current_screen="islands";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True,padx=35,pady=20);tk.Label(body,text="HUB • STAR WORLD",fg=self.star,bg=self.bg,font=("Segoe UI",24,"bold")).pack(anchor="w",pady=(0,12))
