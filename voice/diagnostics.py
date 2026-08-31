@@ -1,4 +1,4 @@
-"""Diagnóstico detalhado da voz local da STAR V1.9.1."""
+"""Diagnóstico detalhado da voz local da STAR V1.9 FINAL."""
 from __future__ import annotations
 
 import sys
@@ -18,7 +18,7 @@ def flag(value: bool) -> str:
 
 def main() -> int:
     print("=" * 64)
-    print("⭐ STAR V1.9.1 — DIAGNÓSTICO DE VOZ")
+    print("⭐ STAR V1.9 FINAL — DIAGNÓSTICO DE VOZ")
     print("=" * 64)
 
     manager = VoiceManager()
@@ -30,8 +30,12 @@ def main() -> int:
 
     print("VOZ OFICIAL")
     print("-" * 64)
-    print(f"Referência: {manager.official.reference_path}")
+    print(f"Referência ativa: {manager.official.reference_path}")
+    print(f"Arquivo: {manager.official.reference_path.name}")
     print(f"Referência existe: {flag(manager.official.reference_path.exists())}")
+    if manager.official.reference_path.exists():
+        size_mb = manager.official.reference_path.stat().st_size / (1024 * 1024)
+        print(f"Tamanho da referência: {size_mb:.2f} MB")
     print(f"Ambiente Chatterbox: {flag(manager.official.python_path.exists())}")
     print(f"Worker Chatterbox: {flag(manager.official.worker_path.exists())}")
     print(f"Estado: {manager.official.status_message}")
@@ -101,7 +105,7 @@ def main() -> int:
 
     if manager.mode == "official" and manager.last_error:
         print()
-        print("❌ CHatterbox não ficou pronto.")
+        print("❌ Chatterbox não ficou pronto.")
         print("Piper não será usado silenciosamente.")
         manager.close()
         return 4
