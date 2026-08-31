@@ -17,7 +17,8 @@ VOICE_CLONE_ENGINE = "Chatterbox"
 VOICE_MODE = "official"
 
 # Motor rápido disponível somente quando escolhido explicitamente.
-VOICE_FAST_ENGINE = "Piper"
+VOICE_FAST_ENGINE = "Windows SAPI / Piper"
+VOICE_FAST_PREFERENCE = "sapi"
 VOICE_FALLBACK_ON_ERROR = False
 
 # O caminho padrão é privado/local. O gerenciador também detecta
