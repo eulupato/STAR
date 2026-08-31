@@ -5,7 +5,7 @@ chcp 65001 >nul
 set "PY=.venv\Scripts\python.exe"
 
 echo ============================================
-echo        INICIANDO STAR V1.9 FINAL
+echo        INICIANDO STAR V2.0 MIND
 echo ============================================
 echo.
 
