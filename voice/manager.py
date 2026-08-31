@@ -4,7 +4,8 @@ Objetivo do hotfix:
 - modo "official" usa SOMENTE a voz oficial Chatterbox;
 - não cair silenciosamente para Piper quando a referência/Chatterbox falhar;
 - diagnóstico detalha exatamente o componente ausente;
-- modo "fast" continua disponível para Piper quando escolhido explicitamente.
+- modo "fast" oferece resposta falada de baixa latência para a interface;
+- no Windows, prefere uma voz SAPI PT-BR/feminina quando disponível e usa Piper como fallback.
 
 Nenhum serviço externo de voz é necessário.
 """
@@ -549,10 +550,19 @@ class ChatterboxOfficialTTS:
 
 
 class WindowsFallbackTTS:
-    """Último fallback local para o modo rápido."""
+    """TTS local rápido via Windows SAPI/pyttsx3.
+
+    O motor é criado dentro da thread que fala para evitar reutilizar objetos
+    COM/SAPI entre threads diferentes. Quando possível, prioriza uma voz
+    portuguesa feminina instalada no Windows.
+    """
+
+    FEMALE_HINTS = ("maria", "francisca", "helena", "female", "feminina")
 
     def __init__(self):
         self.engine = None
+        self.voice_name = None
+        self.last_error = None
         self._lock = threading.Lock()
 
     @property
@@ -563,22 +573,101 @@ class WindowsFallbackTTS:
         except Exception:
             return False
 
-    def _load(self):
-        if self.engine is None:
-            import pyttsx3
-            self.engine = pyttsx3.init()
-            self.engine.setProperty("rate", 185)
-            self.engine.setProperty("volume", 1.0)
+    @staticmethod
+    def _voice_text(voice) -> str:
+        parts = [
+            str(getattr(voice, "id", "") or ""),
+            str(getattr(voice, "name", "") or ""),
+            str(getattr(voice, "gender", "") or ""),
+        ]
+        for lang in getattr(voice, "languages", []) or []:
+            if isinstance(lang, bytes):
+                try:
+                    lang = lang.decode("utf-8", errors="ignore")
+                except Exception:
+                    lang = str(lang)
+            parts.append(str(lang))
+        return " ".join(parts).lower()
 
-    def speak(self, text: str) -> bool:
-        try:
-            with self._lock:
-                self._load()
-                self.engine.say(str(text))
-                self.engine.runAndWait()
-            return True
-        except Exception:
+    @classmethod
+    def _voice_score(cls, voice):
+        text = cls._voice_text(voice)
+        is_pt = any(token in text for token in ("pt-br", "pt_br", "portuguese", "português", "brazil"))
+        is_female = (
+            "female" in text
+            or "feminina" in text
+            or any(hint in text for hint in cls.FEMALE_HINTS)
+        )
+        if is_pt and is_female:
+            rank = 0
+        elif is_female:
+            rank = 1
+        elif is_pt:
+            rank = 2
+        else:
+            rank = 3
+        return (rank, str(getattr(voice, "name", "") or getattr(voice, "id", "")))
+
+    def _configure_engine(self, engine):
+        engine.setProperty("rate", 185)
+        engine.setProperty("volume", 1.0)
+        voices = list(engine.getProperty("voices") or [])
+        if voices:
+            chosen = sorted(voices, key=self._voice_score)[0]
+            engine.setProperty("voice", chosen.id)
+            self.voice_name = str(getattr(chosen, "name", "") or chosen.id)
+        else:
+            self.voice_name = "voz padrão do Windows"
+
+    def cancel(self) -> None:
+        engine = self.engine
+        if engine is not None:
+            try:
+                engine.stop()
+            except Exception:
+                pass
+
+    def speak(
+        self,
+        text: str,
+        cancel_event: threading.Event | None = None,
+    ) -> bool:
+        if cancel_event is not None and cancel_event.is_set():
+            self.last_error = "cancelled"
             return False
+
+        try:
+            import pyttsx3
+
+            with self._lock:
+                engine = pyttsx3.init()
+                self.engine = engine
+                self._configure_engine(engine)
+
+                if cancel_event is not None and cancel_event.is_set():
+                    self.last_error = "cancelled"
+                    return False
+
+                engine.say(str(text))
+                engine.runAndWait()
+
+                if cancel_event is not None and cancel_event.is_set():
+                    self.last_error = "cancelled"
+                    return False
+
+                self.last_error = None
+                return True
+        except Exception as exc:
+            self.last_error = f"{type(exc).__name__}: {exc}"
+            return False
+        finally:
+            engine = self.engine
+            self.engine = None
+            if engine is not None:
+                try:
+                    engine.stop()
+                except Exception:
+                    pass
 
 
 class VoiceManager:
@@ -589,7 +678,7 @@ class VoiceManager:
         Se falhar, ERRO VISÍVEL por padrão. Não usa voz genérica escondida.
 
     fast:
-        Piper PT-BR e SAPI como último fallback.
+        Windows SAPI de baixa latência quando disponível; Piper PT-BR como fallback.
     """
 
     def __init__(self):
@@ -652,10 +741,11 @@ class VoiceManager:
                 return f"Voz oficial STAR (Chatterbox local • {self.official.reference_path.name})"
             return "Voz oficial INDISPONÍVEL — " + self.official.status_message
 
+        if self.fallback.configured:
+            suffix = f" • {self.fallback.voice_name}" if self.fallback.voice_name else ""
+            return f"Windows SAPI (modo rápido{suffix})"
         if self.piper.configured:
             return "Piper PT-BR (modo rápido)"
-        if self.fallback.configured:
-            return "Windows SAPI (modo rápido)"
         return "TTS indisponível"
 
     def set_voice_mode(self, mode: str) -> None:
@@ -718,6 +808,11 @@ class VoiceManager:
         except Exception:
             pass
 
+        try:
+            self.fallback.cancel()
+        except Exception:
+            pass
+
         if self._speaking.is_set():
             self.official.cancel()
 
@@ -726,6 +821,21 @@ class VoiceManager:
         text: str,
         event: threading.Event,
     ) -> bool:
+        # No Windows, SAPI costuma responder quase imediatamente e permite
+        # escolher uma voz PT-BR/feminina instalada. Piper permanece como
+        # fallback determinístico se o SAPI não estiver disponível.
+        if self.fallback.configured and self.fallback.speak(text, event):
+            self.last_error = None
+            label = self.fallback.voice_name or "voz local"
+            self.last_tts_engine = f"Windows SAPI — {label}"
+            return True
+
+        if event.is_set() or self.fallback.last_error == "cancelled":
+            self.last_error = "Fala cancelada."
+            return False
+
+        sapi_error = self.fallback.last_error
+
         if self.piper.configured and self.piper.speak(text, event):
             self.last_error = None
             self.last_tts_engine = "Piper — modo rápido"
@@ -735,17 +845,11 @@ class VoiceManager:
             self.last_error = "Fala cancelada."
             return False
 
-        piper_error = self.piper.last_error
-
-        if self.fallback.speak(text):
-            self.last_error = None
-            self.last_tts_engine = "Windows SAPI — modo rápido"
-            return True
-
         self.last_tts_engine = "indisponível"
         self.last_error = (
-            piper_error
-            or "Piper e Windows SAPI falharam."
+            sapi_error
+            or self.piper.last_error
+            or "Windows SAPI e Piper falharam."
         )
         return False
 
@@ -796,7 +900,28 @@ class VoiceManager:
                 return self._speak_fast(text, event)
             return False
 
+    def warmup_stt_async(self):
+        """Pré-carrega somente o reconhecimento de fala.
+
+        A interface usa este caminho para não gastar minutos carregando
+        Chatterbox durante o startup.
+        """
+        def run():
+            try:
+                self.stt.warmup()
+            except Exception as exc:
+                self.last_error = f"STT: {type(exc).__name__}: {exc}"
+
+        thread = threading.Thread(
+            target=run,
+            daemon=True,
+            name="STAR-STTWarmup",
+        )
+        thread.start()
+        return thread
+
     def warmup_async(self):
+        """Warmup completo, mantido para diagnósticos/testes explícitos."""
         thread = threading.Thread(
             target=self.warmup,
             daemon=True,
@@ -829,10 +954,47 @@ class VoiceManager:
         return thread
 
     def test_audio_async(self, callback=None):
+        """Testa o modo atualmente selecionado."""
         return self.speak_async(
-            "Olá! Eu sou a STAR. Esta é a minha voz oficial.",
+            "Olá! Eu sou a STAR. Este é o teste da minha voz.",
             callback,
         )
+
+    def test_official_audio_async(self, callback=None):
+        """Testa explicitamente o Chatterbox, mesmo se o chat estiver em modo rápido."""
+        self.cancel_speech()
+        event = self._current_cancel_event()
+
+        def run():
+            self._speaking.set()
+            try:
+                with self._tts_lock:
+                    if not self.official.configured:
+                        ok = False
+                        error = "Voz oficial não configurada: " + self.official.status_message
+                        self.last_tts_engine = "voz oficial indisponível"
+                    else:
+                        ok = self.official.speak(
+                            "Olá! Eu sou a STAR. Este é o teste da minha voz oficial.",
+                            event,
+                        )
+                        error = self.official.last_error
+                        if ok:
+                            self.last_tts_engine = "Chatterbox — voz oficial STAR"
+            finally:
+                self._speaking.clear()
+
+            self.last_error = error
+            if callback:
+                callback(ok, error)
+
+        thread = threading.Thread(
+            target=run,
+            daemon=True,
+            name="STAR-OfficialVoiceTest",
+        )
+        thread.start()
+        return thread
 
     def close(self):
         self.cancel_speech()
