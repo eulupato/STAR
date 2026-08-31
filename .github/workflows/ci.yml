@@ -2,9 +2,9 @@ name: STAR CI
 
 on:
   push:
-    branches: [ main, v1.9-development ]
+    branches: [main, v1.9-development, v2.0-development, v1.9-stability-audit-20260831]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   syntax:
@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: Validate Python syntax
-        run: python -m compileall -q core gui modules voice database tests
+        run: python -m compileall -q core gui modules voice database tests main.py config.py diagnostico.py
       - name: Validate project JSON manifests
         run: |
           python - <<'PY'
