@@ -56,7 +56,9 @@ echo.
 
 echo.
 echo Se a referencia aparecer como AUSENTE:
-echo execute CONFIGURAR_VOZ_STAR.bat e selecione seu ZIP/MP3/WAV.
+echo coloque um MP3/WAV/FLAC/OGG/M4A/AAC autorizado em:
+echo voice\reference\
+echo e execute DIAGNOSTICO_VOZ.bat.
 echo O arquivo sera mantido apenas na sua maquina.
 echo.
 echo =====================================================
