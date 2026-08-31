@@ -1,5 +1,5 @@
 APP_NAME = "STAR"
-VERSION = "1.9"
+VERSION = "2.0"
 AUTHOR = "Lu"
 THEME = "dark"
 WINDOW_WIDTH = 1100
@@ -10,6 +10,11 @@ MIN_WINDOW_WIDTH = 900
 MIN_WINDOW_HEIGHT = 600
 
 EXTERNAL_AI_ENABLED = False
+
+# MIND V2
+MIND_ENABLED = True
+MIND_EVENT_HISTORY = 256
+MIND_WORKING_MEMORY_TURNS = 24
 
 # Voz oficial da STAR.
 VOICE_ENGINE = "Chatterbox"
@@ -32,5 +37,5 @@ STT_ENGINE = "faster-whisper"
 STT_MODEL = "tiny"
 PIPER_VOICE = "pt_BR-faber-medium"
 
-RELEASE_CHANNEL = "stable"
-RELEASE_STATUS = "final"
+RELEASE_CHANNEL = "development"
+RELEASE_STATUS = "mind-foundation"
