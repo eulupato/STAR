@@ -1,4 +1,4 @@
-"""Diagnóstico geral e leve da instalação da STAR V1.9.
+"""Diagnóstico geral e leve da instalação da STAR V2.0 MIND.
 
 Não carrega o Chatterbox pesado. Para síntese real use DIAGNOSTICO_VOZ.bat.
 """
@@ -10,8 +10,8 @@ ROOT = Path(__file__).resolve().parent
 
 
 def _configure_console_utf8():
-    """Evita falhas de Unicode em consoles Windows com code page antiga."""
     import sys
+
     for stream in (sys.stdout, sys.stderr):
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")
@@ -26,6 +26,16 @@ MODULES = [
     "core.router",
     "core.executive",
     "core.star_core",
+    "core.mind",
+    "core.mind.event_bus",
+    "core.mind.working_memory",
+    "core.mind.context",
+    "core.mind.salience",
+    "core.mind.planner",
+    "core.mind.capabilities",
+    "core.mind.executive",
+    "core.mind.metacognition",
+    "core.mind.cognitive_loop",
     "core.islands",
     "core.memory",
     "core.emotion",
@@ -62,10 +72,26 @@ def main():
             print(f"🔴 import {name}: {error}")
 
     from main import create_star
+
     star = create_star()
+
+    if star.mind is None:
+        failures.append(("MIND V2", "desativada em config.py"))
+        name_answer = ""
+    else:
+        star.process("meu nome é TesteMind")
+        name_answer = star.process("qual meu nome")
 
     checks = [
         ("identidade", star.get_name() == "STAR"),
+        ("MIND V2 ativa", star.mind_status().get("active") is True),
+        ("Event Bus", star.mind is not None and star.mind.events.count() > 0),
+        (
+            "Working Memory",
+            star.mind is not None
+            and star.mind.working_memory.snapshot()["turn_count"] >= 2,
+        ),
+        ("Context Engine", "TesteMind" in name_answer),
         ("saudação", bool(star.process("olá"))),
         ("criador", bool(star.process("quem criou você?"))),
         ("matemática", "4" in str(star.process("quanto é 2+2"))),
@@ -76,7 +102,16 @@ def main():
         if not ok:
             failures.append((name, "check failed"))
 
+    print("-" * 64)
+    print("MIND V2")
+    mind_status = star.mind_status()
+    print(f"Ativa: {'SIM' if mind_status.get('active') else 'NÃO'}")
+    print(f"Eventos: {mind_status.get('events')}")
+    print(f"Turnos em working memory: {mind_status.get('working_memory_turns')}")
+    print(f"Último executor: {mind_status.get('last_executor')}")
+
     from voice.manager import VoiceManager
+
     voice = VoiceManager()
     print("-" * 64)
     print("VOZ (sem carregar modelos)")
