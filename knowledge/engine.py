@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 
+from config import KNOWLEDGE_RESULT_LIMIT
 from core.logging_config import get_logger
 from .entities import Entity, KnowledgeSource, Relationship
 from .graph import KnowledgeGraph
@@ -49,7 +50,14 @@ class KnowledgeEngine:
         self._event("KNOWLEDGE_RESULT", {"query": query, "count": len(results)})
         return results
 
-    def universal_search(self, query: str, working_memory=None, limit: int = 12) -> list[SearchResult]:
+    def universal_search(
+        self,
+        query: str,
+        working_memory=None,
+        limit: int | None = None,
+    ) -> list[SearchResult]:
+        limit = KNOWLEDGE_RESULT_LIMIT if limit is None else int(limit)
+        limit = max(1, limit)
         results: list[SearchResult] = []
         seen: set[str] = set()
 
