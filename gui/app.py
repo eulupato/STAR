@@ -1903,10 +1903,7 @@ class StarApp:
 
     def _set_mode(self, online):
         self.online_mode = bool(online)
-        try:
-            self.brain.network_enabled = self.online_mode
-        except Exception:
-            pass
+        self.brain.network_enabled = self.online_mode
         self._refresh_mode_buttons()
         self._set_status(
             "ONLINE" if self.online_mode else "OFFLINE",
@@ -1957,7 +1954,8 @@ class StarApp:
                 image.thumbnail((125, 125), Image.Resampling.LANCZOS)
                 photo = ImageTk.PhotoImage(image)
                 self.exit_photo = photo
-            except Exception:
+            except (OSError, ValueError, tk.TclError) as exc:
+                log.warning("Avatar de saída indisponível: %s", exc)
                 photo = None
 
         if photo:
@@ -1995,16 +1993,16 @@ class StarApp:
         self._exit_overlay = None
         try:
             self.emotion.set_emotion("happy")
-        except Exception:
-            pass
+        except Exception as exc:
+            log.debug("Não foi possível atualizar emoção após cancelar saída: %s", exc)
 
     def _confirm_exit(self):
         if self._exit_overlay is not None:
             for child in self._exit_overlay.winfo_children():
                 try:
                     child.destroy()
-                except tk.TclError:
-                    pass
+                except tk.TclError as exc:
+                    log.debug("Widget de saída já destruído: %s", exc)
             tk.Label(
                 self._exit_overlay,
                 text="⭐\n\nOk...",
@@ -2046,19 +2044,19 @@ class StarApp:
         try:
             if self.recording:
                 self.recorder.stop_to_wav()
-        except Exception:
-            pass
+        except Exception as exc:
+            log.warning("Falha ao finalizar gravação durante saída: %s", exc)
         try:
             self.voice.close()
-        except Exception:
-            pass
+        except Exception as exc:
+            log.warning("Falha ao encerrar voz: %s", exc)
         try:
             self.memory.close()
         finally:
             try:
                 self.window.destroy()
-            except Exception:
-                pass
+            except tk.TclError as exc:
+                log.debug("Janela já estava destruída no encerramento: %s", exc)
 
     def run(self):
         self.window.mainloop()
