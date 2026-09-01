@@ -1,8 +1,7 @@
-"""Interface gráfica da STAR V1.9 — STAR WORLD contextual.
+"""Interface gráfica atual da STAR WORLD.
 
-A GUI mantém o núcleo, memória, voz e skins da V1.9, mas reorganiza a
-experiência em Menu -> HUB -> Ilhas -> Ambientes. O chat deixa de ser uma
-tela obrigatória e passa a ser uma camada global contextual.
+A GUI permanece desacoplada da lógica cognitiva: navegação, mídia e views
+delegam conhecimento e conversação aos serviços do Core.
 """
 from __future__ import annotations
 
@@ -11,7 +10,6 @@ import queue
 import sys
 import threading
 import tkinter as tk
-import webbrowser
 from pathlib import Path
 from tkinter import scrolledtext
 
@@ -32,10 +30,15 @@ from config import (
 )
 from core.avatar import AvatarManager
 from core.emotion import EmotionManager
+from core.logging_config import get_logger
 from database.memory import Memory
+from gui.heroes_view import HeroesIslandView
 from gui.navigation import NavigationManager, ROUTES
+from modules.media_controller import MediaController
 from voice.audio_input import AudioRecorder
 from voice.manager import VoiceManager
+
+log = get_logger("gui")
 
 
 class StarApp:
@@ -47,6 +50,9 @@ class StarApp:
         self.voice = VoiceManager()
         self.voice.set_voice_mode(self._load_voice_mode())
         self.recorder = AudioRecorder()
+        self.media = MediaController()
+        self.tv_frame = None
+        self.tv_status_label = None
 
         self.online_mode = False
         self.processing = False
@@ -94,6 +100,7 @@ class StarApp:
         self.window.bind("<Escape>", self._escape_action)
         self.window.bind("<Control-l>", lambda _e: self.toggle_chat_panel())
         self.window.bind("<Control-k>", lambda _e: self.toggle_chat_panel())
+        self.window.bind("<Configure>", self._sync_media_to_tv, add="+")
 
         self.is_maximized = False
         self.normal_size = (WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -161,6 +168,8 @@ class StarApp:
         self.status_label = None
         self.voice_test_label = None
         self.avatar_label = None
+        self.tv_frame = None
+        self.tv_status_label = None
         self._exit_overlay = None
 
     def _render_current(self):
@@ -174,16 +183,21 @@ class StarApp:
             "bedroom": self.show_bedroom,
             "closet": self.show_closet,
             "gallery": self.show_gallery,
+            "heroes": self.show_heroes,
             "settings": self._render_settings,
             "chat": self._render_expanded_chat,
         }
         renderers.get(route, self.show_hub)()
 
     def navigate(self, route):
+        if self.nav.current == "living_room" and route != "living_room":
+            self._close_media_if_open()
         self.nav.go(route)
         self._render_current()
 
     def go_back(self):
+        if self.nav.current == "living_room":
+            self._close_media_if_open()
         self.nav.back()
         self._render_current()
 
@@ -440,7 +454,8 @@ class StarApp:
         except Exception:
             data = {}
 
-        order = ["casa"] + [key for key in data if key != "casa"]
+        preferred = ["casa", "herois"]
+        order = preferred + [key for key in data if key not in preferred]
         for idx, key in enumerate(order):
             if key not in data:
                 continue
@@ -449,8 +464,12 @@ class StarApp:
                 body,
                 f"{item.get('icon', '🏝️')} {item.get('name', key)}",
                 item.get("description", ""),
-                (lambda k=key: self._open_island(k)) if key == "casa" else None,
-                "🟢 DISPONÍVEL" if key == "casa" else "🔵 PLANEJADA",
+                (lambda k=key: self._open_island(k))
+                if key in {"casa", "herois"}
+                else None,
+                "🟢 DISPONÍVEL"
+                if key in {"casa", "herois"}
+                else "🔵 PLANEJADA",
             )
             card.grid(
                 row=idx // 4,
@@ -468,6 +487,66 @@ class StarApp:
     def _open_island(self, key):
         if key == "casa":
             self.navigate("house")
+        elif key == "herois":
+            self.navigate("heroes")
+
+    def show_heroes(self):
+        self.clear_screen()
+        self.nav.current = "heroes"
+        self.current_screen = "heroes"
+
+        root = tk.Frame(self.window, bg=self.bg)
+        root.pack(fill="both", expand=True)
+        self._gradient(root)
+        self._header(root, "ILHA DOS HERÓIS")
+        self._scene_title(
+            root,
+            "🦸 ILHA DOS HERÓIS",
+            "A primeira Ilha de Conhecimento funcional da STAR.",
+        )
+
+        knowledge = getattr(self.brain, "knowledge", None)
+        if knowledge is None:
+            tk.Label(
+                root,
+                text="Knowledge Engine indisponível.",
+                fg=self.red,
+                bg=self.bg,
+                font=("Segoe UI", 12, "bold"),
+            ).pack(pady=80)
+            return
+
+        palette = {
+            "bg": self.bg,
+            "panel": self.panel,
+            "text": self.text,
+            "muted": self.muted,
+            "star": self.star,
+        }
+        view = HeroesIslandView(
+            root,
+            knowledge=knowledge,
+            palette=palette,
+            on_selected=self._hero_selected,
+        )
+        view.pack(fill="both", expand=True, padx=18, pady=(0, 18))
+
+    def _hero_selected(self, entity):
+        mind = getattr(self.brain, "mind", None)
+        if mind is not None:
+            mind.context.track_entity(
+                entity.name,
+                entity_id=entity.id,
+                category=entity.category,
+            )
+            try:
+                mind.events.publish(
+                    "HERO_SELECTED",
+                    {"entity_id": entity.id, "name": entity.name},
+                    "world",
+                )
+            except Exception as exc:
+                log.warning("Falha ao publicar HERO_SELECTED: %s", exc)
 
     # ------------------------------------------------------------------
     # Casa e cômodos
@@ -559,20 +638,52 @@ class StarApp:
         tv = tk.Frame(stage, bg="#070a0e", width=430, height=245)
         tv.place(relx=0.27, rely=0.43, anchor="center")
         tv.pack_propagate(False)
+        self.tv_frame = tv
+
         tk.Label(
             tv,
             text="STAR TV",
             fg=self.star,
             bg="#070a0e",
             font=("Segoe UI", 22, "bold"),
-        ).pack(expand=True)
-        self._button(
+        ).pack(pady=(24, 5))
+
+        self.tv_status_label = tk.Label(
             tv,
-            "ABRIR YOUTUBE",
-            lambda: webbrowser.open("https://www.youtube.com/"),
+            text="Mídia pronta • WebView sob demanda",
+            fg=self.muted,
+            bg="#070a0e",
+            font=("Segoe UI", 9),
+        )
+        self.tv_status_label.pack(pady=(0, 10))
+
+        controls = tk.Frame(tv, bg="#070a0e")
+        controls.pack(pady=(4, 0))
+        self._button(
+            controls,
+            "YOUTUBE",
+            self._open_youtube_tv,
             small=True,
             accent=True,
-        ).pack(pady=(0, 20))
+        ).pack(side="left", padx=3)
+        self._button(
+            controls,
+            "⛶",
+            self._tv_fullscreen,
+            small=True,
+        ).pack(side="left", padx=3)
+        self._button(
+            controls,
+            "RESTAURAR",
+            self._tv_restore,
+            small=True,
+        ).pack(side="left", padx=3)
+        self._button(
+            controls,
+            "FECHAR",
+            self._tv_close,
+            small=True,
+        ).pack(side="left", padx=3)
 
         sofa = tk.Frame(stage, bg=self.panel, width=420, height=115)
         sofa.place(relx=0.29, rely=0.78, anchor="center")
@@ -592,6 +703,106 @@ class StarApp:
         ).pack()
 
         self._place_star(stage, relx=0.73, rely=0.55, size=(230, 285))
+
+    def _tv_rect(self):
+        frame = self.tv_frame
+        if frame is None:
+            return None
+        try:
+            if not frame.winfo_exists():
+                return None
+            self.window.update_idletasks()
+            return (
+                frame.winfo_rootx(),
+                frame.winfo_rooty(),
+                max(320, frame.winfo_width()),
+                max(180, frame.winfo_height()),
+            )
+        except tk.TclError:
+            return None
+
+    def _set_tv_status(self, text, ok=True):
+        label = self.tv_status_label
+        if label is not None:
+            try:
+                if label.winfo_exists():
+                    label.config(
+                        text=str(text),
+                        fg=self.green if ok else self.red,
+                    )
+            except tk.TclError:
+                self.tv_status_label = None
+
+    def _open_youtube_tv(self):
+        if not self.online_mode:
+            self._set_tv_status("Ative o modo ONLINE para usar o YouTube.", False)
+            return
+
+        rect = self._tv_rect()
+        if not rect:
+            self._set_tv_status("A área da TV ainda não está pronta.", False)
+            return
+
+        if self.media.open_youtube(rect=rect):
+            self._set_tv_status("YouTube carregado na STAR TV.")
+            self.window.after(600, self._refresh_media_status)
+        else:
+            state = self.media.state()
+            error = state.get("last_error") or "backend WebView indisponível"
+            self._set_tv_status(f"TV indisponível: {error}", False)
+
+    def _sync_media_to_tv(self, _event=None):
+        try:
+            state = self.media.state()
+        except Exception as exc:
+            log.warning("Falha ao ler estado da mídia: %s", exc)
+            return
+        if not state.get("opened") or state.get("fullscreen"):
+            return
+        if self.nav.current != "living_room":
+            return
+        rect = self._tv_rect()
+        if rect:
+            self.media.sync_rect(rect)
+
+    def _refresh_media_status(self):
+        state = self.media.state()
+        if not state.get("opened"):
+            error = state.get("last_error")
+            if error:
+                self._set_tv_status(f"TV indisponível: {error}", False)
+            return
+        self._set_tv_status(
+            "YouTube • tela cheia"
+            if state.get("fullscreen")
+            else "YouTube • exibindo na STAR TV"
+        )
+
+    def _tv_fullscreen(self):
+        if self.media.fullscreen():
+            self._set_tv_status("YouTube • tela cheia")
+        else:
+            self._refresh_media_status()
+
+    def _tv_restore(self):
+        if self.media.restore():
+            self.window.after(80, self._sync_media_to_tv)
+            self._set_tv_status("YouTube • exibindo na STAR TV")
+        else:
+            self._refresh_media_status()
+
+    def _tv_close(self):
+        self.media.close()
+        self._set_tv_status("Mídia pronta • WebView sob demanda")
+
+    def _close_media_if_open(self):
+        try:
+            if self.media.state().get("opened"):
+                self.media.close()
+        except Exception as exc:
+            log.warning("Falha ao fechar mídia: %s", exc)
+        self.tv_frame = None
+        self.tv_status_label = None
 
     def show_kitchen(self):
         self.clear_screen()
@@ -1750,6 +1961,10 @@ class StarApp:
         if self._closing:
             return
         self._closing = True
+        try:
+            self.media.close()
+        except Exception as exc:
+            log.warning("Falha ao encerrar mídia: %s", exc)
         try:
             if self.recording:
                 self.recorder.stop_to_wav()
