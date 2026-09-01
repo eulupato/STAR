@@ -9,14 +9,14 @@ from pathlib import Path
 
 from huggingface_hub import hf_hub_download, snapshot_download
 
-from config import PIPER_MODEL, STT_MODEL
+from config import PIPER_MODEL, STT_MODEL_NAME
 
 ROOT = Path(__file__).resolve().parent.parent
 PIPER_DIR = ROOT / "voice" / "models" / "piper"
-WHISPER_DIR = ROOT / "voice" / "models" / "whisper" / STT_MODEL
+WHISPER_DIR = ROOT / "voice" / "models" / "whisper" / STT_MODEL_NAME
 PIPER_REPO = "rhasspy/piper-voices"
 PIPER_CONFIG = PIPER_MODEL + ".json"
-WHISPER_REPO = f"Systran/faster-whisper-{STT_MODEL}"
+WHISPER_REPO = f"Systran/faster-whisper-{STT_MODEL_NAME}"
 
 
 def install_piper() -> None:
@@ -38,11 +38,11 @@ def install_piper() -> None:
 def install_whisper() -> None:
     required = (WHISPER_DIR / "model.bin", WHISPER_DIR / "config.json")
     if all(path.exists() and path.stat().st_size > 0 for path in required):
-        print(f"✅ Whisper {STT_MODEL} já existe localmente.")
+        print(f"✅ Whisper {STT_MODEL_NAME} já existe localmente.")
         return
 
     WHISPER_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"🎤 Preparando Whisper {STT_MODEL} local...")
+    print(f"🎤 Preparando Whisper {STT_MODEL_NAME} local...")
     snapshot_download(
         repo_id=WHISPER_REPO,
         local_dir=str(WHISPER_DIR),
@@ -52,7 +52,7 @@ def install_whisper() -> None:
         raise RuntimeError(
             "Download do Whisper incompleto; faltando: " + ", ".join(missing)
         )
-    print(f"✅ Whisper {STT_MODEL} pronto em {WHISPER_DIR}.")
+    print(f"✅ Whisper {STT_MODEL_NAME} pronto em {WHISPER_DIR}.")
 
 
 def main() -> None:
