@@ -36,23 +36,32 @@ ROUTES: dict[str, Route] = {
 class NavigationManager:
     current: str = "menu"
     history: list[str] = field(default_factory=list)
-    return_route: str | None = None
+    overlay_returns: list[str] = field(default_factory=list)
+
+    @property
+    def return_route(self) -> str | None:
+        return self.overlay_returns[-1] if self.overlay_returns else None
 
     def go(self, route: str, *, remember: bool = True) -> str:
         if route not in ROUTES:
             raise KeyError(f"Rota desconhecida: {route}")
         if remember and self.current != route:
             self.history.append(self.current)
+        if route not in {"settings", "chat"}:
+            self.overlay_returns.clear()
         self.current = route
         return route
 
     def open_overlay(self, route: str) -> str:
-        self.return_route = self.current
-        return self.go(route, remember=False)
+        if route not in {"settings", "chat"}:
+            raise ValueError(f"Rota não é overlay: {route}")
+        if self.current != route:
+            self.overlay_returns.append(self.current)
+        self.current = route
+        return route
 
     def close_overlay(self, fallback: str = "hub") -> str:
-        target = self.return_route or fallback
-        self.return_route = None
+        target = self.overlay_returns.pop() if self.overlay_returns else fallback
         self.current = target
         return target
 
