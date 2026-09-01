@@ -198,9 +198,22 @@ class KnowledgeEngine:
                     "afiliacoes": "affiliation",
                 }
                 predicate = predicates.get(relation_name, relation_name)
-                names = self.graph.related_names(entity.id, predicate)
-                if names:
-                    return f"{entity.name}: " + ", ".join(names) + "."
+                names = []
+                if relation_name == "equipes":
+                    names.extend(entity.team)
+                elif relation_name == "afiliacoes":
+                    names.extend(entity.affiliations)
+                names.extend(self.graph.related_names(entity.id, predicate))
+
+                unique = []
+                seen = set()
+                for item in names:
+                    key = normalize_search_text(item)
+                    if key and key not in seen:
+                        seen.add(key)
+                        unique.append(item)
+                if unique:
+                    return f"{entity.name}: " + ", ".join(unique) + "."
 
         group_match = re.match(
             r"^quais personagens (?:dos|do|da) (.+?) (?:possuem|tem|têm) (.+?)[?!.]*$",
@@ -210,7 +223,25 @@ class KnowledgeEngine:
         if group_match:
             team = group_match.group(1).strip()
             trait = group_match.group(2).strip()
-            matches = self.store.search(f"{team} {trait}", filters={"category": "character"}, limit=25)
+            matches = self.store.search(
+                "",
+                filters={
+                    "category": "character",
+                    "team": team,
+                    "power": trait,
+                },
+                limit=25,
+            )
+            if not matches:
+                matches = self.store.search(
+                    "",
+                    filters={
+                        "category": "character",
+                        "team": team,
+                        "ability": trait,
+                    },
+                    limit=25,
+                )
             if matches:
                 return ", ".join(entity.name for entity in matches) + "."
 
