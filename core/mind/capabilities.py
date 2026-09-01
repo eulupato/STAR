@@ -49,6 +49,7 @@ class CapabilityRegistry:
         for capability in (
             Capability("context", "MIND", "Continuidade, entidades e fatos da sessão."),
             Capability("conversation", "EXPRESSION", "Small talk procedural e anti-repetição."),
+            Capability("media", "WORLD", "Controle da STAR TV por eventos."),
             Capability("computer_control", "ACTION", "Ações locais e comandos do computador."),
             Capability("math", "KNOWLEDGE", "Cálculo determinístico offline."),
             Capability("universal_search", "KNOWLEDGE", "Busca local em entidades, packs e memória."),
