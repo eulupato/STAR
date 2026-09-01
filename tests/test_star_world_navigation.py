@@ -74,3 +74,24 @@ def test_heroes_route_returns_to_hub():
     nav.go("heroes")
     assert nav.context == "Heróis"
     assert nav.back() == "hub"
+
+
+def test_nested_overlays_preserve_world_context():
+    nav = NavigationManager(current="bedroom")
+    nav.open_overlay("chat")
+    assert nav.return_route == "bedroom"
+
+    nav.open_overlay("settings")
+    assert nav.return_route == "chat"
+    assert nav.close_overlay() == "chat"
+    assert nav.return_route == "bedroom"
+    assert nav.close_overlay() == "bedroom"
+    assert nav.return_route is None
+
+
+def test_direct_world_navigation_clears_overlay_stack():
+    nav = NavigationManager(current="bedroom")
+    nav.open_overlay("chat")
+    nav.go("hub")
+    assert nav.current == "hub"
+    assert nav.return_route is None
