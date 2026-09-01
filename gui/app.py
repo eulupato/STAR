@@ -1,4 +1,4 @@
-"""Interface gráfica da STAR V1.9."""
+"""Interface gráfica da STAR V2.0 MIND."""
 from __future__ import annotations
 
 import json
@@ -295,14 +295,83 @@ class StarApp:
         if hasattr(self,"offline_btn"):self.offline_btn.config(bg="#5a2630" if not self.online_mode else "#24313f")
 
     def show_islands(self):
-        self.clear_screen();self.current_screen="islands";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True,padx=35,pady=20);tk.Label(body,text="HUB • STAR WORLD",fg=self.star,bg=self.bg,font=("Segoe UI",24,"bold")).pack(anchor="w",pady=(0,12))
+        self.clear_screen()
+        self.current_screen = "islands"
+
+        root = tk.Frame(self.window, bg=self.bg)
+        root.pack(fill="both", expand=True)
+        self._header(root)
+
+        body = tk.Frame(root, bg=self.bg)
+        body.pack(fill="both", expand=True, padx=35, pady=20)
+
+        tk.Label(
+            body,
+            text="HUB • STAR WORLD",
+            fg=self.star,
+            bg=self.bg,
+            font=("Segoe UI", 24, "bold"),
+        ).pack(anchor="w", pady=(0, 12))
+
+        # Tkinter não permite misturar pack() e grid() entre filhos do mesmo
+        # parent. O título usa pack() em body; os cards ficam, portanto, em um
+        # container próprio gerenciado por pack(), e somente seus filhos usam grid().
+        cards_grid = tk.Frame(body, bg=self.bg)
+        cards_grid.pack(fill="both", expand=True)
+
         try:
-            from core.islands import get_islands;data=get_islands()
-        except Exception:data={}
-        for i,(key,item) in enumerate(data.items()):
-            card=tk.Frame(body,bg=self.panel,padx=16,pady=14);card.grid(row=i//3,column=i%3,sticky="nsew",padx=6,pady=6);tk.Label(card,text=f"{item.get('icon','🏝️')} {item.get('name',key)}",fg=self.star,bg=self.panel,font=("Segoe UI",14,"bold")).pack(anchor="w");tk.Label(card,text=item.get('description',''),fg=self.text,bg=self.panel,wraplength=270,justify="left").pack(anchor="w",pady=7)
-            if key.lower() in {"house","casa"}:self._button(card,"ENTRAR NA CASA",self.show_house,small=True).pack(anchor="w")
-            else:tk.Label(card,text="🟢 DISPONÍVEL" if item.get('status')=='installed' else "🔒 AGUARDANDO CONHECIMENTO",fg=self.green if item.get('status')=='installed' else self.gold,bg=self.panel,font=("Segoe UI",8,"bold")).pack(anchor="w")
+            from core.islands import get_islands
+
+            data = get_islands()
+        except Exception:
+            data = {}
+
+        for column in range(3):
+            cards_grid.grid_columnconfigure(column, weight=1)
+
+        for i, (key, item) in enumerate(data.items()):
+            card = tk.Frame(cards_grid, bg=self.panel, padx=16, pady=14)
+            card.grid(
+                row=i // 3,
+                column=i % 3,
+                sticky="nsew",
+                padx=6,
+                pady=6,
+            )
+
+            tk.Label(
+                card,
+                text=f"{item.get('icon', '🏝️')} {item.get('name', key)}",
+                fg=self.star,
+                bg=self.panel,
+                font=("Segoe UI", 14, "bold"),
+            ).pack(anchor="w")
+
+            tk.Label(
+                card,
+                text=item.get("description", ""),
+                fg=self.text,
+                bg=self.panel,
+                wraplength=270,
+                justify="left",
+            ).pack(anchor="w", pady=7)
+
+            if key.lower() in {"house", "casa"}:
+                self._button(
+                    card,
+                    "ENTRAR NA CASA",
+                    self.show_house,
+                    small=True,
+                ).pack(anchor="w")
+            else:
+                installed = item.get("status") == "installed"
+                tk.Label(
+                    card,
+                    text="🟢 DISPONÍVEL" if installed else "🔒 AGUARDANDO CONHECIMENTO",
+                    fg=self.green if installed else self.gold,
+                    bg=self.panel,
+                    font=("Segoe UI", 8, "bold"),
+                ).pack(anchor="w")
 
     def show_house(self):
         self.clear_screen();self.current_screen="house";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True,padx=70,pady=45);tk.Label(body,text="🏠 CASA",fg=self.star,bg=self.bg,font=("Segoe UI",28,"bold")).pack(anchor="w");tk.Label(body,text="O espaço pessoal da STAR dentro do STAR WORLD.",fg=self.muted,bg=self.bg).pack(anchor="w",pady=(4,24));grid=tk.Frame(body,bg=self.bg);grid.pack(fill="x")
