@@ -90,7 +90,27 @@ class ContextEngine:
         entity = self.current_entity
         if entity is None or not self.PRONOUN_RE.search(raw):
             return raw
-        return self.PRONOUN_RE.sub(entity.name, raw)
+
+        replacements = {
+            "ele": entity.name,
+            "ela": entity.name,
+            "dele": f"de {entity.name}",
+            "dela": f"de {entity.name}",
+            "nele": f"em {entity.name}",
+            "nela": f"em {entity.name}",
+            "esse": entity.name,
+            "essa": entity.name,
+            "deste": f"de {entity.name}",
+            "desta": f"de {entity.name}",
+            "desse": f"de {entity.name}",
+            "dessa": f"de {entity.name}",
+        }
+
+        def replace(match):
+            token = self.normalize(match.group(0))
+            return replacements.get(token, entity.name)
+
+        return self.PRONOUN_RE.sub(replace, raw)
 
     def _observe_explicit_entity(self, text: str):
         match = self.ENTITY_PROMPT_RE.search(str(text or ""))
