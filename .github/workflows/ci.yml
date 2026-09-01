@@ -16,6 +16,8 @@ jobs:
           python-version: "3.13"
       - name: Validate Python syntax
         run: python -m compileall -q core gui knowledge modules voice database tests tools main.py config.py diagnostico.py
+      - name: Validate repository hygiene
+        run: python tools/repo_hygiene.py
       - name: Validate project JSON manifests
         run: |
           python - <<'PY'
