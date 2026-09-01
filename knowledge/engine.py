@@ -137,8 +137,8 @@ class KnowledgeEngine:
         resolved_text = str(context.get("resolved_text") or raw)
 
         patterns = (
-            r"^(?:quem (?:e|é)|quem foi|fale sobre|me fale sobre)\\s+(.+?)[?!.]*$",
-            r"^(?:o que sabe sobre|o que voce sabe sobre|o que você sabe sobre)\\s+(.+?)[?!.]*$",
+            r"^(?:quem (?:e|é)|quem foi|fale sobre|me fale sobre)\s+(.+?)[?!.]*$",
+            r"^(?:o que sabe sobre|o que voce sabe sobre|o que você sabe sobre)\s+(.+?)[?!.]*$",
         )
         name = None
         for pattern in patterns:
@@ -181,7 +181,7 @@ class KnowledgeEngine:
                     return f"{entity.name}: {origin}."
 
         relation_match = re.match(
-            r"^(?:quais|quem sao|quem são)\\s+(aliados|inimigos|equipes|afiliacoes|afiliações)\\s+(?:de|do|da)\\s+(.+?)[?!.]*$",
+            r"^(?:quais|quem sao|quem são)\s+(aliados|inimigos|equipes|afiliacoes|afiliações)\s+(?:de|do|da)\s+(.+?)[?!.]*$",
             resolved_text,
             re.IGNORECASE,
         )
