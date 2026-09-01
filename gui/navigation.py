@@ -26,6 +26,7 @@ ROUTES: dict[str, Route] = {
     "bedroom": Route("bedroom", "Quarto", "Casa > Quarto", "house"),
     "closet": Route("closet", "Closet", "Casa > Quarto > Closet", "bedroom"),
     "gallery": Route("gallery", "Álbum", "Casa > Quarto > Closet > Álbum", "closet"),
+    "heroes": Route("heroes", "Ilha dos Heróis", "Heróis", "hub"),
     "settings": Route("settings", "Configurações", "Configurações"),
     "chat": Route("chat", "Conversa", "Conversa geral"),
 }
