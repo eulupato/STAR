@@ -1,4 +1,4 @@
-"""Ferramentas locais da STAR V1.8."""
+"""Registro de ferramentas locais compatível com a STAR V3."""
 import ast, operator, re, math
 
 class ToolRegistry:
