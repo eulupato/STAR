@@ -26,3 +26,12 @@ def test_local_command_remains_available_offline():
     star.network_enabled=False
     answer=star.process("que horas são?")
     assert "Agora são" in answer
+
+
+def test_generic_search_uses_local_knowledge_while_offline():
+    star = create_star()
+    star.network_enabled = False
+    answer = star.process("pesquise Batman")
+    assert "Batman" in answer
+    assert "Ative o modo ONLINE" not in answer
+    assert star.mind.metacognition.last.selected_step == "knowledge_search"
