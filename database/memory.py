@@ -8,9 +8,9 @@ log = get_logger("memory")
 class Memory:
     """Memória persistente simples da conversa da STAR."""
 
-    def __init__(self):
-        Base.metadata.create_all(engine)
-        self.session = SessionLocal()
+    def __init__(self, *, session_factory=SessionLocal, db_engine=engine):
+        Base.metadata.create_all(db_engine)
+        self.session = session_factory()
 
     def save(self, sender, content):
         message = Message(sender=sender, content=str(content))
@@ -18,12 +18,18 @@ class Memory:
         self.session.commit()
         return message
 
-    def load(self):
-        return (
-            self.session.query(Message)
-            .order_by(Message.id.asc())
+    def load(self, limit: int | None = None):
+        query = self.session.query(Message)
+        if limit is None:
+            return query.order_by(Message.id.asc()).all()
+
+        safe_limit = max(1, min(int(limit), 1000))
+        recent = (
+            query.order_by(Message.id.desc())
+            .limit(safe_limit)
             .all()
         )
+        return list(reversed(recent))
 
     def close(self):
         try:
