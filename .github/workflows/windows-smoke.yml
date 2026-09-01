@@ -24,7 +24,7 @@ jobs:
           python -m pip install -r requirements.txt pytest
 
       - name: Compile project
-        run: python -m compileall -q core gui voice modules database tests main.py config.py diagnostico.py
+        run: python -m compileall -q core gui knowledge voice modules database tests tools main.py config.py diagnostico.py
 
       - name: Run test suite
         run: pytest -q tests
