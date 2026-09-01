@@ -308,18 +308,50 @@ class DCOfficialSource(OfficialCharacterSource):
                 urls.append(url)
         return urls
 
-    @staticmethod
-    def _between(text: str, start: str, ends: tuple[str, ...]) -> str | None:
-        start_match = re.search(re.escape(start), text, re.IGNORECASE)
-        if not start_match:
-            return None
-        tail = text[start_match.end():]
-        stop = len(tail)
-        for end in ends:
-            match = re.search(re.escape(end), tail, re.IGNORECASE)
-            if match:
-                stop = min(stop, match.start())
-        return _clean(tail[:stop])
+    FIELD_LABELS = {
+        "powers": "powers",
+        "first appearance": "first_appearance",
+        "alias alter ego": "alter_ego",
+        "aka": "aka",
+        "base of operations": "base",
+        "occupation": "occupation",
+    }
+
+    @classmethod
+    def _labeled_fields(cls, text: str) -> dict[str, str]:
+        """Extrai pares rótulo/valor sem depender do layout HTML exato."""
+        lines = []
+        for raw in str(text or "").splitlines():
+            value = _clean(raw)
+            if value:
+                lines.append(value)
+
+        fields: dict[str, str] = {}
+        index = 0
+        while index < len(lines):
+            normalized = normalize_search_text(lines[index].rstrip(":"))
+            key = cls.FIELD_LABELS.get(normalized)
+            if key is None:
+                index += 1
+                continue
+
+            values = []
+            cursor = index + 1
+            while cursor < len(lines):
+                next_normalized = normalize_search_text(lines[cursor].rstrip(":"))
+                if next_normalized in cls.FIELD_LABELS:
+                    break
+                if next_normalized == "related characters":
+                    break
+                values.append(lines[cursor])
+                cursor += 1
+
+            value = _clean(" ".join(values))
+            if value:
+                fields[key] = value
+            index = max(cursor, index + 1)
+
+        return fields
 
     def parse(self, html: str, url: str) -> OfficialProfile | None:
         parser = _ProfileParser()
@@ -338,37 +370,16 @@ class DCOfficialSource(OfficialCharacterSource):
         if not title:
             return None
 
-        powers = _split_csv(
-            self._between(text, "Powers", ("First Appearance",))
-        )
-        first = self._between(
-            text,
-            "First Appearance",
-            ("Alias/Alter Ego", "AKA", "Base of Operations", "Occupation", "Related Characters"),
-        )
-        alter = self._between(
-            text,
-            "Alias/Alter Ego",
-            ("AKA", "Base of Operations", "Occupation", "Related Characters"),
-        )
-        aka = self._between(
-            text,
-            "AKA",
-            ("Base of Operations", "Occupation", "Related Characters"),
-        )
-        base = self._between(
-            text,
-            "Base of Operations",
-            ("Occupation", "Related Characters"),
-        )
-        occupation = self._between(
-            text,
-            "Occupation",
-            ("Related Characters",),
-        )
+        fields = self._labeled_fields(text)
+        powers = _split_csv(fields.get("powers"))
+        first = fields.get("first_appearance")
+        alter = fields.get("alter_ego")
+        aka = fields.get("aka")
+        base = fields.get("base")
+        occupation = fields.get("occupation")
 
         aliases = []
-        for value in [alter, aka]:
+        for value in (alter, aka):
             aliases.extend(_split_csv(value))
 
         related = []
