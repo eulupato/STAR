@@ -1,13 +1,14 @@
-"""Ferramentas locais da STAR.
+"""Ferramentas locais controladas da STAR.
 
-Ações locais simples podem funcionar offline. Recursos que abrem serviços da
-internet respeitam o estado ONLINE/OFFLINE recebido pelo STAR Core.
+Ações só são executadas quando a frase contém um comando explícito. Recursos
+de internet respeitam o estado ONLINE/OFFLINE recebido pelo STAR Core.
 """
 from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
 import os
+import re
 import subprocess
 import urllib.parse
 import webbrowser
@@ -24,12 +25,16 @@ APP_ALIASES = {
     "bloco de notas": "notepad",
 }
 
+_OPEN_VERBS = r"(?:abra|abre|abrir)"
+_SEARCH_VERBS = r"(?:pesquise|pesquisa|procure|procura|buscar|busque)"
+
 
 def open_app(name: str) -> str:
     name = str(name).strip().lower()
     if name in {"google", "chrome", "navegador", "browser"}:
         webbrowser.open("https://www.google.com")
         return "Abri o Google."
+
     if name == "spotify":
         try:
             os.startfile("spotify:")
@@ -37,10 +42,12 @@ def open_app(name: str) -> str:
         except (OSError, AttributeError):
             webbrowser.open("https://open.spotify.com")
             return "Abri o Spotify no navegador."
+
     command = APP_ALIASES.get(name)
     if command:
-        subprocess.Popen(command, shell=False)
+        subprocess.Popen([command], shell=False)
         return f"Abri {name}."
+
     raise ValueError(f"Ainda não tenho um atalho configurado para {name}.")
 
 
@@ -48,7 +55,10 @@ def web_search(query: str) -> str:
     query = str(query).strip()
     if not query:
         return "O que você quer que eu pesquise?"
-    webbrowser.open("https://www.google.com/search?q=" + urllib.parse.quote_plus(query))
+    webbrowser.open(
+        "https://www.google.com/search?q="
+        + urllib.parse.quote_plus(query)
+    )
     return f"Pesquisando por: {query}."
 
 
@@ -56,24 +66,40 @@ def spotify_search(query: str) -> str:
     query = str(query).strip()
     if not query:
         return open_app("spotify")
-    webbrowser.open("https://open.spotify.com/search/" + urllib.parse.quote(query))
+    webbrowser.open(
+        "https://open.spotify.com/search/"
+        + urllib.parse.quote(query)
+    )
     return f"Procurei {query} no Spotify."
 
 
-def find_files(query: str, root: str | Path | None = None, limit: int = 20):
+def find_files(
+    query: str,
+    root: str | Path | None = None,
+    limit: int = 20,
+):
     root_path = Path(root) if root else Path.home()
-    q = str(query).strip().lower()
-    if not q:
+    q = str(query).strip().casefold()
+    safe_limit = max(1, min(int(limit), 1000))
+    if not q or not root_path.exists():
         return []
+
     hits = []
-    try:
-        for path in root_path.rglob("*"):
-            if q in path.name.lower():
-                hits.append(path)
-                if len(hits) >= limit:
-                    break
-    except (PermissionError, OSError) as exc:
-        log.debug("Busca de arquivos interrompida em %s: %s", root_path, exc)
+
+    def onerror(error):
+        log.debug("Busca de arquivos ignorou pasta inacessível: %s", error)
+
+    for current, directories, files in os.walk(
+        root_path,
+        topdown=True,
+        onerror=onerror,
+        followlinks=False,
+    ):
+        for name in [*directories, *files]:
+            if q in name.casefold():
+                hits.append(Path(current) / name)
+                if len(hits) >= safe_limit:
+                    return hits
     return hits
 
 
@@ -86,54 +112,104 @@ def _needs_network_message() -> str:
     return "Esse comando usa internet. Ative o modo ONLINE nas configurações da STAR."
 
 
+def _normalize_command(text: str) -> str:
+    value = " ".join(str(text or "").strip().lower().split())
+    value = re.sub(r"^star\s*[,;:]?\s*", "", value)
+    return value.strip()
+
+
 def parse(text: str, allow_network: bool = False):
-    s = " ".join(str(text).strip().lower().split())
+    s = _normalize_command(text)
     if not s:
         return None
 
-    if any(k in s for k in ("que horas", "qual a hora", "horário", "horario")):
+    # Menções negativas não devem disparar ações.
+    if re.match(r"^(?:não|nao)\b", s):
+        return None
+
+    if any(
+        phrase in s
+        for phrase in ("que horas", "qual a hora", "horário", "horario")
+    ):
         return local_time()
 
-    if "spotify" in s:
+    spotify_open = re.match(
+        rf"^{_OPEN_VERBS}\s+(?:o\s+)?spotify\b(?:\s+(.*))?$",
+        s,
+    )
+    spotify_prefix = re.match(
+        rf"^(?:spotify\s+)?(?:toca|toque|{_SEARCH_VERBS})\s+(.+)$",
+        s,
+    )
+    spotify_suffix = re.match(
+        rf"^(?:toca|toque|{_SEARCH_VERBS})\s+(.+?)\s+(?:no|na)\s+spotify$",
+        s,
+    )
+
+    if spotify_open or spotify_prefix or spotify_suffix:
         if not allow_network:
             return _needs_network_message()
-        query = s.split("spotify", 1)[1].strip(" .,:;- ")
-        for prefix in ("e toca ", "e toque ", "toca ", "toque ", "procura ", "pesquisa ", "buscar "):
-            if query.startswith(prefix):
-                query = query[len(prefix):].strip()
+
+        query = ""
+        if spotify_open:
+            query = (spotify_open.group(1) or "").strip(" .,:;- ")
+            query = re.sub(
+                r"^(?:e\s+)?(?:toca|toque|pesquise|pesquisa|procure|procura|buscar|busque)\s+",
+                "",
+                query,
+            )
+        elif spotify_suffix:
+            query = spotify_suffix.group(1).strip(" .,:;- ")
+        elif spotify_prefix:
+            query = spotify_prefix.group(1).strip(" .,:;- ")
+            if "spotify" not in s:
+                return None
+
         return spotify_search(query)
 
-    browser = any(k in s for k in ("google", "chrome", "navegador"))
-    if browser and any(k in s for k in ("abre", "abrir", "abra")):
+    browser_open = re.match(
+        rf"^{_OPEN_VERBS}\s+(?:o\s+)?(?:google|chrome|navegador|browser)\b(?:\s+(.*))?$",
+        s,
+    )
+    if browser_open:
         if not allow_network:
             return _needs_network_message()
-        query = ""
-        markers = ("e veja", "e pesquise", "e pesquisa", "pesquise", "pesquisa", "veja o", "veja")
-        for marker in markers:
-            if marker in s:
-                query = s.split(marker, 1)[1].strip(" .,:;- ")
-                break
-        if query:
-            open_app("google")
-            return web_search(query)
+
+        tail = (browser_open.group(1) or "").strip(" .,:;- ")
+        search = re.match(
+            r"^(?:e\s+)?(?:veja|pesquise|pesquisa|procure|procura|buscar|busque)\s+(.+)$",
+            tail,
+        )
+        if search:
+            return web_search(search.group(1).strip())
         return open_app("google")
 
-    for prefix in ("pesquise ", "pesquisa ", "procure ", "procura ", "buscar ", "busque "):
-        if s.startswith(prefix):
-            if not allow_network:
-                return _needs_network_message()
-            return web_search(s[len(prefix):])
+    generic_search = re.match(
+        rf"^{_SEARCH_VERBS}\s+(.+)$",
+        s,
+    )
+    if generic_search:
+        if not allow_network:
+            return _needs_network_message()
+        return web_search(generic_search.group(1).strip())
 
-    for marker in ("procure arquivo ", "procurar arquivo ", "encontre o arquivo ", "encontre arquivo "):
-        if s.startswith(marker):
-            query = s[len(marker):].strip()
-            hits = find_files(query)
-            if not hits:
-                return "Não encontrei arquivos com esse nome."
-            return "Encontrei: " + "; ".join(str(p) for p in hits)
+    file_search = re.match(
+        r"^(?:procure|procurar|encontre)\s+(?:o\s+)?arquivo\s+(.+)$",
+        s,
+    )
+    if file_search:
+        query = file_search.group(1).strip()
+        hits = find_files(query)
+        if not hits:
+            return "Não encontrei arquivos com esse nome."
+        return "Encontrei: " + "; ".join(str(path) for path in hits)
 
-    if "abrir " in s or s.startswith("abra ") or s.startswith("abre "):
-        remainder = s.replace("abra ", "", 1).replace("abre ", "", 1).replace("abrir ", "", 1).strip(" .,:;- ")
+    app_open = re.match(
+        rf"^{_OPEN_VERBS}\s+(.+?)\s*$",
+        s,
+    )
+    if app_open:
+        remainder = app_open.group(1).strip(" .,:;- ")
         if remainder in APP_ALIASES:
             return open_app(remainder)
 
