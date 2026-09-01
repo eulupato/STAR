@@ -189,9 +189,10 @@ class ConversationVariationEngine:
             core = self.rng.choice(cores)
             closing = self._pick_avoiding(endings, self.recent_closings)
             response = f"{opening} {core} {closing}".strip()
+            pattern_key = f"{pattern}|{opening}|{closing}"
             if (
                 response not in self.recent_responses
-                and pattern not in self.recent_patterns
+                and pattern_key not in self.recent_patterns
                 and not any(
                     phrase in normalize(response)
                     for phrase in map(normalize, self.personality.avoid_phrases)
@@ -200,7 +201,7 @@ class ConversationVariationEngine:
                 self.recent_responses.append(response)
                 self.recent_openings.append(opening)
                 self.recent_closings.append(closing)
-                self.recent_patterns.append(pattern)
+                self.recent_patterns.append(pattern_key)
                 return response
 
         response = f"{self.rng.choice(openings)} {self.rng.choice(cores)} {self.rng.choice(endings)}"
