@@ -34,6 +34,7 @@ from core.logging_config import get_logger
 from database.memory import Memory
 from gui.heroes_view import HeroesIslandView
 from gui.navigation import NavigationManager, ROUTES
+from knowledge.recipes import RecipeBook
 from modules.media_controller import MediaController
 from voice.audio_input import AudioRecorder
 from voice.manager import VoiceManager
@@ -938,7 +939,8 @@ class StarApp:
     def _open_recipe_book(self):
         popup = tk.Toplevel(self.window)
         popup.title("STAR • Livro de Receitas")
-        popup.geometry("620x480")
+        popup.geometry("760x520")
+        popup.minsize(680, 460)
         popup.configure(bg=self.bg)
         popup.transient(self.window)
 
@@ -948,40 +950,126 @@ class StarApp:
             fg=self.star,
             bg=self.bg,
             font=("Segoe UI", 20, "bold"),
-        ).pack(anchor="w", padx=24, pady=(24, 6))
+        ).pack(anchor="w", padx=24, pady=(22, 4))
         tk.Label(
             popup,
-            text="A cozinha já possui a interface do livro. O acervo local de receitas será conectado aqui.",
+            text="Selecione uma receita para ver ingredientes e preparo.",
             fg=self.muted,
             bg=self.bg,
-            wraplength=560,
-            justify="left",
-        ).pack(anchor="w", padx=24, pady=(0, 16))
+            font=("Segoe UI", 9),
+        ).pack(anchor="w", padx=24, pady=(0, 12))
 
-        recipes_dir = PROJECT_ROOT / "knowledge" / "recipes"
-        files = []
-        if recipes_dir.exists():
-            files = sorted(
-                p for p in recipes_dir.rglob("*")
-                if p.is_file() and p.suffix.lower() in {".txt", ".md", ".json"}
-            )
-        box = tk.Frame(popup, bg=self.panel, padx=18, pady=16)
-        box.pack(fill="both", expand=True, padx=24, pady=(0, 24))
-        if not files:
-            tk.Label(
-                box,
-                text="Nenhuma receita local cadastrada ainda.",
-                fg=self.gold,
-                bg=self.panel,
-            ).pack(anchor="w")
+        book = RecipeBook(PROJECT_ROOT / "knowledge" / "recipes")
+        recipes = book.load()
+
+        body = tk.Frame(popup, bg=self.bg)
+        body.pack(fill="both", expand=True, padx=24, pady=(0, 20))
+
+        left = tk.Frame(body, bg=self.panel, width=250)
+        left.pack(side="left", fill="y", padx=(0, 10))
+        left.pack_propagate(False)
+
+        right = tk.Frame(body, bg=self.panel, padx=16, pady=14)
+        right.pack(side="left", fill="both", expand=True)
+
+        search_var = tk.StringVar()
+        search = tk.Entry(
+            left,
+            textvariable=search_var,
+            bg="#25364b",
+            fg=self.text,
+            insertbackground=self.text,
+            relief=tk.FLAT,
+            font=("Segoe UI", 9),
+        )
+        search.pack(fill="x", padx=10, pady=(10, 6), ipady=5)
+
+        recipe_list = tk.Listbox(
+            left,
+            bg=self.panel,
+            fg=self.text,
+            selectbackground="#315575",
+            selectforeground=self.text,
+            relief=tk.FLAT,
+            highlightthickness=0,
+            font=("Segoe UI", 9),
+        )
+        recipe_list.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+
+        details = tk.Text(
+            right,
+            bg=self.panel,
+            fg=self.text,
+            insertbackground=self.text,
+            relief=tk.FLAT,
+            wrap="word",
+            font=("Segoe UI", 10),
+            state=tk.DISABLED,
+        )
+        details.pack(fill="both", expand=True)
+
+        state = {"items": recipes}
+
+        def set_details(text):
+            details.config(state=tk.NORMAL)
+            details.delete("1.0", tk.END)
+            details.insert("1.0", text)
+            details.config(state=tk.DISABLED)
+
+        def render_recipe(recipe):
+            lines = [recipe.name, "", "INGREDIENTES"]
+            if recipe.ingredients:
+                lines.extend(f"• {item}" for item in recipe.ingredients)
+            else:
+                lines.append("• Nenhum ingrediente estruturado.")
+
+            lines.extend(["", "PREPARO"])
+            if recipe.steps:
+                lines.extend(
+                    f"{index}. {step}"
+                    for index, step in enumerate(recipe.steps, start=1)
+                )
+            else:
+                lines.append("Nenhum passo estruturado.")
+
+            if recipe.notes:
+                lines.extend(["", "NOTAS"])
+                lines.extend(f"• {note}" for note in recipe.notes)
+            if recipe.source:
+                lines.extend(["", f"Fonte local: {Path(recipe.source).name}"])
+            set_details("\n".join(lines))
+
+        def selected(_event=None):
+            selection = recipe_list.curselection()
+            if not selection:
+                return
+            index = int(selection[0])
+            if 0 <= index < len(state["items"]):
+                render_recipe(state["items"][index])
+
+        def refresh_list(_event=None):
+            query = search_var.get().strip()
+            state["items"] = book.search(query)
+            recipe_list.delete(0, tk.END)
+            for recipe in state["items"]:
+                recipe_list.insert(tk.END, recipe.name)
+            if state["items"]:
+                recipe_list.selection_set(0)
+                recipe_list.activate(0)
+                render_recipe(state["items"][0])
+            else:
+                set_details("Nenhuma receita corresponde à busca atual.")
+
+        search.bind("<KeyRelease>", refresh_list)
+        recipe_list.bind("<<ListboxSelect>>", selected)
+
+        if recipes:
+            refresh_list()
         else:
-            for path in files[:30]:
-                tk.Label(
-                    box,
-                    text=f"• {path.stem.replace('_', ' ').title()}",
-                    fg=self.text,
-                    bg=self.panel,
-                ).pack(anchor="w", pady=2)
+            set_details(
+                "Nenhuma receita local cadastrada. "
+                "Adicione arquivos JSON, Markdown ou TXT em knowledge/recipes."
+            )
 
     def show_bedroom(self):
         self.clear_screen()
