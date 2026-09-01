@@ -3,8 +3,8 @@
 S.T.A.R. — **System for Thought, Analysis and Response**.
 
 A STAR é uma plataforma cognitiva modular **local-first**. A V3.0 absorve a
-fundação V1.9, consolida a MIND construída na V2.0 e introduz a arquitetura de
-conhecimento offline expansível.
+fundação estável anterior, consolida a MIND e introduz uma arquitetura de
+conhecimento offline expansível integrada ao STAR WORLD.
 
 > **LOCAL é a STAR completa. LAN e Internet são expansões, não requisitos para
 > que ela exista.**
@@ -16,7 +16,8 @@ A única fonte de verdade da versão pública é:
 `STAR_MANIFEST.json`
 
 O restante do projeto lê a versão por `core/release.py`. Launcher, GUI,
-diagnóstico e configuração não devem possuir números de versão hardcoded.
+diagnóstico e configuração não devem possuir números de versão pública
+hardcoded.
 
 Estado desta branch:
 
@@ -53,30 +54,34 @@ O diretório `knowledge/` contém:
 - Entity System genérico;
 - SQLite local dedicado;
 - aliases normalizados;
+- campos estruturados multivalorados;
 - relações/Knowledge Graph;
 - fontes e proveniência;
 - Universal Search;
 - Knowledge Packs;
 - importadores reutilizáveis;
 - pipeline de PDF;
+- fontes oficiais opcionais DC/Marvel;
+- Livro de Receitas local;
 - primeira Ilha de Conhecimento: Heróis.
 
-Dados locais, PDFs e caches ficam fora do Git.
+Dados gerados em execução permanecem fora do Git.
 
 ## 🦸 Ilha dos Heróis
 
 A ilha está ligada ao Knowledge Engine e oferece:
 
 - busca livre por nome, alias e conteúdo indexado;
-- filtros estruturados por universo, equipe, poder, habilidade, tag, espécie/tipo e relacionamento;
+- filtros estruturados por universo, equipe, poder, habilidade, tag,
+  espécie/tipo e relacionamento;
 - navegação anterior/próximo por componente genérico;
-- ficha do personagem;
+- ficha ampliada do personagem;
 - múltiplas fontes, página e URL quando disponíveis;
-- fallback visual de imagem sem inventar retratos;
+- fallback visual honesto quando não existe retrato válido;
 - contexto da entidade selecionada para a conversa.
 
 O antigo `heroes.json` permanece somente como seed de compatibilidade até que
-a base local seja importada.
+a base local seja importada integralmente.
 
 ### Construir a Ilha dos Heróis
 
@@ -113,6 +118,31 @@ ainda incompletos.
 
 A ilha continua funcionando sem internet depois que a base foi construída.
 
+## 🏠 STAR WORLD — Casa
+
+`Iniciar` leva ao HUB, não a uma tela central de chat.
+
+Fluxo principal:
+
+```text
+Menu → HUB → Casa → Sala / Cozinha / Quarto
+                         Quarto → Closet → Álbum
+```
+
+O chat é uma camada global contextual: pode ser aberto dentro dos ambientes e
+mantém a localização atual como contexto.
+
+Estado atual da Casa:
+
+- **Sala — experimental:** STAR TV implementada; validação física do WebView no
+  Windows ainda é necessária;
+- **Cozinha — disponível:** Livro de Receitas local, busca, ingredientes,
+  preparo e guia passo a passo;
+- **Quarto — disponível:** espaço pessoal e acesso ao Closet;
+- **Closet — disponível:** skins e acesso ao Álbum;
+- **Álbum — parcial:** galeria local funcional; metadados/agrupamentos e seletor
+  visual de pasta ainda são expansões futuras.
+
 ## 💬 Conversation Variation Engine
 
 Small talk não é uma lista de 1000 frases.
@@ -146,7 +176,7 @@ A frase:
 é reconhecida no Core, gera `MEDIA_REQUESTED` no Event Bus e é executada pela
 GUI no thread do Tkinter.
 
-Controles preparados:
+Controles:
 
 - abrir;
 - play/pause;
@@ -155,6 +185,21 @@ Controles preparados:
 - restore;
 - fechar;
 - estado.
+
+## 🎙️ Voz local
+
+A interface pode iniciar mesmo que os componentes de voz não estejam prontos.
+
+`INSTALAR_VOZ.bat` prepara explicitamente:
+
+- faster-whisper + modelo local em `voice/models/whisper/`;
+- Piper local para modo rápido quando necessário;
+- ambiente Chatterbox da voz oficial.
+
+O runtime recebe um **caminho local absoluto** para o Whisper. Abrir a STAR ou
+usar o microfone não deve iniciar download de modelo automaticamente.
+
+A preferência do modo rápido (`sapi` ou `piper`) é definida em `config.py`.
 
 ## Execução
 
@@ -168,10 +213,16 @@ ou:
 .\.venv\Scripts\python.exe main.py
 ```
 
-Diagnóstico:
+Diagnóstico geral:
 
 ```powershell
 .\.venv\Scripts\python.exe diagnostico.py
+```
+
+Diagnóstico físico de voz:
+
+```powershell
+DIAGNOSTICO_VOZ.bat
 ```
 
 ## Testes
@@ -180,21 +231,42 @@ Diagnóstico:
 .\.venv\Scripts\python.exe -m pytest -q tests
 ```
 
-GitHub Actions valida Linux e Windows.
+GitHub Actions valida Linux e Windows. O Windows smoke também executa o
+diagnóstico geral.
+
+## Dados locais e privacidade
+
+Ficam fora do Git, entre outros:
+
+- `knowledge/local/` e caches gerados;
+- PDFs locais;
+- `star.db` e arquivos SQLite auxiliares;
+- `user_settings.json`;
+- modelos de voz;
+- referência privada de voz;
+- biblioteca pessoal de fotos.
+
+`knowledge/sources/` **não** é ignorado: essa pasta contém código-fonte dos
+adaptadores oficiais.
 
 ## Estado de desenvolvimento
 
-A arquitetura V3 está integrada nesta branch, mas a release só deve ser marcada
-como **READY** depois de:
+A arquitetura V3 está integrada. A release só deve ser marcada como **READY**
+depois de:
 
-1. importar e revisar integralmente as enciclopédias locais;
-2. validar a extração de imagens/associação de referências;
+1. importar e revisar integralmente as enciclopédias locais Marvel/DC;
+2. validar a cobertura e associação final de imagens;
 3. testar a STAR TV em Windows com WebView2/pywebview;
-4. executar toda a suíte CI sem falhas;
-5. validar regressões de voz, GUI e hardware local.
+4. validar microfone, alto-falante e voz oficial no hardware local;
+5. executar toda a suíte CI do HEAD final sem falhas.
+
+A ausência de sprites emocionais específicos não é mascarada: os antigos
+arquivos eram placeholders vazios. Até existirem artes reais, a GUI usa uma
+skin/asset válido com indicador de emoção.
 
 Veja:
 
-- `docs/V3_0_AUDIT_2026-08-31.md`
-- `docs/V3_0_KNOWLEDGE.md`
-- `docs/MASTER_ROADMAP.md`
+- `docs/V3_0_AUDIT_2026-09-01.md` — auditoria atual;
+- `docs/V3_0_AUDIT_2026-08-31.md` — histórico da consolidação inicial;
+- `docs/V3_0_KNOWLEDGE.md`;
+- `docs/MASTER_ROADMAP.md`.
