@@ -499,7 +499,11 @@ class MarvelOfficialSource(OfficialCharacterSource):
         if discovered:
             try:
                 validated = self.client._validate_page_url(str(discovered))
-                if urlparse(validated).path.startswith("/characters/"):
+                path = urlparse(validated).path.rstrip("/")
+                if (
+                    path.startswith("/characters/")
+                    or re.match(r"^/comics/characters/\d+/[^/]+$", path, re.I)
+                ):
                     urls.append(validated)
             except ValueError:
                 pass
