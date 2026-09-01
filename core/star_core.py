@@ -1,9 +1,15 @@
+"""Núcleo central da STAR: identidade, MIND, conhecimento e execução."""
+from __future__ import annotations
+
+import re
 import time
+
+from core.logging_config import get_logger
+
+log = get_logger("core")
 
 
 class StarCore:
-    """Núcleo central da STAR com MIND V2 e fallback compatível com V1.9."""
-
     def __init__(
         self,
         router,
@@ -12,6 +18,8 @@ class StarCore:
         identity=None,
         internal_knowledge=None,
         mind=None,
+        knowledge=None,
+        conversation=None,
     ):
         self.router = router
         self.executive = executive
@@ -19,12 +27,15 @@ class StarCore:
         self.identity = identity
         self.internal_knowledge = internal_knowledge
         self.mind = mind
+        self.knowledge = knowledge
+        self.conversation = conversation
         self.tools = None
         self.skills = None
         self.packs = None
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
+        self.ui_context = ""
 
     def get_name(self):
         if self.identity is None:
@@ -45,26 +56,37 @@ class StarCore:
     def _try_computer(self, user_input, _context=None):
         try:
             from modules.computer_control import parse as parse_computer
-
             return parse_computer(
                 user_input,
                 allow_network=self.network_enabled,
             )
         except Exception as exc:
-            print(f"⚠️ Ação local indisponível: {exc}")
+            log.error("Ação local indisponível: %s", exc)
             return None
 
     def _try_math(self, user_input, _context=None):
         try:
             from core.math_engine import solve_text
-
             solved = solve_text(user_input)
-            if solved:
-                expr, value = solved
-                return f"🧠✨ {expr} = {value}"
-        except Exception:
-            pass
+        except Exception as exc:
+            log.error("Math Engine falhou: %s", exc)
+            return None
+        if solved:
+            expr, value = solved
+            return f"🧠✨ {expr} = {value}"
         return None
+
+    def _try_conversation(self, user_input, context=None):
+        if self.conversation is None:
+            return None
+        try:
+            return self.conversation.generate(
+                user_input,
+                context=context or {},
+            )
+        except Exception as exc:
+            log.error("Conversation Engine falhou: %s", exc)
+            return None
 
     def _context_recall(self, user_input, _context=None):
         if self.mind is None:
@@ -74,16 +96,37 @@ class StarCore:
             self.mind.working_memory,
         )
 
+    def _try_knowledge(self, user_input, context=None):
+        if self.knowledge is None:
+            return None
+        context = dict(context or {})
+        if self.mind is not None:
+            context["resolved_text"] = self.mind.context.resolve_reference_text(
+                user_input
+            )
+        try:
+            response = self.knowledge.answer(user_input, context=context)
+        except Exception as exc:
+            log.error("Knowledge Engine falhou: %s", exc)
+            return None
+
+        entity = getattr(self.knowledge, "last_entity", None)
+        if response and entity is not None and self.mind is not None:
+            self.mind.context.track_entity(
+                entity.name,
+                entity_id=entity.id,
+                category=entity.category,
+            )
+        return response
+
     def _legacy_response(self, user_input, _context=None):
         request_start = time.perf_counter()
         request = {
             "input": str(user_input or "").strip(),
             "identity": self._get_identity(),
             "state": self._get_state(),
+            "ui_context": str(self.ui_context or "").strip(),
         }
-
-        # Compatibilidade para quando a MIND estiver desativada.
-        import re
 
         name_match = re.search(
             r"\bmeu nome (?:e|é)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]{0,40})",
@@ -99,8 +142,7 @@ class StarCore:
 
         normalized = request["input"].strip().lower()
         if (
-            normalized
-            in {
+            normalized in {
                 "qual e o significado",
                 "qual é o significado",
                 "e o significado",
@@ -124,33 +166,41 @@ class StarCore:
 
         response = self.executive.execute(request=request, route=route)
         total_time = time.perf_counter() - request_start
-        print(
-            f"🧭 Rota: {route['response_type'] or 'local'} | "
-            f"{total_time:.3f}s (router {route_time:.3f}s)"
+        context_info = f" | contexto {request['ui_context']}" if request["ui_context"] else ""
+        log.info(
+            "Rota %s%s | %.3fs (router %.3fs)",
+            route.get("response_type") or "local",
+            context_info,
+            total_time,
+            route_time,
         )
         return response
 
-    def _process_v19(self, user_input):
-        action = self._try_computer(user_input)
-        if action:
-            return action
-
-        solved = self._try_math(user_input)
-        if solved:
-            return solved
-
-        return self._legacy_response(user_input)
+    def _process_without_mind(self, user_input):
+        for handler in (
+            self._try_conversation,
+            self._try_computer,
+            self._try_math,
+            self._try_knowledge,
+            self._legacy_response,
+        ):
+            response = handler(user_input, {})
+            if response:
+                return response
+        return "Não consegui concluir esta solicitação com as capacidades disponíveis."
 
     def process(self, user_input):
         text = str(user_input or "").strip()
 
         if self.mind is None:
-            return self._process_v19(text)
+            return self._process_without_mind(text)
 
         handlers = {
             "context_recall": self._context_recall,
+            "conversation": self._try_conversation,
             "computer_control": self._try_computer,
             "math": self._try_math,
+            "knowledge_search": self._try_knowledge,
             "legacy_reasoning": self._legacy_response,
         }
 
@@ -162,20 +212,26 @@ class StarCore:
             )
             trace = self.mind.metacognition.last
             if trace is not None:
-                print(
-                    f"🧠 MIND: {trace.selected_step} | "
-                    f"salience {trace.salience:.2f} | {trace.elapsed_ms:.1f}ms"
+                log.info(
+                    "MIND executor=%s salience=%.2f elapsed=%.1fms",
+                    trace.selected_step,
+                    trace.salience,
+                    trace.elapsed_ms,
                 )
             return response
         except Exception as exc:
-            # A MIND nunca deve transformar uma falha cognitiva em falha total.
-            print(f"⚠️ MIND V2 indisponível, usando fundação V1.9: {exc}")
-            return self._process_v19(text)
+            log.exception("MIND indisponível; usando pipeline local de fallback: %s", exc)
+            return self._process_without_mind(text)
 
     def mind_status(self):
         if self.mind is None:
-            return {"version": None, "active": False}
+            return {"generation": None, "active": False}
         return self.mind.status(network_enabled=self.network_enabled)
+
+    def knowledge_status(self):
+        if self.knowledge is None:
+            return {"active": False}
+        return self.knowledge.status()
 
     def _get_identity(self):
         if self.identity is None:
@@ -183,10 +239,7 @@ class StarCore:
         try:
             return self.identity.get()
         except AttributeError:
-            try:
-                return self.identity.data
-            except AttributeError:
-                return {}
+            return getattr(self.identity, "data", {})
 
     def _get_state(self):
         if self.state is None:
