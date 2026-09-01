@@ -195,7 +195,7 @@ class KnowledgeStore:
                 """
                 SELECT id FROM entities
                 WHERE normalized_name = ?
-                  AND COALESCE(universe, '') = COALESCE(?, '')
+                  AND LOWER(COALESCE(universe, '')) = LOWER(COALESCE(?, ''))
                   AND category = ?
                 """,
                 (normalized_name, entity.universe, entity.category),
@@ -342,7 +342,7 @@ class KnowledgeStore:
             params = [term]
             universe_sql = ""
             if universe:
-                universe_sql = " AND e.universe = ?"
+                universe_sql = " AND LOWER(COALESCE(e.universe, '')) = LOWER(?)"
                 params.append(universe)
             row = db.execute(
                 f"""
