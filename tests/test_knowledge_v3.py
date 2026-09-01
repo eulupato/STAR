@@ -110,3 +110,27 @@ def test_knowledge_store_releases_database_file(tmp_path):
     moved = tmp_path / "knowledge-moved.db"
     os.replace(db, moved)
     assert moved.exists()
+
+
+def test_multivalue_filter_does_not_match_description_only(tmp_path):
+    engine = make_engine(tmp_path)
+    engine.upsert_entity(
+        Entity(
+            name="Jean Grey",
+            category="character",
+            universe="Marvel",
+            powers=["telepatia"],
+        )
+    )
+    engine.upsert_entity(
+        Entity(
+            name="Professor Example",
+            category="character",
+            universe="Marvel",
+            description="Estuda telepatia, mas não possui esse poder.",
+            powers=["inteligência"],
+        )
+    )
+
+    matches = engine.search_entities("", {"power": "telepatia"})
+    assert [entity.name for entity in matches] == ["Jean Grey"]
