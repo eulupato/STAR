@@ -1,14 +1,14 @@
 """Validação leve de higiene do repositório STAR.
 
-Executada no CI para impedir que dados locais, placeholders vazios inválidos
-ou JSON corrompido sejam versionados por acidente.
+Executada no CI para impedir que dados locais, placeholders vazios inválidos,
+JSON corrompido ou resíduos de versões antigas voltem à árvore ativa.
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 import subprocess
-import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FORBIDDEN_EXACT = {
     "star.db",
     "user_settings.json",
+    "AUDITORIA_STAR_CODIGO.txt",
 }
 
 FORBIDDEN_PREFIXES = (
@@ -28,6 +29,14 @@ FORBIDDEN_SUFFIXES = (
     ".db-wal",
     ".db-shm",
 )
+
+FORBIDDEN_ROOT_PATTERNS = (
+    re.compile(r"^HUB_E_ILHAS_V1_[0-9]+\.md$", re.I),
+    re.compile(r"^test_.*\.py$", re.I),
+)
+
+ACTIVE_RUNTIME_SUFFIXES = {".py", ".bat"}
+OBSOLETE_RUNTIME_VERSION = re.compile(r"\b(?:STAR\s*)?V(?:1\.[0-9]+|2\.0)\b", re.I)
 
 ALLOWED_EMPTY_NAMES = {
     "__init__.py",
@@ -52,6 +61,16 @@ def tracked_files() -> list[str]:
     ]
 
 
+def _is_active_runtime(normalized: str, path: Path) -> bool:
+    if normalized.startswith("archive/"):
+        return False
+    if normalized.startswith("docs/"):
+        return False
+    if normalized.startswith("tests/"):
+        return False
+    return path.suffix.lower() in ACTIVE_RUNTIME_SUFFIXES
+
+
 def validate() -> list[str]:
     failures = []
     tracked = tracked_files()
@@ -61,11 +80,17 @@ def validate() -> list[str]:
         path = ROOT / relative
 
         if normalized in FORBIDDEN_EXACT:
-            failures.append(f"dado local rastreado: {normalized}")
+            failures.append(f"dado/resíduo local rastreado: {normalized}")
         if normalized.endswith(FORBIDDEN_SUFFIXES):
             failures.append(f"arquivo auxiliar SQLite rastreado: {normalized}")
         if any(normalized.startswith(prefix) for prefix in FORBIDDEN_PREFIXES):
             failures.append(f"diretório local rastreado: {normalized}")
+
+        if "/" not in normalized and any(
+            pattern.match(normalized)
+            for pattern in FORBIDDEN_ROOT_PATTERNS
+        ):
+            failures.append(f"arquivo legado/teste indevido na raiz: {normalized}")
 
         if (
             path.exists()
@@ -81,17 +106,17 @@ def validate() -> list[str]:
             except (OSError, UnicodeError, json.JSONDecodeError) as exc:
                 failures.append(f"JSON inválido {normalized}: {exc}")
 
-    root_tests = [
-        item
-        for item in tracked
-        if "/" not in item.replace("\\", "/")
-        and Path(item).name.startswith("test_")
-        and Path(item).suffix == ".py"
-    ]
-    for item in root_tests:
-        failures.append(
-            f"teste Python fora de tests/: {item}"
-        )
+        if _is_active_runtime(normalized, path) and path.exists():
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeError) as exc:
+                failures.append(f"runtime ilegível {normalized}: {exc}")
+            else:
+                match = OBSOLETE_RUNTIME_VERSION.search(text)
+                if match:
+                    failures.append(
+                        f"versão obsoleta em runtime ativo {normalized}: {match.group(0)}"
+                    )
 
     return failures
 
