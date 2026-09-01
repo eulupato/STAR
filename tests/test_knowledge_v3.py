@@ -95,3 +95,18 @@ def test_multivalue_filters_for_team_power_and_affiliation(tmp_path):
     assert engine.search_entities("", {"team": "X-Men"})[0].name == "Jean Grey"
     assert engine.search_entities("", {"power": "telepatia"})[0].name == "Jean Grey"
     assert engine.search_entities("", {"affiliation": "X-Men"})[0].name == "Jean Grey"
+
+
+def test_knowledge_store_releases_database_file(tmp_path):
+    import os
+
+    db = tmp_path / "knowledge.db"
+    engine = KnowledgeEngine(db)
+    engine.upsert_entity(
+        Entity(name="Lock Test", category="concept")
+    )
+    assert engine.store.count() == 1
+
+    moved = tmp_path / "knowledge-moved.db"
+    os.replace(db, moved)
+    assert moved.exists()
