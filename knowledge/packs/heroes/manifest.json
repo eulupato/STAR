@@ -2,10 +2,10 @@
   "id": "heroes",
   "name": "Ilha dos Heróis",
   "version": "2.0",
-  "status": "installed",
+  "status": "partial",
   "type": "knowledge",
   "data_model": "entity-v1",
-  "description": "Seed de compatibilidade e ponto de entrada da primeira ilha funcional de conhecimento.",
+  "description": "Seed de compatibilidade da primeira ilha de conhecimento; o acervo real é construído localmente por PDFs e fontes oficiais.",
   "topics": [
     "personagens",
     "Marvel",
@@ -19,11 +19,23 @@
   "storage": {
     "seed": "heroes.json",
     "runtime_store": "knowledge/local/star_knowledge.db",
-    "local_sources_only": true
+    "local_sources_only": false
   },
   "provenance_required": true,
   "notes": [
-    "PDFs e caches não são versionados.",
-    "O seed não substitui a importação das enciclopédias locais."
-  ]
+    "PDFs, HTML cache, imagens e banco runtime não são versionados.",
+    "PDFs têm prioridade; sites oficiais complementam campos e imagens ausentes.",
+    "Falha de rede nunca impede a consulta ao conhecimento já indexado."
+  ],
+  "sources": {
+    "pdf": [
+      "Marvel Encyclopedia New Edition",
+      "The DC Comics Encyclopedia"
+    ],
+    "official_web": [
+      "https://www.marvel.com/characters",
+      "https://www.dc.com/characters"
+    ],
+    "web_optional": true
+  }
 }
