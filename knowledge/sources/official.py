@@ -271,9 +271,69 @@ class OfficialCharacterSource:
             if not html:
                 continue
             profile = self.parse(html, url)
-            if profile:
+            if profile and self.profile_matches_entity(entity, profile):
                 return profile
+            if profile:
+                log.warning(
+                    "Perfil oficial rejeitado por identidade: entidade=%s perfil=%s url=%s",
+                    entity.name,
+                    profile.name,
+                    url,
+                )
         return None
+
+    @staticmethod
+    def profile_matches_entity(entity: Entity, profile: OfficialProfile) -> bool:
+        def norm(value):
+            return normalize_search_text(value or "")
+
+        expected = {
+            norm(entity.name),
+            norm(entity.original_name),
+            *(norm(value) for value in entity.aliases),
+        }
+        expected.discard("")
+
+        actual = {
+            norm(profile.name),
+            *(norm(value) for value in profile.aliases),
+        }
+        actual.discard("")
+
+        profile_base = norm(re.sub(r"\([^)]*\)", " ", profile.name or ""))
+        if profile_base:
+            actual.add(profile_base)
+
+        name_match = bool(expected & actual)
+        if not name_match:
+            for left in expected:
+                for right in actual:
+                    if (
+                        len(left) >= 4
+                        and (
+                            f" {left} " in f" {right} "
+                            or f" {right} " in f" {left} "
+                        )
+                    ):
+                        name_match = True
+                        break
+                if name_match:
+                    break
+
+        if not name_match:
+            return False
+
+        real_name = norm(
+            entity.attributes.get("real_name")
+            if entity.attributes
+            else None
+        )
+        if real_name:
+            identity_haystack = " ".join(sorted(actual))
+            if f" {real_name} " not in f" {identity_haystack} ":
+                return False
+
+        return True
 
     @staticmethod
     def _meta_description(parser: _ProfileParser) -> str | None:
@@ -433,9 +493,9 @@ class MarvelOfficialSource(OfficialCharacterSource):
         for name in names:
             if not name:
                 continue
-            candidates.append(_slugify(name))
             if real_name and normalize_search_text(real_name) not in normalize_search_text(name):
                 candidates.append(_slugify(f"{name} {real_name}"))
+            candidates.append(_slugify(name))
 
         urls = []
         for slug in candidates:
