@@ -13,7 +13,7 @@ echo        %STAR_LABEL% - INSTALACAO DE VOZ
 echo =====================================================
 echo.
 set "STAR_STT_MODEL=tiny"
-for /f "delims=" %%M in ('".venv\Scripts\python.exe" -c "from config import STT_MODEL; print(STT_MODEL)" 2^>nul') do set "STAR_STT_MODEL=%%M"
+for /f "delims=" %%M in ('".venv\Scripts\python.exe" -c "from config import STT_MODEL_NAME; print(STT_MODEL_NAME)" 2^>nul') do set "STAR_STT_MODEL=%%M"
 
 echo ENTRADA : faster-whisper %STAR_STT_MODEL% (PT-BR, local)
 echo OFICIAL : Chatterbox + referencia local da STAR
@@ -54,7 +54,7 @@ if errorlevel 1 (
 )
 
 echo.
-".venv\Scripts\python.exe" -c "from voice.manager import ChatterboxOfficialTTS, LocalSpeechToText; e=ChatterboxOfficialTTS(); s=LocalSpeechToText(); print('STT LOCAL:', s.status_message); print('REFERENCIA OFICIAL:', e.reference_path if e.reference_path.exists() else 'AUSENTE')"
+".venv\Scripts\python.exe" -c "from pathlib import Path; from voice.manager import ChatterboxOfficialTTS, LocalSpeechToText; e=ChatterboxOfficialTTS(); s=LocalSpeechToText(); print('STT LOCAL:', s.model_size if Path(s.model_size).exists() else 'AUSENTE'); print('REFERENCIA OFICIAL:', e.reference_path if e.reference_path.exists() else 'AUSENTE')"
 
 echo.
 echo Se a referencia aparecer como AUSENTE:
