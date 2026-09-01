@@ -75,3 +75,30 @@ def test_tts_text_removes_emoji_sequences_and_flags():
 def test_tts_text_keeps_normal_punctuation_and_accents():
     text = "Olá, Lu! Você está bem? Sim: estou ótima."
     assert prepare_tts_text(text) == text
+
+
+def test_fast_cancel_does_not_kill_official_worker():
+    manager = VoiceManager()
+    manager.mode = "fast"
+    calls = []
+    manager.official.cancel = lambda: calls.append("official")
+    manager._speaking.set()
+
+    manager.cancel_speech()
+
+    assert calls == []
+    manager._speaking.clear()
+    manager.close()
+
+
+def test_cancel_stops_official_worker_only_when_official_is_active():
+    manager = VoiceManager()
+    calls = []
+    manager.official.cancel = lambda: calls.append("official")
+    manager._official_active.set()
+
+    manager.cancel_speech()
+
+    assert calls == ["official"]
+    manager._official_active.clear()
+    manager.close()
