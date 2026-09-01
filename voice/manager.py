@@ -697,8 +697,8 @@ class WindowsFallbackTTS:
             if engine is not None:
                 try:
                     engine.stop()
-                except Exception:
-                    pass
+                except Exception as exc:
+                    log.debug("Backend SAPI já estava encerrado: %s", exc)
 
 
 class VoiceManager:
@@ -836,13 +836,13 @@ class VoiceManager:
         try:
             import sounddevice as sd
             sd.stop()
-        except Exception:
-            pass
+        except Exception as exc:
+            log.debug("Áudio já estava parado/indisponível: %s", exc)
 
         try:
             self.fallback.cancel()
-        except Exception:
-            pass
+        except Exception as exc:
+            log.debug("Fallback de voz já estava parado: %s", exc)
 
         if self._speaking.is_set():
             self.official.cancel()
@@ -1038,5 +1038,5 @@ class VoiceManager:
         self.cancel_speech()
         try:
             self.official.close()
-        except Exception:
-            pass
+        except Exception as exc:
+            log.warning("Falha ao encerrar voz oficial: %s", exc)
