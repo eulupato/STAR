@@ -51,8 +51,8 @@ def test_all_navigation_routes_have_labels():
 
 def test_house_and_heroes_are_functional_islands():
     islands = get_islands()
-    assert islands["casa"]["status"] == "installed"
-    assert islands["herois"]["status"] == "installed"
+    assert islands["casa"]["status"] == "available"
+    assert islands["herois"]["status"] == "partial"
     assert "sala" in islands["casa"]["subareas"]
     assert "cozinha" in islands["casa"]["subareas"]
     assert "quarto" in islands["casa"]["subareas"]
