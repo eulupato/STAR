@@ -11,15 +11,47 @@
   ],
   "super_heroes": {
     "Marvel": [
-      "Homem-Aranha",
-      "Capitão América",
-      "Pantera Negra"
+      {
+        "name": "Spider-Man",
+        "aliases": [
+          "Homem-Aranha"
+        ],
+        "real_name": "Peter Parker"
+      },
+      {
+        "name": "Captain America",
+        "aliases": [
+          "Capitão América"
+        ],
+        "real_name": "Steve Rogers"
+      },
+      {
+        "name": "Black Panther",
+        "aliases": [
+          "Pantera Negra"
+        ],
+        "real_name": "T'Challa"
+      }
     ],
     "DC": [
-      "Superman",
-      "Batman",
-      "Mulher-Maravilha"
+      {
+        "name": "Superman",
+        "aliases": [],
+        "real_name": "Clark Kent"
+      },
+      {
+        "name": "Batman",
+        "aliases": [],
+        "real_name": "Bruce Wayne"
+      },
+      {
+        "name": "Wonder Woman",
+        "aliases": [
+          "Mulher-Maravilha"
+        ],
+        "real_name": "Diana Prince"
+      }
     ]
   },
-  "note": "Este pack é uma base de organização e será expandido com fontes e conteúdos estruturados."
+  "note": "Seed mínimo de compatibilidade. A base real é enriquecida por PDFs locais e fontes oficiais autorizadas."
 }
