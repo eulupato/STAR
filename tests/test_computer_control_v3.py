@@ -86,3 +86,33 @@ def test_file_search_has_priority_over_generic_web_search(monkeypatch, tmp_path)
 
     assert str(target) in answer
     assert web_calls == []
+
+
+def test_spotify_suffix_removes_platform_name_from_query(monkeypatch):
+    queries = []
+    monkeypatch.setattr(
+        computer_control,
+        "spotify_search",
+        lambda query: queries.append(query) or "ok",
+    )
+
+    assert computer_control.parse(
+        "toca Space Oddity no Spotify",
+        allow_network=True,
+    ) == "ok"
+    assert queries == ["space oddity"]
+
+
+def test_spotify_prefix_is_explicit(monkeypatch):
+    queries = []
+    monkeypatch.setattr(
+        computer_control,
+        "spotify_search",
+        lambda query: queries.append(query) or "ok",
+    )
+
+    assert computer_control.parse(
+        "spotify toca Heroes",
+        allow_network=True,
+    ) == "ok"
+    assert queries == ["heroes"]
