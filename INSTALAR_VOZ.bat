@@ -27,7 +27,7 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
-echo [1/4] Instalando dependencias do ambiente principal...
+echo [1/3] Instalando dependencias do ambiente principal...
 ".venv\Scripts\python.exe" -m pip install -r requirements.txt
 if errorlevel 1 (
     echo ERRO ao instalar dependencias.
@@ -36,21 +36,15 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/4] Preparando Piper PT-BR para o modo rapido...
+echo [2/3] Preparando Piper e Whisper para uso totalmente local...
 ".venv\Scripts\python.exe" voice\install_models.py
 if errorlevel 1 (
-    echo AVISO: Piper nao ficou pronto. Isso nao impede a voz oficial.
+    echo AVISO: um ou mais modelos locais nao ficaram prontos.
+    echo A interface ainda pode abrir, mas STT/Piper podem ficar indisponiveis.
 )
 
 echo.
-echo [3/4] Preparando Whisper %STAR_STT_MODEL%...
-".venv\Scripts\python.exe" -c "from config import STT_MODEL; from faster_whisper import WhisperModel; WhisperModel(STT_MODEL,device='cpu',compute_type='int8')"
-if errorlevel 1 (
-    echo AVISO: nao foi possivel preparar o Whisper agora.
-)
-
-echo.
-echo [4/4] Preparando Chatterbox...
+echo [3/3] Preparando Chatterbox...
 set STAR_SETUP_CHAIN=1
 call INSTALAR_CHATTERBOX.bat
 set STAR_SETUP_CHAIN=
@@ -60,7 +54,7 @@ if errorlevel 1 (
 )
 
 echo.
-".venv\Scripts\python.exe" -c "from voice.manager import ChatterboxOfficialTTS; e=ChatterboxOfficialTTS(); print('REFERENCIA OFICIAL:', e.reference_path if e.reference_path.exists() else 'AUSENTE')"
+".venv\Scripts\python.exe" -c "from voice.manager import ChatterboxOfficialTTS, LocalSpeechToText; e=ChatterboxOfficialTTS(); s=LocalSpeechToText(); print('STT LOCAL:', s.status_message); print('REFERENCIA OFICIAL:', e.reference_path if e.reference_path.exists() else 'AUSENTE')"
 
 echo.
 echo Se a referencia aparecer como AUSENTE:
