@@ -1,11 +1,10 @@
-"""Leitura de PDF com fallback OCR local e cache de páginas."""
+"""Leitura de PDF com OCR opcional, cache e candidatos de imagem."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import shutil
 import subprocess
-import tempfile
 
 from core.logging_config import get_logger
 
@@ -17,6 +16,8 @@ class PdfPage:
     number: int
     text: str
     image_path: str | None = None
+    portrait_path: str | None = None
+    image_candidates: tuple[str, ...] = field(default_factory=tuple)
     used_ocr: bool = False
 
 
@@ -67,6 +68,60 @@ class PdfDocumentReader:
             raise RuntimeError(result.stderr.strip() or "Falha no Tesseract.")
         return result.stdout.strip()
 
+    def _extract_image_candidates(self, doc, page, cache_root: Path, page_number: int):
+        """Extrai imagens embutidas que parecem retratos/arte, não scans da página."""
+        page_area = max(float(page.rect.width * page.rect.height), 1.0)
+        candidates = []
+
+        try:
+            infos = page.get_image_info(xrefs=True)
+        except Exception as exc:
+            log.debug("Não foi possível inspecionar imagens da pág. %s: %s", page_number, exc)
+            return []
+
+        seen_xrefs = set()
+        for info in infos:
+            xref = int(info.get("xref") or 0)
+            if xref <= 0 or xref in seen_xrefs:
+                continue
+            seen_xrefs.add(xref)
+
+            bbox = info.get("bbox")
+            width = int(info.get("width") or 0)
+            height = int(info.get("height") or 0)
+            if not bbox or width < 160 or height < 160:
+                continue
+
+            try:
+                area = max(float((bbox[2] - bbox[0]) * (bbox[3] - bbox[1])), 0.0)
+            except Exception:
+                area = 0.0
+            ratio = area / page_area
+
+            # >82% normalmente é a página escaneada inteira, não um retrato.
+            if ratio >= 0.82 or ratio < 0.025:
+                continue
+
+            extracted = doc.extract_image(xref)
+            data = extracted.get("image")
+            ext = str(extracted.get("ext") or "png").lower()
+            if not data:
+                continue
+            if ext not in {"png", "jpg", "jpeg", "webp"}:
+                ext = "png"
+
+            output = cache_root / f"page_{page_number:04d}_xref_{xref}.{ext}"
+            if not output.exists():
+                output.write_bytes(data)
+
+            aspect = width / max(height, 1)
+            portrait_bonus = 0.25 if 0.35 <= aspect <= 1.15 else 0.0
+            score = min(ratio, 0.65) + portrait_bonus
+            candidates.append((score, str(output)))
+
+        candidates.sort(key=lambda item: item[0], reverse=True)
+        return [path for _score, path in candidates]
+
     def iter_pages(
         self,
         pdf_path: str | Path,
@@ -89,16 +144,21 @@ class PdfDocumentReader:
             last = len(doc) if end_page is None else min(len(doc), int(end_page))
             first = max(1, int(start_page))
             for index in range(first - 1, last):
+                page_number = index + 1
                 page = doc.load_page(index)
                 text = (page.get_text("text") or "").strip()
                 image_path = None
                 used_ocr = False
+                image_candidates = []
 
-                needs_image = render_images or (
-                    allow_ocr and len(text) < int(min_text_chars)
-                )
-                if needs_image:
-                    image_file = cache_root / f"page_{index + 1:04d}.png"
+                if render_images:
+                    image_candidates = self._extract_image_candidates(
+                        doc, page, cache_root, page_number
+                    )
+
+                needs_page_render = allow_ocr and len(text) < int(min_text_chars)
+                if needs_page_render:
+                    image_file = cache_root / f"page_{page_number:04d}.png"
                     image_path = self._render_page(page, image_file)
 
                 if allow_ocr and len(text) < int(min_text_chars):
@@ -108,14 +168,16 @@ class PdfDocumentReader:
                     except RuntimeError as exc:
                         log.warning(
                             "OCR indisponível na página %s de %s: %s",
-                            index + 1,
+                            page_number,
                             source.name,
                             exc,
                         )
 
                 yield PdfPage(
-                    number=index + 1,
+                    number=page_number,
                     text=text,
                     image_path=image_path,
+                    portrait_path=image_candidates[0] if image_candidates else None,
+                    image_candidates=tuple(image_candidates),
                     used_ocr=used_ocr,
                 )
