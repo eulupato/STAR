@@ -242,3 +242,37 @@ def test_multivalue_index_migrates_existing_entities(tmp_path):
     assert migrated.search_entities("", {"team": "X-Men"})[0].name == "Storm"
     assert migrated.search_entities("", {"power": "controle climático"})[0].name == "Storm"
     assert migrated.search_entities("", {"relationship": "Wolverine"})[0].name == "Storm"
+
+
+def test_knowledge_last_entity_is_not_stale(tmp_path):
+    engine = make_engine(tmp_path)
+    engine.upsert_entity(
+        Entity(
+            name="Batman",
+            category="character",
+            universe="DC",
+        )
+    )
+
+    assert engine.answer("quem é Batman?") is not None
+    assert engine.last_entity is not None
+    assert engine.last_entity.name == "Batman"
+
+    assert engine.answer("uma pergunta sem correspondência") is None
+    assert engine.last_entity is None
+
+
+def test_single_local_search_can_become_current_entity(tmp_path):
+    engine = make_engine(tmp_path)
+    engine.upsert_entity(
+        Entity(
+            name="Superman",
+            category="character",
+            universe="DC",
+        )
+    )
+
+    answer = engine.answer("pesquise Superman")
+    assert "Superman" in answer
+    assert engine.last_entity is not None
+    assert engine.last_entity.name == "Superman"
