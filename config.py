@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from core.release import (
@@ -8,6 +9,12 @@ from core.release import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent
+
+# O runtime é LOCAL-first. Bibliotecas do ecossistema Hugging Face não podem
+# baixar artefatos implicitamente durante o uso normal da STAR. Instaladores
+# explícitos importam huggingface_hub antes deste módulo e realizam a etapa de
+# download de forma intencional.
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
 APP_NAME = "STAR"
 VERSION = STAR_VERSION
@@ -37,7 +44,7 @@ VOICE_FALLBACK_ON_ERROR = False
 VOICE_REFERENCE = "voice/reference/star_reference.mp3"
 
 # O runtime recebe um caminho local absoluto, nunca o identificador remoto
-# "tiny". Assim faster-whisper não pode iniciar download ao usar o microfone.
+# "tiny". Somado a HF_HUB_OFFLINE, isso impede download ao usar o microfone.
 STT_MODEL_NAME = "tiny"
 STT_MODEL = str(
     (PROJECT_ROOT / "voice" / "models" / "whisper" / STT_MODEL_NAME).resolve()
