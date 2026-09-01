@@ -19,16 +19,22 @@ echo        INICIANDO %STAR_LABEL%
 echo ============================================
 echo.
 
-"%PY%" -c "import PIL, sounddevice, soundfile, faster_whisper" >nul 2>&1
+"%PY%" -c "import PIL, sqlalchemy, numpy" >nul 2>&1
 if errorlevel 1 (
-    echo ERRO: dependencias principais incompletas.
-    echo Execute INSTALAR_VOZ.bat uma vez e tente novamente.
+    echo ERRO: dependencias essenciais da interface incompletas.
+    echo Execute CRIAR_AMBIENTE.bat e tente novamente.
     pause
     exit /b 1
 )
 
-rem A voz e uma capacidade da STAR, nao uma condicao para abrir a interface.
-"%PY%" -c "from voice.manager import VoiceManager; v=VoiceManager(); print('Voz:', v.tts_description); v.close()" 2>nul
+rem Voz e uma capacidade opcional: falhas de STT/TTS nao bloqueiam a interface.
+"%PY%" -c "import sounddevice, soundfile, faster_whisper" >nul 2>&1
+if errorlevel 1 (
+    echo AVISO: componentes de voz incompletos. A STAR iniciara sem voz completa.
+    echo Para habilitar voz depois, execute INSTALAR_VOZ.bat.
+) else (
+    "%PY%" -c "from voice.manager import VoiceManager; v=VoiceManager(); print('Voz:', v.tts_description); v.close()" 2>nul
+)
 
 echo.
 "%PY%" main.py
