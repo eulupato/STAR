@@ -158,7 +158,7 @@ class HeroEncyclopediaImporter:
                 description=cls._summary(page.text, heading),
                 powers=cls._split_values(special),
                 relationships=relations,
-                image=page.image_path,
+                image=page.portrait_path,
                 tags=["encyclopedia", universe.lower(), "pdf-import"],
                 sources=[
                     KnowledgeSource(
@@ -171,7 +171,9 @@ class HeroEncyclopediaImporter:
                 metadata={
                     "source_page": page.number,
                     "ocr": page.used_ocr,
-                    "image_kind": "page_reference" if page.image_path else None,
+                    "image_kind": "pdf_embedded_candidate" if page.portrait_path else None,
+                    "page_reference": page.image_path,
+                    "image_candidates": list(page.image_candidates),
                 },
                 attributes={
                     "real_name": real_name,
