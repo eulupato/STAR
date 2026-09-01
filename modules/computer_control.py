@@ -193,14 +193,14 @@ def parse(text: str, allow_network: bool = False):
             return "Não encontrei arquivos com esse nome."
         return "Encontrei: " + "; ".join(str(path) for path in hits)
 
-    generic_search = re.match(
-        rf"^{_SEARCH_VERBS}\s+(.+)$",
+    explicit_web_search = re.match(
+        rf"^{_SEARCH_VERBS}\s+(?:(?:na|pela)\s+(?:internet|web)|no\s+google)\s+(.+)$",
         s,
     )
-    if generic_search:
+    if explicit_web_search:
         if not allow_network:
             return _needs_network_message()
-        return web_search(generic_search.group(1).strip())
+        return web_search(explicit_web_search.group(1).strip())
 
     app_open = re.match(
         rf"^{_OPEN_VERBS}\s+(.+?)\s*$",
