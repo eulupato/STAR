@@ -16,6 +16,7 @@ from knowledge.sources.official import (
     merge_official_profile,
     source_for_entity,
 )
+from knowledge.sources.marvel_catalog import MarvelOfficialCatalog
 
 log = get_logger("heroes.builder")
 
@@ -26,6 +27,7 @@ class UniverseBuildStats:
     pdf_saved: int = 0
     pdf_rejected: int = 0
     ocr_pages: int = 0
+    official_catalog_saved: int = 0
     official_profiles: int = 0
     official_missing: int = 0
 
@@ -137,7 +139,7 @@ class HeroesKnowledgeBuilder:
                 continue
 
             image_path = None
-            if images and not entity.image:
+            if images:
                 image_path = self.web.cache_image(
                     profile.image_url,
                     online=online,
@@ -184,6 +186,8 @@ class HeroesKnowledgeBuilder:
         cache_images: bool = True,
         force_web: bool = False,
         enrichment_limit: int = 0,
+        import_marvel_catalog: bool = True,
+        marvel_catalog_max_pages: int = 120,
     ) -> HeroesBuildReport:
         marvel_path = self._check_pdf(marvel_pdf, "PDF Marvel")
         dc_path = self._check_pdf(dc_pdf, "PDF DC")
@@ -203,6 +207,16 @@ class HeroesKnowledgeBuilder:
             publisher="DC Comics",
             allow_ocr=dc_ocr,
         )
+
+        if online_enrichment and import_marvel_catalog:
+            report.marvel.official_catalog_saved = MarvelOfficialCatalog(
+                self.web
+            ).import_into(
+                self.engine,
+                online=True,
+                force=force_web,
+                max_pages=marvel_catalog_max_pages,
+            )
 
         if online_enrichment:
             self._enrich(
