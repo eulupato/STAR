@@ -1,5 +1,5 @@
 class Executive:
-    """Executivo V1.6: offline por padrão; nunca chama IA quando desativada."""
+    """Executive local de fallback da STAR V3; não depende de modelo externo."""
     def __init__(self, model_manager=None, internal_knowledge=None):
         self.model_manager=model_manager
         self.internal_knowledge=internal_knowledge
