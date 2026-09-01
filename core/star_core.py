@@ -53,6 +53,41 @@ class StarCore:
         except AttributeError:
             return "Lu"
 
+    def _try_media(self, user_input, _context=None):
+        from core.media_intents import parse_media_intent
+
+        intent = parse_media_intent(user_input)
+        if intent is None:
+            return None
+
+        action = intent.get("action")
+        if action == "open_youtube" and not self.network_enabled:
+            return "A STAR TV está pronta, mas o YouTube precisa do modo ONLINE."
+
+        if self.mind is None:
+            return "A ação de mídia foi reconhecida, mas o Event Bus da MIND não está ativo."
+
+        try:
+            self.mind.events.publish(
+                "MEDIA_REQUESTED",
+                intent,
+                "core",
+            )
+        except Exception as exc:
+            log.error("Falha ao solicitar mídia: %s", exc)
+            return "Não consegui enviar o comando para a STAR TV."
+
+        responses = {
+            "open_youtube": "Certo. Vou abrir o YouTube na STAR TV.",
+            "fullscreen": "Certo. Vou ampliar a STAR TV.",
+            "restore": "Certo. Vou restaurar a STAR TV.",
+            "close": "Certo. Vou fechar a mídia da STAR TV.",
+            "pause": "Certo. Vou pausar a STAR TV.",
+            "play": "Certo. Vou continuar a reprodução.",
+            "volume": f"Certo. Volume da STAR TV em {intent.get('value', 100)}%.",
+        }
+        return responses.get(action, "Comando de mídia enviado para a STAR TV.")
+
     def _try_computer(self, user_input, _context=None):
         try:
             from modules.computer_control import parse as parse_computer
@@ -179,6 +214,7 @@ class StarCore:
     def _process_without_mind(self, user_input):
         for handler in (
             self._try_conversation,
+            self._try_media,
             self._try_computer,
             self._try_math,
             self._try_knowledge,
@@ -198,6 +234,7 @@ class StarCore:
         handlers = {
             "context_recall": self._context_recall,
             "conversation": self._try_conversation,
+            "media_request": self._try_media,
             "computer_control": self._try_computer,
             "math": self._try_math,
             "knowledge_search": self._try_knowledge,
