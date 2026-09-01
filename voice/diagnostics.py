@@ -1,4 +1,4 @@
-"""Diagnóstico detalhado da voz local da STAR V1.9 FINAL."""
+"""Diagnóstico detalhado da voz local da STAR."""
 from __future__ import annotations
 
 import sys
@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from core.release import RELEASE
 from voice.manager import VoiceManager
 
 
@@ -18,7 +19,7 @@ def flag(value: bool) -> str:
 
 def main() -> int:
     print("=" * 64)
-    print("⭐ STAR V1.9 FINAL — DIAGNÓSTICO DE VOZ")
+    print(f"⭐ {RELEASE.label} — DIAGNÓSTICO DE VOZ")
     print("=" * 64)
 
     manager = VoiceManager()
