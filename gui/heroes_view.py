@@ -249,7 +249,11 @@ class HeroesIslandView(tk.Frame):
                 filters[key] = value
         previous = self.carousel.current
         previous_id = previous.id if previous else None
-        items = self.knowledge.search_entities(query, filters=filters, limit=500)
+        items = self.knowledge.search_entities(
+            query,
+            filters=filters,
+            limit=5000,
+        )
         self.carousel.set_items(items, keep_id=previous_id)
         self.render()
 
