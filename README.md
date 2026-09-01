@@ -67,12 +67,12 @@ Dados locais, PDFs e caches ficam fora do Git.
 
 A ilha está ligada ao Knowledge Engine e oferece:
 
-- busca por nome, alias, universo, espécie, descrição, poderes e tags;
-- filtro de universo;
+- busca livre por nome, alias e conteúdo indexado;
+- filtros estruturados por universo, equipe, poder, habilidade, tag, espécie/tipo e relacionamento;
 - navegação anterior/próximo por componente genérico;
 - ficha do personagem;
-- fonte e página;
-- fallback de imagem;
+- múltiplas fontes, página e URL quando disponíveis;
+- fallback visual de imagem sem inventar retratos;
 - contexto da entidade selecionada para a conversa.
 
 O antigo `heroes.json` permanece somente como seed de compatibilidade até que
@@ -83,6 +83,11 @@ a base local seja importada.
 O fluxo recomendado usa um único comando. Os PDFs são a fonte local
 prioritária; os sites oficiais complementam campos e imagens ausentes somente
 quando `--online` é informado.
+
+A enciclopédia Marvel usada no projeto é majoritariamente escaneada. Para a
+extração integral por OCR, o executável Tesseract precisa estar instalado e
+disponível no `PATH`. Se OCR for solicitado sem Tesseract, o builder interrompe
+com uma mensagem explícita em vez de fingir que a importação foi completa.
 
 ```powershell
 .\.venv\Scripts\python.exe tools\build_heroes_island.py `
