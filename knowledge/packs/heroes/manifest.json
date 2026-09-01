@@ -5,7 +5,7 @@
   "status": "partial",
   "type": "knowledge",
   "data_model": "entity-v1",
-  "description": "Seed de compatibilidade da primeira ilha de conhecimento; o acervo real é construído localmente por PDFs e fontes oficiais.",
+  "description": "Seed de compatibilidade e ponto de entrada da primeira ilha de conhecimento navegável; acervo real é construído por PDFs locais e fontes oficiais autorizadas.",
   "topics": [
     "personagens",
     "Marvel",
@@ -23,9 +23,9 @@
   },
   "provenance_required": true,
   "notes": [
-    "PDFs, HTML cache, imagens e banco runtime não são versionados.",
-    "PDFs têm prioridade; sites oficiais complementam campos e imagens ausentes.",
-    "Falha de rede nunca impede a consulta ao conhecimento já indexado."
+    "PDFs, cache e banco local não são versionados.",
+    "O seed não substitui a importação das enciclopédias.",
+    "Internet enriquece a base; não é necessária para consultar o conhecimento já importado."
   ],
   "sources": {
     "pdf": [
@@ -37,5 +37,15 @@
       "https://www.dc.com/characters"
     ],
     "web_optional": true
-  }
+  },
+  "source_priority": [
+    "PDF local fornecido pelo usuário",
+    "asset local",
+    "perfil oficial DC/Marvel quando ONLINE for autorizado",
+    "placeholder"
+  ],
+  "official_sources": [
+    "https://www.dc.com/characters",
+    "https://www.marvel.com/characters"
+  ]
 }
