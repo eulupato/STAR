@@ -158,7 +158,10 @@ class StarApp:
     def _read_user_settings(self):
         try:
             return json.loads(self._user_settings_path.read_text(encoding="utf-8"))
-        except Exception:
+        except FileNotFoundError:
+            return {}
+        except (OSError, json.JSONDecodeError) as exc:
+            log.warning("Configurações do usuário inválidas: %s", exc)
             return {}
 
     def _write_user_settings(self, **values):
@@ -169,8 +172,8 @@ class StarApp:
                 json.dumps(data, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
-        except Exception:
-            pass
+        except (OSError, TypeError) as exc:
+            log.warning("Não foi possível salvar user_settings.json: %s", exc)
 
     def _load_voice_mode(self):
         mode = str(
@@ -186,7 +189,8 @@ class StarApp:
             return json.loads(
                 (PROJECT_ROOT / "config_skin.json").read_text(encoding="utf-8")
             ).get("skin", "original.jpeg")
-        except Exception:
+        except (OSError, json.JSONDecodeError) as exc:
+            log.warning("config_skin.json inválido; usando skin padrão: %s", exc)
             return "original.jpeg"
 
     def _save_skin_selection(self):
@@ -507,7 +511,8 @@ class StarApp:
             from core.islands import get_islands
 
             data = get_islands()
-        except Exception:
+        except Exception as exc:
+            log.error("Não foi possível carregar catálogo de ilhas: %s", exc)
             data = {}
 
         preferred = ["casa", "herois"]
@@ -811,8 +816,8 @@ class StarApp:
         if self._media_sync_job is not None:
             try:
                 self.window.after_cancel(self._media_sync_job)
-            except tk.TclError:
-                pass
+            except tk.TclError as exc:
+                log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
         self._media_sync_job = self.window.after(90, self._sync_media_to_tv)
 
     def _sync_media_to_tv(self):
@@ -869,8 +874,8 @@ class StarApp:
         if self._media_sync_job is not None:
             try:
                 self.window.after_cancel(self._media_sync_job)
-            except tk.TclError:
-                pass
+            except tk.TclError as exc:
+                log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
             self._media_sync_job = None
         self.tv_frame = None
         self.tv_status_label = None
@@ -1144,7 +1149,8 @@ class StarApp:
             image.thumbnail((360, 330), Image.Resampling.LANCZOS)
             self.closet_photo = ImageTk.PhotoImage(image)
             self.closet_image.config(image=self.closet_photo, text="")
-        except Exception:
+        except (OSError, ValueError, tk.TclError) as exc:
+            log.warning("Não foi possível abrir skin %s: %s", path, exc)
             self.closet_image.config(
                 image="",
                 text="Não foi possível abrir esta skin",
@@ -1251,7 +1257,8 @@ class StarApp:
                 photo = ImageTk.PhotoImage(image)
                 self.gallery_photos.append(photo)
                 tk.Label(card, image=photo, bg=self.panel).pack()
-            except Exception:
+            except (OSError, ValueError, tk.TclError) as exc:
+                log.debug("Thumbnail indisponível para %s: %s", path, exc)
                 tk.Label(
                     card,
                     text="📷",
@@ -1347,8 +1354,8 @@ class StarApp:
         if self.chat_panel is not None:
             try:
                 self.chat_panel.destroy()
-            except tk.TclError:
-                pass
+            except tk.TclError as exc:
+                log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
         self.chat_panel = None
         self.chat = None
         self.entry = None
@@ -1509,8 +1516,8 @@ class StarApp:
         self._append_user(text)
         try:
             self.memory.save("Você", text)
-        except Exception:
-            pass
+        except Exception as exc:
+            log.warning("Falha ao persistir mensagem do usuário: %s", exc)
 
         context = self._context_for_brain()
         self.processing = True
@@ -1526,10 +1533,7 @@ class StarApp:
 
     def _process_message(self, text, context):
         try:
-            try:
-                self.brain.ui_context = context
-            except Exception:
-                pass
+            self.brain.ui_context = context
             self.response_queue.put(("success", self.brain.process(text)))
         except Exception as exc:
             self.response_queue.put(("error", str(exc)))
@@ -1604,8 +1608,8 @@ class StarApp:
             if path:
                 try:
                     path.unlink(missing_ok=True)
-                except Exception:
-                    pass
+                except OSError as exc:
+                    log.debug("Não foi possível remover áudio temporário: %s", exc)
 
     def _chat_controls_available(self):
         return self.entry is not None and self.send_button is not None
@@ -1669,8 +1673,8 @@ class StarApp:
                     self._append_star(response)
                     try:
                         self.memory.save("STAR", response)
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        log.warning("Falha ao persistir resposta da STAR: %s", exc)
                     self._load_avatar("speaking")
                     self.voice.speak_async(
                         response,
@@ -1696,13 +1700,13 @@ class StarApp:
                         self.send_button.config(state=tk.NORMAL)
 
         except queue.Empty:
-            pass
+            queue_drained = True  # fim esperado do lote atual
 
         if not self._closing:
             try:
                 self.window.after(60, self._check_response_queue)
-            except tk.TclError:
-                pass
+            except tk.TclError as exc:
+                log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
 
     # ------------------------------------------------------------------
     # Avatar
@@ -1719,8 +1723,8 @@ class StarApp:
                 self.avatar_photo = ImageTk.PhotoImage(image)
                 self.avatar_label.config(image=self.avatar_photo, text="")
                 return
-            except Exception:
-                pass
+            except (OSError, ValueError, tk.TclError) as exc:
+                log.warning("Skin atual não pôde ser usada no avatar: %s", exc)
         self._load_avatar("neutral", max_size=max_size)
 
     def _load_avatar(self, emotion="neutral", max_size=(250, 250)):
@@ -1741,8 +1745,8 @@ class StarApp:
                     fg=self.star,
                     font=("Segoe UI", 26, "bold"),
                 )
-            except tk.TclError:
-                pass
+            except tk.TclError as exc:
+                log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
 
     # ------------------------------------------------------------------
     # Configurações
@@ -1887,8 +1891,8 @@ class StarApp:
                         fg=self.green if ok else self.red,
                     )
                     return
-            except tk.TclError:
-                pass
+            except tk.TclError as exc:
+                log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
         if self.chat:
             self._append_system(message)
 
@@ -1924,8 +1928,8 @@ class StarApp:
         if label:
             try:
                 label.config(text=f"● V{VERSION} • {text}", fg=color)
-            except tk.TclError:
-                pass
+            except tk.TclError as exc:
+                log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
 
     # ------------------------------------------------------------------
     # Saída e janela
@@ -1986,8 +1990,8 @@ class StarApp:
         if self._exit_overlay is not None:
             try:
                 self._exit_overlay.destroy()
-            except tk.TclError:
-                pass
+            except tk.TclError as exc:
+                log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
         self._exit_overlay = None
         try:
             self.emotion.set_emotion("happy")
