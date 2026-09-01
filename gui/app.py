@@ -100,7 +100,7 @@ class StarApp:
         self.window.bind("<Escape>", self._escape_action)
         self.window.bind("<Control-l>", lambda _e: self.toggle_chat_panel())
         self.window.bind("<Control-k>", lambda _e: self.toggle_chat_panel())
-        self.window.bind("<Configure>", self._sync_media_to_tv, add="+")
+        self.window.bind("<Configure>", self._schedule_media_sync, add="+")
 
         self.is_maximized = False
         self.normal_size = (WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -202,6 +202,8 @@ class StarApp:
         self._render_current()
 
     def open_settings(self):
+        if self.nav.current == "living_room":
+            self._close_media_if_open()
         if self.nav.current != "settings":
             self.nav.open_overlay("settings")
         self._render_settings()
@@ -751,7 +753,16 @@ class StarApp:
             error = state.get("last_error") or "backend WebView indisponível"
             self._set_tv_status(f"TV indisponível: {error}", False)
 
-    def _sync_media_to_tv(self, _event=None):
+    def _schedule_media_sync(self, _event=None):
+        if self._media_sync_job is not None:
+            try:
+                self.window.after_cancel(self._media_sync_job)
+            except tk.TclError:
+                pass
+        self._media_sync_job = self.window.after(90, self._sync_media_to_tv)
+
+    def _sync_media_to_tv(self):
+        self._media_sync_job = None
         try:
             state = self.media.state()
         except Exception as exc:
@@ -801,6 +812,12 @@ class StarApp:
                 self.media.close()
         except Exception as exc:
             log.warning("Falha ao fechar mídia: %s", exc)
+        if self._media_sync_job is not None:
+            try:
+                self.window.after_cancel(self._media_sync_job)
+            except tk.TclError:
+                pass
+            self._media_sync_job = None
         self.tv_frame = None
         self.tv_status_label = None
 
