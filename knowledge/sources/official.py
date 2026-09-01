@@ -11,12 +11,10 @@ from hashlib import sha256
 from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
-import json
-import mimetypes
 import re
 import time
 from urllib.error import HTTPError, URLError
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from core.logging_config import get_logger
@@ -341,31 +339,31 @@ class DCOfficialSource(OfficialCharacterSource):
             return None
 
         powers = _split_csv(
-            self._between(text, "Powers:", ("First Appearance:",))
+            self._between(text, "Powers", ("First Appearance",))
         )
         first = self._between(
             text,
-            "First Appearance:",
-            ("Alias/Alter Ego:", "AKA:", "Base of Operations:", "Occupation:", "Related Characters"),
+            "First Appearance",
+            ("Alias/Alter Ego", "AKA", "Base of Operations", "Occupation", "Related Characters"),
         )
         alter = self._between(
             text,
-            "Alias/Alter Ego:",
-            ("AKA:", "Base of Operations:", "Occupation:", "Related Characters"),
+            "Alias/Alter Ego",
+            ("AKA", "Base of Operations", "Occupation", "Related Characters"),
         )
         aka = self._between(
             text,
-            "AKA:",
-            ("Base of Operations:", "Occupation:", "Related Characters"),
+            "AKA",
+            ("Base of Operations", "Occupation", "Related Characters"),
         )
         base = self._between(
             text,
-            "Base of Operations:",
-            ("Occupation:", "Related Characters"),
+            "Base of Operations",
+            ("Occupation", "Related Characters"),
         )
         occupation = self._between(
             text,
-            "Occupation:",
+            "Occupation",
             ("Related Characters",),
         )
 
