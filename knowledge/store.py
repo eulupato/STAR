@@ -125,8 +125,42 @@ class KnowledgeStore:
 
                 CREATE INDEX IF NOT EXISTS idx_sources_entity
                 ON sources(entity_id);
+
+                CREATE TABLE IF NOT EXISTS entity_values (
+                    entity_id TEXT NOT NULL,
+                    kind TEXT NOT NULL,
+                    value TEXT NOT NULL,
+                    normalized_value TEXT NOT NULL,
+                    PRIMARY KEY(entity_id, kind, normalized_value),
+                    FOREIGN KEY(entity_id) REFERENCES entities(id) ON DELETE CASCADE
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_entity_values_lookup
+                ON entity_values(kind, normalized_value, entity_id);
                 """
             )
+
+            value_count = db.execute(
+                "SELECT COUNT(*) AS n FROM entity_values"
+            ).fetchone()["n"]
+            entity_count = db.execute(
+                "SELECT COUNT(*) AS n FROM entities"
+            ).fetchone()["n"]
+            if entity_count and not value_count:
+                rows = db.execute("SELECT id, data_json FROM entities").fetchall()
+                for row in rows:
+                    try:
+                        data = json.loads(row["data_json"])
+                    except json.JSONDecodeError:
+                        continue
+                    db.executemany(
+                        """
+                        INSERT OR IGNORE INTO entity_values
+                        (entity_id, kind, value, normalized_value)
+                        VALUES (?, ?, ?, ?)
+                        """,
+                        self._multivalue_rows_from_dict(row["id"], data),
+                    )
 
     @staticmethod
     def _json(value) -> str:
@@ -267,6 +301,15 @@ class KnowledgeStore:
                     for source in entity.sources
                 ],
             )
+            db.execute("DELETE FROM entity_values WHERE entity_id = ?", (entity.id,))
+            db.executemany(
+                """
+                INSERT OR IGNORE INTO entity_values
+                (entity_id, kind, value, normalized_value)
+                VALUES (?, ?, ?, ?)
+                """,
+                self._multivalue_rows(entity),
+            )
         return entity.id
 
     def upsert_many(self, entities: Iterable[Entity]) -> int:
@@ -332,15 +375,25 @@ class KnowledgeStore:
                 clauses.append(f"LOWER(COALESCE(e.{key}, '')) = LOWER(?)")
                 params.append(str(value))
 
-        # Campos multivalorados permanecem no documento da entidade e no
-        # search_text normalizado. O filtro é aplicado sem acoplar a GUI ao SQL.
+        # Filtros multivalorados usam índice próprio para não confundir
+        # conteúdo da descrição com o campo estrutural solicitado.
         for key in ("team", "power", "ability", "tag", "affiliation"):
             value = filters.get(key)
             if value:
                 normalized_filter = normalize_search_text(str(value))
                 if normalized_filter:
-                    clauses.append("e.search_text LIKE ?")
-                    params.append(f"%{normalized_filter}%")
+                    clauses.append(
+                        """
+                        EXISTS (
+                            SELECT 1
+                            FROM entity_values ev
+                            WHERE ev.entity_id = e.id
+                              AND ev.kind = ?
+                              AND ev.normalized_value = ?
+                        )
+                        """
+                    )
+                    params.extend([key, normalized_filter])
 
         sql = "SELECT DISTINCT e.* FROM entities e"
         if clauses:
