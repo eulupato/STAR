@@ -9,8 +9,11 @@ if not exist ".venv\Scripts\python.exe" (
   exit /b 1
 )
 
+set "STAR_LABEL=STAR"
+for /f "delims=" %%V in ('".venv\Scripts\python.exe" -c "from core.release import RELEASE; print(RELEASE.label)"') do set "STAR_LABEL=%%V"
+
 echo ============================================
-echo       STAR V1.9 - TESTE DE VOZ LOCAL
+echo       %STAR_LABEL% - TESTE DE VOZ LOCAL
 echo ============================================
 echo.
 echo O diagnostico usa o mesmo resolvedor de referencia da interface.
