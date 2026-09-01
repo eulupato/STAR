@@ -102,3 +102,20 @@ def test_cancel_stops_official_worker_only_when_official_is_active():
     assert calls == ["official"]
     manager._official_active.clear()
     manager.close()
+
+
+def test_voice_operational_config_is_applied(monkeypatch):
+    from config import (
+        PIPER_MODEL,
+        STT_MODEL,
+        VOICE_FAST_PREFERENCE,
+    )
+
+    monkeypatch.delenv("STAR_STT_MODEL", raising=False)
+    monkeypatch.delenv("STAR_VOICE_FAST_PREFERENCE", raising=False)
+
+    manager = VoiceManager()
+    assert manager.stt.model_size == STT_MODEL
+    assert manager.piper.model_path.name == Path(PIPER_MODEL).name
+    assert manager.fast_preference == VOICE_FAST_PREFERENCE
+    manager.close()
