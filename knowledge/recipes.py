@@ -227,3 +227,48 @@ class RecipeBook:
             if all(token in haystack for token in tokens):
                 result.append(recipe)
         return result
+
+
+
+class RecipeSession:
+    """Estado simples para acompanhar o preparo passo a passo."""
+
+    def __init__(self, recipe: Recipe):
+        self.recipe = recipe
+        self.index = 0
+
+    @property
+    def total(self) -> int:
+        return len(self.recipe.steps)
+
+    @property
+    def current(self) -> str | None:
+        if not self.recipe.steps:
+            return None
+        return self.recipe.steps[self.index]
+
+    @property
+    def position(self) -> int:
+        return 0 if self.total == 0 else self.index + 1
+
+    @property
+    def finished(self) -> bool:
+        return self.total > 0 and self.index == self.total - 1
+
+    def next(self) -> str | None:
+        if self.total == 0:
+            return None
+        if self.index < self.total - 1:
+            self.index += 1
+        return self.current
+
+    def previous(self) -> str | None:
+        if self.total == 0:
+            return None
+        if self.index > 0:
+            self.index -= 1
+        return self.current
+
+    def reset(self) -> str | None:
+        self.index = 0
+        return self.current
