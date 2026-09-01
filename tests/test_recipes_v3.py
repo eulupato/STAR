@@ -1,6 +1,6 @@
 import json
 
-from knowledge.recipes import RecipeBook
+from knowledge.recipes import Recipe, RecipeBook, RecipeSession
 
 
 def test_recipe_book_loads_structured_json(tmp_path):
@@ -75,3 +75,35 @@ def test_recipe_book_searches_name_ingredients_and_tags(tmp_path):
     book = RecipeBook(root)
     assert [item.name for item in book.search("tomate")] == ["Sanduíche"]
     assert [item.name for item in book.search("leve")] == ["Salada"]
+
+
+
+def test_recipe_session_navigates_steps():
+    recipe = Recipe(
+        name="Teste",
+        steps=("Passo 1", "Passo 2", "Passo 3"),
+    )
+    session = RecipeSession(recipe)
+
+    assert session.position == 1
+    assert session.current == "Passo 1"
+    assert session.finished is False
+
+    assert session.next() == "Passo 2"
+    assert session.position == 2
+    assert session.next() == "Passo 3"
+    assert session.finished is True
+
+    assert session.next() == "Passo 3"
+    assert session.previous() == "Passo 2"
+    assert session.reset() == "Passo 1"
+
+
+def test_recipe_session_handles_recipe_without_steps():
+    session = RecipeSession(Recipe(name="Sem passos"))
+
+    assert session.current is None
+    assert session.position == 0
+    assert session.total == 0
+    assert session.next() is None
+    assert session.previous() is None
