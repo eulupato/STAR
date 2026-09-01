@@ -44,6 +44,7 @@ MODULES = [
     "core.islands",
     "core.math_engine",
     "core.media_intents",
+    "core.tools",
     "knowledge.entities",
     "knowledge.store",
     "knowledge.graph",
@@ -52,8 +53,10 @@ MODULES = [
     "knowledge.importers.heroes",
     "knowledge.sources.official",
     "knowledge.heroes_builder",
+    "knowledge.recipes",
     "modules.computer_control",
     "modules.media_controller",
+    "modules.media_host",
     "database.database",
     "database.memory",
     "voice.manager",
@@ -68,6 +71,9 @@ MODULES = [
 def main():
     _configure_console_utf8()
     from core.release import RELEASE, STAR_VERSION
+    manifest = json.loads(
+        (ROOT / "STAR_MANIFEST.json").read_text(encoding="utf-8")
+    )
 
     print("=" * 64)
     print(f"⭐ DIAGNÓSTICO GERAL {RELEASE.label}")
@@ -95,8 +101,32 @@ def main():
         greeting = star.process("olá")
         math_answer = star.process("quanto é 2+2")
 
+        from knowledge.recipes import RecipeBook
+        from gui.navigation import NavigationManager
+
+        recipe_count = len(
+            RecipeBook(ROOT / "knowledge" / "recipes").load()
+        )
+        nav = NavigationManager()
+        nav.go("hub")
+        nav.go("house")
+        nav.go("bedroom")
+        nav.go("closet")
+        nav.go("gallery")
+        navigation_ok = (
+            nav.back() == "closet"
+            and nav.back() == "bedroom"
+            and nav.back() == "house"
+            and nav.back() == "hub"
+            and nav.back() == "menu"
+        )
+
         checks = [
-            ("versão única", STAR_VERSION == "3.0"),
+            (
+                "versão única",
+                STAR_VERSION == str(manifest.get("version", "")).strip()
+                and RELEASE.version == STAR_VERSION,
+            ),
             ("identidade", star.get_name() == "STAR"),
             ("MIND ativa", star.mind_status().get("active") is True),
             ("Event Bus", star.mind is not None and star.mind.events.count() > 0),
@@ -116,6 +146,8 @@ def main():
             ("Knowledge Engine", star.knowledge_status().get("active") is True),
             ("Entity System", star.knowledge_status().get("entities", 0) >= 1),
             ("Knowledge Packs", bool(star.packs.list())),
+            ("Livro de Receitas", recipe_count >= 1),
+            ("Navegação STAR WORLD", navigation_ok),
         ]
         for name, ok in checks:
             print(("🟢 " if ok else "🔴 ") + name)
