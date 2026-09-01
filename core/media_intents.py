@@ -40,11 +40,11 @@ def parse_media_intent(text: str) -> dict | None:
     if not mentions_tv:
         return None
 
-    if any(term in value for term in ("tela cheia", "fullscreen", "ampliar", "maximizar")):
-        return {"action": "fullscreen"}
-
     if any(term in value for term in ("restaurar", "voltar tamanho", "sair da tela cheia")):
         return {"action": "restore"}
+
+    if any(term in value for term in ("tela cheia", "fullscreen", "ampliar", "maximizar")):
+        return {"action": "fullscreen"}
 
     if any(term in value for term in ("fechar", "desligar", "desliga")):
         return {"action": "close"}
@@ -55,7 +55,10 @@ def parse_media_intent(text: str) -> dict | None:
     if any(term in value for term in ("continuar", "reproduzir", "play", "retomar")):
         return {"action": "play"}
 
-    volume = re.search(r"volume(?:\s+(?:da|do)?\s*(?:star\s+)?tv)?\s+(\d{1,3})", value)
+    volume = re.search(
+        r"volume(?:\s+(?:da|do)?\s*(?:star\s+)?tv)?(?:\s+(?:em|para))?\s+(\d{1,3})",
+        value,
+    )
     if volume:
         return {
             "action": "volume",
