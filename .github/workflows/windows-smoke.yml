@@ -2,9 +2,9 @@ name: STAR Windows smoke
 
 on:
   push:
-    branches: [main, v2.0-development]
+    branches: [main, v2.0-development, v3.0-knowledge]
   pull_request:
-    branches: [main, v2.0-development]
+    branches: [main, v2.0-development, v3.0-knowledge]
 
 jobs:
   windows-smoke:
