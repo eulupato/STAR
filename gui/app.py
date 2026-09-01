@@ -31,6 +31,7 @@ from config import (
 from core.avatar import AvatarManager
 from core.emotion import EmotionManager
 from core.logging_config import get_logger
+from core.photo_library import PhotoLibrary
 from database.memory import Memory
 from gui.heroes_view import HeroesIslandView
 from gui.navigation import NavigationManager, ROUTES
@@ -1297,23 +1298,21 @@ class StarApp:
         body.pack(fill="both", expand=True, padx=42, pady=14)
 
         configured = self._read_user_settings().get("photo_library")
-        candidates = []
-        if configured:
-            folder = Path(str(configured)).expanduser()
-            if folder.exists():
-                candidates.append(folder)
-        candidates.append(PROJECT_ROOT / "assets" / "images")
+        library_root = (
+            Path(str(configured)).expanduser()
+            if configured
+            else PROJECT_ROOT / "photos"
+        )
+        images = PhotoLibrary(library_root).list_images(limit=500)
 
-        images = []
-        for folder in candidates:
-            if not folder.exists():
-                continue
-            images.extend(
-                p
-                for p in folder.rglob("*")
-                if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}
-            )
-        images = sorted(dict.fromkeys(images))
+        tk.Label(
+            body,
+            text=f"📁 {library_root}",
+            fg=self.muted,
+            bg=self.bg,
+            font=("Segoe UI", 8),
+            anchor="w",
+        ).pack(fill="x", pady=(0, 8))
 
         if not images:
             empty = tk.Frame(body, bg=self.panel, padx=24, pady=22)
@@ -1328,8 +1327,9 @@ class StarApp:
             tk.Label(
                 empty,
                 text=(
-                    "Por padrão a STAR procura em assets/images. "
-                    "Também é possível definir 'photo_library' em user_settings.json."
+                    "Por padrão a STAR usa a pasta local 'photos'. "
+                    "Também é possível definir 'photo_library' em user_settings.json. "
+                    "Imagens pessoais não são enviadas nem versionadas pelo projeto."
                 ),
                 fg=self.muted,
                 bg=self.panel,
@@ -1351,7 +1351,7 @@ class StarApp:
         scroll.pack(side="right", fill="y")
 
         self.gallery_photos = []
-        for idx, path in enumerate(images[:100]):
+        for idx, path in enumerate(images):
             card = tk.Frame(grid, bg=self.panel, padx=8, pady=8)
             card.grid(row=idx // 5, column=idx % 5, padx=5, pady=5, sticky="nsew")
             try:
