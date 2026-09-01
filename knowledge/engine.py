@@ -138,6 +138,7 @@ class KnowledgeEngine:
         return results[0] if results else None
 
     def answer(self, text: str, context: dict | None = None) -> str | None:
+        self.last_entity = None
         raw = str(text or "").strip()
         if not raw:
             return None
@@ -261,6 +262,13 @@ class KnowledgeEngine:
         if search_match:
             results = self.universal_search(search_match.group(1), limit=8)
             if results:
+                entity_results = [
+                    item.entity
+                    for item in results
+                    if item.entity is not None
+                ]
+                if len(results) == 1 and len(entity_results) == 1:
+                    self.last_entity = entity_results[0]
                 return "Encontrei: " + ", ".join(item.title for item in results) + "."
 
         return None
