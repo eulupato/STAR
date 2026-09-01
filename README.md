@@ -78,16 +78,35 @@ A ilha está ligada ao Knowledge Engine e oferece:
 O antigo `heroes.json` permanece somente como seed de compatibilidade até que
 a base local seja importada.
 
-### Importar enciclopédias locais
+### Construir a Ilha dos Heróis
+
+O fluxo recomendado usa um único comando. Os PDFs são a fonte local
+prioritária; os sites oficiais complementam campos e imagens ausentes somente
+quando `--online` é informado.
 
 ```powershell
-.\.venv\Scripts\python.exe tools\import_heroes.py "C:\caminho\Marvel Encyclopedia New Edition.pdf" --universe Marvel --publisher "Marvel Comics" --ocr
-
-.\.venv\Scripts\python.exe tools\import_heroes.py "C:\caminho\The DC COMICS Encyclopedia.pdf" --universe DC --publisher "DC Comics"
+.\.venv\Scripts\python.exe tools\build_heroes_island.py `
+  --marvel-pdf "C:\caminho\Marvel Encyclopedia New Edition.pdf" `
+  --dc-pdf "C:\caminho\The DC COMICS Encyclopedia.pdf" `
+  --online
 ```
 
-`--ocr` usa Tesseract local somente quando a página não possui texto
-suficiente. O PDF e as imagens renderizadas permanecem na máquina local.
+Fontes oficiais autorizadas pelo projeto:
+
+- `https://www.marvel.com/characters`
+- `https://www.dc.com/characters`
+
+O builder grava apenas dados estruturados, proveniência e caches locais. Ele
+não coloca PDFs, páginas das enciclopédias ou cache web no GitHub.
+
+Ao final é criado:
+
+`knowledge/local/reports/heroes_build_report.json`
+
+com total de personagens, cobertura de imagens, fontes PDF/oficiais e itens
+ainda incompletos.
+
+A ilha continua funcionando sem internet depois que a base foi construída.
 
 ## 💬 Conversation Variation Engine
 
