@@ -28,6 +28,17 @@ def parser():
     p.add_argument("--no-images", action="store_true")
     p.add_argument("--force-web", action="store_true")
     p.add_argument("--enrichment-limit", type=int, default=0)
+    p.add_argument(
+        "--skip-marvel-catalog",
+        action="store_true",
+        help="Não descobre o catálogo A-Z oficial da Marvel.",
+    )
+    p.add_argument(
+        "--marvel-catalog-max-pages",
+        type=int,
+        default=120,
+        help="Limite de páginas do índice oficial a percorrer.",
+    )
     return p
 
 
@@ -51,6 +62,8 @@ def main():
         cache_images=not args.no_images,
         force_web=args.force_web,
         enrichment_limit=max(0, args.enrichment_limit),
+        import_marvel_catalog=not args.skip_marvel_catalog,
+        marvel_catalog_max_pages=max(1, args.marvel_catalog_max_pages),
     )
     print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
 
