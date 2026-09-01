@@ -35,7 +35,7 @@ from core.photo_library import PhotoLibrary
 from database.memory import Memory
 from gui.heroes_view import HeroesIslandView
 from gui.navigation import NavigationManager, ROUTES
-from knowledge.recipes import RecipeBook
+from knowledge.recipes import RecipeBook, RecipeSession
 from modules.media_controller import MediaController
 from voice.audio_input import AudioRecorder
 from voice.manager import VoiceManager
@@ -1041,7 +1041,16 @@ class StarApp:
         )
         details.pack(fill="both", expand=True)
 
-        state = {"items": recipes}
+        follow_button = self._button(
+            right,
+            "SEGUIR PASSO A PASSO",
+            lambda: open_step_mode(),
+            accent=True,
+        )
+        follow_button.pack(anchor="e", pady=(10, 0))
+        follow_button.config(state=tk.DISABLED)
+
+        state = {"items": recipes, "selected": None}
 
         def set_details(text):
             details.config(state=tk.NORMAL)
@@ -1050,6 +1059,10 @@ class StarApp:
             details.config(state=tk.DISABLED)
 
         def render_recipe(recipe):
+            state["selected"] = recipe
+            follow_button.config(
+                state=tk.NORMAL if recipe.steps else tk.DISABLED
+            )
             lines = [recipe.name, "", "INGREDIENTES"]
             if recipe.ingredients:
                 lines.extend(f"• {item}" for item in recipe.ingredients)
@@ -1072,6 +1085,107 @@ class StarApp:
                 lines.extend(["", f"Fonte local: {Path(recipe.source).name}"])
             set_details("\n".join(lines))
 
+        def open_step_mode():
+            recipe = state.get("selected")
+            if recipe is None or not recipe.steps:
+                return
+
+            session = RecipeSession(recipe)
+            guide = tk.Toplevel(popup)
+            guide.title(f"STAR • Preparando {recipe.name}")
+            guide.geometry("620x420")
+            guide.minsize(560, 380)
+            guide.configure(bg=self.bg)
+            guide.transient(popup)
+
+            tk.Label(
+                guide,
+                text=f"🍳 {recipe.name}",
+                fg=self.star,
+                bg=self.bg,
+                font=("Segoe UI", 18, "bold"),
+            ).pack(anchor="w", padx=24, pady=(22, 4))
+
+            progress = tk.Label(
+                guide,
+                fg=self.muted,
+                bg=self.bg,
+                font=("Segoe UI", 9, "bold"),
+            )
+            progress.pack(anchor="w", padx=24)
+
+            step_card = tk.Frame(
+                guide,
+                bg=self.panel,
+                padx=24,
+                pady=24,
+            )
+            step_card.pack(
+                fill="both",
+                expand=True,
+                padx=24,
+                pady=18,
+            )
+
+            step_text = tk.Label(
+                step_card,
+                fg=self.text,
+                bg=self.panel,
+                wraplength=500,
+                justify="left",
+                anchor="nw",
+                font=("Segoe UI", 13),
+            )
+            step_text.pack(fill="both", expand=True)
+
+            controls = tk.Frame(guide, bg=self.bg)
+            controls.pack(fill="x", padx=24, pady=(0, 22))
+
+            previous_button = self._button(
+                controls,
+                "← ANTERIOR",
+                lambda: move_step(-1),
+            )
+            previous_button.pack(side="left")
+
+            next_button = self._button(
+                controls,
+                "PRÓXIMO →",
+                lambda: move_step(1),
+                accent=True,
+            )
+            next_button.pack(side="right")
+
+            def render_step():
+                progress.config(
+                    text=f"PASSO {session.position} DE {session.total}"
+                )
+                step_text.config(text=session.current or "Sem passos de preparo.")
+                previous_button.config(
+                    state=tk.NORMAL if session.index > 0 else tk.DISABLED
+                )
+                next_button.config(
+                    text=(
+                        "CONCLUÍDO ✓"
+                        if session.finished
+                        else "PRÓXIMO →"
+                    ),
+                    state=(
+                        tk.DISABLED
+                        if session.finished
+                        else tk.NORMAL
+                    ),
+                )
+
+            def move_step(direction):
+                if direction < 0:
+                    session.previous()
+                else:
+                    session.next()
+                render_step()
+
+            render_step()
+
         def selected(_event=None):
             selection = recipe_list.curselection()
             if not selection:
@@ -1091,6 +1205,8 @@ class StarApp:
                 recipe_list.activate(0)
                 render_recipe(state["items"][0])
             else:
+                state["selected"] = None
+                follow_button.config(state=tk.DISABLED)
                 set_details("Nenhuma receita corresponde à busca atual.")
 
         search.bind("<KeyRelease>", refresh_list)
