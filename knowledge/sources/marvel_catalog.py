@@ -213,11 +213,29 @@ class MarvelOfficialCatalog:
         retrieved = datetime.now(timezone.utc).isoformat()
         saved = 0
 
+        current = engine.search_entities(
+            "",
+            filters={"category": "character", "universe": "Marvel"},
+            limit=5000,
+        )
+        by_real_name = {}
+        for item in current:
+            real = normalize_search_text(
+                (item.attributes or {}).get("real_name") or ""
+            )
+            if real:
+                by_real_name.setdefault(real, item)
+
         for entry in entries:
             existing = engine.resolve_entity(entry.name, universe="Marvel")
-            # Uma identidade explícita (ex.: Spider-Man (Miles Morales)) nunca
-            # pode ser mesclada apenas porque compartilha o codinome base com
-            # outra pessoa (ex.: Peter Parker).
+            real_key = normalize_search_text(entry.real_name or "")
+
+            # Um seed antigo com o mesmo nome real pode ser reaproveitado
+            # (Spider-Man/Peter Parker), mas compartilhar apenas o codinome
+            # nunca é suficiente para fundir identidades (Miles != Peter).
+            if existing is None and real_key:
+                existing = by_real_name.get(real_key)
+
             if existing is None and not entry.real_name and entry.aliases:
                 for alias in entry.aliases:
                     existing = engine.resolve_entity(alias, universe="Marvel")
@@ -272,6 +290,11 @@ class MarvelOfficialCatalog:
                     )
 
             engine.upsert_entity(entity)
+            real = normalize_search_text(
+                (entity.attributes or {}).get("real_name") or ""
+            )
+            if real:
+                by_real_name.setdefault(real, entity)
             saved += 1
 
         return saved
