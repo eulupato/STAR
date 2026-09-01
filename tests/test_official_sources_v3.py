@@ -183,3 +183,21 @@ def test_marvel_catalog_discovered_url_is_tried_first(tmp_path):
     )
     urls = source.candidate_urls(entity)
     assert urls[0] == "https://www.marvel.com/characters/spider-man-miles-morales"
+
+
+
+def test_marvel_legacy_catalog_profile_url_is_accepted(tmp_path):
+    source = MarvelOfficialSource(client(tmp_path))
+    entity = Entity(
+        name="Black Panther",
+        category="character",
+        universe="Marvel",
+        metadata={
+            "official_profile_url":
+                "https://www.marvel.com/comics/characters/1009187/black_panther"
+        },
+    )
+    urls = source.candidate_urls(entity)
+    assert urls[0] == (
+        "https://www.marvel.com/comics/characters/1009187/black_panther"
+    )
