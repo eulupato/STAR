@@ -1,6 +1,7 @@
 """Diagnóstico geral e leve da instalação da STAR.
 
-Não carrega Chatterbox nem WebView. Testa a arquitetura local principal.
+Não carrega Chatterbox, Whisper nem WebView. Testa a arquitetura local
+principal e diferencia falha crítica de capacidade opcional não instalada.
 """
 from pathlib import Path
 import importlib
@@ -31,6 +32,15 @@ MODULES = [
     "core.star_core",
     "core.conversation",
     "core.personality",
+    "core.avatar",
+    "core.emotion",
+    "core.photo_library",
+    "core.cure",
+    "core.skills",
+    "core.tools",
+    "core.ai_engine",
+    "core.models.model_manager",
+    "core.models.local.ollama",
     "core.mind",
     "core.mind.event_bus",
     "core.mind.working_memory",
@@ -44,11 +54,11 @@ MODULES = [
     "core.islands",
     "core.math_engine",
     "core.media_intents",
-    "core.tools",
     "knowledge.entities",
     "knowledge.store",
     "knowledge.graph",
     "knowledge.engine",
+    "knowledge.bootstrap",
     "knowledge.importers.pdf",
     "knowledge.importers.heroes",
     "knowledge.sources.official",
@@ -58,6 +68,7 @@ MODULES = [
     "modules.media_controller",
     "modules.media_host",
     "database.database",
+    "database.models",
     "database.memory",
     "voice.manager",
     "voice.audio_input",
@@ -101,12 +112,15 @@ def main():
         greeting = star.process("olá")
         math_answer = star.process("quanto é 2+2")
 
+        from core.islands import get_islands
+        from core.media_intents import parse_media_intent
         from knowledge.recipes import RecipeBook
         from gui.navigation import NavigationManager
 
         recipe_count = len(
             RecipeBook(ROOT / "knowledge" / "recipes").load()
         )
+        islands = get_islands()
         nav = NavigationManager()
         nav.go("hub")
         nav.go("house")
@@ -120,6 +134,9 @@ def main():
             and nav.back() == "hub"
             and nav.back() == "menu"
         )
+
+        media_restore = parse_media_intent("sair da tela cheia da TV")
+        media_volume = parse_media_intent("volume da TV para 42")
 
         checks = [
             (
@@ -147,7 +164,18 @@ def main():
             ("Entity System", star.knowledge_status().get("entities", 0) >= 1),
             ("Knowledge Packs", bool(star.packs.list())),
             ("Livro de Receitas", recipe_count >= 1),
+            (
+                "Cozinha disponível",
+                islands["casa"]["subareas"]["cozinha"]["status"] == "available",
+            ),
             ("Navegação STAR WORLD", navigation_ok),
+            (
+                "Media intents",
+                media_restore is not None
+                and media_restore.get("action") == "restore"
+                and media_volume is not None
+                and media_volume.get("value") == 42,
+            ),
         ]
         for name, ok in checks:
             print(("🟢 " if ok else "🔴 ") + name)
@@ -175,8 +203,11 @@ def main():
     print("-" * 64)
     print("VOZ (sem carregar modelos pesados)")
     print(f"Modo: {voice.mode}")
-    print(f"STT instalado: {'SIM' if voice.stt_configured else 'NÃO'}")
+    print(f"STT local: {'SIM' if voice.stt_configured else 'NÃO'}")
+    print(f"STT detalhe: {voice.stt.status_message}")
     print(f"TTS: {voice.tts_description}")
+    if not voice.stt_configured:
+        warnings.append("STT local indisponível: " + voice.stt.status_message)
     if not voice.official.configured:
         warnings.append("voz oficial indisponível: " + voice.official.status_message)
     voice.close()
