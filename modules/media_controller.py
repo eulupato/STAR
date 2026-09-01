@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+from urllib.parse import urlparse
 from threading import RLock
 
 from core.logging_config import get_logger
@@ -40,16 +41,25 @@ class MediaController:
         self._lock = RLock()
         self._rect = None
 
-    @staticmethod
-    def normalize_youtube_url(url: str | None = None) -> str:
+    @classmethod
+    def normalize_youtube_url(cls, url: str | None = None) -> str:
         value = str(url or "").strip()
         if not value:
             return "https://www.youtube.com/"
-        if value.startswith("https://www.youtube.com/") or value.startswith("https://m.youtube.com/"):
+
+        parsed = urlparse(value)
+        host = (parsed.hostname or "").lower()
+        if parsed.scheme != "https":
+            return "https://www.youtube.com/"
+
+        if host in cls.ALLOWED_WEB_HOSTS:
             return value
-        if value.startswith("https://youtu.be/"):
-            video_id = value.rsplit("/", 1)[-1].split("?", 1)[0]
-            return f"https://www.youtube.com/watch?v={video_id}"
+
+        if host == "youtu.be":
+            video_id = parsed.path.strip("/").split("/", 1)[0]
+            if video_id:
+                return f"https://www.youtube.com/watch?v={video_id}"
+
         return "https://www.youtube.com/"
 
     def _send(self, command: str, **payload) -> bool:
@@ -70,10 +80,13 @@ class MediaController:
     def open_youtube(self, *, url: str | None = None, rect=None) -> bool:
         with self._lock:
             if self._process is not None and self._process.poll() is None:
+                target = self.normalize_youtube_url(url)
+                if not self._send("load", url=target):
+                    self._state.opened = False
+                    return False
                 self._state.opened = True
                 self._state.source = "youtube"
-                self._state.url = self.normalize_youtube_url(url)
-                self._send("load", url=self._state.url)
+                self._state.url = target
                 if rect:
                     self.sync_rect(rect)
                 return True
@@ -159,14 +172,23 @@ class MediaController:
 
     def close(self) -> bool:
         with self._lock:
-            if self._process is None:
+            process = self._process
+            if process is None:
                 self._state.opened = False
+                self._state.fullscreen = False
                 return True
+
             self._send("close")
             try:
-                self._process.wait(timeout=2)
+                process.wait(timeout=2)
             except subprocess.TimeoutExpired:
-                self._process.terminate()
+                process.terminate()
+                try:
+                    process.wait(timeout=1)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=1)
+
             self._process = None
             self._state.opened = False
             self._state.fullscreen = False
@@ -175,13 +197,16 @@ class MediaController:
 
     def state(self) -> dict:
         with self._lock:
-            if self._process is not None and self._process.poll() is not None:
+            process = self._process
+            if process is not None and process.poll() is not None:
                 self._state.opened = False
-                if self._process.stderr:
+                self._state.fullscreen = False
+                if process.stderr:
                     try:
-                        error = self._process.stderr.read().strip()
+                        error = process.stderr.read().strip()
                     except OSError:
                         error = ""
                     if error:
                         self._state.last_error = error[-800:]
+                self._process = None
             return asdict(self._state)
