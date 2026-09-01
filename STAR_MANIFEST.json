@@ -59,18 +59,21 @@
     "pdf_ingestion_pipeline",
     "recipe_book",
     "recipe_step_mode",
-    "fast_local_tts_mode"
+    "fast_local_tts_mode",
+    "marvel_official_catalog_import",
+    "heroes_multi_image_gallery",
+    "heroes_dynamic_character_themes"
   ],
   "features_in_progress": [
-    "heroes_full_pdf_import",
     "heroes_full_image_coverage",
-    "official_web_enrichment_validation",
     "star_tv_windows_webview_validation",
     "recipe_library_expansion",
     "photo_album_metadata",
     "photo_album_folder_picker",
     "persistent_world_state",
-    "emotion_sprite_pack"
+    "emotion_sprite_pack",
+    "marvel_local_catalog_build_validation",
+    "dc_full_pdf_import"
   ],
   "features_prepared": [
     "memory_architecture_expansion",
@@ -99,7 +102,14 @@
     "official_sources": [
       "dc.com",
       "marvel.com"
-    ]
+    ],
+    "marvel_catalog": {
+      "official_index": true,
+      "bulk_import": true,
+      "identity_disambiguation": true,
+      "local_cache": true,
+      "pdf_role": "supplemental_local_source"
+    }
   },
   "voice": {
     "stt": "faster-whisper local PT-BR com modelo preparado por INSTALAR_VOZ.bat",
