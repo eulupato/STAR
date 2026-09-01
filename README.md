@@ -77,6 +77,8 @@ A ilha está ligada ao Knowledge Engine e oferece:
 - navegação anterior/próximo por componente genérico;
 - ficha ampliada do personagem;
 - múltiplas fontes, página e URL quando disponíveis;
+- múltiplas referências visuais locais por personagem;
+- tema visual por personagem: overrides icônicos + paleta derivada da imagem;
 - fallback visual honesto quando não existe retrato válido;
 - contexto da entidade selecionada para a conversa.
 
@@ -85,9 +87,14 @@ a base local seja importada integralmente.
 
 ### Construir a Ilha dos Heróis
 
-O fluxo recomendado usa um único comando. Os PDFs são a fonte local
-prioritária; os sites oficiais complementam campos e imagens ausentes somente
-quando `--online` é informado.
+O fluxo recomendado usa um único comando. O PDF é a base local complementar e
+mantém página/proveniência; quando `--online` é informado, a fonte oficial
+Marvel/DC é tratada como autoritativa para os campos que realmente fornece.
+
+Para Marvel, o builder também descobre em lote o índice oficial de personagens,
+preserva variantes de identidade (por exemplo, Peter Parker e Miles Morales)
+como entidades distintas e percorre todos os registros encontrados sem um
+limite artificial de enriquecimento.
 
 A enciclopédia Marvel usada no projeto é majoritariamente escaneada. Para a
 extração integral por OCR, o executável Tesseract precisa estar instalado e
@@ -104,10 +111,20 @@ com uma mensagem explícita em vez de fingir que a importação foi completa.
 Fontes oficiais autorizadas pelo projeto:
 
 - `https://www.marvel.com/characters`
+- índice A-Z oficial em `https://www.marvel.com/comics/characters`
 - `https://www.dc.com/characters`
 
 O builder grava apenas dados estruturados, proveniência e caches locais. Ele
 não coloca PDFs, páginas das enciclopédias ou cache web no GitHub.
+
+No Windows, o catálogo Marvel completo pode ser construído também por:
+
+```powershell
+ATUALIZAR_CATALOGO_MARVEL.bat
+```
+
+O arquivo pede o caminho do PDF, executa a importação OCR, descobre o catálogo
+oficial, enriquece os perfis e salva as imagens apenas no cache local.
 
 Ao final é criado:
 
