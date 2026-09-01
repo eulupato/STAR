@@ -49,9 +49,10 @@ def test_all_navigation_routes_have_labels():
         assert route.label
 
 
-def test_house_is_first_functional_island():
+def test_house_and_heroes_are_functional_islands():
     islands = get_islands()
     assert islands["casa"]["status"] == "installed"
+    assert islands["herois"]["status"] == "installed"
     assert "sala" in islands["casa"]["subareas"]
     assert "cozinha" in islands["casa"]["subareas"]
     assert "quarto" in islands["casa"]["subareas"]
@@ -66,3 +67,10 @@ def test_star_core_accepts_optional_ui_context_without_breaking_process():
     assert isinstance(answer, str)
     assert answer
     assert star.ui_context == "Casa > Cozinha"
+
+
+def test_heroes_route_returns_to_hub():
+    nav = NavigationManager(current="hub")
+    nav.go("heroes")
+    assert nav.context == "Heróis"
+    assert nav.back() == "hub"
