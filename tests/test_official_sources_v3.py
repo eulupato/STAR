@@ -116,3 +116,50 @@ def test_official_merge_does_not_overwrite_pdf_priority(tmp_path):
     assert "martial arts" in merged.powers
     assert "detective skill" in merged.powers
     assert any(s.url == "https://www.dc.com/characters/batman" for s in merged.sources)
+
+
+def test_official_source_rejects_wrong_character_profile(tmp_path):
+    source = DCOfficialSource(client(tmp_path))
+    source.client.fetch_html = lambda *_args, **_kwargs: """
+        <html><head>
+          <meta property="og:title" content="Superman | Official DC Character">
+        </head><body>
+          <div>Alias/Alter Ego:</div><div>Clark Kent</div>
+        </body></html>
+    """
+    entity = Entity(
+        name="Batman",
+        category="character",
+        universe="DC",
+        attributes={"real_name": "Bruce Wayne"},
+    )
+    assert source.fetch_profile(entity, online=True) is None
+
+
+def test_marvel_real_name_prevents_ambiguous_profile_merge(tmp_path):
+    source = MarvelOfficialSource(client(tmp_path))
+    urls = source.candidate_urls(
+        Entity(
+            name="Spider-Man",
+            category="character",
+            universe="Marvel",
+            attributes={"real_name": "Miles Morales"},
+        )
+    )
+    assert urls[0].endswith("spider-man-miles-morales")
+
+    source.client.fetch_html = lambda *_args, **_kwargs: """
+        <html><head>
+          <meta property="og:title"
+                content="Spider-Man (Peter Parker) | Characters | Marvel">
+        </head><body>
+          <div>Other Aliases</div><div>Peter Parker</div>
+        </body></html>
+    """
+    entity = Entity(
+        name="Spider-Man",
+        category="character",
+        universe="Marvel",
+        attributes={"real_name": "Miles Morales"},
+    )
+    assert source.fetch_profile(entity, online=True) is None
