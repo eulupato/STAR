@@ -45,6 +45,11 @@ class Planner:
                 "Responder small talk local sem modelo externo.",
             ),
             PlanStep(
+                "media_request",
+                "media",
+                "Controlar a mídia do STAR WORLD por Event Bus.",
+            ),
+            PlanStep(
                 "computer_control",
                 "computer_control",
                 "Verificar ações locais ou online autorizadas.",
