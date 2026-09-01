@@ -35,7 +35,6 @@
     "computer_commands",
     "local_speech_to_text",
     "official_local_voice",
-    "fast_local_tts_fallback",
     "voice_degraded_startup",
     "automatic_spoken_replies",
     "mind_cognitive_loop",
@@ -47,17 +46,26 @@
     "mind_capability_registry",
     "mind_operational_metacognition",
     "mind_graceful_fallback",
-    "star_world_contextual_navigation"
-  ],
-  "features_in_progress": [
+    "star_world_contextual_navigation",
     "knowledge_engine",
     "universal_search",
     "entity_system",
     "knowledge_graph",
-    "heroes_island",
+    "heroes_island_navigation",
     "conversation_variation_engine",
     "media_controller",
-    "pdf_ingestion"
+    "pdf_ingestion_pipeline",
+    "recipe_book",
+    "fast_local_tts_mode"
+  ],
+  "features_in_progress": [
+    "heroes_full_pdf_import",
+    "heroes_full_image_coverage",
+    "official_web_enrichment_validation",
+    "star_tv_windows_webview_validation",
+    "recipe_library_expansion",
+    "photo_album_metadata",
+    "persistent_world_state"
   ],
   "features_prepared": [
     "memory_architecture_expansion",
@@ -69,7 +77,8 @@
   ],
   "mind": {
     "enabled": true,
-    "subsystem_version": "2.x-consolidated",
+    "generation": "MIND",
+    "integrated_release": "3.0",
     "external_model_required": false,
     "fallback": "foundation stable pipeline",
     "diagnostics_command": "diagnóstico da mente",
@@ -79,8 +88,13 @@
     "subsystem_version": "3.0",
     "local_first": true,
     "entity_store": "SQLite local",
+    "structured_multivalue_index": true,
     "source_provenance": true,
-    "web_optional": true
+    "web_optional": true,
+    "official_sources": [
+      "dc.com",
+      "marvel.com"
+    ]
   },
   "voice": {
     "stt": "faster-whisper tiny local PT-BR",
@@ -96,5 +110,14 @@
     "automatic_reply_from_gui": true,
     "fast_mode": "Windows SAPI preferencial + Piper PT-BR fallback",
     "tts_sanitizes_visual_symbols": true
+  },
+  "world": {
+    "house_status": "available",
+    "heroes_status": "partial",
+    "living_room_status": "experimental",
+    "kitchen_status": "partial",
+    "bedroom_status": "available",
+    "closet_status": "available",
+    "album_status": "partial"
   }
 }
