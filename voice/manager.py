@@ -1,6 +1,6 @@
-"""Gerenciador de voz local da STAR V1.9 FINAL.
+"""Gerenciador de voz local da STAR.
 
-Objetivo do hotfix:
+Objetivos atuais:
 - modo "official" usa SOMENTE a voz oficial Chatterbox;
 - não cair silenciosamente para Piper quando a referência/Chatterbox falhar;
 - diagnóstico detalha exatamente o componente ausente;
@@ -17,6 +17,10 @@ import subprocess
 import threading
 import time
 from pathlib import Path
+
+from core.logging_config import get_logger
+
+log = get_logger("voice")
 
 ROOT = Path(__file__).resolve().parent.parent
 VOICE_DIR = ROOT / "voice"
@@ -381,8 +385,8 @@ class ChatterboxOfficialTTS:
                     process.wait(timeout=0.8)
                 except subprocess.TimeoutExpired:
                     process.kill()
-        except Exception:
-            pass
+        except Exception as exc:
+            log.debug("Falha ao limpar processo de voz: %s", exc)
 
     def cancel(self) -> None:
         self._cleanup_process()
@@ -556,8 +560,8 @@ class ChatterboxOfficialTTS:
             if output_path is not None:
                 try:
                     output_path.unlink(missing_ok=True)
-                except Exception:
-                    pass
+                except OSError as exc:
+                    log.debug("Falha ao remover áudio temporário: %s", exc)
 
     def close(self) -> None:
         process = self._process
@@ -651,8 +655,8 @@ class WindowsFallbackTTS:
         if engine is not None:
             try:
                 engine.stop()
-            except Exception:
-                pass
+            except Exception as exc:
+                log.debug("Falha não crítica no backend de voz: %s", exc)
 
     def speak(
         self,
