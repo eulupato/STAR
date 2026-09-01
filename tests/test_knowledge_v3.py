@@ -192,3 +192,53 @@ def test_resolve_entity_universe_is_case_insensitive(tmp_path):
         )
     )
     assert engine.resolve_entity("Batman", universe="dc").name == "Batman"
+
+
+def test_relationship_filter_uses_structured_index(tmp_path):
+    engine = make_engine(tmp_path)
+    engine.upsert_entity(
+        Entity(
+            name="Batman",
+            category="character",
+            universe="DC",
+            relationships=[Relationship("ally", "Robin")],
+        )
+    )
+    engine.upsert_entity(
+        Entity(
+            name="Example",
+            category="character",
+            universe="DC",
+            description="Leu histórias sobre Robin.",
+        )
+    )
+
+    matches = engine.search_entities("", {"relationship": "Robin"})
+    assert [entity.name for entity in matches] == ["Batman"]
+
+
+def test_multivalue_index_migrates_existing_entities(tmp_path):
+    db = tmp_path / "knowledge.db"
+    engine = KnowledgeEngine(db)
+    engine.upsert_entity(
+        Entity(
+            name="Storm",
+            category="character",
+            universe="Marvel",
+            team=["X-Men"],
+            powers=["controle climático"],
+            relationships=[Relationship("ally", "Wolverine")],
+        )
+    )
+
+    with engine.store._connect() as connection:
+        connection.execute("DELETE FROM entity_values")
+        connection.execute(
+            "DELETE FROM knowledge_meta WHERE key = ?",
+            ("entity_values_schema",),
+        )
+
+    migrated = KnowledgeEngine(db)
+    assert migrated.search_entities("", {"team": "X-Men"})[0].name == "Storm"
+    assert migrated.search_entities("", {"power": "controle climático"})[0].name == "Storm"
+    assert migrated.search_entities("", {"relationship": "Wolverine"})[0].name == "Storm"
