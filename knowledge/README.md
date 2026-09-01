@@ -1,11 +1,13 @@
-# Knowledge System da STAR
+# STAR Knowledge
 
-O conhecimento próprio será organizado em **Knowledge Packs** modulares.
+A V3 usa `knowledge/` como subsistema, não como pasta de textos soltos.
 
-Fluxo planejado:
+- `entities.py` — modelo genérico;
+- `store.py` — SQLite local e índices;
+- `graph.py` — relações;
+- `engine.py` — busca e resposta;
+- `importers/` — ingestão reutilizável;
+- `packs/` — manifests e seeds portáteis;
+- `local/` — banco, PDFs derivados e cache local (gitignored).
 
-PDF → OCR/extração → texto estruturado → revisão → Knowledge Pack → STAR
-
-Cada pacote poderá declarar a ilha à qual pertence e ser transportado em uma
-mídia removível no futuro. A V1.5 apenas prepara o registro; nenhum pacote
-externo é instalado automaticamente.
+A GUI nunca deve consultar SQL diretamente.
