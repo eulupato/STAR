@@ -26,7 +26,8 @@ from core.skills import SkillRegistry
 from core.star_core import StarCore
 from core.star_identity import StarIdentity
 from core.state import StarState
-from core.tools import ToolRegistry, safe_math
+from core.math_engine import calculate
+from core.tools import ToolRegistry
 from gui.app import StarApp
 from knowledge.bootstrap import bootstrap_legacy_heroes
 from knowledge.engine import KnowledgeEngine
@@ -78,7 +79,7 @@ def create_star(*, knowledge_db=None):
 
     star.skills = SkillRegistry()
     star.tools = ToolRegistry()
-    star.tools.register("math", safe_math, True, "Cálculo matemático offline")
+    star.tools.register("math", calculate, True, "Cálculo matemático offline")
     star.packs = packs
 
     if knowledge is not None:
