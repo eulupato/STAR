@@ -154,6 +154,32 @@ class KnowledgeEngine:
                 self._event("ENTITY_SELECTED", {"entity_id": entity.id, "name": entity.name})
                 return self.format_entity(entity)
 
+        place_match = re.match(
+            r"^(?:onde|de onde)\s+(.+?)\s+(?:nasceu|vem|veio)[?!.]*$",
+            resolved_text,
+            re.IGNORECASE,
+        )
+        if place_match:
+            entity = self.resolve_entity(place_match.group(1).strip())
+            if entity:
+                self.last_entity = entity
+                place = entity.origin_place or entity.origin
+                if place:
+                    return f"{entity.name}: {place}."
+
+        origin_match = re.match(
+            r"^(?:qual (?:e|é) a origem de|qual a origem de|origem de)\s+(.+?)[?!.]*$",
+            resolved_text,
+            re.IGNORECASE,
+        )
+        if origin_match:
+            entity = self.resolve_entity(origin_match.group(1).strip())
+            if entity:
+                self.last_entity = entity
+                origin = entity.origin or entity.origin_place
+                if origin:
+                    return f"{entity.name}: {origin}."
+
         relation_match = re.match(
             r"^(?:quais|quem sao|quem são)s+(aliados|inimigos|equipes|afiliacoes|afiliações)s+(?:de|do|da)s+(.+?)[?!.]*$",
             resolved_text,
