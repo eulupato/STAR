@@ -995,7 +995,7 @@ class StarApp:
         self._scene_title(
             root,
             "🛏️ QUARTO",
-            "O espaço pessoal da STAR, com acesso ao Closet e às memórias visuais.",
+            "O espaço pessoal da STAR, com acesso ao Closet.",
         )
 
         stage = tk.Frame(root, bg=self.bg)
@@ -1029,23 +1029,6 @@ class StarApp:
             small=True,
             accent=True,
         ).pack(pady=(0, 18))
-
-        album = tk.Frame(stage, bg="#4a3c66", width=180, height=140)
-        album.place(relx=0.52, rely=0.30, anchor="center")
-        album.pack_propagate(False)
-        tk.Label(
-            album,
-            text="📸\nÁLBUM",
-            fg="#f4eaff",
-            bg="#4a3c66",
-            font=("Segoe UI", 14, "bold"),
-        ).pack(expand=True)
-        self._button(
-            album,
-            "ABRIR",
-            lambda: self.navigate("gallery"),
-            small=True,
-        ).pack(pady=(0, 12))
 
         self._place_star(stage, relx=0.78, rely=0.54, size=(230, 285))
 
