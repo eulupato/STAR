@@ -4,10 +4,12 @@ from __future__ import annotations
 from pathlib import Path
 from huggingface_hub import hf_hub_download
 
+from config import PIPER_MODEL
+
 ROOT = Path(__file__).resolve().parent.parent
 PIPER_DIR = ROOT / "voice" / "models" / "piper"
 REPO = "rhasspy/piper-voices"
-MODEL = "pt/pt_BR/faber/medium/pt_BR-faber-medium.onnx"
+MODEL = PIPER_MODEL
 CONFIG = MODEL + ".json"
 
 
