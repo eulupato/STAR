@@ -1,0 +1,49 @@
+{
+  "recipes": [
+    {
+      "name": "Sanduíche de queijo e tomate",
+      "ingredients": [
+        "2 fatias de pão",
+        "2 fatias de queijo",
+        "rodelas de tomate",
+        "folhas de alface lavadas"
+      ],
+      "steps": [
+        "Coloque o queijo sobre uma fatia de pão.",
+        "Adicione o tomate e a alface.",
+        "Feche com a outra fatia e sirva."
+      ],
+      "tags": ["lanche", "sem cozimento"]
+    },
+    {
+      "name": "Iogurte com frutas e aveia",
+      "ingredients": [
+        "1 pote de iogurte",
+        "1 fruta lavada e cortada",
+        "2 colheres de aveia"
+      ],
+      "steps": [
+        "Coloque o iogurte em uma tigela.",
+        "Adicione a fruta.",
+        "Finalize com a aveia e misture se desejar."
+      ],
+      "tags": ["café da manhã", "sem cozimento"]
+    },
+    {
+      "name": "Salada de grão-de-bico",
+      "ingredients": [
+        "1 xícara de grão-de-bico já cozido",
+        "tomate picado",
+        "pepino picado",
+        "folhas verdes lavadas",
+        "azeite e limão a gosto"
+      ],
+      "steps": [
+        "Coloque o grão-de-bico e os vegetais em uma tigela.",
+        "Misture delicadamente.",
+        "Tempere com azeite e limão a gosto e sirva."
+      ],
+      "tags": ["salada", "sem cozimento"]
+    }
+  ]
+}
