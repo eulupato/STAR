@@ -137,16 +137,20 @@ class KnowledgeStore:
 
                 CREATE INDEX IF NOT EXISTS idx_entity_values_lookup
                 ON entity_values(kind, normalized_value, entity_id);
+
+                CREATE TABLE IF NOT EXISTS knowledge_meta (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                );
                 """
             )
 
-            value_count = db.execute(
-                "SELECT COUNT(*) AS n FROM entity_values"
-            ).fetchone()["n"]
-            entity_count = db.execute(
-                "SELECT COUNT(*) AS n FROM entities"
-            ).fetchone()["n"]
-            if entity_count and not value_count:
+            meta = db.execute(
+                "SELECT value FROM knowledge_meta WHERE key = ?",
+                ("entity_values_schema",),
+            ).fetchone()
+            if meta is None or meta["value"] != "2":
+                db.execute("DELETE FROM entity_values")
                 rows = db.execute("SELECT id, data_json FROM entities").fetchall()
                 for row in rows:
                     try:
@@ -161,6 +165,14 @@ class KnowledgeStore:
                         """,
                         self._multivalue_rows_from_dict(row["id"], data),
                     )
+                db.execute(
+                    """
+                    INSERT INTO knowledge_meta(key, value)
+                    VALUES (?, ?)
+                    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                    """,
+                    ("entity_values_schema", "2"),
+                )
 
     @staticmethod
     def _json(value) -> str:
@@ -186,6 +198,42 @@ class KnowledgeStore:
             " ".join(entity.tags),
         ]
         return normalize_search_text(" ".join(values))
+
+    @staticmethod
+    def _multivalue_rows_from_dict(entity_id: str, data: dict) -> list[tuple]:
+        relationships = data.get("relationships", []) or []
+        mapping = {
+            "team": data.get("team", []),
+            "power": data.get("powers", []),
+            "ability": data.get("abilities", []),
+            "tag": data.get("tags", []),
+            "affiliation": data.get("affiliations", []),
+            "relationship": [
+                item.get("target_name", "")
+                for item in relationships
+                if isinstance(item, dict)
+            ],
+            "relation_type": [
+                item.get("predicate", "")
+                for item in relationships
+                if isinstance(item, dict)
+            ],
+        }
+        rows = []
+        seen = set()
+        for kind, values in mapping.items():
+            for raw in values or []:
+                value = str(raw).strip()
+                normalized = normalize_search_text(value)
+                key = (kind, normalized)
+                if value and normalized and key not in seen:
+                    seen.add(key)
+                    rows.append((str(entity_id), kind, value, normalized))
+        return rows
+
+    @classmethod
+    def _multivalue_rows(cls, entity: Entity) -> list[tuple]:
+        return cls._multivalue_rows_from_dict(entity.id, entity.to_dict())
 
     def upsert_entity(self, entity: Entity) -> str:
         normalized_name = normalize_search_text(entity.name)
@@ -377,7 +425,15 @@ class KnowledgeStore:
 
         # Filtros multivalorados usam índice próprio para não confundir
         # conteúdo da descrição com o campo estrutural solicitado.
-        for key in ("team", "power", "ability", "tag", "affiliation"):
+        for key in (
+            "team",
+            "power",
+            "ability",
+            "tag",
+            "affiliation",
+            "relationship",
+            "relation_type",
+        ):
             value = filters.get(key)
             if value:
                 normalized_filter = normalize_search_text(str(value))
