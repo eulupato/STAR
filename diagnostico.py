@@ -79,6 +79,15 @@ MODULES = [
 ]
 
 
+def _whisper_model_ready(model_value: str) -> tuple[bool, str]:
+    path = Path(str(model_value)).expanduser()
+    required = (path / "model.bin", path / "config.json")
+    ready = path.is_dir() and all(item.exists() and item.stat().st_size > 0 for item in required)
+    if ready:
+        return True, str(path)
+    return False, f"modelo local ausente/incompleto: {path}"
+
+
 def main():
     _configure_console_utf8()
     from core.release import RELEASE, STAR_VERSION
@@ -200,14 +209,19 @@ def main():
     from voice.manager import VoiceManager
 
     voice = VoiceManager()
+    stt_backend = voice.stt_configured
+    stt_model, stt_detail = _whisper_model_ready(voice.stt.model_size)
     print("-" * 64)
     print("VOZ (sem carregar modelos pesados)")
     print(f"Modo: {voice.mode}")
-    print(f"STT local: {'SIM' if voice.stt_configured else 'NÃO'}")
-    print(f"STT detalhe: {voice.stt.status_message}")
+    print(f"STT backend: {'SIM' if stt_backend else 'NÃO'}")
+    print(f"STT modelo local: {'SIM' if stt_model else 'NÃO'}")
+    print(f"STT detalhe: {stt_detail}")
     print(f"TTS: {voice.tts_description}")
-    if not voice.stt_configured:
-        warnings.append("STT local indisponível: " + voice.stt.status_message)
+    if not stt_backend:
+        warnings.append("faster-whisper não instalado")
+    elif not stt_model:
+        warnings.append("STT local indisponível: " + stt_detail)
     if not voice.official.configured:
         warnings.append("voz oficial indisponível: " + voice.official.status_message)
     voice.close()
