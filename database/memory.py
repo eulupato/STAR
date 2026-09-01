@@ -13,9 +13,13 @@ class Memory:
         self.session = session_factory()
 
     def save(self, sender, content):
-        message = Message(sender=sender, content=str(content))
+        message = Message(sender=str(sender), content=str(content))
         self.session.add(message)
-        self.session.commit()
+        try:
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            raise
         return message
 
     def load(self, limit: int | None = None):
