@@ -66,6 +66,13 @@ class AvatarManager:
             emotion = "neutral"
 
         specific = self.avatar_dir / f"{emotion}.png"
+        if (
+            emotion == "neutral"
+            and fallback_path
+            and self._valid_image_file(fallback_path)
+        ):
+            return Path(fallback_path), ""
+
         if self._valid_image_file(specific):
             return specific, ""
 
