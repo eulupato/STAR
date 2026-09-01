@@ -4,13 +4,14 @@ O backend WebView roda em processo separado para não disputar o loop Tkinter.
 """
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 import subprocess
 import sys
 from urllib.parse import urlparse
-from threading import RLock
+from threading import RLock, Thread
 
 from core.logging_config import get_logger
 
@@ -40,6 +41,8 @@ class MediaController:
         self._state = MediaState()
         self._lock = RLock()
         self._rect = None
+        self._stderr_lines = deque(maxlen=30)
+        self._stderr_thread = None
 
     @classmethod
     def normalize_youtube_url(cls, url: str | None = None) -> str:
@@ -61,6 +64,29 @@ class MediaController:
                 return f"https://www.youtube.com/watch?v={video_id}"
 
         return "https://www.youtube.com/"
+
+    def _capture_stderr(self, process: subprocess.Popen) -> None:
+        stream = process.stderr
+        if stream is None:
+            return
+        try:
+            for line in stream:
+                message = str(line).strip()
+                if message:
+                    self._stderr_lines.append(message)
+        except (OSError, ValueError) as exc:
+            log.debug("Leitura de stderr da STAR TV encerrada: %s", exc)
+
+    def _start_stderr_reader(self, process: subprocess.Popen) -> None:
+        self._stderr_lines.clear()
+        thread = Thread(
+            target=self._capture_stderr,
+            args=(process,),
+            daemon=True,
+            name="STAR-MediaStderr",
+        )
+        self._stderr_thread = thread
+        thread.start()
 
     def _send(self, command: str, **payload) -> bool:
         with self._lock:
@@ -87,6 +113,7 @@ class MediaController:
                 self._state.opened = True
                 self._state.source = "youtube"
                 self._state.url = target
+                self._state.last_error = None
                 if rect:
                     self.sync_rect(rect)
                 return True
@@ -123,6 +150,7 @@ class MediaController:
                 log.error("Não foi possível iniciar STAR TV: %s", exc)
                 return False
 
+            self._start_stderr_reader(self._process)
             self._rect = rect
             self._state = MediaState(
                 opened=True,
@@ -189,6 +217,11 @@ class MediaController:
                     process.kill()
                     process.wait(timeout=1)
 
+            thread = self._stderr_thread
+            self._stderr_thread = None
+            if thread is not None and thread.is_alive():
+                thread.join(timeout=0.25)
+
             self._process = None
             self._state.opened = False
             self._state.fullscreen = False
@@ -198,15 +231,21 @@ class MediaController:
     def state(self) -> dict:
         with self._lock:
             process = self._process
+            if self._stderr_lines:
+                protocol_errors = [
+                    line
+                    for line in self._stderr_lines
+                    if line.startswith("STAR_MEDIA_ERROR:")
+                ]
+                if protocol_errors:
+                    self._state.last_error = protocol_errors[-1][-800:]
+
             if process is not None and process.poll() is not None:
                 self._state.opened = False
                 self._state.fullscreen = False
-                if process.stderr:
-                    try:
-                        error = process.stderr.read().strip()
-                    except OSError:
-                        error = ""
-                    if error:
-                        self._state.last_error = error[-800:]
+                if self._stderr_lines:
+                    self._state.last_error = "\n".join(
+                        self._stderr_lines
+                    )[-800:]
                 self._process = None
             return asdict(self._state)
