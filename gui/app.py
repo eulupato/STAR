@@ -2135,7 +2135,8 @@ class StarApp:
             log.warning("Falha ao encerrar mídia: %s", exc)
         try:
             if self.recording:
-                self.recorder.stop_to_wav()
+                self.recorder.stop()
+                self.recording = False
         except Exception as exc:
             log.warning("Falha ao finalizar gravação durante saída: %s", exc)
         try:
