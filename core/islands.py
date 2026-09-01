@@ -9,9 +9,9 @@ ISLANDS = {
     "herois": {
         "name": "Heróis",
         "icon": "🦸",
-        "status": "installed",
+        "status": "partial",
         "type": "knowledge",
-        "description": "Primeira ilha funcional de conhecimento da STAR, alimentada pelo Entity System, busca local e Knowledge Graph.",
+        "description": "Primeira ilha de conhecimento navegável da STAR; o motor está ativo e o acervo cresce por PDFs e fontes oficiais.",
         "contents": [
             "biografia, origem e história",
             "evolução do personagem e principais arcos",
@@ -135,9 +135,9 @@ ISLANDS = {
     "casa": {
         "name": "Casa",
         "icon": "🏠",
-        "status": "installed",
+        "status": "available",
         "type": "home",
-        "description": "A primeira ilha funcional da STAR, com ambientes pessoais, mídia, receitas, skins e álbum local.",
+        "description": "Ilha residencial navegável da STAR; cada cômodo informa seu próprio nível de maturidade.",
         "contents": [
             "📺 Sala — entretenimento, mídia e conversa",
             "🍳 Cozinha — receitas, pratos e preparo culinário",
@@ -149,31 +149,36 @@ ISLANDS = {
             "sala": {
                 "name": "Sala",
                 "icon": "📺",
-                "description": "Entretenimento, mídia e um espaço confortável para conversar com a STAR.",
+                "description": "Entretenimento, mídia e conversa; STAR TV em validação experimental no Windows.",
+                "status": "experimental",
                 "contents": ["TV", "YouTube", "mídia", "modo conversa"],
             },
             "cozinha": {
                 "name": "Cozinha",
                 "icon": "🍳",
-                "description": "Culinária e gastronomia, com a STAR realmente preparando receitas.",
+                "description": "Interface culinária inicial; o acervo local de receitas ainda será conectado.",
+                "status": "partial",
                 "contents": ["receitas", "preparo", "aprendizado culinário", "experimentação gastronômica"],
             },
             "quarto": {
                 "name": "Quarto",
                 "icon": "🛏️",
-                "description": "Espaço pessoal da STAR dentro da Casa.",
+                "description": "Espaço pessoal navegável da STAR dentro da Casa.",
+                "status": "available",
                 "contents": ["rotina", "descanso", "organização pessoal", "acesso ao Closet", "acesso ao Álbum"],
             },
             "closet": {
                 "name": "Closet",
                 "icon": "👕",
                 "description": "Espaço de personalização visual da STAR.",
+                "status": "available",
                 "contents": ["roupas", "skins", "acessórios", "aparências", "itens especiais"],
             },
             "album": {
                 "name": "Álbum",
                 "icon": "📸",
-                "description": "Galeria local de imagens e futuras memórias visuais.",
+                "description": "Galeria local básica de imagens e futuras memórias visuais.",
+                "status": "partial",
                 "contents": ["imagens locais", "álbuns", "memórias visuais"],
             },
         },
@@ -213,5 +218,6 @@ ISLANDS = {
 
 
 def get_islands():
-    """Retorna uma cópia segura do catálogo para a interface."""
-    return {key: dict(value) for key, value in ISLANDS.items()}
+    """Retorna uma cópia profunda para impedir mutações acidentais pela GUI."""
+    from copy import deepcopy
+    return deepcopy(ISLANDS)
