@@ -29,6 +29,8 @@ def test_voice_paths_are_local_and_optional():
     manager = VoiceManager()
     assert manager.piper.model_path.is_relative_to(ROOT)
     assert manager.official.worker_path.is_relative_to(ROOT)
+    assert Path(manager.stt.model_size).is_absolute()
+    assert Path(manager.stt.model_size).is_relative_to(ROOT)
     assert manager.piper.configured in (True, False)
     assert manager.official.configured in (True, False)
     manager.close()
@@ -59,7 +61,6 @@ def test_no_external_voice_service_is_required():
     manager = VoiceManager()
     assert manager.last_tts_engine == "não executado"
     manager.close()
-
 
 
 def test_tts_text_removes_emojis_without_changing_portuguese():
@@ -108,6 +109,7 @@ def test_voice_operational_config_is_applied(monkeypatch):
     from config import (
         PIPER_MODEL,
         STT_MODEL,
+        STT_MODEL_NAME,
         VOICE_FAST_PREFERENCE,
     )
 
@@ -116,6 +118,20 @@ def test_voice_operational_config_is_applied(monkeypatch):
 
     manager = VoiceManager()
     assert manager.stt.model_size == STT_MODEL
+    assert Path(manager.stt.model_size).name == STT_MODEL_NAME
+    assert Path(manager.stt.model_size).is_absolute()
     assert manager.piper.model_path.name == Path(PIPER_MODEL).name
     assert manager.fast_preference == VOICE_FAST_PREFERENCE
     manager.close()
+
+
+def test_stt_runtime_uses_local_path_not_remote_model_identifier(monkeypatch):
+    from config import STT_MODEL
+
+    monkeypatch.delenv("STAR_STT_MODEL", raising=False)
+    stt = LocalSpeechToText()
+    model_path = Path(stt.model_size)
+
+    assert stt.model_size == STT_MODEL
+    assert model_path.is_absolute()
+    assert model_path.is_relative_to(ROOT)
