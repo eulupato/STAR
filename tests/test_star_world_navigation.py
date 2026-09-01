@@ -95,3 +95,39 @@ def test_direct_world_navigation_clears_overlay_stack():
     nav.go("hub")
     assert nav.current == "hub"
     assert nav.return_route is None
+
+
+def test_full_world_back_chain_has_no_cycles():
+    nav = NavigationManager()
+    nav.go("hub")
+    nav.go("house")
+    nav.go("bedroom")
+    nav.go("closet")
+    nav.go("gallery")
+
+    assert nav.back() == "closet"
+    assert nav.back() == "bedroom"
+    assert nav.back() == "house"
+    assert nav.back() == "hub"
+    assert nav.back() == "menu"
+
+
+def test_global_hub_navigation_discards_stale_room_history():
+    nav = NavigationManager()
+    nav.go("hub")
+    nav.go("house")
+    nav.go("bedroom")
+    nav.go("hub")
+
+    assert nav.current == "hub"
+    assert nav.history == ["menu"]
+    assert nav.back() == "menu"
+
+
+def test_back_from_overlay_closes_overlay_instead_of_using_world_history():
+    nav = NavigationManager()
+    nav.go("hub")
+    nav.go("house")
+    nav.open_overlay("chat")
+    assert nav.back() == "house"
+    assert nav.return_route is None
