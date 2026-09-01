@@ -638,23 +638,28 @@ def merge_official_profile(
     entity.occupation = merge_list(entity.occupation, profile.occupation)
     entity.affiliations = merge_list(entity.affiliations, profile.affiliations)
 
-    if not entity.description and profile.description:
+    # A fonte oficial é autoritativa quando fornece o campo. O conteúdo do PDF
+    # continua preservado como apoio/proveniência em vez de ser descartado.
+    if profile.description:
+        if entity.description and entity.description != profile.description:
+            entity.metadata.setdefault("supplemental_pdf_description", entity.description)
         entity.description = profile.description
-    if not entity.origin_place and profile.origin_place:
+    if profile.origin_place:
         entity.origin_place = profile.origin_place
-    if not entity.first_appearance and profile.first_appearance:
+    if profile.first_appearance:
         entity.first_appearance = profile.first_appearance
-    if not entity.gender and profile.gender:
+    if profile.gender:
         entity.gender = profile.gender
     if image_path:
         candidates = list(entity.metadata.get("image_candidates", []) or [])
+        if entity.image and str(entity.image) not in {str(item) for item in candidates if item}:
+            candidates.insert(0, str(entity.image))
         normalized_paths = {str(item) for item in candidates if item}
         if str(image_path) not in normalized_paths:
             candidates.append(str(image_path))
         entity.metadata["image_candidates"] = candidates
-        if not entity.image:
-            entity.image = image_path
-            entity.metadata["image_kind"] = "official_web_cache"
+        entity.image = image_path
+        entity.metadata["image_kind"] = "official_web_cache"
 
     existing_relations = {
         (normalize_search_text(item.predicate), normalize_search_text(item.target_name))
