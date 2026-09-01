@@ -55,7 +55,7 @@ def parse_media_intent(text: str) -> dict | None:
     if any(term in value for term in ("continuar", "reproduzir", "play", "retomar")):
         return {"action": "play"}
 
-    volume = re.search(r"volume\s+(\d{1,3})", value)
+    volume = re.search(r"volume(?:\s+(?:da|do)?\s*(?:star\s+)?tv)?\s+(\d{1,3})", value)
     if volume:
         return {
             "action": "volume",
