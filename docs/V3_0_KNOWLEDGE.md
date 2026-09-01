@@ -125,7 +125,37 @@ talk não chamam modelo, internet nem banco de conhecimento.
 `modules/media_host.py` hospeda o WebView.  
 `gui/app.py` apenas recebe o evento no thread principal e atualiza a cena.
 
+## Fontes da Ilha dos Heróis
+
+Prioridade de conhecimento:
+
+```text
+PDF local
+↓
+dados já indexados/cache
+↓
+perfil oficial DC/Marvel, quando ONLINE for autorizado
+↓
+campo desconhecido permanece nulo
+```
+
+O enriquecimento oficial usa somente `dc.com` e `marvel.com`, mantém cache
+local e registra a URL em `KnowledgeSource`. Uma falha HTTP nunca impede a
+consulta dos dados locais.
+
+O `HeroesKnowledgeBuilder` orquestra os dois PDFs, enriquecimento opcional,
+cache de imagens e relatório de cobertura.
+
+## Imagens
+
+O importador não usa mais uma página escaneada inteira como retrato final.
+Imagens embutidas que cobrem quase toda a página são rejeitadas; arte candidata
+menor pode ser associada ao personagem. Se não houver imagem adequada, o
+enriquecimento oficial pode preencher a imagem e salvá-la no cache local.
+Caso tudo falhe, a GUI usa placeholder.
+
 ## Status
 
-Arquitetura implementada. Conteúdo integral dos dois PDFs e validação de
-WebView/hardware ainda precisam ser concluídos antes da release estável.
+A arquitetura está implementada e testada por CI progressivo. A classificação
+permanece **PARTIAL** até a importação/revisão integral dos dois PDFs e a
+validação física da STAR TV/voz no Windows do projeto.
