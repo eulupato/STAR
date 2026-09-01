@@ -59,6 +59,9 @@ Thumbs.db
 # Preferências locais da interface
 user_settings.json
 
+# Álbum pessoal local
+photos/
+
 # Base de conhecimento, PDFs e caches locais
 knowledge/local/
 knowledge/cache/
