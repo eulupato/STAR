@@ -1823,13 +1823,15 @@ class StarApp:
                         self.send_button.config(state=tk.NORMAL)
 
         except queue.Empty:
-            queue_drained = True  # fim esperado do lote atual
-
-        if not self._closing:
-            try:
-                self.window.after(60, self._check_response_queue)
-            except tk.TclError as exc:
-                log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
+            if not self._closing:
+                try:
+                    self.window.after(60, self._check_response_queue)
+                except tk.TclError as exc:
+                    log.debug(
+                        "Operação Tk ignorada após destruição de widget: %s",
+                        exc,
+                    )
+            return
 
     # ------------------------------------------------------------------
     # Avatar
@@ -2169,8 +2171,8 @@ class StarApp:
         if overlay is not None:
             try:
                 overlay.grab_release()
-            except tk.TclError:
-                pass
+            except tk.TclError as exc:
+                log.debug("Grab do overlay já havia sido liberado: %s", exc)
             try:
                 overlay.destroy()
             except tk.TclError as exc:
