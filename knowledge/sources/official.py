@@ -308,13 +308,20 @@ class OfficialCharacterSource:
         if not name_match:
             for left in expected:
                 for right in actual:
-                    if (
+                    left_tokens = set(left.split())
+                    right_tokens = set(right.split())
+                    same_tokens = (
+                        len(left_tokens) >= 2
+                        and left_tokens == right_tokens
+                    )
+                    contained = (
                         len(left) >= 4
                         and (
                             f" {left} " in f" {right} "
                             or f" {right} " in f" {left} "
                         )
-                    ):
+                    )
+                    if same_tokens or contained:
                         name_match = True
                         break
                 if name_match:
