@@ -116,3 +116,18 @@ def test_spotify_prefix_is_explicit(monkeypatch):
         allow_network=True,
     ) == "ok"
     assert queries == ["heroes"]
+
+
+def test_generic_search_is_not_stolen_from_local_knowledge():
+    assert computer_control.parse(
+        "pesquise Batman",
+        allow_network=False,
+    ) is None
+
+
+def test_explicit_web_search_keeps_network_guard():
+    answer = computer_control.parse(
+        "pesquise na internet estrelas",
+        allow_network=False,
+    )
+    assert "Ative o modo ONLINE" in answer
