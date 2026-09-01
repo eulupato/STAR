@@ -113,8 +113,11 @@ def _resolve_reference_path() -> Path:
 class LocalSpeechToText:
     """STT local rápido com faster-whisper tiny."""
 
-    def __init__(self, model_size: str = "tiny"):
-        self.model_size = os.getenv("STAR_STT_MODEL", model_size)
+    def __init__(self, model_size: str | None = None):
+        from config import STT_MODEL
+
+        configured_model = model_size or STT_MODEL
+        self.model_size = os.getenv("STAR_STT_MODEL", configured_model)
         self.model = None
         self.last_error = None
         self.last_elapsed = 0.0
@@ -192,11 +195,14 @@ class FastPiperTTS:
         self._load_lock = threading.Lock()
 
     def _find_model(self) -> Path:
-        preferred = PIPER_DIR / "pt_BR-faber-medium.onnx"
+        from config import PIPER_MODEL
+
+        model_name = Path(PIPER_MODEL).name
+        preferred = PIPER_DIR / model_name
         if preferred.exists():
             return preferred
         if PIPER_DIR.exists():
-            matches = list(PIPER_DIR.rglob("pt_BR-faber-medium.onnx"))
+            matches = list(PIPER_DIR.rglob(model_name))
             if matches:
                 return matches[0]
         return preferred
@@ -714,10 +720,15 @@ class VoiceManager:
 
     def __init__(self):
         try:
-            from config import VOICE_FALLBACK_ON_ERROR, VOICE_MODE
+            from config import (
+                VOICE_FALLBACK_ON_ERROR,
+                VOICE_FAST_PREFERENCE,
+                VOICE_MODE,
+            )
         except Exception:
             VOICE_MODE = "official"
             VOICE_FALLBACK_ON_ERROR = False
+            VOICE_FAST_PREFERENCE = "sapi"
 
         self.mode = os.getenv(
             "STAR_VOICE_MODE",
@@ -726,6 +737,13 @@ class VoiceManager:
 
         if self.mode not in {"official", "fast"}:
             self.mode = "official"
+
+        self.fast_preference = os.getenv(
+            "STAR_VOICE_FAST_PREFERENCE",
+            VOICE_FAST_PREFERENCE,
+        ).strip().lower()
+        if self.fast_preference not in {"sapi", "piper"}:
+            self.fast_preference = "sapi"
 
         env_fallback = os.getenv("STAR_VOICE_FALLBACK_ON_ERROR")
         if env_fallback is None:
@@ -773,11 +791,26 @@ class VoiceManager:
                 return f"Voz oficial STAR (Chatterbox local • {self.official.reference_path.name})"
             return "Voz oficial INDISPONÍVEL — " + self.official.status_message
 
-        if self.fallback.configured:
-            suffix = f" • {self.fallback.voice_name}" if self.fallback.voice_name else ""
-            return f"Windows SAPI (modo rápido{suffix})"
-        if self.piper.configured:
-            return "Piper PT-BR (modo rápido)"
+        if self.fast_preference == "piper":
+            if self.piper.configured:
+                return "Piper PT-BR (modo rápido • preferido)"
+            if self.fallback.configured:
+                suffix = (
+                    f" • {self.fallback.voice_name}"
+                    if self.fallback.voice_name
+                    else ""
+                )
+                return f"Windows SAPI (fallback rápido{suffix})"
+        else:
+            if self.fallback.configured:
+                suffix = (
+                    f" • {self.fallback.voice_name}"
+                    if self.fallback.voice_name
+                    else ""
+                )
+                return f"Windows SAPI (modo rápido{suffix})"
+            if self.piper.configured:
+                return "Piper PT-BR (fallback rápido)"
         return "TTS indisponível"
 
     def set_voice_mode(self, mode: str) -> None:
@@ -808,15 +841,28 @@ class VoiceManager:
                         f"Voz oficial: {type(exc).__name__}: {exc}"
                     )
 
-            if self.fallback_on_error and not self.fallback.configured:
-                try:
-                    self.piper.warmup()
-                except Exception as exc:
-                    errors.append(f"Piper: {type(exc).__name__}: {exc}")
+            if self.fallback_on_error:
+                should_warm_piper = (
+                    self.piper.configured
+                    and (
+                        self.fast_preference == "piper"
+                        or not self.fallback.configured
+                    )
+                )
+                if should_warm_piper:
+                    try:
+                        self.piper.warmup()
+                    except Exception as exc:
+                        errors.append(f"Piper: {type(exc).__name__}: {exc}")
         else:
-            # No Windows, SAPI é o backend rápido preferido e não exige
-            # carregamento de modelo. Piper só é aquecido se SAPI não existir.
-            if not self.fallback.configured:
+            should_warm_piper = (
+                self.piper.configured
+                and (
+                    self.fast_preference == "piper"
+                    or not self.fallback.configured
+                )
+            )
+            if should_warm_piper:
                 try:
                     self.piper.warmup()
                 except Exception as exc:
@@ -856,35 +902,45 @@ class VoiceManager:
         text: str,
         event: threading.Event,
     ) -> bool:
-        # No Windows, SAPI costuma responder quase imediatamente e permite
-        # escolher uma voz PT-BR/feminina instalada. Piper permanece como
-        # fallback determinístico se o SAPI não estiver disponível.
-        if self.fallback.configured and self.fallback.speak(text, event):
-            self.last_error = None
-            label = self.fallback.voice_name or "voz local"
-            self.last_tts_engine = f"Windows SAPI — {label}"
-            return True
+        backends = {
+            "sapi": self.fallback,
+            "piper": self.piper,
+        }
+        order = (
+            ("piper", "sapi")
+            if self.fast_preference == "piper"
+            else ("sapi", "piper")
+        )
+        errors = []
 
-        if event.is_set() or self.fallback.last_error == "cancelled":
-            self.last_error = "Fala cancelada."
-            return False
+        for name in order:
+            backend = backends[name]
+            if not backend.configured:
+                continue
 
-        sapi_error = self.fallback.last_error
+            if backend.speak(text, event):
+                self.last_error = None
+                if name == "sapi":
+                    label = self.fallback.voice_name or "voz local"
+                    self.last_tts_engine = f"Windows SAPI — {label}"
+                else:
+                    self.last_tts_engine = "Piper — modo rápido"
+                return True
 
-        if self.piper.configured and self.piper.speak(text, event):
-            self.last_error = None
-            self.last_tts_engine = "Piper — modo rápido"
-            return True
+            if event.is_set() or backend.last_error == "cancelled":
+                self.last_error = "Fala cancelada."
+                return False
 
-        if event.is_set() or self.piper.last_error == "cancelled":
-            self.last_error = "Fala cancelada."
-            return False
+            if backend.last_error:
+                errors.append(
+                    f"{name.upper()}: {backend.last_error}"
+                )
 
         self.last_tts_engine = "indisponível"
         self.last_error = (
-            sapi_error
-            or self.piper.last_error
-            or "Windows SAPI e Piper falharam."
+            " | ".join(errors)
+            if errors
+            else "Windows SAPI e Piper estão indisponíveis."
         )
         return False
 
