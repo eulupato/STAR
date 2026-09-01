@@ -16,14 +16,18 @@ log = get_logger("knowledge.heroes_import")
 
 
 FACT_PATTERNS = {
-    "real_name": r"(?:REAL NAME|REAL NAME\s*:|Real name)\s*[:\-]?\s*([^\n|]{2,80})",
-    "occupation": r"(?:OCCUPATION|Occupation)\s*[:\-]?\s*([^\n|]{2,100})",
-    "base": r"(?:BASE|Base)\s*[:\-]?\s*([^\n|]{2,100})",
-    "first_appearance": r"(?:FIRST APPEARANCE|First appearance)\s*[:\-]?\s*([^\n]{2,140})",
-    "species": r"(?:SPECIES|Species)\s*[:\-]?\s*([^\n|]{2,80})",
+    "real_name": r"(?:REAL NAME|Real name)\s*[:\-]?\s*([^\n|]{2,100})",
+    "occupation": r"(?:OCCUPATION|Occupation)\s*[:\-]?\s*([^\n|]{2,140})",
+    "base": r"(?:BASE OF OPERATIONS|BASE|Base)\s*[:\-]?\s*([^\n|]{2,140})",
+    "first_appearance": r"(?:FIRST APPEARANCE|First appearance)\s*[:\-]?\s*([^\n]{2,180})",
+    "species": r"(?:SPECIES|Species)\s*[:\-]?\s*([^\n|]{2,100})",
+    "gender": r"(?:GENDER|Gender)\s*[:\-]?\s*([^\n|]{2,60})",
     "status": r"(?:STATUS|Status)\s*[:\-]?\s*([^\n|]{2,80})",
-    "known_relatives": r"(?:KNOWN RELATIVES|Known relatives)\s*[:\-]?\s*([^\n]{2,180})",
-    "special": r"(?:SPECIAL POWERS/ABILITIES|SPECIAL POWERS|POWERS/ABILITIES|Special powers/abilities)\s*[:\-]?\s*([^\n]{2,240})",
+    "origin": r"(?:ORIGIN|Origin)\s*[:\-]?\s*([^\n|]{2,160})",
+    "place_of_origin": r"(?:PLACE OF ORIGIN|Place of Origin)\s*[:\-]?\s*([^\n|]{2,160})",
+    "known_relatives": r"(?:KNOWN RELATIVES|Known relatives)\s*[:\-]?\s*([^\n]{2,240})",
+    "group_affiliation": r"(?:GROUP AFFILIATION|AFFILIATIONS|TEAM|Teams)\s*[:\-]?\s*([^\n]{2,240})",
+    "special": r"(?:SPECIAL POWERS/ABILITIES|SPECIAL POWERS|POWERS/ABILITIES|POWERS|Special powers/abilities)\s*[:\-]?\s*([^\n]{2,300})",
 }
 
 GENERIC_HEADINGS = {
@@ -31,6 +35,7 @@ GENERIC_HEADINGS = {
     "ACKNOWLEDGMENTS", "ACKNOWLEDGEMENTS", "AMAZING VEHICLES",
     "AMAZING WEAPONS", "ALIEN RACES", "GREAT TEAM-UPS",
     "ROMANTIC MOMENTS", "GREAT BATTLES", "STRANGE TIMES AND PLACES",
+    "CHARACTER FACTS", "FACTFILE", "BIOGRAPHY", "HISTORY", "PERSONALITY",
 }
 
 
@@ -40,6 +45,7 @@ class ImportStats:
     pages_with_text: int = 0
     entities_detected: int = 0
     entities_saved: int = 0
+    entities_rejected: int = 0
     ocr_pages: int = 0
 
 
@@ -53,38 +59,62 @@ class HeroEncyclopediaImporter:
         if not value:
             return []
         parts = re.split(r"[,;/]|\band\b|\be\b", value, flags=re.IGNORECASE)
-        return [item.strip(" .") for item in parts if item.strip(" .")]
+        result = []
+        seen = set()
+        for item in parts:
+            cleaned = item.strip(" .")
+            key = normalize_search_text(cleaned)
+            if cleaned and key and key not in seen:
+                seen.add(key)
+                result.append(cleaned)
+        return result
 
     @staticmethod
     def _clean_heading(value: str) -> str:
-        value = re.sub(r"\s+", " ", value).strip(" :.-\t")
-        return value
+        return re.sub(r"\s+", " ", value).strip(" :.-\t")
 
     @classmethod
-    def _heading_candidates(cls, text: str) -> list[str]:
-        candidates = []
-        for raw in text.splitlines()[:18]:
+    def _heading_entries(cls, text: str) -> list[tuple[int, str]]:
+        entries = []
+        lines = text.splitlines()
+        generic = {normalize_search_text(item) for item in GENERIC_HEADINGS}
+
+        for index, raw in enumerate(lines):
             line = cls._clean_heading(raw)
-            if not line or len(line) < 2 or len(line) > 60:
+            if not line or len(line) < 2 or len(line) > 70:
                 continue
             normalized = normalize_search_text(line)
-            if normalized.upper() in GENERIC_HEADINGS:
+            if normalized in generic:
                 continue
-            if re.search(r"\b(?:FACTFILE|FIRST APPEARANCE|REAL NAME|OCCUPATION|BASE)\b", line, re.I):
+            if re.search(
+                r"\b(?:FIRST APPEARANCE|REAL NAME|OCCUPATION|BASE|POWERS|ABILITIES|HEIGHT|WEIGHT|EYES|HAIR)\b",
+                line,
+                re.I,
+            ):
                 continue
+
             letters = [ch for ch in line if ch.isalpha()]
             if len(letters) < 2:
                 continue
             uppercase_ratio = sum(ch.isupper() for ch in letters) / len(letters)
             titleish = uppercase_ratio >= 0.72 or line.istitle()
-            if titleish:
-                candidates.append(line)
-        return candidates[:4]
+            if not titleish:
+                continue
+
+            # Headings muito longos/fraseados tendem a ser subtítulos editoriais.
+            if len(line.split()) > 8:
+                continue
+            entries.append((index, line))
+
+        return entries
+
+    @classmethod
+    def _heading_candidates(cls, text: str) -> list[str]:
+        return [name for _index, name in cls._heading_entries(text)]
 
     @staticmethod
     def _extract_fact(text: str, key: str) -> str | None:
-        pattern = FACT_PATTERNS[key]
-        match = re.search(pattern, text, re.IGNORECASE)
+        match = re.search(FACT_PATTERNS[key], text, re.IGNORECASE)
         if not match:
             return None
         value = re.sub(r"\s+", " ", match.group(1)).strip(" .:-")
@@ -92,17 +122,98 @@ class HeroEncyclopediaImporter:
 
     @staticmethod
     def _summary(text: str, heading: str) -> str | None:
-        cleaned = re.sub(r"\s+", " ", text)
-        cleaned = re.sub(re.escape(heading), " ", cleaned, count=1, flags=re.I)
+        cleaned = re.sub(re.escape(heading), " ", text, count=1, flags=re.I)
         cleaned = re.sub(
-            r"(FACTFILE|FIRST APPEARANCE|REAL NAME|OCCUPATION|BASE|HEIGHT|WEIGHT|EYES|HAIR).*",
+            r"(?is)(FACTFILE|CHARACTER FACTS|FIRST APPEARANCE|REAL NAME|OCCUPATION|BASE|HEIGHT|WEIGHT|EYES|HAIR|POWERS).*",
             "",
             cleaned,
-            flags=re.I,
-        ).strip()
-        if len(cleaned) < 40:
+        )
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        if len(cleaned) < 45:
             return None
-        return cleaned[:700].rstrip()
+        return cleaned[:900].rstrip()
+
+    @classmethod
+    def _build_entity(
+        cls,
+        segment: str,
+        heading: str,
+        page: PdfPage,
+        *,
+        universe: str,
+        publisher: str,
+        source_file: str,
+    ) -> tuple[Entity | None, float]:
+        normalized = normalize_search_text(heading)
+        if normalized in {normalize_search_text(item) for item in GENERIC_HEADINGS}:
+            return None, 0.0
+
+        facts = {key: cls._extract_fact(segment, key) for key in FACT_PATTERNS}
+        summary = cls._summary(segment, heading)
+        signal_count = sum(bool(value) for value in facts.values())
+        confidence = 0.28 + min(signal_count, 5) * 0.11 + (0.17 if summary else 0.0)
+
+        # Sem qualquer ficha, exigimos um resumo substancial para evitar que
+        # títulos editoriais virem personagens.
+        if signal_count == 0 and (not summary or len(summary) < 100):
+            return None, confidence
+        if confidence < 0.45:
+            return None, confidence
+
+        real_name = facts["real_name"]
+        aliases = []
+        if real_name and normalize_search_text(real_name) != normalized:
+            aliases.append(real_name)
+
+        relatives = cls._split_values(facts["known_relatives"])
+        relations = [Relationship("relative", value) for value in relatives]
+
+        teams = cls._split_values(facts["group_affiliation"])
+        relations.extend(Relationship("team", value) for value in teams)
+
+        origin_place = facts["place_of_origin"] or facts["base"]
+        entity = Entity(
+            name=heading.title() if heading.isupper() else heading,
+            original_name=heading,
+            aliases=aliases,
+            category="character",
+            universe=universe,
+            publisher=publisher,
+            team=teams,
+            species=facts["species"],
+            gender=facts["gender"],
+            origin=facts["origin"],
+            origin_place=origin_place,
+            occupation=cls._split_values(facts["occupation"]),
+            status=facts["status"],
+            first_appearance=facts["first_appearance"],
+            description=summary,
+            powers=cls._split_values(facts["special"]),
+            relationships=relations,
+            image=page.portrait_path,
+            tags=["encyclopedia", universe.lower(), "pdf-import"],
+            sources=[
+                KnowledgeSource(
+                    source_type="PDF",
+                    source_ref=source_file,
+                    page=page.number,
+                    retrieved_at=datetime.now(timezone.utc).isoformat(),
+                )
+            ],
+            metadata={
+                "source_page": page.number,
+                "ocr": page.used_ocr,
+                "import_confidence": round(min(confidence, 1.0), 3),
+                "image_kind": "pdf_embedded_candidate" if page.portrait_path else None,
+                "page_reference": page.image_path,
+                "image_candidates": list(page.image_candidates),
+            },
+            attributes={
+                "real_name": real_name,
+                "base": facts["base"],
+            },
+        )
+        return entity, confidence
 
     @classmethod
     def parse_page(
@@ -116,73 +227,30 @@ class HeroEncyclopediaImporter:
         if len(page.text.strip()) < 40:
             return []
 
-        headings = cls._heading_candidates(page.text)
-        if not headings:
+        lines = page.text.splitlines()
+        entries = cls._heading_entries(page.text)
+        if not entries:
             return []
 
-        # A maioria das páginas possui uma entrada dominante; múltiplos headings
-        # são mantidos quando o OCR/texto deixa isso claro.
         entities = []
-        for heading in headings:
-            normalized = normalize_search_text(heading)
-            if normalized in {normalize_search_text(item) for item in GENERIC_HEADINGS}:
-                continue
-
-            real_name = cls._extract_fact(page.text, "real_name")
-            occupation = cls._extract_fact(page.text, "occupation")
-            first_appearance = cls._extract_fact(page.text, "first_appearance")
-            species = cls._extract_fact(page.text, "species")
-            status = cls._extract_fact(page.text, "status")
-            relatives = cls._extract_fact(page.text, "known_relatives")
-            special = cls._extract_fact(page.text, "special")
-
-            aliases = []
-            if real_name and normalize_search_text(real_name) != normalized:
-                aliases.append(real_name)
-
-            relations = []
-            for relative in cls._split_values(relatives):
-                relations.append(Relationship("relative", relative))
-
-            entity = Entity(
-                name=heading.title() if heading.isupper() else heading,
-                original_name=heading,
-                aliases=aliases,
-                category="character",
+        for position, (line_index, heading) in enumerate(entries):
+            next_index = (
+                entries[position + 1][0]
+                if position + 1 < len(entries)
+                else len(lines)
+            )
+            segment = "\n".join(lines[line_index:next_index]).strip()
+            entity, _confidence = cls._build_entity(
+                segment,
+                heading,
+                page,
                 universe=universe,
                 publisher=publisher,
-                species=species,
-                occupation=cls._split_values(occupation),
-                status=status,
-                first_appearance=first_appearance,
-                description=cls._summary(page.text, heading),
-                powers=cls._split_values(special),
-                relationships=relations,
-                image=page.portrait_path,
-                tags=["encyclopedia", universe.lower(), "pdf-import"],
-                sources=[
-                    KnowledgeSource(
-                        source_type="PDF",
-                        source_ref=source_file,
-                        page=page.number,
-                        retrieved_at=datetime.now(timezone.utc).isoformat(),
-                    )
-                ],
-                metadata={
-                    "source_page": page.number,
-                    "ocr": page.used_ocr,
-                    "image_kind": "pdf_embedded_candidate" if page.portrait_path else None,
-                    "page_reference": page.image_path,
-                    "image_candidates": list(page.image_candidates),
-                },
-                attributes={
-                    "real_name": real_name,
-                    "base": cls._extract_fact(page.text, "base"),
-                },
+                source_file=source_file,
             )
-            entities.append(entity)
+            if entity is not None:
+                entities.append(entity)
 
-        # Evita multiplicar a mesma entrada por headings repetidos na página.
         unique = {}
         for entity in entities:
             unique[normalize_search_text(entity.name)] = entity
@@ -215,21 +283,24 @@ class HeroEncyclopediaImporter:
             if page.used_ocr:
                 stats.ocr_pages += 1
 
+            candidates = self._heading_entries(page.text)
             entities = self.parse_page(
                 page,
                 universe=universe,
                 publisher=publisher,
                 source_file=source.name,
             )
-            stats.entities_detected += len(entities)
+            stats.entities_detected += len(candidates)
+            stats.entities_rejected += max(0, len(candidates) - len(entities))
             for entity in entities:
                 self.engine.upsert_entity(entity)
                 stats.entities_saved += 1
 
         log.info(
-            "Importação %s: %s páginas, %s entidades salvas.",
+            "Importação %s: %s páginas, %s entidades salvas, %s candidatos rejeitados.",
             source.name,
             stats.pages_seen,
             stats.entities_saved,
+            stats.entities_rejected,
         )
         return stats
