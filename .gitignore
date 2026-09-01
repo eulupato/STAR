@@ -55,3 +55,9 @@ Thumbs.db
 
 # Preferências locais da interface
 user_settings.json
+
+# Base de conhecimento, PDFs e caches locais
+knowledge/local/
+knowledge/sources/
+knowledge/cache/
+*.pdf
