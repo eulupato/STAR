@@ -1,1 +1,1 @@
-"""Fontes externas opcionais da STAR Knowledge."""\n
+"""Fontes externas opcionais da STAR Knowledge."""
