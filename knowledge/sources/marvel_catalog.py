@@ -215,7 +215,10 @@ class MarvelOfficialCatalog:
 
         for entry in entries:
             existing = engine.resolve_entity(entry.name, universe="Marvel")
-            if existing is None and entry.aliases:
+            # Uma identidade explícita (ex.: Spider-Man (Miles Morales)) nunca
+            # pode ser mesclada apenas porque compartilha o codinome base com
+            # outra pessoa (ex.: Peter Parker).
+            if existing is None and not entry.real_name and entry.aliases:
                 for alias in entry.aliases:
                     existing = engine.resolve_entity(alias, universe="Marvel")
                     if existing is not None:
