@@ -746,6 +746,7 @@ class VoiceManager:
         self._state_lock = threading.Lock()
         self._cancel_event = threading.Event()
         self._speaking = threading.Event()
+        self._official_active = threading.Event()
 
     @property
     def configured(self) -> bool:
@@ -844,7 +845,7 @@ class VoiceManager:
         except Exception as exc:
             log.debug("Fallback de voz já estava parado: %s", exc)
 
-        if self._speaking.is_set():
+        if self._official_active.is_set():
             self.official.cancel()
 
     def _speak_fast(
@@ -917,7 +918,13 @@ class VoiceManager:
                     return self._speak_fast(spoken_text, event)
                 return False
 
-            if self.official.speak(spoken_text, event):
+            self._official_active.set()
+            try:
+                official_ok = self.official.speak(spoken_text, event)
+            finally:
+                self._official_active.clear()
+
+            if official_ok:
                 self.last_error = None
                 self.last_tts_engine = "Chatterbox — voz oficial STAR"
                 return True
@@ -973,10 +980,16 @@ class VoiceManager:
         event = self._current_cancel_event()
 
         def run():
+            ok = False
+            error = None
             self._speaking.set()
             try:
                 ok = self.speak(text, event)
                 error = self.last_error
+            except Exception as exc:
+                error = f"{type(exc).__name__}: {exc}"
+                self.last_error = error
+                log.exception("Falha inesperada no thread de TTS: %s", exc)
             finally:
                 self._speaking.clear()
 
@@ -1012,10 +1025,14 @@ class VoiceManager:
                         error = "Voz oficial não configurada: " + self.official.status_message
                         self.last_tts_engine = "voz oficial indisponível"
                     else:
-                        ok = self.official.speak(
-                            "Olá! Eu sou a STAR. Este é o teste da minha voz oficial.",
-                            event,
-                        )
+                        self._official_active.set()
+                        try:
+                            ok = self.official.speak(
+                                "Olá! Eu sou a STAR. Este é o teste da minha voz oficial.",
+                                event,
+                            )
+                        finally:
+                            self._official_active.clear()
                         error = self.official.last_error
                         if ok:
                             self.last_tts_engine = "Chatterbox — voz oficial STAR"
