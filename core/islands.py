@@ -9,9 +9,9 @@ ISLANDS = {
     "herois": {
         "name": "Heróis",
         "icon": "🦸",
-        "status": "planned",
+        "status": "installed",
         "type": "knowledge",
-        "description": "Catálogo aprofundado de heróis e personagens, com biografias e referências organizadas.",
+        "description": "Primeira ilha funcional de conhecimento da STAR, alimentada pelo Entity System, busca local e Knowledge Graph.",
         "contents": [
             "biografia, origem e história",
             "evolução do personagem e principais arcos",
