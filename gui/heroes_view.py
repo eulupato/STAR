@@ -24,12 +24,28 @@ class HeroesIslandView(tk.Frame):
 
         self.search_var = tk.StringVar()
         self.universe_var = tk.StringVar(value="Todos")
+        self.filter_vars = {
+            "team": tk.StringVar(),
+            "power": tk.StringVar(),
+            "ability": tk.StringVar(),
+            "tag": tk.StringVar(),
+            "species": tk.StringVar(),
+            "relationship": tk.StringVar(),
+        }
         self._build()
         self.refresh()
 
     def _build(self):
         controls = tk.Frame(self, bg=self.palette["bg"])
         controls.pack(fill="x", padx=24, pady=(8, 12))
+
+        tk.Label(
+            controls,
+            text="Nome / alias / busca",
+            bg=self.palette["bg"],
+            fg=self.palette["muted"],
+            font=("Segoe UI", 9, "bold"),
+        ).pack(side="left", padx=(0, 8))
 
         self.search = tk.Entry(
             controls,
@@ -60,6 +76,61 @@ class HeroesIslandView(tk.Frame):
         )
         menu["menu"].config(bg="#243247", fg=self.palette["text"])
         menu.pack(side="left", padx=(10, 0))
+
+        advanced = tk.Frame(self, bg=self.palette["bg"])
+        advanced.pack(fill="x", padx=24, pady=(0, 10))
+        fields = (
+            ("Equipe", "team"),
+            ("Poder", "power"),
+            ("Habilidade", "ability"),
+            ("Tag", "tag"),
+            ("Tipo / espécie", "species"),
+            ("Relação com", "relationship"),
+        )
+        for index, (label, key) in enumerate(fields):
+            holder = tk.Frame(advanced, bg=self.palette["bg"])
+            holder.grid(
+                row=index // 3,
+                column=index % 3,
+                sticky="ew",
+                padx=(0 if index % 3 == 0 else 8, 0),
+                pady=(0, 7),
+            )
+            tk.Label(
+                holder,
+                text=label,
+                bg=self.palette["bg"],
+                fg=self.palette["muted"],
+                font=("Segoe UI", 8, "bold"),
+            ).pack(anchor="w")
+            entry = tk.Entry(
+                holder,
+                textvariable=self.filter_vars[key],
+                bg="#25364b",
+                fg=self.palette["text"],
+                insertbackground=self.palette["text"],
+                relief=tk.FLAT,
+                font=("Segoe UI", 9),
+            )
+            entry.pack(fill="x", ipady=5)
+            entry.bind("<KeyRelease>", self._schedule_refresh)
+
+        for column in range(3):
+            advanced.grid_columnconfigure(column, weight=1)
+
+        tk.Button(
+            advanced,
+            text="LIMPAR FILTROS",
+            command=self._clear_filters,
+            bg="#243247",
+            fg=self.palette["text"],
+            activebackground="#315575",
+            activeforeground=self.palette["text"],
+            relief=tk.FLAT,
+            font=("Segoe UI", 8, "bold"),
+            padx=12,
+            pady=5,
+        ).grid(row=2, column=2, sticky="e", pady=(2, 0))
 
         content = tk.Frame(self, bg=self.palette["bg"])
         content.pack(fill="both", expand=True, padx=24, pady=(0, 18))
@@ -158,6 +229,13 @@ class HeroesIslandView(tk.Frame):
                 log.debug("Busca anterior já não estava agendada: %s", exc)
         self._search_job = self.after(140, self.refresh)
 
+    def _clear_filters(self):
+        self.search_var.set("")
+        self.universe_var.set("Todos")
+        for variable in self.filter_vars.values():
+            variable.set("")
+        self.refresh()
+
     def refresh(self):
         self._search_job = None
         query = self.search_var.get().strip()
@@ -165,6 +243,10 @@ class HeroesIslandView(tk.Frame):
         filters = {"category": "character"}
         if universe != "Todos":
             filters["universe"] = universe
+        for key, variable in self.filter_vars.items():
+            value = variable.get().strip()
+            if value:
+                filters[key] = value
         previous = self.carousel.current
         previous_id = previous.id if previous else None
         items = self.knowledge.search_entities(query, filters=filters, limit=500)
@@ -198,24 +280,51 @@ class HeroesIslandView(tk.Frame):
         self.meta_label.config(text=meta or entity.category)
 
         lines = []
+        real_name = (
+            entity.attributes.get("real_name")
+            if entity.attributes
+            else None
+        )
+        if real_name:
+            lines.append(f"Identidade / nome real: {real_name}")
         if entity.original_name and entity.original_name != entity.name:
             lines.append(f"Nome original: {entity.original_name}")
         if entity.aliases:
             lines.append("Aliases: " + ", ".join(entity.aliases))
+        if entity.gender:
+            lines.append(f"Gênero: {entity.gender}")
+        if entity.species:
+            lines.append(f"Espécie / tipo: {entity.species}")
+        if entity.origin_place:
+            lines.append(f"Local de origem: {entity.origin_place}")
+        if entity.origin:
+            lines.append(f"Origem: {entity.origin}")
         if entity.occupation:
             lines.append("Ocupação: " + ", ".join(entity.occupation))
+        if entity.creators:
+            lines.append("Criadores: " + ", ".join(entity.creators))
         if entity.team:
-            lines.append("Equipe: " + ", ".join(entity.team))
+            lines.append("Equipes: " + ", ".join(entity.team))
         if entity.affiliations:
             lines.append("Afiliações: " + ", ".join(entity.affiliations))
+        if entity.status:
+            lines.append(f"Status / classificação: {entity.status}")
+        if entity.tags:
+            lines.append("Tags: " + ", ".join(entity.tags))
         if entity.first_appearance:
             lines.append("Primeira aparição: " + entity.first_appearance)
         if entity.description:
             lines.append("\n" + entity.description)
         if entity.powers:
-            lines.append("\nPoderes/Habilidades: " + ", ".join(entity.powers))
+            lines.append("\nPoderes: " + ", ".join(entity.powers))
+        if entity.abilities:
+            lines.append("Habilidades: " + ", ".join(entity.abilities))
         if entity.weaknesses:
             lines.append("Fraquezas: " + ", ".join(entity.weaknesses))
+        if entity.equipment:
+            lines.append("Equipamentos: " + ", ".join(entity.equipment))
+        if entity.weapons:
+            lines.append("Armas: " + ", ".join(entity.weapons))
         if entity.relationships:
             grouped = {}
             for relation in entity.relationships:
@@ -223,11 +332,18 @@ class HeroesIslandView(tk.Frame):
             for predicate, names in grouped.items():
                 lines.append(f"{predicate.title()}: " + ", ".join(names))
         if entity.sources:
-            source = entity.sources[0]
-            page = f", pág. {source.page}" if source.page else ""
-            lines.append(f"\nFonte: {source.source_ref}{page}")
+            lines.append("\nFontes:")
+            for source in entity.sources[:6]:
+                page = f", pág. {source.page}" if source.page else ""
+                url = f" — {source.url}" if source.url else ""
+                lines.append(f"• {source.source_ref}{page}{url}")
+            if len(entity.sources) > 6:
+                lines.append(f"• +{len(entity.sources) - 6} fontes registradas")
 
-        self._set_details("\n".join(lines) or "Registro básico; aguardando enriquecimento.")
+        self._set_details(
+            "\n".join(lines)
+            or "Registro básico disponível; ainda sem detalhes adicionais nas fontes indexadas."
+        )
         self._render_image(entity.image)
         self.counter_label.config(
             text=f"{self.carousel.index + 1} / {len(self.carousel.items)}"
