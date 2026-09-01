@@ -8,6 +8,7 @@ from PIL import Image, ImageTk
 
 from core.logging_config import get_logger
 from gui.components.carousel import CarouselController
+from knowledge.hero_visuals import theme_for_entity, visual_references
 
 log = get_logger("gui.heroes")
 
@@ -21,6 +22,9 @@ class HeroesIslandView(tk.Frame):
         self.carousel = CarouselController()
         self.photo = None
         self._search_job = None
+        self._image_index = 0
+        self._image_refs: list[str] = []
+        self._rendered_entity_id = None
 
         self.search_var = tk.StringVar()
         self.universe_var = tk.StringVar(value="Todos")
@@ -132,11 +136,11 @@ class HeroesIslandView(tk.Frame):
             pady=5,
         ).grid(row=2, column=2, sticky="e", pady=(2, 0))
 
-        content = tk.Frame(self, bg=self.palette["bg"])
-        content.pack(fill="both", expand=True, padx=24, pady=(0, 18))
+        self.content = tk.Frame(self, bg=self.palette["bg"])
+        self.content.pack(fill="both", expand=True, padx=24, pady=(0, 18))
 
         self.prev_button = tk.Button(
-            content,
+            self.content,
             text="◀",
             command=lambda: self.move(-1),
             bg="#243247",
@@ -149,15 +153,20 @@ class HeroesIslandView(tk.Frame):
         )
         self.prev_button.pack(side="left", fill="y", padx=(0, 10))
 
-        card = tk.Frame(content, bg=self.palette["panel"], padx=20, pady=18)
-        card.pack(side="left", fill="both", expand=True)
+        self.card = tk.Frame(
+            self.content,
+            bg=self.palette["panel"],
+            padx=20,
+            pady=18,
+        )
+        self.card.pack(side="left", fill="both", expand=True)
 
-        left = tk.Frame(card, bg=self.palette["panel"], width=330)
-        left.pack(side="left", fill="y")
-        left.pack_propagate(False)
+        self.left = tk.Frame(self.card, bg=self.palette["panel"], width=330)
+        self.left.pack(side="left", fill="y")
+        self.left.pack_propagate(False)
 
         self.image_label = tk.Label(
-            left,
+            self.left,
             bg="#080c12",
             fg=self.palette["muted"],
             text="SEM IMAGEM\nDE REFERÊNCIA",
@@ -166,11 +175,36 @@ class HeroesIslandView(tk.Frame):
         )
         self.image_label.pack(fill="both", expand=True, padx=(0, 18))
 
-        right = tk.Frame(card, bg=self.palette["panel"])
-        right.pack(side="left", fill="both", expand=True)
+        self.image_controls = tk.Frame(self.left, bg=self.palette["panel"])
+        self.image_controls.pack(fill="x", padx=(0, 18), pady=(8, 0))
+        self.image_prev = tk.Button(
+            self.image_controls,
+            text="◀ imagem",
+            command=lambda: self.move_image(-1),
+            relief=tk.FLAT,
+            font=("Segoe UI", 8, "bold"),
+        )
+        self.image_prev.pack(side="left")
+        self.image_counter = tk.Label(
+            self.image_controls,
+            text="0 / 0",
+            font=("Segoe UI", 8, "bold"),
+        )
+        self.image_counter.pack(side="left", expand=True)
+        self.image_next = tk.Button(
+            self.image_controls,
+            text="imagem ▶",
+            command=lambda: self.move_image(1),
+            relief=tk.FLAT,
+            font=("Segoe UI", 8, "bold"),
+        )
+        self.image_next.pack(side="right")
+
+        self.right = tk.Frame(self.card, bg=self.palette["panel"])
+        self.right.pack(side="left", fill="both", expand=True)
 
         self.name_label = tk.Label(
-            right,
+            self.right,
             bg=self.palette["panel"],
             fg=self.palette["star"],
             font=("Segoe UI", 23, "bold"),
@@ -179,7 +213,7 @@ class HeroesIslandView(tk.Frame):
         self.name_label.pack(fill="x")
 
         self.meta_label = tk.Label(
-            right,
+            self.right,
             bg=self.palette["panel"],
             fg=self.palette["muted"],
             font=("Segoe UI", 10, "bold"),
@@ -188,7 +222,7 @@ class HeroesIslandView(tk.Frame):
         self.meta_label.pack(fill="x", pady=(3, 12))
 
         self.details = tk.Text(
-            right,
+            self.right,
             bg=self.palette["panel"],
             fg=self.palette["text"],
             insertbackground=self.palette["text"],
@@ -200,7 +234,7 @@ class HeroesIslandView(tk.Frame):
         self.details.pack(fill="both", expand=True)
 
         self.counter_label = tk.Label(
-            right,
+            self.right,
             bg=self.palette["panel"],
             fg=self.palette["muted"],
             font=("Segoe UI", 9),
@@ -208,7 +242,7 @@ class HeroesIslandView(tk.Frame):
         self.counter_label.pack(anchor="e", pady=(8, 0))
 
         self.next_button = tk.Button(
-            content,
+            self.content,
             text="▶",
             command=lambda: self.move(1),
             bg="#243247",
@@ -247,13 +281,10 @@ class HeroesIslandView(tk.Frame):
             value = variable.get().strip()
             if value:
                 filters[key] = value
+
         previous = self.carousel.current
         previous_id = previous.id if previous else None
-        items = self.knowledge.search_entities(
-            query,
-            filters=filters,
-            limit=5000,
-        )
+        items = self.knowledge.search_entities(query, filters=filters, limit=5000)
         self.carousel.set_items(items, keep_id=previous_id)
         self.render()
 
@@ -261,34 +292,77 @@ class HeroesIslandView(tk.Frame):
         self.carousel.move(step)
         self.render()
 
+    def move_image(self, step):
+        if not self._image_refs:
+            return
+        self._image_index = (self._image_index + step) % len(self._image_refs)
+        self._render_image_reference()
+
+    def _apply_theme(self, entity):
+        theme = theme_for_entity(entity)
+        self.card.config(bg=theme.panel)
+        self.left.config(bg=theme.panel)
+        self.right.config(bg=theme.panel)
+        self.image_controls.config(bg=theme.panel)
+
+        self.name_label.config(bg=theme.panel, fg=theme.accent)
+        self.meta_label.config(bg=theme.panel, fg=theme.muted)
+        self.details.config(
+            bg=theme.panel,
+            fg=theme.text,
+            insertbackground=theme.text,
+        )
+        self.counter_label.config(bg=theme.panel, fg=theme.muted)
+        self.image_label.config(
+            bg=theme.background,
+            fg=theme.muted,
+            highlightbackground=theme.accent,
+            highlightcolor=theme.accent,
+            highlightthickness=1,
+        )
+        for button in (
+            self.prev_button,
+            self.next_button,
+            self.image_prev,
+            self.image_next,
+        ):
+            button.config(
+                bg=theme.background,
+                fg=theme.accent_secondary,
+                activebackground=theme.accent,
+                activeforeground=theme.text,
+            )
+        self.image_counter.config(bg=theme.panel, fg=theme.muted)
+
     def render(self):
         entity = self.carousel.current
         if entity is None:
             self.name_label.config(text="Nenhum personagem encontrado")
             self.meta_label.config(
-                text="Importe os PDFs locais ou altere os filtros de busca."
+                text="Importe a base local ou altere os filtros de busca."
             )
             self._set_details(
                 "A Ilha dos Heróis está funcional, mas não há registros que "
                 "correspondam à pesquisa atual."
             )
+            self.photo = None
+            self._image_refs = []
             self.image_label.config(image="", text="SEM IMAGEM\nDE REFERÊNCIA")
+            self.image_counter.config(text="0 / 0")
             self.counter_label.config(text="0 / 0")
             return
 
+        self._apply_theme(entity)
         self.name_label.config(text=entity.name)
         meta = " • ".join(
-            item for item in [entity.universe, entity.publisher, entity.species]
+            item
+            for item in [entity.universe, entity.publisher, entity.species]
             if item
         )
         self.meta_label.config(text=meta or entity.category)
 
         lines = []
-        real_name = (
-            entity.attributes.get("real_name")
-            if entity.attributes
-            else None
-        )
+        real_name = entity.attributes.get("real_name") if entity.attributes else None
         if real_name:
             lines.append(f"Identidade / nome real: {real_name}")
         if entity.original_name and entity.original_name != entity.name:
@@ -319,6 +393,10 @@ class HeroesIslandView(tk.Frame):
             lines.append("Primeira aparição: " + entity.first_appearance)
         if entity.description:
             lines.append("\n" + entity.description)
+        if entity.history_summary:
+            lines.append("\nHistória resumida: " + entity.history_summary)
+        if entity.personality:
+            lines.append("Personalidade: " + entity.personality)
         if entity.powers:
             lines.append("\nPoderes: " + ", ".join(entity.powers))
         if entity.abilities:
@@ -327,28 +405,34 @@ class HeroesIslandView(tk.Frame):
             lines.append("Fraquezas: " + ", ".join(entity.weaknesses))
         if entity.equipment:
             lines.append("Equipamentos: " + ", ".join(entity.equipment))
-        if entity.weapons:
-            lines.append("Armas: " + ", ".join(entity.weapons))
+
         if entity.relationships:
             grouped = {}
             for relation in entity.relationships:
                 grouped.setdefault(relation.predicate, []).append(relation.target_name)
             for predicate, names in grouped.items():
                 lines.append(f"{predicate.title()}: " + ", ".join(names))
+
         if entity.sources:
             lines.append("\nFontes:")
-            for source in entity.sources[:6]:
+            for source in entity.sources[:8]:
                 page = f", pág. {source.page}" if source.page else ""
                 url = f" — {source.url}" if source.url else ""
                 lines.append(f"• {source.source_ref}{page}{url}")
-            if len(entity.sources) > 6:
-                lines.append(f"• +{len(entity.sources) - 6} fontes registradas")
+            if len(entity.sources) > 8:
+                lines.append(f"• +{len(entity.sources) - 8} fontes registradas")
 
         self._set_details(
             "\n".join(lines)
             or "Registro básico disponível; ainda sem detalhes adicionais nas fontes indexadas."
         )
-        self._render_image(entity.image)
+
+        if self._rendered_entity_id != entity.id:
+            self._rendered_entity_id = entity.id
+            self._image_index = 0
+            self._image_refs = visual_references(entity)
+        self._render_image_reference()
+
         self.counter_label.config(
             text=f"{self.carousel.index + 1} / {len(self.carousel.items)}"
         )
@@ -361,22 +445,23 @@ class HeroesIslandView(tk.Frame):
         self.details.insert("1.0", str(text))
         self.details.config(state=tk.DISABLED)
 
-    def _render_image(self, path_value):
+    def _render_image_reference(self):
         self.photo = None
-        path = Path(path_value) if path_value else None
-        if path and path.exists() and path.is_file():
-            try:
-                image = Image.open(path).convert("RGB")
-                image.thumbnail((310, 430), Image.Resampling.LANCZOS)
-                self.photo = ImageTk.PhotoImage(image)
-                self.image_label.config(
-                    image=self.photo,
-                    text="",
-                )
-                return
-            except (OSError, ValueError, tk.TclError) as exc:
-                log.debug("Imagem de personagem indisponível (%s): %s", path, exc)
-        self.image_label.config(
-            image="",
-            text="SEM IMAGEM\nDE REFERÊNCIA",
+        if not self._image_refs:
+            self.image_label.config(image="", text="SEM IMAGEM\nDE REFERÊNCIA")
+            self.image_counter.config(text="0 / 0")
+            return
+
+        self._image_index %= len(self._image_refs)
+        path = Path(self._image_refs[self._image_index])
+        try:
+            image = Image.open(path).convert("RGB")
+            image.thumbnail((310, 430), Image.Resampling.LANCZOS)
+            self.photo = ImageTk.PhotoImage(image)
+            self.image_label.config(image=self.photo, text="")
+        except (OSError, ValueError, tk.TclError) as exc:
+            log.debug("Imagem de personagem indisponível (%s): %s", path, exc)
+            self.image_label.config(image="", text="IMAGEM INDISPONÍVEL")
+        self.image_counter.config(
+            text=f"{self._image_index + 1} / {len(self._image_refs)}"
         )
