@@ -1,9 +1,13 @@
+from pathlib import Path
+
 from core.release import (
     STAR_CODENAME,
     STAR_RELEASE_CHANNEL,
     STAR_RELEASE_STATUS,
     STAR_VERSION,
 )
+
+PROJECT_ROOT = Path(__file__).resolve().parent
 
 APP_NAME = "STAR"
 VERSION = STAR_VERSION
@@ -32,7 +36,12 @@ VOICE_FAST_PREFERENCE = "sapi"
 VOICE_FALLBACK_ON_ERROR = False
 VOICE_REFERENCE = "voice/reference/star_reference.mp3"
 
-STT_MODEL = "tiny"
+# O runtime recebe um caminho local absoluto, nunca o identificador remoto
+# "tiny". Assim faster-whisper não pode iniciar download ao usar o microfone.
+STT_MODEL_NAME = "tiny"
+STT_MODEL = str(
+    (PROJECT_ROOT / "voice" / "models" / "whisper" / STT_MODEL_NAME).resolve()
+)
 PIPER_MODEL = "pt/pt_BR/faber/medium/pt_BR-faber-medium.onnx"
 
 RELEASE_CHANNEL = STAR_RELEASE_CHANNEL
