@@ -76,3 +76,22 @@ def test_context_resolves_entity_pronouns(tmp_path):
     context.track_entity("Batman", category="character")
     assert context.resolve_reference_text("quais aliados dele?") == "quais aliados de Batman?"
     assert context.resolve_reference_text("onde ele vem?") == "onde Batman vem?"
+
+
+def test_multivalue_filters_for_team_power_and_affiliation(tmp_path):
+    engine = make_engine(tmp_path)
+    engine.upsert_entity(
+        Entity(
+            name="Jean Grey",
+            category="character",
+            universe="Marvel",
+            team=["X-Men"],
+            affiliations=["X-Men"],
+            species="Mutante",
+            powers=["telepatia", "telecinese"],
+            tags=["mutante"],
+        )
+    )
+    assert engine.search_entities("", {"team": "X-Men"})[0].name == "Jean Grey"
+    assert engine.search_entities("", {"power": "telepatia"})[0].name == "Jean Grey"
+    assert engine.search_entities("", {"affiliation": "X-Men"})[0].name == "Jean Grey"
