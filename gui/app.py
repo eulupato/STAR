@@ -60,6 +60,7 @@ class StarApp:
         self.recording = False
         self._closing = False
         self._exit_overlay = None
+        self._exit_canceling = False
         self.response_queue: queue.Queue = queue.Queue()
         self._subscribe_world_events()
 
@@ -2082,7 +2083,10 @@ class StarApp:
         )
         overlay.place(relx=0.5, rely=0.5, anchor="center", width=430, height=330)
         overlay.lift()
+        overlay.grab_set()
+        overlay.focus_set()
         self._exit_overlay = overlay
+        self._exit_canceling = False
 
         photo, indicator = self._avatar_visual(
             "sad",
@@ -2110,7 +2114,7 @@ class StarApp:
 
         tk.Label(
             overlay,
-            text="Você já vai?",
+            text="você já vai?",
             fg=self.text,
             bg="#080c12",
             font=("Segoe UI", 18, "bold"),
@@ -2124,12 +2128,56 @@ class StarApp:
         )
 
     def _cancel_exit(self):
-        if self._exit_overlay is not None:
+        overlay = self._exit_overlay
+        if overlay is None or self._exit_canceling:
+            return
+        self._exit_canceling = True
+
+        try:
+            for child in overlay.winfo_children():
+                child.destroy()
+
+            photo, indicator = self._avatar_visual(
+                "happy",
+                max_size=(125, 125),
+            )
+            self.exit_photo = photo
+            if photo is not None:
+                tk.Label(
+                    overlay,
+                    image=photo,
+                    text=indicator or "😊",
+                    compound="bottom",
+                    fg=self.star,
+                    bg="#080c12",
+                    font=("Segoe UI Emoji", 18),
+                ).pack(expand=True)
+            else:
+                tk.Label(
+                    overlay,
+                    text="⭐\n😊",
+                    fg=self.gold,
+                    bg="#080c12",
+                    font=("Segoe UI Emoji", 34),
+                ).pack(expand=True)
+            self.window.after(260, self._finish_cancel_exit)
+        except tk.TclError:
+            self._finish_cancel_exit()
+
+    def _finish_cancel_exit(self):
+        overlay = self._exit_overlay
+        if overlay is not None:
             try:
-                self._exit_overlay.destroy()
+                overlay.grab_release()
+            except tk.TclError:
+                pass
+            try:
+                overlay.destroy()
             except tk.TclError as exc:
-                log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
+                log.debug("Overlay de saída já destruído: %s", exc)
+
         self._exit_overlay = None
+        self._exit_canceling = False
         try:
             self.emotion.set_emotion("happy")
             if self.avatar_label is not None:
@@ -2146,7 +2194,7 @@ class StarApp:
                     log.debug("Widget de saída já destruído: %s", exc)
             tk.Label(
                 self._exit_overlay,
-                text="⭐\n\nOk...",
+                text="⭐\n\nok...",
                 fg=self.muted,
                 bg="#080c12",
                 font=("Segoe UI", 16, "bold"),
