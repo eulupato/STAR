@@ -318,6 +318,16 @@ class KnowledgeStore:
                 clauses.append(f"LOWER(COALESCE(e.{key}, '')) = LOWER(?)")
                 params.append(str(value))
 
+        # Campos multivalorados permanecem no documento da entidade e no
+        # search_text normalizado. O filtro é aplicado sem acoplar a GUI ao SQL.
+        for key in ("team", "power", "ability", "tag", "affiliation"):
+            value = filters.get(key)
+            if value:
+                normalized_filter = normalize_search_text(str(value))
+                if normalized_filter:
+                    clauses.append("e.search_text LIKE ?")
+                    params.append(f"%{normalized_filter}%")
+
         sql = "SELECT DISTINCT e.* FROM entities e"
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)
