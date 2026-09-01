@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
 
 echo ============================================================
@@ -31,21 +31,47 @@ if errorlevel 1 (
 )
 
 set "MARVEL_PDF=%~1"
-if "%MARVEL_PDF%"=="" (
+
+:ASK_PDF
+if not defined MARVEL_PDF (
     set /p "MARVEL_PDF=Arraste o PDF Marvel para esta janela e pressione ENTER: "
 )
 
-set "MARVEL_PDF=%MARVEL_PDF:"=%"
-if not exist "%MARVEL_PDF%" (
-    echo [ERRO] PDF nao encontrado: %MARVEL_PDF%
-    pause
-    exit /b 1
+rem PowerShell pode inserir arquivos arrastados como: & 'C:\caminho\arquivo.pdf'
+rem Delayed expansion evita que o & seja interpretado pelo CMD durante a limpeza.
+set "MARVEL_PDF=!MARVEL_PDF:"=!"
+
+if "!MARVEL_PDF:~0,2!"=="& " (
+    set "MARVEL_PDF=!MARVEL_PDF:~2!"
 )
 
+if "!MARVEL_PDF:~0,1!"=="'" if "!MARVEL_PDF:~-1!"=="'" (
+    set "MARVEL_PDF=!MARVEL_PDF:~1,-1!"
+)
+
+for /f "tokens=* delims= " %%A in ("!MARVEL_PDF!") do set "MARVEL_PDF=%%~A"
+
+if not exist "!MARVEL_PDF!" (
+    echo.
+    echo [ERRO] PDF nao encontrado:
+    echo !MARVEL_PDF!
+    echo.
+    echo Informe novamente apenas o arquivo PDF.
+    echo Voce tambem pode cancelar com CTRL+C.
+    echo.
+    set "MARVEL_PDF="
+    goto ASK_PDF
+)
+
+for %%A in ("!MARVEL_PDF!") do set "MARVEL_PDF=%%~fA"
+
+echo.
+echo [STAR] PDF confirmado:
+echo !MARVEL_PDF!
 echo.
 echo [STAR] Construindo catalogo Marvel completo...
 ".venv\Scripts\python.exe" tools\build_heroes_island.py ^
-  --marvel-pdf "%MARVEL_PDF%" ^
+  --marvel-pdf "!MARVEL_PDF!" ^
   --online ^
   --marvel-catalog-max-pages 120
 
