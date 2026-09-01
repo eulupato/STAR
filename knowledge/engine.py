@@ -28,6 +28,7 @@ class KnowledgeEngine:
         self.graph = KnowledgeGraph(self.store)
         self.pack_manager = pack_manager
         self.event_bus = event_bus
+        self.last_entity: Entity | None = None
 
     def _event(self, event_type: str, payload=None):
         if self.event_bus is None:
@@ -149,6 +150,7 @@ class KnowledgeEngine:
         if name:
             entity = self.resolve_entity(name)
             if entity:
+                self.last_entity = entity
                 self._event("ENTITY_SELECTED", {"entity_id": entity.id, "name": entity.name})
                 return self.format_entity(entity)
 
@@ -162,6 +164,7 @@ class KnowledgeEngine:
             target = relation_match.group(2).strip()
             entity = self.resolve_entity(target)
             if entity:
+                self.last_entity = entity
                 predicates = {
                     "aliados": "ally",
                     "inimigos": "enemy",
@@ -172,6 +175,28 @@ class KnowledgeEngine:
                 names = self.graph.related_names(entity.id, predicate)
                 if names:
                     return f"{entity.name}: " + ", ".join(names) + "."
+
+        group_match = re.match(
+            r"^quais personagens (?:dos|do|da) (.+?) (?:possuem|tem|têm) (.+?)[?!.]*$",
+            resolved_text,
+            re.IGNORECASE,
+        )
+        if group_match:
+            team = group_match.group(1).strip()
+            trait = group_match.group(2).strip()
+            matches = self.store.search(f"{team} {trait}", filters={"category": "character"}, limit=25)
+            if matches:
+                return ", ".join(entity.name for entity in matches) + "."
+
+        search_match = re.match(
+            r"^(?:pesquise|procure|buscar|busque)\s+(.+?)[?!.]*$",
+            resolved_text,
+            re.IGNORECASE,
+        )
+        if search_match:
+            results = self.universal_search(search_match.group(1), limit=8)
+            if results:
+                return "Encontrei: " + ", ".join(item.title for item in results) + "."
 
         return None
 
