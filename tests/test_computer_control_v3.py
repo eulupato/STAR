@@ -61,3 +61,28 @@ def test_find_files_is_bounded_and_local(tmp_path):
 
     assert len(hits) == 1
     assert "star" in Path(hits[0]).name
+
+
+def test_file_search_has_priority_over_generic_web_search(monkeypatch, tmp_path):
+    target = tmp_path / "relatorio_star.txt"
+    target.write_text("x", encoding="utf-8")
+    web_calls = []
+
+    monkeypatch.setattr(
+        computer_control,
+        "find_files",
+        lambda query: [target] if query == "relatorio_star" else [],
+    )
+    monkeypatch.setattr(
+        computer_control,
+        "web_search",
+        lambda query: web_calls.append(query) or "web",
+    )
+
+    answer = computer_control.parse(
+        "procure arquivo relatorio_star",
+        allow_network=True,
+    )
+
+    assert str(target) in answer
+    assert web_calls == []
