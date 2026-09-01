@@ -211,7 +211,7 @@ class MarvelOfficialCatalog:
             max_pages=max_pages,
         )
         retrieved = datetime.now(timezone.utc).isoformat()
-        saved = 0
+        saved_ids = set()
 
         current = engine.search_entities(
             "",
@@ -289,15 +289,13 @@ class MarvelOfficialCatalog:
                         )
                     )
 
-            engine.upsert_entity(entity)
+            saved_ids.add(engine.upsert_entity(entity))
             real = normalize_search_text(
                 (entity.attributes or {}).get("real_name") or ""
             )
             if real:
                 by_real_name.setdefault(real, entity)
-            saved += 1
-
-        return saved
+        return len(saved_ids)
 
 
 def _merge_values(current, incoming) -> list[str]:
