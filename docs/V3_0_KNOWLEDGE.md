@@ -142,17 +142,21 @@ Biblioteca e outras ilhas.
 
 ## Fontes oficiais DC/Marvel
 
-Prioridade de conhecimento:
+Prioridade de conhecimento nesta etapa:
 
 ```text
-PDF local
-↓
+catálogo/perfil oficial DC/Marvel, quando ONLINE for autorizado
++
+PDF local como base complementar e referência de página
++
 dados já indexados/cache
-↓
-perfil oficial DC/Marvel, quando ONLINE for autorizado
 ↓
 campo desconhecido permanece nulo
 ```
+
+Dados oficiais substituem somente campos que a própria fonte oficial fornece.
+O valor anterior do PDF é preservado quando útil como material complementar e
+a proveniência continua registrada.
 
 O enriquecimento usa somente hosts oficiais autorizados, mantém cache local e
 registra URL/proveniência.
@@ -166,6 +170,12 @@ Uma falha HTTP nunca impede a consulta dos dados locais.
 O `HeroesKnowledgeBuilder` orquestra os dois PDFs, enriquecimento opcional,
 cache de imagens e relatório de cobertura.
 
+`MarvelOfficialCatalog` descobre o índice oficial em lote. Ele preserva
+variantes que compartilham o mesmo codinome como entidades distintas quando a
+identidade é explícita, evitando fundir, por exemplo, Peter Parker e Miles
+Morales. O processo é executado apenas por comando explícito; nunca durante o
+startup normal da STAR.
+
 ## Imagens
 
 O importador não usa uma página escaneada inteira como retrato final. Imagens
@@ -173,6 +183,12 @@ embutidas que cobrem quase toda a página são rejeitadas; arte candidata menor
 pode ser associada ao personagem. Se não houver imagem adequada, o
 enriquecimento oficial pode preencher a imagem e salvá-la no cache local.
 Caso tudo falhe, a GUI usa placeholder honesto.
+
+A ficha pode navegar entre múltiplas referências locais. O tema visual possui
+overrides de identidade para personagens icônicos e, para todo o restante,
+extrai uma paleta escura a partir da imagem local com cache. Assim a Ilha pode
+dar identidade visual própria a milhares de personagens sem milhares de regras
+hardcoded.
 
 ## Cozinha e conhecimento local estruturado
 
