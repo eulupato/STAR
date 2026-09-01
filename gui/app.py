@@ -66,6 +66,7 @@ class StarApp:
         self.nav = NavigationManager()
         self.current_screen = "menu"
         self.session_messages: list[tuple[str, str]] = []
+        self._load_persistent_messages()
 
         self.chat = None
         self.chat_panel = None
@@ -1541,6 +1542,26 @@ class StarApp:
         ):
             self.chat.tag_configure(tag, foreground=fg, font=font)
         self.chat.configure(state=tk.DISABLED)
+
+    def _load_persistent_messages(self):
+        try:
+            messages = self.memory.load(limit=100)
+        except Exception as exc:
+            log.warning("Falha ao carregar histórico persistente: %s", exc)
+            return
+
+        for message in messages:
+            sender = str(message.sender or "").strip()
+            content = str(message.content or "").strip()
+            if not content:
+                continue
+            if sender == "STAR":
+                normalized_sender = "STAR"
+            elif sender in {"Você", "Voce", "user"}:
+                normalized_sender = "Você"
+            else:
+                normalized_sender = sender or "SISTEMA"
+            self.session_messages.append((normalized_sender, content))
 
     def _restore_session_messages(self):
         if not self.chat:
