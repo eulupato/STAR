@@ -23,16 +23,16 @@ def install_piper() -> None:
     PIPER_DIR.mkdir(parents=True, exist_ok=True)
     print("🎙️ Preparando Piper PT-BR...")
     for filename in (PIPER_MODEL, PIPER_CONFIG):
-        target = PIPER_DIR / Path(filename).name
+        target = PIPER_DIR / Path(filename)
         if target.exists() and target.stat().st_size > 1000:
-            print(f"✅ Já existe: {target.name}")
+            print(f"✅ Já existe: {target.relative_to(PIPER_DIR)}")
             continue
         path = hf_hub_download(
             repo_id=PIPER_REPO,
             filename=filename,
             local_dir=str(PIPER_DIR),
         )
-        print(f"✅ Baixado: {Path(path).name}")
+        print(f"✅ Baixado: {Path(path).relative_to(PIPER_DIR)}")
 
 
 def install_whisper() -> None:
