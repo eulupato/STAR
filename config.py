@@ -8,8 +8,7 @@ from core.release import (
 APP_NAME = "STAR"
 VERSION = STAR_VERSION
 CODENAME = STAR_CODENAME
-AUTHOR = "Lu"
-THEME = "dark"
+
 WINDOW_WIDTH = 1100
 WINDOW_HEIGHT = 700
 MENU_WIDTH = 1100
@@ -26,22 +25,15 @@ MIND_WORKING_MEMORY_TURNS = 24
 KNOWLEDGE_ENABLED = True
 KNOWLEDGE_DB = "knowledge/local/star_knowledge.db"
 KNOWLEDGE_RESULT_LIMIT = 12
-KNOWLEDGE_WEB_ENRICHMENT = False
 
-RESOURCE_PROFILE = "NORMAL"
-
-VOICE_ENGINE = "Chatterbox"
-VOICE_CLONE_ENGINE = "Chatterbox"
 VOICE_MODE = "official"
 VOICE_CHAT_MODE = "fast"
-VOICE_FAST_ENGINE = "Windows SAPI / Piper"
 VOICE_FAST_PREFERENCE = "sapi"
 VOICE_FALLBACK_ON_ERROR = False
 VOICE_REFERENCE = "voice/reference/star_reference.mp3"
 
-STT_ENGINE = "faster-whisper"
 STT_MODEL = "tiny"
-PIPER_VOICE = "pt_BR-faber-medium"
+PIPER_MODEL = "pt/pt_BR/faber/medium/pt_BR-faber-medium.onnx"
 
 RELEASE_CHANNEL = STAR_RELEASE_CHANNEL
 RELEASE_STATUS = STAR_RELEASE_STATUS
