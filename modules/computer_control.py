@@ -137,16 +137,16 @@ def parse(text: str, allow_network: bool = False):
         rf"^{_OPEN_VERBS}\s+(?:o\s+)?spotify\b(?:\s+(.*))?$",
         s,
     )
-    spotify_prefix = re.match(
-        rf"^(?:spotify\s+)?(?:toca|toque|{_SEARCH_VERBS})\s+(.+)$",
-        s,
-    )
     spotify_suffix = re.match(
         rf"^(?:toca|toque|{_SEARCH_VERBS})\s+(.+?)\s+(?:no|na)\s+spotify$",
         s,
     )
+    spotify_prefix = re.match(
+        rf"^spotify\s+(?:toca|toque|{_SEARCH_VERBS})\s+(.+)$",
+        s,
+    )
 
-    if spotify_open or spotify_prefix or spotify_suffix:
+    if spotify_open or spotify_suffix or spotify_prefix:
         if not allow_network:
             return _needs_network_message()
 
@@ -162,8 +162,6 @@ def parse(text: str, allow_network: bool = False):
             query = spotify_suffix.group(1).strip(" .,:;- ")
         elif spotify_prefix:
             query = spotify_prefix.group(1).strip(" .,:;- ")
-            if "spotify" not in s:
-                return None
 
         return spotify_search(query)
 
