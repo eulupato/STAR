@@ -1,8 +1,8 @@
 """Catálogo modular do STAR WORLD.
 
 As ilhas representam ambientes/capacidades da STAR. Uma ilha pode existir
-visualmente no HUB mesmo quando o respectivo pacote de conhecimento ainda
-não foi instalado. O campo ``status`` indica o estado do pacote.
+visualmente no HUB mesmo quando sua implementação ainda está em andamento.
+O campo ``status`` indica a maturidade real do ambiente.
 """
 
 ISLANDS = {
@@ -165,7 +165,7 @@ ISLANDS = {
                 "icon": "🛏️",
                 "description": "Espaço pessoal navegável da STAR dentro da Casa.",
                 "status": "available",
-                "contents": ["rotina", "descanso", "organização pessoal", "acesso ao Closet", "acesso ao Álbum"],
+                "contents": ["rotina", "descanso", "organização pessoal", "acesso ao Closet"],
             },
             "closet": {
                 "name": "Closet",
