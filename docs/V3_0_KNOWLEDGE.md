@@ -32,9 +32,12 @@ knowledge/
 ├── graph.py
 ├── engine.py
 ├── bootstrap.py
+├── recipes.py
 ├── importers/
 │   ├── pdf.py
 │   └── heroes.py
+├── sources/
+│   └── official.py
 └── packs/
 ```
 
@@ -43,18 +46,36 @@ Dados gerados em execução:
 ```text
 knowledge/local/
 ├── star_knowledge.db
+├── reports/
 └── cache/
-    └── pdf/
 ```
 
-Esse diretório é local e gitignored.
+Esse diretório é local e gitignored. `knowledge/sources/`, por outro lado,
+contém **código-fonte** e permanece versionado.
 
 ## Entity System
 
 O modelo é genérico para personagens, pessoas, livros, lugares, objetos,
 organizações, espécies, eventos e futuros domínios.
 
-Campos ausentes permanecem nulos/vazios. O importador não deve inventar fatos.
+Campos ausentes permanecem nulos/vazios. Importadores não devem inventar fatos.
+
+O SQLite mantém também `entity_values`, um índice estrutural para campos
+multivalorados como:
+
+- equipe;
+- poder;
+- habilidade;
+- tag;
+- afiliação;
+- relacionamento;
+- tipo de relação.
+
+Isso impede que um filtro de “poder” coincida apenas porque a mesma palavra
+aparece na descrição textual da entidade.
+
+A evolução desse índice é registrada em `knowledge_meta`, permitindo migração
+automática de bancos V3 anteriores.
 
 ## Proveniência
 
@@ -84,6 +105,19 @@ embeddings e web opcional sem alterar a GUI.
 
 A GUI não executa SQL nem faz parsing dos PDFs.
 
+Filtros atuais:
+
+- universo;
+- equipe;
+- poder;
+- habilidade;
+- tag;
+- espécie/tipo;
+- relacionamento.
+
+A ficha apresenta os campos disponíveis e múltiplas fontes, sem transformar
+campo ausente em informação inventada.
+
 A seleção anterior/próximo usa `CarouselController`, reutilizável por Closet,
 Biblioteca e outras ilhas.
 
@@ -106,26 +140,7 @@ Biblioteca e outras ilhas.
 5. registra relações disponíveis;
 6. indexa no store.
 
-## Copyright e dados locais
-
-Enciclopédias, páginas renderizadas e imagens extraídas não são versionadas no
-repositório público. O código armazena localmente somente o conteúdo necessário
-para a base do usuário.
-
-## Conversation
-
-`core/conversation.py` executa antes de ferramentas caras. Saudações e small
-talk não chamam modelo, internet nem banco de conhecimento.
-
-## TV
-
-`core/media_intents.py` interpreta intenção.  
-`MEDIA_REQUESTED` passa pelo Event Bus.  
-`modules/media_controller.py` controla o processo.  
-`modules/media_host.py` hospeda o WebView.  
-`gui/app.py` apenas recebe o evento no thread principal e atualiza a cena.
-
-## Fontes da Ilha dos Heróis
+## Fontes oficiais DC/Marvel
 
 Prioridade de conhecimento:
 
@@ -139,23 +154,69 @@ perfil oficial DC/Marvel, quando ONLINE for autorizado
 campo desconhecido permanece nulo
 ```
 
-O enriquecimento oficial usa somente `dc.com` e `marvel.com`, mantém cache
-local e registra a URL em `KnowledgeSource`. Uma falha HTTP nunca impede a
-consulta dos dados locais.
+O enriquecimento usa somente hosts oficiais autorizados, mantém cache local e
+registra URL/proveniência.
+
+Antes de mesclar um perfil, a fonte verifica se a identidade do perfil é
+compatível com a entidade local. Nome real pode ser usado para desambiguar
+personagens que compartilham um mesmo codinome.
+
+Uma falha HTTP nunca impede a consulta dos dados locais.
 
 O `HeroesKnowledgeBuilder` orquestra os dois PDFs, enriquecimento opcional,
 cache de imagens e relatório de cobertura.
 
 ## Imagens
 
-O importador não usa mais uma página escaneada inteira como retrato final.
-Imagens embutidas que cobrem quase toda a página são rejeitadas; arte candidata
-menor pode ser associada ao personagem. Se não houver imagem adequada, o
+O importador não usa uma página escaneada inteira como retrato final. Imagens
+embutidas que cobrem quase toda a página são rejeitadas; arte candidata menor
+pode ser associada ao personagem. Se não houver imagem adequada, o
 enriquecimento oficial pode preencher a imagem e salvá-la no cache local.
-Caso tudo falhe, a GUI usa placeholder.
+Caso tudo falhe, a GUI usa placeholder honesto.
+
+## Cozinha e conhecimento local estruturado
+
+`RecipeBook` demonstra a mesma filosofia fora da Ilha dos Heróis:
+
+- dados locais separados da GUI;
+- JSON, Markdown e TXT;
+- busca por nome, ingrediente e tag;
+- ingredientes e instruções estruturadas;
+- `RecipeSession` para acompanhamento passo a passo.
+
+Esse serviço é consumido pela Cozinha da Casa sem colocar parsing de arquivos
+dentro da camada visual.
+
+## Copyright e dados locais
+
+Enciclopédias, páginas renderizadas, imagens extraídas, bancos gerados e caches
+não são versionados no repositório público. O projeto armazena localmente apenas
+o necessário para a base autorizada do usuário.
+
+## Conversation
+
+`core/conversation.py` executa antes de ferramentas caras, mas só responde a
+intenções reconhecidas de small talk. Perguntas de conhecimento continuam para
+o Knowledge Engine.
+
+## TV
+
+`core/media_intents.py` interpreta intenção.  
+`MEDIA_REQUESTED` passa pelo Event Bus.  
+`modules/media_controller.py` controla o processo.  
+`modules/media_host.py` hospeda o WebView.  
+`gui/app.py` recebe o evento no thread principal e atualiza a cena.
+
+O host reporta falhas de comandos via stderr; erros de mídia não derrubam o
+Core.
 
 ## Status
 
-A arquitetura está implementada e testada por CI progressivo. A classificação
-permanece **PARTIAL** até a importação/revisão integral dos dois PDFs e a
-validação física da STAR TV/voz no Windows do projeto.
+A arquitetura KNOWLEDGE está implementada e testada progressivamente. A
+classificação permanece **DEVELOPMENT / PARTIAL NO CONTEÚDO** até:
+
+- importação e revisão integral dos dois PDFs locais;
+- validação de cobertura final de imagens;
+- validação física da STAR TV e voz no Windows do projeto.
+
+Veja a auditoria atual em `docs/V3_0_AUDIT_2026-09-01.md`.
