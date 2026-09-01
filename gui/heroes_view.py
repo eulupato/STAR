@@ -17,6 +17,7 @@ class HeroesIslandView(tk.Frame):
         self.on_selected = on_selected
         self.carousel = CarouselController()
         self.photo = None
+        self._search_job = None
 
         self.search_var = tk.StringVar()
         self.universe_var = tk.StringVar(value="Todos")
@@ -37,7 +38,7 @@ class HeroesIslandView(tk.Frame):
             font=("Segoe UI", 11),
         )
         self.search.pack(side="left", fill="x", expand=True, ipady=8)
-        self.search.bind("<KeyRelease>", lambda _e: self.refresh())
+        self.search.bind("<KeyRelease>", self._schedule_refresh)
 
         options = ["Todos", "Marvel", "DC"]
         menu = tk.OptionMenu(
@@ -146,7 +147,16 @@ class HeroesIslandView(tk.Frame):
         )
         self.next_button.pack(side="left", fill="y", padx=(10, 0))
 
+    def _schedule_refresh(self, _event=None):
+        if self._search_job is not None:
+            try:
+                self.after_cancel(self._search_job)
+            except tk.TclError:
+                pass
+        self._search_job = self.after(140, self.refresh)
+
     def refresh(self):
+        self._search_job = None
         query = self.search_var.get().strip()
         universe = self.universe_var.get()
         filters = {"category": "character"}
