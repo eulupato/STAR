@@ -25,8 +25,12 @@ def main() -> int:
     manager = VoiceManager()
 
     print(f"Modo de voz: {manager.mode.upper()}")
+    print(f"Preferência rápida: {manager.fast_preference.upper()}")
     print(f"Fallback automático: {'ATIVO' if manager.fallback_on_error else 'DESATIVADO'}")
-    print(f"STT: {'PRONTO' if manager.stt_configured else 'NÃO INSTALADO'}")
+    print(
+        f"STT ({manager.stt.model_size}): "
+        f"{'PRONTO' if manager.stt_configured else 'NÃO INSTALADO'}"
+    )
     print()
 
     print("VOZ OFICIAL")
