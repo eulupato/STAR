@@ -322,7 +322,7 @@ class KnowledgeStore:
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)
         sql += " ORDER BY e.name COLLATE NOCASE LIMIT ?"
-        params.append(max(1, min(int(limit), 200)))
+        params.append(max(1, min(int(limit), 5000)))
 
         with self._lock, self._connect() as db:
             rows = db.execute(sql, params).fetchall()
