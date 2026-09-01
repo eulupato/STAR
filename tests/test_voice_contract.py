@@ -25,3 +25,11 @@ def test_local_voice_test_uses_python_diagnostic_as_source_of_truth():
     root = Path(__file__).resolve().parents[1]
     launcher = (root / "TESTAR_VOZ_LOCAL.bat").read_text(encoding="utf-8")
     assert "-m voice.diagnostics" in launcher
+
+
+def test_launcher_allows_degraded_voice_startup():
+    root = Path(__file__).resolve().parents[1]
+    launcher = (root / "INICIAR_STAR.bat").read_text(encoding="utf-8")
+    assert 'import PIL, sqlalchemy, numpy' in launcher
+    assert "A STAR iniciara sem voz completa" in launcher
+    assert 'import PIL, sounddevice, soundfile, faster_whisper' not in launcher
