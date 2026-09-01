@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -36,4 +37,25 @@ def test_persistent_memory_can_load_full_history(tmp_path):
     memory.save("Você", "A")
     memory.save("STAR", "B")
     assert [item.content for item in memory.load()] == ["A", "B"]
+    memory.close()
+
+
+def test_persistent_memory_rolls_back_failed_commit(tmp_path, monkeypatch):
+    memory = make_memory(tmp_path)
+    original_commit = memory.session.commit
+    calls = {"count": 0}
+
+    def fail_once():
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise RuntimeError("commit failure")
+        return original_commit()
+
+    monkeypatch.setattr(memory.session, "commit", fail_once)
+
+    with pytest.raises(RuntimeError, match="commit failure"):
+        memory.save("Você", "falha")
+
+    memory.save("STAR", "recuperado")
+    assert [item.content for item in memory.load()] == ["recuperado"]
     memory.close()
