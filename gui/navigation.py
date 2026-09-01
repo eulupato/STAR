@@ -45,8 +45,16 @@ class NavigationManager:
     def go(self, route: str, *, remember: bool = True) -> str:
         if route not in ROUTES:
             raise KeyError(f"Rota desconhecida: {route}")
-        if remember and self.current != route:
+
+        if route == "menu":
+            self.history.clear()
+        elif route == "hub":
+            # HUB é a raiz do mundo. Acesso pelo botão global não deve manter
+            # uma trilha que possa levar de volta a um cômodo antigo.
+            self.history = ["menu"]
+        elif remember and self.current != route:
             self.history.append(self.current)
+
         if route not in {"settings", "chat"}:
             self.overlay_returns.clear()
         self.current = route
@@ -66,13 +74,23 @@ class NavigationManager:
         return target
 
     def back(self) -> str:
+        if self.current in {"settings", "chat"} and self.overlay_returns:
+            return self.close_overlay()
+
         route = ROUTES[self.current]
         if route.parent:
-            self.current = route.parent
+            parent = route.parent
+            if self.history and self.history[-1] == parent:
+                self.history.pop()
+            self.current = parent
             return self.current
-        if self.history:
-            self.current = self.history.pop()
-            return self.current
+
+        while self.history:
+            target = self.history.pop()
+            if target != self.current:
+                self.current = target
+                return self.current
+
         self.current = "menu"
         return self.current
 
