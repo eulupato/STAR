@@ -1,0 +1,202 @@
+{
+  "Black Panther": {
+    "background": "#09080D",
+    "panel": "#15121D",
+    "accent": "#8E5BFF",
+    "accent_secondary": "#CDB9FF",
+    "text": "#F7F4FF",
+    "muted": "#B9B1C7"
+  },
+  "Spider-Man (Miles Morales)": {
+    "background": "#0B0A0D",
+    "panel": "#171116",
+    "accent": "#E62429",
+    "accent_secondary": "#FF6A6E",
+    "text": "#FFF7F7",
+    "muted": "#C7B8BB"
+  },
+  "Spider-Man (Peter Parker)": {
+    "background": "#0A111B",
+    "panel": "#142033",
+    "accent": "#E62429",
+    "accent_secondary": "#4D8DFF",
+    "text": "#F8FAFF",
+    "muted": "#BAC7D9"
+  },
+  "Loki": {
+    "background": "#0B1510",
+    "panel": "#13251A",
+    "accent": "#2FA45A",
+    "accent_secondary": "#E5C75A",
+    "text": "#F8FFF9",
+    "muted": "#B8CDBD"
+  },
+  "Iron Man": {
+    "background": "#1A0E0A",
+    "panel": "#2A1710",
+    "accent": "#D73A2F",
+    "accent_secondary": "#F0C75E",
+    "text": "#FFF8F2",
+    "muted": "#D6C0AD"
+  },
+  "Captain America": {
+    "background": "#0B1321",
+    "panel": "#14233A",
+    "accent": "#4A79C9",
+    "accent_secondary": "#E8ECEF",
+    "text": "#F8FAFF",
+    "muted": "#B8C5D8"
+  },
+  "Hulk": {
+    "background": "#0D160B",
+    "panel": "#172315",
+    "accent": "#65A844",
+    "accent_secondary": "#8E5AA8",
+    "text": "#F7FFF3",
+    "muted": "#B9C9AF"
+  },
+  "Thor": {
+    "background": "#0B1420",
+    "panel": "#15263A",
+    "accent": "#4A8FD3",
+    "accent_secondary": "#D9DCE3",
+    "text": "#F8FBFF",
+    "muted": "#B9C7D7"
+  },
+  "Doctor Strange": {
+    "background": "#150D16",
+    "panel": "#251629",
+    "accent": "#D64A3C",
+    "accent_secondary": "#55A6D9",
+    "text": "#FFF8FF",
+    "muted": "#CEBACC"
+  },
+  "Scarlet Witch": {
+    "background": "#180A0F",
+    "panel": "#2A111A",
+    "accent": "#B8243E",
+    "accent_secondary": "#EA6B82",
+    "text": "#FFF7FA",
+    "muted": "#D0B4BC"
+  },
+  "Wolverine": {
+    "background": "#151309",
+    "panel": "#252111",
+    "accent": "#E1B82F",
+    "accent_secondary": "#2E5CA8",
+    "text": "#FFFDF4",
+    "muted": "#D1C9A7"
+  },
+  "Deadpool": {
+    "background": "#110B0D",
+    "panel": "#211317",
+    "accent": "#B52B38",
+    "accent_secondary": "#29272B",
+    "text": "#FFF8F8",
+    "muted": "#C6B8BC"
+  },
+  "Black Widow": {
+    "background": "#0C0D10",
+    "panel": "#191B20",
+    "accent": "#C73A3A",
+    "accent_secondary": "#D7D9DE",
+    "text": "#FAFAFB",
+    "muted": "#B9BCC4"
+  },
+  "Captain Marvel": {
+    "background": "#0B1220",
+    "panel": "#15233A",
+    "accent": "#D43D3D",
+    "accent_secondary": "#E6B946",
+    "text": "#F9FBFF",
+    "muted": "#BCC7D8"
+  },
+  "Daredevil": {
+    "background": "#140909",
+    "panel": "#251010",
+    "accent": "#B92727",
+    "accent_secondary": "#E56D62",
+    "text": "#FFF8F7",
+    "muted": "#D0B6B3"
+  },
+  "Venom": {
+    "background": "#080A0D",
+    "panel": "#11161C",
+    "accent": "#DDE2E7",
+    "accent_secondary": "#445568",
+    "text": "#FFFFFF",
+    "muted": "#B6C0C9"
+  },
+  "Carnage": {
+    "background": "#140708",
+    "panel": "#260D10",
+    "accent": "#D82632",
+    "accent_secondary": "#121418",
+    "text": "#FFF7F7",
+    "muted": "#CFB0B3"
+  },
+  "Storm": {
+    "background": "#101219",
+    "panel": "#1B202B",
+    "accent": "#E5E8EE",
+    "accent_secondary": "#6B86B6",
+    "text": "#FFFFFF",
+    "muted": "#C2C8D2"
+  },
+  "Cyclops": {
+    "background": "#11152A",
+    "panel": "#1C2340",
+    "accent": "#E2C441",
+    "accent_secondary": "#D33C3C",
+    "text": "#FFFDF5",
+    "muted": "#C9C4A6"
+  },
+  "Magneto": {
+    "background": "#160D1C",
+    "panel": "#26162E",
+    "accent": "#9A4FB5",
+    "accent_secondary": "#C43C62",
+    "text": "#FFF8FF",
+    "muted": "#CCB7D0"
+  },
+  "Doctor Doom": {
+    "background": "#0E140F",
+    "panel": "#19241A",
+    "accent": "#4E8C57",
+    "accent_secondary": "#B7BEC2",
+    "text": "#F8FFF9",
+    "muted": "#B7C5BA"
+  },
+  "Ghost Rider": {
+    "background": "#160D07",
+    "panel": "#2B160A",
+    "accent": "#FF7A1A",
+    "accent_secondary": "#F6D15B",
+    "text": "#FFF9F2",
+    "muted": "#D9C0A6"
+  },
+  "Galactus": {
+    "background": "#140D22",
+    "panel": "#24163A",
+    "accent": "#8A56D8",
+    "accent_secondary": "#D65FB0",
+    "text": "#FFF8FF",
+    "muted": "#C9B6D3"
+  },
+  "Gamora": {
+    "background": "#0B160E",
+    "panel": "#14261A",
+    "accent": "#4EA65E",
+    "accent_secondary": "#E8E8E8",
+    "text": "#F8FFF8",
+    "muted": "#B9CCBC"
+  },
+  "Gambit": {
+    "background": "#150B18",
+    "panel": "#27132B",
+    "accent": "#C64BBA",
+    "accent_secondary": "#D34355",
+    "text": "#FFF8FF",
+    "muted": "#D0B6CE"
+  }
+}
