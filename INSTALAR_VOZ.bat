@@ -3,8 +3,13 @@ setlocal
 cd /d "%~dp0"
 chcp 65001 >nul
 
+set "STAR_LABEL=STAR"
+if exist ".venv\Scripts\python.exe" (
+  for /f "delims=" %%V in ('".venv\Scripts\python.exe" -c "from core.release import RELEASE; print(RELEASE.label)"') do set "STAR_LABEL=%%V"
+)
+
 echo =====================================================
-echo        STAR V1.9 FINAL - INSTALACAO DE VOZ
+echo        %STAR_LABEL% - INSTALACAO DE VOZ
 echo =====================================================
 echo.
 echo ENTRADA : faster-whisper tiny (PT-BR, local)
@@ -62,7 +67,7 @@ echo e execute DIAGNOSTICO_VOZ.bat.
 echo O arquivo sera mantido apenas na sua maquina.
 echo.
 echo =====================================================
-echo        INSTALACAO V1.9 FINAL CONCLUIDA
+echo        INSTALACAO DE VOZ CONCLUIDA
 echo =====================================================
 echo Depois execute DIAGNOSTICO_VOZ.bat.
 echo.
