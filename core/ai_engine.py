@@ -1,6 +1,7 @@
-"""Engine de IA externa mantido para integração futura.
+"""Adaptador opcional de modelo externo.
 
-A V1.5 não permite que este componente seja usado acidentalmente.
+A identidade da STAR não depende deste componente. Ele permanece desativado
+por configuração até que uma rota de modelo seja explicitamente habilitada.
 """
 
 from config import EXTERNAL_AI_ENABLED
@@ -15,7 +16,7 @@ class AIEngine:
 
     def _ensure_enabled(self):
         if not self.enabled:
-            raise RuntimeError("AIEngine está desativado na V1.5 offline.")
+            raise RuntimeError("AIEngine está desativado no modo local atual.")
 
     def is_available(self):
         self._ensure_enabled()
