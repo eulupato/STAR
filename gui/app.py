@@ -397,10 +397,22 @@ class StarApp:
             justify="left",
         ).pack(anchor="w", pady=(7, 10))
         if status:
+            status_key = str(status).lower()
+            status_map = {
+                "available": ("🟢 DISPONÍVEL", self.green),
+                "partial": ("🟡 PARCIAL", self.gold),
+                "experimental": ("🟠 EXPERIMENTAL", self.gold),
+                "planned": ("🔵 PLANEJADA", self.muted),
+                "unavailable": ("⚫ INDISPONÍVEL", self.red),
+            }
+            label, color = status_map.get(
+                status_key,
+                (str(status).upper(), self.muted),
+            )
             tk.Label(
                 card,
-                text=status,
-                fg=self.green if "DISPON" in status else self.gold,
+                text=label,
+                fg=color,
                 bg=self.panel,
                 font=("Segoe UI", 8, "bold"),
             ).pack(anchor="w", pady=(0, 8))
@@ -504,16 +516,16 @@ class StarApp:
             if key not in data:
                 continue
             item = data[key]
+            status = item.get("status", "planned")
+            enterable = status in {"available", "partial", "experimental"}
             card = self._world_card(
                 body,
                 f"{item.get('icon', '🏝️')} {item.get('name', key)}",
                 item.get("description", ""),
                 (lambda k=key: self._open_island(k))
-                if key in {"casa", "herois"}
+                if enterable and key in {"casa", "herois"}
                 else None,
-                "🟢 DISPONÍVEL"
-                if key in {"casa", "herois"}
-                else "🔵 PLANEJADA",
+                status,
             )
             card.grid(
                 row=idx // 4,
@@ -546,7 +558,7 @@ class StarApp:
         self._scene_title(
             root,
             "🦸 ILHA DOS HERÓIS",
-            "A primeira Ilha de Conhecimento funcional da STAR.",
+            "Busca local ativa; acervo em consolidação por PDFs e fontes oficiais.",
         )
 
         knowledge = getattr(self.brain, "knowledge", None)
@@ -608,7 +620,7 @@ class StarApp:
         self._scene_title(
             root,
             "🏠 STAR HOUSE",
-            "A primeira ilha funcional do STAR WORLD.",
+            "Ilha residencial navegável; os cômodos exibem seus próprios níveis de maturidade.",
         )
 
         stage = tk.Frame(root, bg=self.bg)
