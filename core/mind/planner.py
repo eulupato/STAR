@@ -1,9 +1,7 @@
-"""Planner operacional da STAR MIND V2.
+"""Planner operacional da STAR MIND.
 
-O plano contém somente etapas executáveis e metadados de roteamento. Ele não
-armazena nem expõe raciocínio privado passo a passo.
+O plano contém apenas etapas executáveis e metadados de roteamento.
 """
-
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
@@ -32,29 +30,39 @@ class OperationalPlan:
 
 
 class Planner:
-    """Preserva a ordem segura da V1.9 dentro de uma estrutura extensível."""
+    """Ordena capacidades locais do menor custo para o maior."""
 
     def build(self, text: str, salience, context: dict) -> OperationalPlan:
         steps = (
             PlanStep(
                 "context_recall",
                 "context",
-                "Resolver continuidade imediata antes de ferramentas.",
+                "Resolver continuidade e fatos de sessão.",
+            ),
+            PlanStep(
+                "conversation",
+                "conversation",
+                "Responder small talk local sem modelo externo.",
             ),
             PlanStep(
                 "computer_control",
                 "computer_control",
-                "Verificar se a entrada é uma ação local ou online autorizada.",
+                "Verificar ações locais ou online autorizadas.",
             ),
             PlanStep(
                 "math",
                 "math",
-                "Resolver matemática determinística sem modelo externo.",
+                "Resolver matemática determinística.",
+            ),
+            PlanStep(
+                "knowledge_search",
+                "universal_search",
+                "Consultar entidades, grafo e conhecimento local.",
             ),
             PlanStep(
                 "legacy_reasoning",
                 "legacy_reasoning",
-                "Usar conhecimento interno, Router e Executive estáveis.",
+                "Usar Router, Executive e conhecimento interno consolidados.",
             ),
         )
         return OperationalPlan(priority=salience.priority, steps=steps)
