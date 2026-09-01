@@ -73,27 +73,57 @@ Model Router e seleção automática de motores.
 ---
 
 ## V3.0 — KNOWLEDGE
-**Objetivo:** transformar a STAR em uma plataforma de conhecimento offline expansível.
+**Objetivo:** transformar a STAR em uma plataforma de conhecimento offline expansível e conectar essa base ao STAR WORLD funcional.
 
-**Status em 31/08/2026: arquitetura KNOWLEDGE implementada em desenvolvimento.**
+**Status em 01/09/2026: arquitetura integrada em DEVELOPMENT / knowledge-foundation.**
 
 Implementado nesta fundação:
 - Entity System genérico;
-- SQLite local dedicado;
+- SQLite local dedicado com conexões curtas para Windows;
 - aliases, fontes e proveniência;
 - Knowledge Graph;
-- Universal Search inicial;
+- índice estrutural `entity_values` e migração versionada;
+- Universal Search;
 - pipeline PDF reutilizável;
-- primeira ilha de conhecimento funcional: Heróis;
-- busca/carrossel/filtros;
+- fontes oficiais DC/Marvel opcionais com validação de identidade;
+- primeira ilha de conhecimento navegável: Heróis;
+- busca, carrossel e filtros estruturados;
 - Conversation Variation Engine;
-- STAR TV com MediaController e WebView opcional.
+- STAR TV com MediaController e WebView opcional;
+- STAR WORLD com navegação contextual e overlays sem ciclos;
+- Casa navegável: Sala, Cozinha, Quarto, Closet e Álbum;
+- Cozinha com RecipeBook e guia passo a passo;
+- PhotoLibrary local inicial;
+- memória de conversa persistente gravada e restaurada;
+- voz degradável no startup;
+- Whisper/Piper preparados explicitamente pelo instalador;
+- runtime sem download implícito de modelo;
+- higiene de repositório e CI Linux/Windows.
+
+Status dos ambientes V3 atuais:
+- **Casa:** available;
+- **Cozinha:** available;
+- **Quarto:** available;
+- **Closet:** available;
+- **Álbum:** partial;
+- **Sala / STAR TV:** experimental;
+- **Ilha dos Heróis:** partial.
 
 Pendente antes de release READY:
-- ingestão/revisão integral dos dois PDFs de heróis;
-- imagens isoladas por personagem quando disponíveis;
-- validação da STAR TV no Windows;
+- ingestão e revisão integral dos dois PDFs locais de heróis;
+- validação da cobertura/associação final de imagens;
+- validação física da STAR TV no Windows real;
+- regressão física de microfone, alto-falante, Chatterbox e referência local;
+- sprites emocionais reais para substituir indicadores de fallback;
+- expansão de metadados/seletor de pasta do Álbum;
+- persistência completa do estado de objetos/cenas do STAR WORLD;
 - expansão progressiva da Biblioteca/Scientific Engine.
+
+A ausência desses itens não deve ser mascarada por porcentagens ou estados
+falsos: componentes incompletos permanecem `partial`, `experimental` ou
+`planned` no catálogo.
+
+Auditoria atual: `docs/V3_0_AUDIT_2026-09-01.md`.
 
 ---
 
@@ -193,4 +223,4 @@ Cada geração segue especificação, arquitetura, implementação incremental,
 testes/diagnóstico, documentação, release e freeze.
 
 # Próximo marco
-**V3.0 KNOWLEDGE → validar conteúdo integral, STAR TV e regressões antes do freeze.**
+**V3.0 KNOWLEDGE → concluir validações locais de conteúdo, TV e voz; depois freeze.**
