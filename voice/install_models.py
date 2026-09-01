@@ -5,7 +5,12 @@ arquivos já presentes em ``voice/models`` e nunca baixa modelo por conta própr
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
+
+# Este processo é o instalador explícito iniciado pelo usuário. Ele é a única
+# exceção ao modo HF_HUB_OFFLINE usado pelo runtime normal da STAR.
+os.environ["HF_HUB_OFFLINE"] = "0"
 
 from huggingface_hub import hf_hub_download, snapshot_download
 
