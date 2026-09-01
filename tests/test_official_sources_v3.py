@@ -86,7 +86,7 @@ def test_marvel_candidates_use_real_name_from_pdf(tmp_path):
     assert "https://www.marvel.com/characters/wolverine-james-howlett" in urls
 
 
-def test_official_merge_does_not_overwrite_pdf_priority(tmp_path):
+def test_official_merge_prioritizes_official_and_preserves_pdf_reference(tmp_path):
     source = DCOfficialSource(client(tmp_path))
     profile = source.parse(
         """
@@ -111,8 +111,11 @@ def test_official_merge_does_not_overwrite_pdf_priority(tmp_path):
         sources=[KnowledgeSource("PDF", "dc.pdf", page=10)],
     )
     merged = merge_official_profile(entity, profile, image_path="/web/cache.jpg")
-    assert merged.description == "Descrição extraída do PDF"
-    assert merged.image == "/local/pdf-portrait.png"
+    assert merged.description == "Official description"
+    assert merged.image == "/web/cache.jpg"
+    assert merged.metadata["supplemental_pdf_description"] == "Descrição extraída do PDF"
+    assert "/local/pdf-portrait.png" in merged.metadata["image_candidates"]
+    assert "/web/cache.jpg" in merged.metadata["image_candidates"]
     assert "martial arts" in merged.powers
     assert "detective skill" in merged.powers
     assert any(s.url == "https://www.dc.com/characters/batman" for s in merged.sources)
@@ -163,3 +166,20 @@ def test_marvel_real_name_prevents_ambiguous_profile_merge(tmp_path):
         attributes={"real_name": "Miles Morales"},
     )
     assert source.fetch_profile(entity, online=True) is None
+
+
+
+def test_marvel_catalog_discovered_url_is_tried_first(tmp_path):
+    source = MarvelOfficialSource(client(tmp_path))
+    entity = Entity(
+        name="Spider-Man (Miles Morales)",
+        category="character",
+        universe="Marvel",
+        attributes={"real_name": "Miles Morales"},
+        metadata={
+            "official_profile_url":
+                "https://www.marvel.com/characters/spider-man-miles-morales"
+        },
+    )
+    urls = source.candidate_urls(entity)
+    assert urls[0] == "https://www.marvel.com/characters/spider-man-miles-morales"
