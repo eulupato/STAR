@@ -64,3 +64,50 @@ def test_marvel_catalog_parser_accepts_legacy_official_index():
         "https://www.marvel.com/comics/characters?l=sem&o=603409",
     )
     assert {entry.name for entry in entries} == {"Black Panther", "Iron Man"}
+
+
+
+def test_marvel_catalog_reuses_old_peter_seed_but_keeps_miles_separate(tmp_path):
+    from knowledge.entities import Entity
+
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    engine.upsert_entity(
+        Entity(
+            name="Spider-Man",
+            category="character",
+            universe="Marvel",
+            publisher="Marvel Comics",
+            aliases=["Homem-Aranha"],
+            attributes={"real_name": "Peter Parker"},
+        )
+    )
+    html = """
+    <html><body>
+      <a href="/characters/spider-man-peter-parker">Spider-Man (Peter Parker)</a>
+      <a href="/characters/spider-man-miles-morales">Spider-Man (Miles Morales)</a>
+    </body></html>
+    """
+
+    class Client:
+        def fetch_html(self, *_args, **_kwargs):
+            return html
+
+    catalog = MarvelOfficialCatalog(Client())
+    catalog.import_into(engine, online=True, max_pages=1)
+
+    items = engine.search_entities(
+        "",
+        filters={"category": "character", "universe": "Marvel"},
+        limit=20,
+    )
+    assert len(items) == 2
+
+    peter = next(
+        item for item in items
+        if item.attributes.get("real_name") == "Peter Parker"
+    )
+    miles = next(
+        item for item in items
+        if item.attributes.get("real_name") == "Miles Morales"
+    )
+    assert peter.id != miles.id
