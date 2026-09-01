@@ -37,6 +37,9 @@ voice/cache/
 
 # Banco local e dados da máquina
 star.db
+star.db-*
+*.db-wal
+*.db-shm
 
 # Logs
 *.log
@@ -58,6 +61,5 @@ user_settings.json
 
 # Base de conhecimento, PDFs e caches locais
 knowledge/local/
-knowledge/sources/
 knowledge/cache/
 *.pdf
