@@ -134,3 +134,61 @@ def test_multivalue_filter_does_not_match_description_only(tmp_path):
 
     matches = engine.search_entities("", {"power": "telepatia"})
     assert [entity.name for entity in matches] == ["Jean Grey"]
+
+
+def test_structured_team_and_affiliation_answers(tmp_path):
+    engine = make_engine(tmp_path)
+    engine.upsert_entity(
+        Entity(
+            name="Jean Grey",
+            category="character",
+            universe="Marvel",
+            team=["X-Men"],
+            affiliations=["X-Men", "Quiet Council"],
+            powers=["telepatia"],
+        )
+    )
+
+    assert "X-Men" in engine.answer("quais equipes da Jean Grey?")
+    affiliation = engine.answer("quais afiliações da Jean Grey?")
+    assert "X-Men" in affiliation
+    assert "Quiet Council" in affiliation
+
+
+def test_group_query_uses_structured_team_and_trait_filters(tmp_path):
+    engine = make_engine(tmp_path)
+    engine.upsert_entity(
+        Entity(
+            name="Jean Grey",
+            category="character",
+            universe="Marvel",
+            team=["X-Men"],
+            powers=["telepatia"],
+        )
+    )
+    engine.upsert_entity(
+        Entity(
+            name="Example",
+            category="character",
+            universe="Marvel",
+            team=["X-Men"],
+            description="Pesquisa telepatia sem possuir esse poder.",
+            powers=["inteligência"],
+        )
+    )
+
+    answer = engine.answer("quais personagens dos X-Men possuem telepatia?")
+    assert "Jean Grey" in answer
+    assert "Example" not in answer
+
+
+def test_resolve_entity_universe_is_case_insensitive(tmp_path):
+    engine = make_engine(tmp_path)
+    engine.upsert_entity(
+        Entity(
+            name="Batman",
+            category="character",
+            universe="DC",
+        )
+    )
+    assert engine.resolve_entity("Batman", universe="dc").name == "Batman"
