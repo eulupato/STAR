@@ -808,16 +808,19 @@ class VoiceManager:
                         f"Voz oficial: {type(exc).__name__}: {exc}"
                     )
 
-            if self.fallback_on_error:
+            if self.fallback_on_error and not self.fallback.configured:
                 try:
                     self.piper.warmup()
                 except Exception as exc:
                     errors.append(f"Piper: {type(exc).__name__}: {exc}")
         else:
-            try:
-                self.piper.warmup()
-            except Exception as exc:
-                errors.append(f"Piper: {type(exc).__name__}: {exc}")
+            # No Windows, SAPI é o backend rápido preferido e não exige
+            # carregamento de modelo. Piper só é aquecido se SAPI não existir.
+            if not self.fallback.configured:
+                try:
+                    self.piper.warmup()
+                except Exception as exc:
+                    errors.append(f"Piper: {type(exc).__name__}: {exc}")
 
         self.last_error = " | ".join(errors) if errors else None
 
