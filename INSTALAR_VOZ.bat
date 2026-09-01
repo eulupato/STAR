@@ -12,9 +12,12 @@ echo =====================================================
 echo        %STAR_LABEL% - INSTALACAO DE VOZ
 echo =====================================================
 echo.
-echo ENTRADA : faster-whisper tiny (PT-BR, local)
+set "STAR_STT_MODEL=tiny"
+for /f "delims=" %%M in ('".venv\Scripts\python.exe" -c "from config import STT_MODEL; print(STT_MODEL)" 2^>nul') do set "STAR_STT_MODEL=%%M"
+
+echo ENTRADA : faster-whisper %STAR_STT_MODEL% (PT-BR, local)
 echo OFICIAL : Chatterbox + referencia local da STAR
-echo RAPIDA  : Piper PT-BR (somente se escolhido)
+echo RAPIDA  : SAPI/Piper conforme config.py
 echo.
 
 if not exist ".venv\Scripts\python.exe" (
@@ -40,8 +43,8 @@ if errorlevel 1 (
 )
 
 echo.
-echo [3/4] Preparando Whisper Tiny...
-".venv\Scripts\python.exe" -c "from faster_whisper import WhisperModel; WhisperModel('tiny',device='cpu',compute_type='int8')"
+echo [3/4] Preparando Whisper %STAR_STT_MODEL%...
+".venv\Scripts\python.exe" -c "from config import STT_MODEL; from faster_whisper import WhisperModel; WhisperModel(STT_MODEL,device='cpu',compute_type='int8')"
 if errorlevel 1 (
     echo AVISO: nao foi possivel preparar o Whisper agora.
 )
