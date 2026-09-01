@@ -1,4 +1,4 @@
-"""Ferramentas locais da STAR V1.9.
+"""Ferramentas locais da STAR.
 
 Ações locais simples podem funcionar offline. Recursos que abrem serviços da
 internet respeitam o estado ONLINE/OFFLINE recebido pelo STAR Core.
@@ -11,6 +11,10 @@ import os
 import subprocess
 import urllib.parse
 import webbrowser
+
+from core.logging_config import get_logger
+
+log = get_logger("computer")
 
 APP_ALIASES = {
     "explorador": "explorer",
@@ -68,8 +72,8 @@ def find_files(query: str, root: str | Path | None = None, limit: int = 20):
                 hits.append(path)
                 if len(hits) >= limit:
                     break
-    except (PermissionError, OSError):
-        pass
+    except (PermissionError, OSError) as exc:
+        log.debug("Busca de arquivos interrompida em %s: %s", root_path, exc)
     return hits
 
 
