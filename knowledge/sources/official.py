@@ -487,6 +487,14 @@ class MarvelOfficialSource(OfficialCharacterSource):
     base = "https://www.marvel.com/characters/"
 
     def candidate_urls(self, entity: Entity) -> list[str]:
+        urls = []
+        discovered = (entity.metadata or {}).get("official_profile_url")
+        if discovered:
+            try:
+                urls.append(self.client._validate_page_url(str(discovered)))
+            except ValueError:
+                pass
+
         names = [entity.name, entity.original_name, *entity.aliases]
         real_name = _clean(entity.attributes.get("real_name")) if entity.attributes else None
         candidates = []
@@ -497,7 +505,6 @@ class MarvelOfficialSource(OfficialCharacterSource):
                 candidates.append(_slugify(f"{name} {real_name}"))
             candidates.append(_slugify(name))
 
-        urls = []
         for slug in candidates:
             if not slug:
                 continue
@@ -637,9 +644,15 @@ def merge_official_profile(
         entity.first_appearance = profile.first_appearance
     if not entity.gender and profile.gender:
         entity.gender = profile.gender
-    if not entity.image and image_path:
-        entity.image = image_path
-        entity.metadata["image_kind"] = "official_web_cache"
+    if image_path:
+        candidates = list(entity.metadata.get("image_candidates", []) or [])
+        normalized_paths = {str(item) for item in candidates if item}
+        if str(image_path) not in normalized_paths:
+            candidates.append(str(image_path))
+        entity.metadata["image_candidates"] = candidates
+        if not entity.image:
+            entity.image = image_path
+            entity.metadata["image_kind"] = "official_web_cache"
 
     existing_relations = {
         (normalize_search_text(item.predicate), normalize_search_text(item.target_name))
