@@ -491,7 +491,9 @@ class MarvelOfficialSource(OfficialCharacterSource):
         discovered = (entity.metadata or {}).get("official_profile_url")
         if discovered:
             try:
-                urls.append(self.client._validate_page_url(str(discovered)))
+                validated = self.client._validate_page_url(str(discovered))
+                if urlparse(validated).path.startswith("/characters/"):
+                    urls.append(validated)
             except ValueError:
                 pass
 
