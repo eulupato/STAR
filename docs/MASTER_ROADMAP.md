@@ -34,7 +34,7 @@ Pós-release: bugs entram como V1.9.x.
 ## V2.0 — MIND
 **Objetivo:** criar a arquitetura cognitiva permanente.
 
-**Status em 31/08/2026: MIND FOUNDATION implementada na branch de desenvolvimento.**
+**Status em 31/08/2026: MIND consolidada e absorvida pela V3.0 KNOWLEDGE.**
 
 Implementado na fundação V2.0:
 - Cognitive Loop;
@@ -49,11 +49,17 @@ Implementado na fundação V2.0:
 - fallback seguro para a fundação V1.9;
 - diagnóstico da MIND.
 
-Expansões ainda planejadas nesta geração:
-- memória episódica, semântica, projetos e preferências;
-- Personality/Identity Core expandido;
-- Reasoning/Planning avançado;
-- Model Router com múltiplos motores.
+Consolidação incorporada à V3:
+- contexto com Entity Tracking e resolução de referências;
+- Personality Engine separado de modelos;
+- Conversation Variation Engine local;
+- Knowledge Search integrado ao Planner;
+- Capability Registry expandido;
+- Event Bus usado por WORLD/mídia;
+- modelos externos permanecem opcionais e desativados por padrão.
+
+Expansões profundas de memória persistente e múltiplos modelos continuam
+incrementais, sem redefinir a identidade da STAR.
 
 ### V2.1
 Memory Architecture.
@@ -69,9 +75,25 @@ Model Router e seleção automática de motores.
 ## V3.0 — KNOWLEDGE
 **Objetivo:** transformar a STAR em uma plataforma de conhecimento offline expansível.
 
-Inclui Biblioteca, ingestão de PDF/texto, proveniência, embeddings locais,
-busca universal, Knowledge Packs V2, Knowledge Graph, Scientific Engine,
-matemática simbólica, estatística, unidades, física, química e simulações.
+**Status em 31/08/2026: arquitetura KNOWLEDGE implementada em desenvolvimento.**
+
+Implementado nesta fundação:
+- Entity System genérico;
+- SQLite local dedicado;
+- aliases, fontes e proveniência;
+- Knowledge Graph;
+- Universal Search inicial;
+- pipeline PDF reutilizável;
+- primeira ilha de conhecimento funcional: Heróis;
+- busca/carrossel/filtros;
+- Conversation Variation Engine;
+- STAR TV com MediaController e WebView opcional.
+
+Pendente antes de release READY:
+- ingestão/revisão integral dos dois PDFs de heróis;
+- imagens isoladas por personagem quando disponíveis;
+- validação da STAR TV no Windows;
+- expansão progressiva da Biblioteca/Scientific Engine.
 
 ---
 
@@ -171,4 +193,4 @@ Cada geração segue especificação, arquitetura, implementação incremental,
 testes/diagnóstico, documentação, release e freeze.
 
 # Próximo marco
-**V2.0 MIND FOUNDATION → validar em hardware real e seguir para V2.1 Memory Architecture.**
+**V3.0 KNOWLEDGE → validar conteúdo integral, STAR TV e regressões antes do freeze.**
