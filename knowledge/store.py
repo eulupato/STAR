@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import contextmanager
 from pathlib import Path
 import sqlite3
 from threading import RLock
@@ -26,13 +27,26 @@ class KnowledgeStore:
         self._lock = RLock()
         self._initialize()
 
+    @contextmanager
     def _connect(self):
+        """Abre uma conexão curta e garante fechamento inclusive em erro.
+
+        O context manager nativo de sqlite3 faz commit/rollback, mas não fecha
+        a conexão. Isso causava lock de knowledge.db no Windows.
+        """
         connection = sqlite3.connect(self.path)
         connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute("PRAGMA journal_mode = WAL")
-        connection.execute("PRAGMA synchronous = NORMAL")
-        return connection
+        try:
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.execute("PRAGMA journal_mode = WAL")
+            connection.execute("PRAGMA synchronous = NORMAL")
+            yield connection
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
 
     def _initialize(self):
         with self._lock, self._connect() as db:
