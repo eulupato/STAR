@@ -6,7 +6,10 @@ from pathlib import Path
 
 from PIL import Image, ImageTk
 
+from core.logging_config import get_logger
 from gui.components.carousel import CarouselController
+
+log = get_logger("gui.heroes")
 
 
 class HeroesIslandView(tk.Frame):
@@ -151,8 +154,8 @@ class HeroesIslandView(tk.Frame):
         if self._search_job is not None:
             try:
                 self.after_cancel(self._search_job)
-            except tk.TclError:
-                pass
+            except tk.TclError as exc:
+                log.debug("Busca anterior já não estava agendada: %s", exc)
         self._search_job = self.after(140, self.refresh)
 
     def refresh(self):
@@ -251,8 +254,8 @@ class HeroesIslandView(tk.Frame):
                     text="",
                 )
                 return
-            except (OSError, ValueError):
-                pass
+            except (OSError, ValueError, tk.TclError) as exc:
+                log.debug("Imagem de personagem indisponível (%s): %s", path, exc)
         self.image_label.config(
             image="",
             text="SEM IMAGEM\nDE REFERÊNCIA",
