@@ -27,11 +27,11 @@ def test_working_memory_is_bounded_and_keeps_facts():
     assert memory.get_fact("user_name") == "Teste"
 
 
-def test_star_v2_mind_is_active():
+def test_mind_is_active_inside_v3():
     star = create_star()
     status = star.mind_status()
     assert status["active"] is True
-    assert status["version"] == "2.0"
+    assert status["generation"] == "MIND"
     assert "Event Bus" in status["architecture"]
 
 
@@ -77,10 +77,10 @@ def test_internal_knowledge_uses_legacy_executor_inside_mind():
 def test_mind_diagnostic_command_is_local():
     star = create_star()
     answer = star.process("diagnóstico da mente")
-    assert "MIND V2 ATIVA" in answer
+    assert "MIND ATIVA" in answer
 
 
-def test_v19_fallback_still_works_when_mind_is_disabled():
+def test_local_fallback_still_works_when_mind_is_disabled():
     star = create_star()
     star.mind = None
     assert "4" in star.process("quanto é 2+2")
