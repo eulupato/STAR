@@ -168,7 +168,10 @@ class HeroesKnowledgeBuilder:
             for entity in entities
         )
         report.with_official_source = sum(
-            any(source.source_type == "official_web" for source in entity.sources)
+            any(
+                source.source_type in {"official_web", "official_catalog"}
+                for source in entity.sources
+            )
             for entity in entities
         )
         report.missing_images = [
