@@ -647,14 +647,30 @@ class StarApp:
         rooms = tk.Frame(house, bg=self.panel_2)
         rooms.pack(expand=True)
 
-        for col, (title, subtitle, route) in enumerate(
+        try:
+            from core.islands import get_islands
+
+            home_subareas = get_islands()["casa"]["subareas"]
+        except (KeyError, TypeError) as exc:
+            log.warning("Status dos cômodos indisponível: %s", exc)
+            home_subareas = {}
+
+        status_labels = {
+            "available": ("🟢 DISPONÍVEL", self.green),
+            "partial": ("🟡 PARCIAL", self.gold),
+            "experimental": ("🟠 EXPERIMENTAL", self.gold),
+            "planned": ("🔵 PLANEJADO", self.muted),
+            "unavailable": ("⚫ INDISPONÍVEL", self.red),
+        }
+
+        for col, (key, title, subtitle, route) in enumerate(
             (
-                ("📺 SALA", "entretenimento e conversa", "living_room"),
-                ("🍳 COZINHA", "receitas e preparo", "kitchen"),
-                ("🛏️ QUARTO", "espaço pessoal", "bedroom"),
+                ("sala", "📺 SALA", "entretenimento e conversa", "living_room"),
+                ("cozinha", "🍳 COZINHA", "receitas e preparo", "kitchen"),
+                ("quarto", "🛏️ QUARTO", "espaço pessoal", "bedroom"),
             )
         ):
-            card = tk.Frame(rooms, bg=self.panel, width=210, height=160)
+            card = tk.Frame(rooms, bg=self.panel, width=210, height=175)
             card.grid(row=0, column=col, padx=12)
             card.grid_propagate(False)
             tk.Label(
@@ -663,20 +679,34 @@ class StarApp:
                 fg=self.star,
                 bg=self.panel,
                 font=("Segoe UI", 14, "bold"),
-            ).pack(pady=(24, 7))
+            ).pack(pady=(20, 5))
             tk.Label(
                 card,
                 text=subtitle,
                 fg=self.muted,
                 bg=self.panel,
             ).pack()
+
+            status = str(home_subareas.get(key, {}).get("status", "planned"))
+            status_text, status_color = status_labels.get(
+                status,
+                (status.upper(), self.muted),
+            )
+            tk.Label(
+                card,
+                text=status_text,
+                fg=status_color,
+                bg=self.panel,
+                font=("Segoe UI", 8, "bold"),
+            ).pack(pady=(7, 0))
+
             self._button(
                 card,
                 "IR →",
                 lambda r=route: self.navigate(r),
                 small=True,
                 accent=True,
-            ).pack(pady=18)
+            ).pack(pady=12)
 
         self._place_star(stage, relx=0.84, rely=0.78, size=(170, 210))
 
