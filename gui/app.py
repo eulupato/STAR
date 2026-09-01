@@ -60,6 +60,7 @@ class StarApp:
         self._closing = False
         self._exit_overlay = None
         self.response_queue: queue.Queue = queue.Queue()
+        self._subscribe_world_events()
 
         self.nav = NavigationManager()
         self.current_screen = "menu"
@@ -108,6 +109,47 @@ class StarApp:
         self.show_menu()
         self.window.after(60, self._check_response_queue)
         self.voice.warmup_stt_async()
+
+    def _subscribe_world_events(self):
+        mind = getattr(self.brain, "mind", None)
+        if mind is None:
+            return
+        try:
+            mind.events.subscribe(
+                "MEDIA_REQUESTED",
+                lambda event: self.response_queue.put(
+                    ("media_command", dict(event.payload))
+                ),
+            )
+        except Exception as exc:
+            log.warning("Falha ao assinar eventos de mídia: %s", exc)
+
+    def _handle_media_command(self, payload):
+        action = str((payload or {}).get("action", ""))
+
+        if action == "open_youtube":
+            if not self.online_mode:
+                return
+            if self.nav.current != "living_room":
+                self.navigate("living_room")
+            self.window.after(80, self._open_youtube_tv)
+            return
+
+        if action == "fullscreen":
+            self._tv_fullscreen()
+        elif action == "restore":
+            self._tv_restore()
+        elif action == "close":
+            self._tv_close()
+        elif action == "pause":
+            self.media.pause()
+            self._refresh_media_status()
+        elif action == "play":
+            self.media.play()
+            self._refresh_media_status()
+        elif action == "volume":
+            self.media.volume(int((payload or {}).get("value", 100)))
+            self._refresh_media_status()
 
     @property
     def _user_settings_path(self):
@@ -1563,7 +1605,10 @@ class StarApp:
             while True:
                 kind, result = self.response_queue.get_nowait()
 
-                if kind == "transcript":
+                if kind == "media_command":
+                    self._handle_media_command(result)
+
+                elif kind == "transcript":
                     if not self._chat_controls_available():
                         self._build_chat_panel()
                     if self.entry:
