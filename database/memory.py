@@ -1,5 +1,8 @@
 from database.database import Base, SessionLocal, engine
 from database.models import Message
+from core.logging_config import get_logger
+
+log = get_logger("memory")
 
 
 class Memory:
@@ -25,5 +28,5 @@ class Memory:
     def close(self):
         try:
             self.session.close()
-        except Exception:
-            pass
+        except Exception as exc:
+            log.warning("Falha ao fechar sessão de memória: %s", exc)
