@@ -1,0 +1,15 @@
+{
+  "name": "dark",
+  "status": "reserved",
+  "description": "Paleta base escura da STAR V3; a GUI atual ainda define cores em gui/app.py.",
+  "palette": {
+    "background": "#0b1018",
+    "panel": "#131c29",
+    "panel_alt": "#172231",
+    "text": "#edf3fb",
+    "muted": "#9aa8bb",
+    "star": "#8fd0ff",
+    "pink": "#ff9dcc",
+    "gold": "#ffd36e"
+  }
+}
