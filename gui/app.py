@@ -2115,6 +2115,8 @@ class StarApp:
         self._exit_overlay = None
         try:
             self.emotion.set_emotion("happy")
+            if self.avatar_label is not None:
+                self._load_avatar("happy")
         except Exception as exc:
             log.debug("Não foi possível atualizar emoção após cancelar saída: %s", exc)
 
