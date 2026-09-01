@@ -65,8 +65,16 @@ def command_loop(window):
             elif command == "close":
                 window.destroy()
                 return
-        except Exception:
-            # O host é isolado: uma operação de mídia não pode derrubar o Core.
+        except Exception as exc:
+            # O host é isolado: uma operação de mídia não derruba o Core,
+            # mas a falha precisa permanecer observável para o controlador.
+            print(
+                "STAR_MEDIA_ERROR:"
+                f"{command or 'unknown'}:"
+                f"{type(exc).__name__}:{exc}",
+                file=sys.stderr,
+                flush=True,
+            )
             continue
 
 
