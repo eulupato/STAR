@@ -1834,41 +1834,57 @@ class StarApp:
     # Avatar
     # ------------------------------------------------------------------
 
-    def _load_display_avatar(self, max_size=(300, 330)):
-        if self.avatar_label is None:
-            return
+    def _avatar_visual(self, emotion="neutral", max_size=(250, 250)):
         skin = PROJECT_ROOT / "SKINS" / self.selected_skin
-        if skin.exists():
-            try:
-                image = Image.open(skin).convert("RGBA")
-                image.thumbnail(max_size, Image.Resampling.LANCZOS)
-                self.avatar_photo = ImageTk.PhotoImage(image)
-                self.avatar_label.config(image=self.avatar_photo, text="")
-                return
-            except (OSError, ValueError, tk.TclError) as exc:
-                log.warning("Skin atual não pôde ser usada no avatar: %s", exc)
+        path, indicator = self.avatar.resolve_display_asset(
+            emotion,
+            fallback_path=skin,
+        )
+        if path is None:
+            return None, indicator or "⭐"
+
+        try:
+            image = Image.open(path).convert("RGBA")
+            image.thumbnail(max_size, Image.Resampling.LANCZOS)
+            return ImageTk.PhotoImage(image), indicator
+        except (OSError, ValueError, tk.TclError) as exc:
+            log.warning("Avatar visual indisponível (%s): %s", path, exc)
+            return None, indicator or "⭐"
+
+    def _load_display_avatar(self, max_size=(300, 330)):
         self._load_avatar("neutral", max_size=max_size)
 
     def _load_avatar(self, emotion="neutral", max_size=(250, 250)):
         if self.avatar_label is None:
             return
-        path = self.avatar.avatar_dir / f"{emotion}.png"
-        if not path.exists() or path.stat().st_size == 0:
-            path = self.avatar.avatar_dir / "neutral.png"
+
+        photo, indicator = self._avatar_visual(
+            emotion,
+            max_size=max_size,
+        )
+        self.avatar_photo = photo
         try:
-            image = Image.open(path).convert("RGBA")
-            image.thumbnail(max_size, Image.Resampling.LANCZOS)
-            self.avatar_photo = ImageTk.PhotoImage(image)
-            self.avatar_label.config(image=self.avatar_photo, text="")
-        except Exception:
-            try:
+            if photo is not None:
                 self.avatar_label.config(
-                    text="⭐\nSTAR",
+                    image=photo,
+                    text=indicator,
+                    compound="bottom",
                     fg=self.star,
-                    font=("Segoe UI", 26, "bold"),
+                    font=("Segoe UI Emoji", 18),
                 )
-            except tk.TclError as exc:
-                log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
+            else:
+                fallback = "⭐\nSTAR"
+                if indicator:
+                    fallback += f"\n{indicator}"
+                self.avatar_label.config(
+                    image="",
+                    text=fallback,
+                    compound="none",
+                    fg=self.star,
+                    font=("Segoe UI Emoji", 24, "bold"),
+                )
+        except tk.TclError as exc:
+            log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
 
     # ------------------------------------------------------------------
     # Configurações
@@ -2068,28 +2084,29 @@ class StarApp:
         overlay.lift()
         self._exit_overlay = overlay
 
-        sad_path = self.avatar.avatar_dir / "sad.png"
-        photo = None
-        if sad_path.exists() and sad_path.stat().st_size > 0:
-            try:
-                image = Image.open(sad_path).convert("RGBA")
-                image.thumbnail((125, 125), Image.Resampling.LANCZOS)
-                photo = ImageTk.PhotoImage(image)
-                self.exit_photo = photo
-            except (OSError, ValueError, tk.TclError) as exc:
-                log.warning("Avatar de saída indisponível: %s", exc)
-                photo = None
-
-        if photo:
-            tk.Label(overlay, image=photo, bg="#080c12").pack(pady=(20, 5))
+        photo, indicator = self._avatar_visual(
+            "sad",
+            max_size=(125, 125),
+        )
+        self.exit_photo = photo
+        if photo is not None:
+            tk.Label(
+                overlay,
+                image=photo,
+                text=indicator or "😢",
+                compound="bottom",
+                fg=self.muted,
+                bg="#080c12",
+                font=("Segoe UI Emoji", 18),
+            ).pack(pady=(14, 3))
         else:
             tk.Label(
                 overlay,
-                text="⭐",
+                text="⭐\n😢",
                 fg=self.gold,
                 bg="#080c12",
-                font=("Segoe UI Emoji", 42),
-            ).pack(pady=(25, 5))
+                font=("Segoe UI Emoji", 34),
+            ).pack(pady=(18, 3))
 
         tk.Label(
             overlay,
