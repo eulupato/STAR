@@ -1,16 +1,29 @@
 {
   "id": "heroes",
   "name": "Ilha dos Heróis",
-  "version": "1.0",
-  "description": "Conhecimento inicial sobre heróis históricos, mitologia e super-heróis.",
+  "version": "2.0",
+  "status": "installed",
+  "type": "knowledge",
+  "data_model": "entity-v1",
+  "description": "Seed de compatibilidade e ponto de entrada da primeira ilha funcional de conhecimento.",
   "topics": [
-    "conceito de herói",
-    "heróis históricos",
-    "mitologia",
+    "personagens",
     "Marvel",
     "DC",
     "equipes",
     "poderes e habilidades",
-    "universos e cronologias"
+    "universos",
+    "relações",
+    "cronologias"
+  ],
+  "storage": {
+    "seed": "heroes.json",
+    "runtime_store": "knowledge/local/star_knowledge.db",
+    "local_sources_only": true
+  },
+  "provenance_required": true,
+  "notes": [
+    "PDFs e caches não são versionados.",
+    "O seed não substitui a importação das enciclopédias locais."
   ]
 }
