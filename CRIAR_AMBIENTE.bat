@@ -9,7 +9,7 @@ if not errorlevel 1 (
 )
 call ".venv\Scripts\activate.bat"
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 
 echo.
 echo Ambiente da STAR criado.
