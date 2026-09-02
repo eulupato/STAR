@@ -215,6 +215,11 @@ class MarvelMasterCatalog:
             else:
                 entity = existing
                 entity.aliases = _merge_values(entity.aliases, record.aliases)
+                if record.name != entity.name:
+                    entity.aliases = _merge_values(
+                        entity.aliases,
+                        [record.name],
+                    )
                 if record.original_name != entity.name:
                     entity.aliases = _merge_values(
                         entity.aliases,
