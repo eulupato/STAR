@@ -343,7 +343,7 @@ def test_visual_scan_resume_skips_completed_character(tmp_path, monkeypatch):
     key = str(engine.resolve_entity("Resume Hero", universe="Marvel").id)
     builder._save_visual_scan_state(
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "characters": {
                 key: {
                     "name": "Resume Hero",
@@ -464,3 +464,26 @@ def test_network_clients_use_fail_fast_default_timeouts(tmp_path):
 
     assert OfficialWebClient(tmp_path / "official").timeout <= 5.0
     assert WikidataClient(tmp_path / "wikidata").timeout <= 7.0
+
+
+def test_visual_scan_discards_old_checkpoint_schema(tmp_path):
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    builder = HeroesKnowledgeBuilder(engine, tmp_path / "local")
+    builder._visual_scan_state_path().write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "characters": {
+                    "old": {
+                        "status": "accepted_official_reference",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    state = builder._load_visual_scan_state()
+
+    assert state["schema_version"] == 2
+    assert state["characters"] == {}
