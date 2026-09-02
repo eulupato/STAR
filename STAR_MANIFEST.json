@@ -60,9 +60,11 @@
     "recipe_book",
     "recipe_step_mode",
     "fast_local_tts_mode",
-    "marvel_official_catalog_import",
     "heroes_multi_image_gallery",
-    "heroes_dynamic_character_themes"
+    "heroes_dynamic_character_themes",
+    "marvel_master_catalog_sync",
+    "marvel_image_manifest_local_cache",
+    "marvel_pdf_supplement_only"
   ],
   "features_in_progress": [
     "heroes_full_image_coverage",
@@ -72,8 +74,8 @@
     "photo_album_folder_picker",
     "persistent_world_state",
     "emotion_sprite_pack",
-    "marvel_local_catalog_build_validation",
-    "dc_full_pdf_import"
+    "dc_full_pdf_import",
+    "marvel_master_catalog_coverage_expansion"
   ],
   "features_prepared": [
     "memory_architecture_expansion",
@@ -104,11 +106,17 @@
       "marvel.com"
     ],
     "marvel_catalog": {
-      "official_index": true,
-      "bulk_import": true,
+      "source_mode": "versioned_master_snapshot",
+      "snapshot_records": 1564,
+      "image_references": 1007,
+      "official_site_reported_results": 2896,
+      "official_site_observed_date": "2026-09-01",
+      "coverage_status": "partial_verified_snapshot",
       "identity_disambiguation": true,
       "local_cache": true,
-      "pdf_role": "supplemental_local_source"
+      "ocr_identity_discovery": false,
+      "pdf_role": "supplement_only_existing_entities",
+      "live_web_optional": true
     }
   },
   "voice": {
