@@ -26,12 +26,24 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
-echo [STAR] Sincronizando identidades e imagens Marvel...
-".venv\Scripts\python.exe" tools\build_heroes_island.py --online --live-marvel-enrichment --cache-marvel-images --wikidata-fallback
+echo [STAR] Fase 1/2 - sincronizando identidades e conteudo...
+".venv\Scripts\python.exe" tools\build_heroes_island.py --online --live-marvel-enrichment --wikidata-fallback --no-images
 
 if errorlevel 1 (
     echo.
     echo [ERRO] A sincronizacao do catalogo falhou. Consulte os logs acima.
+    pause
+    exit /b 1
+)
+
+echo.
+echo [STAR] Fase 2/2 - varrendo imagens personagem por personagem...
+".venv\Scripts\python.exe" tools\build_heroes_island.py --scan-images
+
+if errorlevel 1 (
+    echo.
+    echo [ERRO] A varredura visual falhou. O checkpoint foi preservado.
+    echo Execute este arquivo novamente para continuar de onde parou.
     pause
     exit /b 1
 )
@@ -42,8 +54,10 @@ echo   CATALOGO MARVEL SINCRONIZADO
 echo ============================================================
 echo Relatorio:
 echo knowledge\local\reports\heroes_build_report.json
+echo knowledge\local\reports\heroes_image_scan_report.json
+echo knowledge\local\reports\heroes_image_scan_state.json
 echo.
-echo Consulte "image_rejection_reasons" no JSON para ver por que
-echo imagens especificas nao foram aceitas.
+echo A varredura visual e resumivel: execute novamente para continuar.
+echo Use --restart-image-scan apenas se quiser reavaliar todos os personagens.
 echo.
 pause
