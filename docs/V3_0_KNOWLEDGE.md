@@ -243,6 +243,18 @@ Dois relatórios ficam disponíveis em `knowledge/local/reports/`:
 - `heroes_coverage_report.json` para auditoria somente-leitura com
   `--audit-only`.
 
+### Aparições oficiais e relações
+
+A pipeline oficial agora registra também **aparições** quando Marvel/DC expõem
+links de quadrinhos ou listas de leitura no perfil do personagem. Esses títulos
+são armazenados em `Entity.attributes["appearances"]`, sem criar outro modelo
+de entidade. Relações oficiais continuam em `Entity.relationships`.
+
+Tanto `appearances` quanto `relationships` recebem proveniência por campo e
+aparecem respectivamente na aba **Aparições**, na aba **Relações** e na ficha
+completa. Se a fonte oficial não publicar esse dado, a interface mantém a
+lacuna explícita em vez de inferir aparições ou vínculos.
+
 ### Qualidade das fichas
 
 `heroes_build_report.json` agora diferencia:
