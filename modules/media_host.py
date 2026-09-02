@@ -7,6 +7,17 @@ import sys
 from urllib.parse import urlparse
 
 
+EVENT_PREFIX = "STAR_MEDIA_EVENT:"
+
+
+def emit(event: str) -> None:
+    print(
+        EVENT_PREFIX + json.dumps({"event": event}),
+        file=sys.stdout,
+        flush=True,
+    )
+
+
 ALLOWED_HOSTS = {
     "youtube.com",
     "www.youtube.com",
@@ -34,6 +45,7 @@ def build_parser():
 
 
 def command_loop(window):
+    emit("ready")
     for line in sys.stdin:
         try:
             message = json.loads(line)
@@ -62,8 +74,16 @@ def command_loop(window):
                 window.evaluate_js(
                     f"if(document.querySelector('video')) document.querySelector('video').volume={level}"
                 )
+            elif command == "hide":
+                window.hide()
+            elif command == "show":
+                window.show()
             elif command == "close":
-                window.destroy()
+                emit("closing")
+                try:
+                    window.hide()
+                finally:
+                    window.destroy()
                 return
         except Exception as exc:
             # O host é isolado: uma operação de mídia não derruba o Core,
@@ -94,6 +114,8 @@ def main():
         "width": max(320, args.width),
         "height": max(180, args.height),
         "resizable": True,
+        "frameless": True,
+        "easy_drag": False,
         "background_color": "#05070a",
         "text_select": False,
     }
@@ -103,7 +125,10 @@ def main():
         kwargs["y"] = args.y
 
     window = webview.create_window("STAR TV", **kwargs)
-    webview.start(command_loop, window)
+    try:
+        webview.start(command_loop, window)
+    finally:
+        emit("closed")
 
 
 if __name__ == "__main__":
