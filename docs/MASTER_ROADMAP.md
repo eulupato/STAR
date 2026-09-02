@@ -87,6 +87,7 @@ Implementado nesta fundação:
 - pipeline PDF reutilizável;
 - fontes oficiais DC/Marvel opcionais com validação de identidade;
 - catálogo mestre Marvel versionado + manifesto visual + cache local;
+- varredura visual resumível manifesto-first, com Commons/Wikidata e perfil oficial como fallback;
 - enriquecimento official-first com fallback Wikidata/Wikimedia Commons para lacunas verificáveis;
 - proveniência por campo e cobertura estruturada global/por universo;
 - auditoria de origem/direitos das imagens locais;
