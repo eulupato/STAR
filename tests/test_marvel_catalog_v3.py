@@ -96,3 +96,33 @@ def test_image_manifest_contains_urls_not_binary_assets():
     )
     assert not list(PACK.glob("*.jpg"))
     assert not list(PACK.glob("*.png"))
+
+
+def test_master_catalog_reuses_seed_by_exact_real_name(tmp_path):
+    pack = tmp_path / "pack"
+    _write_pack(pack)
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+
+    from knowledge.entities import Entity
+
+    engine.upsert_entity(
+        Entity(
+            name="Spider-Man",
+            category="character",
+            universe="Marvel",
+            publisher="Marvel Comics",
+            attributes={"real_name": "Peter Parker"},
+        )
+    )
+
+    MarvelMasterCatalog(pack).import_into(engine)
+
+    peter = engine.resolve_entity("Spider-Man (Peter Parker)", universe="Marvel")
+    miles = engine.resolve_entity("Spider-Man (Miles Morales)", universe="Marvel")
+    original_seed = engine.resolve_entity("Spider-Man", universe="Marvel")
+
+    assert peter is not None
+    assert miles is not None
+    assert original_seed is not None
+    assert peter.id == original_seed.id
+    assert peter.id != miles.id
