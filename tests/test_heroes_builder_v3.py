@@ -372,3 +372,95 @@ def test_visual_scan_resume_skips_completed_character(tmp_path, monkeypatch):
 
     assert report["totals"]["skipped_resume"] == 1
     assert report["totals"]["accepted_official_reference"] == 1
+
+
+def test_visual_scan_uses_marvel_manifest_before_live_official(tmp_path, monkeypatch):
+    import knowledge.heroes_builder as heroes_builder_module
+
+    pack = tmp_path / "pack"
+    pack.mkdir()
+    record = {
+        "id": "marvel-api:99",
+        "source_id": 99,
+        "name": "Manifest Hero",
+        "original_name": "Manifest Hero",
+        "aliases": [],
+        "universe": "Marvel",
+        "publisher": "Marvel Comics",
+        "official_api_uri": "https://gateway.marvel.com/v1/public/characters/99",
+        "image_ref": "marvel-api:99",
+    }
+    (pack / "marvel_characters.jsonl").write_text(
+        json.dumps(record) + "\n",
+        encoding="utf-8",
+    )
+    (pack / "marvel_image_manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "images": {
+                    "marvel-api:99": [
+                        "https://i.annihil.us/manifest-hero.jpg"
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (pack / "marvel_sources.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "coverage": {"snapshot_records": 1},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    builder = HeroesKnowledgeBuilder(
+        engine,
+        tmp_path / "local",
+        marvel_pack_root=pack,
+    )
+    builder.marvel_master.import_into(engine)
+
+    def fake_cache(url, *, online=True, context="", source_ref=""):
+        image = tmp_path / "manifest.jpg"
+        image.write_bytes(b"image")
+        return str(image)
+
+    monkeypatch.setattr(builder.web, "cache_image", fake_cache)
+    monkeypatch.setattr(
+        builder.wikidata,
+        "fetch_profile",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        heroes_builder_module,
+        "source_for_entity",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("perfil live não deve ser chamado quando o manifesto resolveu")
+        ),
+    )
+
+    report = builder.scan_visual_references(
+        online=False,
+        resume=False,
+        delay_seconds=0,
+    )
+
+    assert report["totals"]["accepted_official_reference"] == 1
+    hero = engine.resolve_entity("Manifest Hero", universe="Marvel")
+    assert hero is not None
+    assert hero.image
+    attribution = hero.metadata["image_attribution"][hero.image]
+    assert attribution["rights_status"] == "official_source_local_reference"
+
+
+def test_network_clients_use_fail_fast_default_timeouts(tmp_path):
+    from knowledge.sources.official import OfficialWebClient
+    from knowledge.sources.wikidata import WikidataClient
+
+    assert OfficialWebClient(tmp_path / "official").timeout <= 5.0
+    assert WikidataClient(tmp_path / "wikidata").timeout <= 7.0
