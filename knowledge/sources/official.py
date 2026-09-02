@@ -142,6 +142,7 @@ class OfficialProfile:
     equipment: list[str] = field(default_factory=list)
     occupation: list[str] = field(default_factory=list)
     affiliations: list[str] = field(default_factory=list)
+    appearances: list[str] = field(default_factory=list)
     origin_place: str | None = None
     first_appearance: str | None = None
     gender: str | None = None
@@ -452,6 +453,36 @@ class DCOfficialSource(OfficialCharacterSource):
         for value in (alter, aka):
             aliases.extend(_split_csv(value))
 
+        appearances = []
+        appearance_seen = set()
+        for link in parser.links:
+            href = str(link.get("href") or "")
+            label = _clean(link.get("text"))
+            section = normalize_search_text(link.get("section") or "")
+            if not label:
+                continue
+            is_comic_link = (
+                "/comics/issue/" in href
+                or "/comics/series/" in href
+                or "/comics/comic/" in href
+            )
+            is_appearance_section = any(
+                token in section
+                for token in (
+                    "essential reading",
+                    "comics",
+                    "latest",
+                    "reading list",
+                )
+            )
+            if is_comic_link or is_appearance_section:
+                key = normalize_search_text(label)
+                if key and key not in appearance_seen:
+                    appearance_seen.add(key)
+                    appearances.append(label)
+                    if len(appearances) >= 100:
+                        break
+
         related = []
         seen = set()
         for link in parser.links:
@@ -475,6 +506,26 @@ class DCOfficialSource(OfficialCharacterSource):
                         )
                     )
 
+        dc_appearances = []
+        dc_appearance_seen = set()
+        for link in parser.links:
+            href = str(link.get("href") or "")
+            label = _clean(link.get("text"))
+            section = normalize_search_text(link.get("section") or "")
+            if not label:
+                continue
+            if (
+                "/comics/" in href
+                or "recommended reading" in section
+                or "comics" == section
+            ):
+                key = normalize_search_text(label)
+                if key and key not in dc_appearance_seen:
+                    dc_appearance_seen.add(key)
+                    dc_appearances.append(label)
+                    if len(dc_appearances) >= 100:
+                        break
+
         return OfficialProfile(
             name=title,
             universe=self.universe,
@@ -484,6 +535,7 @@ class DCOfficialSource(OfficialCharacterSource):
             aliases=aliases,
             powers=powers,
             occupation=_split_csv(occupation),
+            appearances=dc_appearances,
             origin_place=base,
             first_appearance=first,
             image_url=self._meta_image(parser),
@@ -650,6 +702,7 @@ class MarvelOfficialSource(OfficialCharacterSource):
             abilities=abilities,
             equipment=equipment_values,
             affiliations=affiliations,
+            appearances=appearances,
             origin_place=origin_place,
             gender=gender,
             image_url=self._meta_image(parser),
@@ -690,6 +743,14 @@ def merge_official_profile(
     entity.occupation = merge_list(entity.occupation, profile.occupation)
     entity.affiliations = merge_list(entity.affiliations, profile.affiliations)
 
+    existing_appearances = list(
+        (entity.attributes or {}).get("appearances", []) or []
+    )
+    entity.attributes["appearances"] = merge_list(
+        existing_appearances,
+        profile.appearances,
+    )
+
     for field_name, value in (
         ("aliases", profile.aliases),
         ("powers", profile.powers),
@@ -697,6 +758,7 @@ def merge_official_profile(
         ("equipment", profile.equipment),
         ("occupation", profile.occupation),
         ("affiliations", profile.affiliations),
+        ("appearances", profile.appearances),
         ("description", profile.description),
         ("origin_place", profile.origin_place),
         ("first_appearance", profile.first_appearance),
@@ -752,11 +814,24 @@ def merge_official_profile(
         (normalize_search_text(item.predicate), normalize_search_text(item.target_name))
         for item in entity.relationships
     }
+    relation_added = False
     for relation in profile.relationships:
-        key = (normalize_search_text(relation.predicate), normalize_search_text(relation.target_name))
+        key = (
+            normalize_search_text(relation.predicate),
+            normalize_search_text(relation.target_name),
+        )
         if key not in existing_relations:
             existing_relations.add(key)
             entity.relationships.append(relation)
+            relation_added = True
+    if relation_added:
+        record_field_provenance(
+            entity,
+            "relationships",
+            source_type="official_web",
+            source_ref=profile.publisher,
+            source_url=profile.source_url,
+        )
 
     if not any(source.url == profile.source_url for source in entity.sources):
         entity.sources.append(
