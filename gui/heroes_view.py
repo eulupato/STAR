@@ -292,6 +292,7 @@ class HeroesIslandView(tk.Frame):
         self._image_index = 0
         self._image_refs: list[str] = []
         self._rendered_entity_id = None
+        self._last_notified_entity_id = None
         self._active_tab = "info"
         self._filter_open = False
         self._coverage = self._read_coverage()
@@ -349,7 +350,7 @@ class HeroesIslandView(tk.Frame):
     def _build_backdrop(self):
         self.backdrop = tk.Canvas(self, highlightthickness=0, bd=0)
         self.backdrop.place(x=0, y=0, relwidth=1, relheight=1)
-        self.backdrop.lower()
+        self.backdrop.tk.call("lower", str(self.backdrop))
 
         def draw(_event=None):
             width = max(self.backdrop.winfo_width(), 1)
@@ -1032,10 +1033,9 @@ class HeroesIslandView(tk.Frame):
             items = []
 
         self.carousel.set_items(items, keep_id=previous_id)
-        if reset_page:
-            self._page = 0
-        else:
-            self._sync_page_to_selection()
+        # Se a seleção anterior continuar válida, mantém a página que a contém;
+        # quando ela some, CarouselController volta ao índice 0.
+        self._sync_page_to_selection()
         self._refresh_catalog_header()
         self._render_roster()
         self.render()
@@ -1146,7 +1146,7 @@ class HeroesIslandView(tk.Frame):
                 cursor="hand2",
                 font=self._retro_font(8, "bold"),
                 padx=7,
-                pady=5,
+                pady=3,
             )
             if thumb is not None:
                 button.image = thumb
@@ -1173,7 +1173,7 @@ class HeroesIslandView(tk.Frame):
         try:
             with Image.open(path) as source:
                 image = source.convert("RGBA")
-                image.thumbnail((44, 50), Image.Resampling.LANCZOS)
+                image.thumbnail((36, 40), Image.Resampling.LANCZOS)
                 photo = ImageTk.PhotoImage(image)
         except (OSError, ValueError, tk.TclError) as exc:
             log.debug("Miniatura indisponível (%s): %s", path, exc)
@@ -1229,6 +1229,7 @@ class HeroesIslandView(tk.Frame):
         entity = self.carousel.current
         if entity is None:
             self._rendered_entity_id = None
+            self._last_notified_entity_id = None
             self._image_refs = []
             self.photo = None
             self.name_label.config(text="NENHUM PERSONAGEM ENCONTRADO")
@@ -1249,7 +1250,11 @@ class HeroesIslandView(tk.Frame):
         self._render_details()
         self._render_summary(entity)
 
-        if self.on_selected:
+        if (
+            self.on_selected
+            and self._last_notified_entity_id != entity.id
+        ):
+            self._last_notified_entity_id = entity.id
             self.on_selected(entity)
 
     def _render_details(self):
