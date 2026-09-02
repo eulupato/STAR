@@ -646,7 +646,7 @@ class HeroesKnowledgeBuilder:
                 self.engine,
                 progress=self._progress,
             )
-            report.marvel.master_image_refs = self.marvel_master.image_reference_count()
+            report.marvel.master_image_refs = self.marvel_master.image_reference_count
 
         marvel_pdf_stats = self._import_pdf(
             marvel_path,
