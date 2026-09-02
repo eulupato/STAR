@@ -6,6 +6,7 @@ versiona imagens pessoais.
 from __future__ import annotations
 
 from pathlib import Path
+import shutil
 
 
 class PhotoLibrary:
@@ -13,6 +14,61 @@ class PhotoLibrary:
 
     def __init__(self, root: str | Path):
         self.root = Path(root).expanduser()
+
+    def ensure_root(self) -> Path:
+        self.root.mkdir(parents=True, exist_ok=True)
+        return self.root
+
+    def import_images(
+        self,
+        paths,
+        *,
+        limit: int = 200,
+    ) -> list[Path]:
+        """Copia imagens escolhidas para a biblioteca local.
+
+        Arquivos inválidos são ignorados. Colisões de nome recebem sufixo
+        incremental; a origem nunca é apagada.
+        """
+        root = self.ensure_root()
+        safe_limit = max(1, min(int(limit), 1000))
+        imported: list[Path] = []
+
+        for raw in list(paths or [])[:safe_limit]:
+            source = Path(raw).expanduser()
+            try:
+                if (
+                    not source.is_file()
+                    or source.suffix.lower() not in self.SUPPORTED
+                    or source.stat().st_size <= 0
+                ):
+                    continue
+            except OSError:
+                continue
+
+            try:
+                if source.resolve().parent == root.resolve():
+                    imported.append(source)
+                    continue
+            except OSError:
+                pass
+
+            target = root / source.name
+            counter = 2
+            while target.exists():
+                target = (
+                    root
+                    / f"{source.stem}_{counter}{source.suffix.lower()}"
+                )
+                counter += 1
+
+            try:
+                shutil.copy2(source, target)
+            except OSError:
+                continue
+            imported.append(target)
+
+        return imported
 
     def list_images(self, limit: int = 500) -> list[Path]:
         safe_limit = max(1, min(int(limit), 5000))
