@@ -71,7 +71,11 @@
     "photo_album_folder_picker",
     "photo_album_preview",
     "star_tv_nonblocking_lifecycle",
-    "star_tv_startup_handshake"
+    "star_tv_startup_handshake",
+    "heroes_official_first_enrichment",
+    "heroes_field_provenance",
+    "heroes_structured_coverage_report",
+    "heroes_image_rights_audit"
   ],
   "features_in_progress": [
     "heroes_full_image_coverage",
