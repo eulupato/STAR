@@ -164,6 +164,7 @@ def hero_tab_text(entity, tab: str) -> str:
         f"UNIVERSO: {_field(getattr(entity, 'universe', None))}",
         f"EDITORA / ORIGEM: {_field(publisher_origin)}",
         f"ESPÉCIE: {_field(getattr(entity, 'species', None))}",
+        f"FUNÇÃO / OCUPAÇÃO: {_field(getattr(entity, 'occupation', []))}",
         "",
         f"PODERES: {_field(getattr(entity, 'powers', []))}",
         f"HABILIDADES: {_field(getattr(entity, 'abilities', []))}",
