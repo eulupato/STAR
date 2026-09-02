@@ -114,7 +114,11 @@ def score_candidate(entity: Entity, candidate: dict) -> int:
     if rejected_publishers and any(token in combined for token in rejected_publishers):
         return -100
     publisher_evidence = any(token in combined for token in required_publishers)
-    if required_publishers and not publisher_evidence:
+    fiction_evidence = any(token in combined for token in _FICTION_TOKENS)
+    # Algumas fichas Wikidata corretas não citam a editora na descrição curta.
+    # Não rejeitamos automaticamente nesses casos quando o resultado é
+    # explicitamente ficcional; conflitos Marvel/DC continuam rejeitados.
+    if required_publishers and not publisher_evidence and not fiction_evidence:
         return -100
 
     score = 0
@@ -141,7 +145,7 @@ def score_candidate(entity: Entity, candidate: dict) -> int:
 
     if publisher_evidence:
         score += 7
-    if any(token in combined for token in _FICTION_TOKENS):
+    if fiction_evidence:
         score += 2
     if description:
         score += 1
@@ -167,6 +171,7 @@ class WikidataClient:
         self.entity_cache = self.cache_dir / "entities"
         self.commons_cache = self.cache_dir / "commons"
         self.image_cache = self.cache_dir / "images"
+        self.image_rejections: list[dict] = []
         for path in (
             self.search_cache,
             self.entity_cache,
@@ -175,6 +180,28 @@ class WikidataClient:
         ):
             path.mkdir(parents=True, exist_ok=True)
         self.timeout = float(timeout)
+
+    def _record_image_rejection(
+        self,
+        *,
+        entity_name: str,
+        reason: str,
+        qid: str | None = None,
+        source_url: str | None = None,
+        detail: str | None = None,
+    ) -> None:
+        record = {
+            "source": "wikimedia_commons",
+            "entity": str(entity_name or ""),
+            "reason": str(reason),
+        }
+        if qid:
+            record["qid"] = str(qid)
+        if source_url:
+            record["source_url"] = str(source_url)
+        if detail:
+            record["detail"] = str(detail)[:240]
+        self.image_rejections.append(record)
 
     @staticmethod
     def _cache_key(value: str) -> str:
@@ -404,7 +431,8 @@ class WikidataClient:
                 "format": "json",
                 "formatversion": 2,
                 "prop": "imageinfo",
-                "iiprop": "url|extmetadata",
+                "iiprop": "url|mime|size|extmetadata",
+                "iiurlwidth": 1024,
                 "titles": "File:" + filename,
             }
         )
@@ -430,8 +458,15 @@ class WikidataClient:
         image_url: str | None,
         *,
         online: bool,
+        entity_name: str = "",
+        qid: str | None = None,
     ) -> str | None:
         if not image_url:
+            self._record_image_rejection(
+                entity_name=entity_name,
+                qid=qid,
+                reason="missing_image_url",
+            )
             return None
         parsed = urlparse(image_url)
         host = (parsed.hostname or "").lower()
@@ -439,17 +474,38 @@ class WikidataClient:
             host == "upload.wikimedia.org"
             or host.endswith(".wikimedia.org")
         ):
+            self._record_image_rejection(
+                entity_name=entity_name,
+                qid=qid,
+                reason="unsupported_source_host",
+                source_url=image_url,
+            )
             return None
 
         suffix = Path(parsed.path).suffix.lower()
-        if suffix not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
-            suffix = ".jpg"
-        target = self.image_cache / (
-            f"{self._cache_key(image_url)}{suffix}"
+        allowed = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+        if suffix not in allowed:
+            suffix = ""
+
+        cache_key = self._cache_key(image_url)
+        existing = next(
+            (
+                self.image_cache / f"{cache_key}{candidate}"
+                for candidate in allowed
+                if (self.image_cache / f"{cache_key}{candidate}").exists()
+                and (self.image_cache / f"{cache_key}{candidate}").stat().st_size > 0
+            ),
+            None,
         )
-        if target.exists() and target.stat().st_size > 0:
-            return str(target)
+        if existing is not None:
+            return str(existing)
         if not online:
+            self._record_image_rejection(
+                entity_name=entity_name,
+                qid=qid,
+                reason="cache_miss_offline",
+                source_url=image_url,
+            )
             return None
 
         request = Request(
@@ -460,15 +516,58 @@ class WikidataClient:
             with urlopen(request, timeout=self.timeout) as response:
                 content_type = (
                     response.headers.get("Content-Type") or ""
-                ).lower()
-                if not content_type.startswith("image/"):
+                ).lower().split(";", 1)[0].strip()
+                type_suffix = {
+                    "image/jpeg": ".jpg",
+                    "image/png": ".png",
+                    "image/webp": ".webp",
+                    "image/gif": ".gif",
+                }.get(content_type)
+                if not type_suffix:
+                    self._record_image_rejection(
+                        entity_name=entity_name,
+                        qid=qid,
+                        reason="unsupported_image_format",
+                        source_url=image_url,
+                        detail=content_type or "content-type ausente",
+                    )
                     return None
+                suffix = suffix or type_suffix
                 data = response.read(12 * 1024 * 1024 + 1)
-        except (HTTPError, URLError, TimeoutError, OSError) as exc:
-            log.debug("Imagem Commons indisponível %s: %s", image_url, exc)
+        except HTTPError as exc:
+            self._record_image_rejection(
+                entity_name=entity_name,
+                qid=qid,
+                reason=f"http_{exc.code}",
+                source_url=image_url,
+            )
             return None
-        if not data or len(data) > 12 * 1024 * 1024:
+        except (URLError, TimeoutError, OSError) as exc:
+            self._record_image_rejection(
+                entity_name=entity_name,
+                qid=qid,
+                reason="network_error",
+                source_url=image_url,
+                detail=str(exc),
+            )
             return None
+        if not data:
+            self._record_image_rejection(
+                entity_name=entity_name,
+                qid=qid,
+                reason="empty_image",
+                source_url=image_url,
+            )
+            return None
+        if len(data) > 12 * 1024 * 1024:
+            self._record_image_rejection(
+                entity_name=entity_name,
+                qid=qid,
+                reason="image_too_large",
+                source_url=image_url,
+            )
+            return None
+        target = self.image_cache / f"{cache_key}{suffix}"
         target.write_bytes(data)
         return str(target)
 
@@ -590,7 +689,39 @@ class WikidataClient:
                     license_name = _clean_text(
                         (ext.get("LicenseShortName") or {}).get("value")
                     )
-                    if license_name:
+                    usage_terms = _clean_text(
+                        (ext.get("UsageTerms") or {}).get("value")
+                    )
+                    rights_text = normalize_search_text(
+                        " ".join(
+                            value
+                            for value in (license_name, usage_terms)
+                            if value
+                        )
+                    )
+                    forbidden = (
+                        "all rights reserved",
+                        "copyrighted",
+                        "non free",
+                        "non-free",
+                        "fair use",
+                    )
+                    open_markers = (
+                        "cc by",
+                        "cc-by",
+                        "cc0",
+                        "public domain",
+                        "public-domain",
+                        "pdm",
+                        "gfdl",
+                        "free art",
+                    )
+                    verified_open = (
+                        bool(rights_text)
+                        and not any(token in rights_text for token in forbidden)
+                        and any(token in rights_text for token in open_markers)
+                    )
+                    if verified_open:
                         image_url = (
                             _clean_text(
                                 info.get("thumburl")
@@ -613,12 +744,48 @@ class WikidataClient:
                             "credit": _clean_text(
                                 (ext.get("Credit") or {}).get("value")
                             ),
-                            "license": license_name,
+                            "license": license_name or usage_terms,
                             "license_url": _clean_text(
                                 (ext.get("LicenseUrl") or {}).get("value")
                             ),
                             "source_url": image_source_url,
+                            "rights_status": "open_license_verified",
                         }
+                    else:
+                        self._record_image_rejection(
+                            entity_name=entity.name,
+                            qid=qid,
+                            reason=(
+                                "missing_license_metadata"
+                                if not rights_text
+                                else "non_open_license"
+                            ),
+                            source_url=(
+                                _clean_text(info.get("descriptionurl"))
+                                or (
+                                    "https://commons.wikimedia.org/wiki/File:"
+                                    + quote(filename.replace(" ", "_"))
+                                )
+                            ),
+                            detail=rights_text or "sem LicenseShortName/UsageTerms",
+                        )
+                else:
+                    self._record_image_rejection(
+                        entity_name=entity.name,
+                        qid=qid,
+                        reason="commons_metadata_unavailable",
+                        source_url=(
+                            "https://commons.wikimedia.org/wiki/File:"
+                            + quote(filename.replace(" ", "_"))
+                        ),
+                    )
+            else:
+                self._record_image_rejection(
+                    entity_name=entity.name,
+                    qid=qid,
+                    reason="wikidata_without_p18",
+                    source_url=f"https://www.wikidata.org/wiki/{qid}",
+                )
 
         if not any(
             (
@@ -745,11 +912,32 @@ def merge_wikidata_profile(
         except OSError:
             current_image_valid = False
 
-    if image_path and not current_image_valid:
+    attributions = entity.metadata.get("image_attribution", {}) or {}
+    current_rights = (
+        attributions.get(str(entity.image), {})
+        if isinstance(attributions, dict) and entity.image
+        else {}
+    )
+    current_open_licensed = (
+        isinstance(current_rights, dict)
+        and current_rights.get("rights_status") == "open_license_verified"
+    )
+    promote_commons = bool(
+        image_path
+        and (
+            not current_image_valid
+            or not current_open_licensed
+        )
+    )
+
+    if promote_commons:
+        previous_image = str(entity.image) if entity.image else None
         entity.image = image_path
         candidates = list(
             entity.metadata.get("image_candidates", []) or []
         )
+        if previous_image and previous_image not in candidates:
+            candidates.append(previous_image)
         if image_path not in candidates:
             candidates.append(image_path)
         entity.metadata["image_candidates"] = candidates
