@@ -161,10 +161,15 @@ MarvelMasterCatalog
 Entity Store local
 ```
 
-O snapshot atual possui 1.564 registros e 1.007 referências visuais. A
-proveniência registra também que o índice público Marvel foi observado com
-2.896 resultados em 01/09/2026; portanto, a cobertura é
-`partial_verified_snapshot`, sem alegação de completude.
+O snapshot atual possui **1.564 IDs/identidades verificáveis** e **1.007
+referências visuais**. O índice público Marvel foi observado com **2.896
+perfis/resultados** em 01/09/2026. Esse total inclui variantes e nomes de
+exibição repetidos e não equivale a 2.896 codinomes únicos.
+
+A lacuna registrada é de **1.332 resultados** e a cobertura numérica do
+snapshot é **54,01%** do índice observado. O estado permanece
+`partial_verified_snapshot`, sem alegação de completude e sem usar OCR ou
+inferência para inflar a contagem.
 
 Regras atuais:
 
@@ -259,8 +264,36 @@ o Knowledge Engine.
 `modules/media_host.py` hospeda o WebView.  
 `gui/app.py` recebe o evento no thread principal e atualiza a cena.
 
-O host reporta falhas de comandos via stderr; erros de mídia não derrubam o
-Core.
+A auditoria de 02/09 encontrou duas causas concretas para a interface ficar
+presa ao abrir/sair do YouTube: `_media_sync_job` era usado sem inicialização e
+o fechamento do processo WebView esperava sincronamente dentro do thread
+Tkinter. O lifecycle agora é não bloqueante: a janela é ocultada antes do
+fechamento, o processo é destacado da GUI e reaped em worker, existe handshake
+`ready`, timeout de recuperação e debounce de sincronização de geometria apenas
+quando a Sala está ativa. O host continua reportando falhas via stderr.
+
+A Sala permanece `experimental` somente porque o comportamento visual do
+WebView2 precisa de validação física na máquina Windows do projeto; o código e o
+contrato de recuperação possuem testes automatizados.
+
+## Álbum
+
+O `PhotoLibrary` continua local-first, mas o fluxo principal agora está
+**available**:
+
+- cria a pasta padrão `photos/` quando necessário;
+- adiciona fotos pela própria GUI;
+- copia imagens sem apagar a origem;
+- resolve colisões de nomes com sufixo incremental;
+- permite apontar para uma pasta existente;
+- abre a pasta no sistema;
+- atualiza a galeria;
+- abre pré-visualização ao clicar na miniatura;
+- aceita PNG, JPG, JPEG e WEBP.
+
+`user_settings.json` continua armazenando apenas o caminho escolhido e permanece
+fora do Git. Metadados, agrupamentos e memórias visuais mais profundas seguem
+como expansões, mas não bloqueiam o uso básico do Álbum.
 
 ## Status
 
@@ -272,4 +305,4 @@ classificação permanece **DEVELOPMENT / PARTIAL NO CONTEÚDO** até:
   imagens/descrições verificadas;
 - validação física da STAR TV e voz no Windows do projeto.
 
-Veja a auditoria atual em `docs/V3_0_AUDIT_2026-09-01.md`.
+Veja a auditoria atual em `docs/V3_0_AUDIT_2026-09-02.md`.
