@@ -37,7 +37,8 @@ knowledge/
 │   ├── pdf.py
 │   └── heroes.py
 ├── sources/
-│   └── official.py
+│   ├── official.py
+│   └── wikidata.py
 └── packs/
 ```
 
@@ -115,8 +116,12 @@ Filtros atuais:
 - espécie/tipo;
 - relacionamento.
 
-A ficha apresenta os campos disponíveis e múltiplas fontes, sem transformar
-campo ausente em informação inventada.
+A ficha apresenta os campos disponíveis e múltiplas fontes. Descrições vindas
+de fonte estruturada são identificadas pela proveniência; quando nenhuma
+biografia verificável foi localizada, a STAR cria apenas uma descrição básica
+do catálogo usando fatos já conhecidos e marca explicitamente que a biografia
+verificada continua pendente. Assim nenhum personagem fica com a ficha vazia e
+o sistema não inventa história.
 
 A seleção anterior/próximo usa `CarouselController`, reutilizável por Closet,
 Biblioteca e outras ilhas.
@@ -173,17 +178,42 @@ Regras atuais:
 - variantes distintas permanecem entidades distintas;
 - acesso live à Marvel é opcional e explicitamente habilitado, pois pode sofrer
   HTTP 403;
-- DC mantém enriquecimento oficial opcional com validação de identidade.
+- DC mantém enriquecimento oficial opcional com validação de identidade;
+- Wikidata/Wikimedia Commons formam uma camada suplementar opcional para
+  preencher lacunas de descrição curta e referência visual;
+- essa camada suplementar nunca sobrescreve descrição oficial/PDF já validada;
+- candidatos suplementares precisam combinar identidade e editora/universo;
+- imagens do Commons só são usadas quando possuem metadados de licença e
+  permanecem no cache local com atribuição/proveniência.
 
 Falha de rede nunca impede a consulta do catálogo já importado.
+
+### Qualidade das fichas
+
+`heroes_build_report.json` agora diferencia:
+
+- total de personagens;
+- imagens locais realmente válidas;
+- descrições presentes;
+- descrições verificadas;
+- descrições básicas de fallback;
+- fichas completas (imagem local + descrição verificada);
+- quantidade e lista de imagens faltantes;
+- quantidade e lista de descrições verificadas faltantes.
+
+Isso impede que um caminho de imagem inexistente ou um registro sem biografia
+seja contabilizado como ficha completa.
 
 ## Imagens
 
 O importador não usa uma página escaneada inteira como retrato final. Imagens
 embutidas que cobrem quase toda a página são rejeitadas; arte candidata menor
 pode ser associada ao personagem. Se não houver imagem adequada, o
-enriquecimento oficial pode preencher a imagem e salvá-la no cache local.
-Caso tudo falhe, a GUI usa placeholder honesto.
+enriquecimento oficial pode preencher a imagem e salvá-la no cache local. Se a
+fonte oficial não fornecer uma referência, o enriquecimento suplementar pode
+tentar uma imagem licenciada do Wikimedia Commons e registrar autor, licença e
+URL de origem junto à entidade. Caso tudo falhe, a GUI usa placeholder honesto
+e o relatório mantém o registro na lista de imagens pendentes.
 
 A ficha pode navegar entre múltiplas referências locais. O tema visual possui
 overrides de identidade para personagens icônicos e, para todo o restante,
@@ -210,6 +240,11 @@ Enciclopédias, páginas renderizadas, imagens extraídas, bancos gerados e cach
 não são versionados no repositório público. O projeto armazena localmente apenas
 o necessário para a base autorizada do usuário.
 
+O repositório também não versiona em massa biografias longas de terceiros.
+Wikidata é usado somente como fonte estruturada suplementar de descrições
+curtas. Arquivos do Wikimedia Commons ficam fora do Git e carregam metadados de
+atribuição/licença no banco local.
+
 ## Conversation
 
 `core/conversation.py` executa antes de ferramentas caras, mas só responde a
@@ -233,7 +268,8 @@ A arquitetura KNOWLEDGE está implementada e testada progressivamente. A
 classificação permanece **DEVELOPMENT / PARTIAL NO CONTEÚDO** até:
 
 - expansão progressiva do snapshot Marvel até cobrir o índice atual e revisão do PDF DC;
-- validação de cobertura final de imagens;
+- execução/revisão local do enriquecimento suplementar e cobertura final de
+  imagens/descrições verificadas;
 - validação física da STAR TV e voz no Windows do projeto.
 
 Veja a auditoria atual em `docs/V3_0_AUDIT_2026-09-01.md`.
