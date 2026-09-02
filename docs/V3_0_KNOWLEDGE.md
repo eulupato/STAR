@@ -255,6 +255,28 @@ aparecem respectivamente na aba **Aparições**, na aba **Relações** e na fich
 completa. Se a fonte oficial não publicar esse dado, a interface mantém a
 lacuna explícita em vez de inferir aparições ou vínculos.
 
+### Seleção visual — cadeia de confiança
+
+A imagem preferida de um personagem segue uma cadeia explícita de confiança:
+
+`Commons licenciado via Wikidata → perfil oficial → thumbnail oficial Marvel`.
+
+O Commons é promovido sobre uma referência oficial existente quando sua licença
+é verificada, preservando a imagem oficial anterior em
+`metadata.image_candidates`. Referências Marvel/DC permanecem válidas como
+referência local, com `rights_status=official_source_local_reference`, mas não
+são tratadas como conteúdo de licença aberta.
+
+O cliente Commons solicita `iiurlwidth=1024` para receber thumbnail rasterizada
+também quando o arquivo original é SVG. Licenças são validadas por
+`LicenseShortName` e/ou `UsageTerms`; conteúdo marcado como non-free,
+copyrighted, fair use ou all-rights-reserved é rejeitado.
+
+Cada recusa de download/associação entra no relatório com fonte, personagem,
+URL quando disponível e motivo técnico. Isso permite distinguir falha de rede,
+HTTP 403, falta de P18, identidade Wikidata não resolvida, licença ausente,
+formato incompatível e host não permitido.
+
 ### Qualidade das fichas
 
 `heroes_build_report.json` agora diferencia:
