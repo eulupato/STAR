@@ -75,7 +75,7 @@ Model Router e seleção automática de motores.
 ## V3.0 — KNOWLEDGE
 **Objetivo:** transformar a STAR em uma plataforma de conhecimento offline expansível e conectar essa base ao STAR WORLD funcional.
 
-**Status em 01/09/2026: arquitetura integrada em DEVELOPMENT / knowledge-foundation.**
+**Status em 02/09/2026: arquitetura integrada em DEVELOPMENT / knowledge-foundation.**
 
 Implementado nesta fundação:
 - Entity System genérico;
@@ -86,6 +86,8 @@ Implementado nesta fundação:
 - Universal Search;
 - pipeline PDF reutilizável;
 - fontes oficiais DC/Marvel opcionais com validação de identidade;\n- catálogo mestre Marvel versionado + manifesto visual + cache local;
+- enriquecimento suplementar de lacunas via Wikidata/Wikimedia Commons, com proveniência e cache local;
+- relatório de qualidade de fichas separando imagem local, descrição verificada e fallback;
 - primeira ilha de conhecimento navegável: Heróis;
 - busca, carrossel e filtros estruturados;
 - Conversation Variation Engine;
@@ -111,7 +113,7 @@ Status dos ambientes V3 atuais:
 
 Pendente antes de release READY:
 - expansão do snapshot Marvel verificável até a cobertura desejada do índice atual e revisão do PDF DC;
-- validação da cobertura/associação final de imagens;
+- validação da cobertura/associação final de imagens e descrições verificadas;
 - validação física da STAR TV no Windows real;
 - regressão física de microfone, alto-falante, Chatterbox e referência local;
 - sprites emocionais reais para substituir indicadores de fallback;
