@@ -41,6 +41,9 @@ def test_builder_coverage_report_is_local_and_deterministic(tmp_path):
     assert report.with_verified_descriptions == 1
     assert report.complete_cards == 1
     assert report.with_pdf_source == 1
+    assert report.field_coverage["verified_description"]["count"] == 1
+    assert report.field_coverage["powers"]["missing"] == 1
+    assert report.field_coverage_by_universe["DC"]["verified_description"]["percent"] == 100.0
     assert report.with_official_source == 1
     saved = json.loads(
         (tmp_path / "local" / "reports" / "heroes_build_report.json").read_text(
@@ -139,3 +142,45 @@ def test_builder_never_leaves_character_description_blank(tmp_path):
     assert report.missing_description_count == 0
     assert report.fallback_descriptions == 1
     assert report.missing_verified_description_count == 1
+
+
+def test_builder_audit_reports_field_and_image_rights_coverage(tmp_path):
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    image = tmp_path / "hero.jpg"
+    image.write_bytes(b"image")
+    engine.upsert_entity(
+        Entity(
+            name="Hero",
+            category="character",
+            universe="Marvel",
+            image=str(image),
+            description="Verified bio.",
+            powers=["Flight"],
+            occupation=["Pilot"],
+            metadata={
+                "description_kind": "wikidata_short_description",
+                "image_attribution": {
+                    str(image): {
+                        "author": "Example",
+                        "license": "CC BY-SA 4.0",
+                        "source_url": "https://commons.wikimedia.org/wiki/File:Hero.jpg",
+                    }
+                },
+            },
+        )
+    )
+    builder = HeroesKnowledgeBuilder(engine, tmp_path / "local")
+    report = builder.audit()
+
+    assert report.total_characters == 1
+    assert report.open_licensed_images == 1
+    assert report.sourced_images == 1
+    assert report.field_coverage["powers"]["percent"] == 100.0
+    assert report.field_coverage["abilities"]["percent"] == 0.0
+    assert report.missing_by_field["abilities"] == ["Hero"]
+    assert (
+        tmp_path
+        / "local"
+        / "reports"
+        / "heroes_coverage_report.json"
+    ).exists()

@@ -57,6 +57,15 @@ class HeroesBuildReport:
     missing_verified_description_count: int = 0
     with_pdf_source: int = 0
     with_official_source: int = 0
+    with_supplemental_source: int = 0
+    sourced_images: int = 0
+    open_licensed_images: int = 0
+    official_reference_images: int = 0
+    images_without_rights_metadata: int = 0
+    rich_cards: int = 0
+    field_coverage: dict[str, dict] = field(default_factory=dict)
+    field_coverage_by_universe: dict[str, dict[str, dict]] = field(default_factory=dict)
+    missing_by_field: dict[str, list[str]] = field(default_factory=dict)
     missing_images: list[str] = field(default_factory=list)
     missing_descriptions: list[str] = field(default_factory=list)
     missing_verified_descriptions: list[str] = field(default_factory=list)
@@ -131,6 +140,43 @@ class HeroesKnowledgeBuilder:
             return False
         kind = (getattr(entity, "metadata", {}) or {}).get("description_kind")
         return kind != "catalog_fallback"
+
+    @staticmethod
+    def _field_present(entity, field_name: str) -> bool:
+        if field_name == "verified_description":
+            return HeroesKnowledgeBuilder._description_is_verified(entity)
+        if field_name == "real_name":
+            return bool((entity.attributes or {}).get("real_name"))
+        value = getattr(entity, field_name, None)
+        if isinstance(value, (list, tuple, set, dict)):
+            return bool(value)
+        return bool(str(value).strip()) if value is not None else False
+
+    @staticmethod
+    def _image_rights_kind(entity) -> str:
+        if not HeroesKnowledgeBuilder._has_local_image(entity):
+            return "missing"
+        metadata = getattr(entity, "metadata", {}) or {}
+        attributions = metadata.get("image_attribution", {}) or {}
+        image = str(getattr(entity, "image", "") or "")
+        record = attributions.get(image) if isinstance(attributions, dict) else None
+        if not isinstance(record, dict) and isinstance(attributions, dict):
+            record = next(
+                (item for item in attributions.values() if isinstance(item, dict)),
+                None,
+            )
+        if not isinstance(record, dict):
+            return "unknown"
+        rights_status = str(record.get("rights_status") or "").strip()
+        license_name = str(record.get("license") or "").strip().lower()
+        if rights_status == "official_source_local_reference":
+            return "official_reference"
+        if license_name and license_name not in {
+            "no open license recorded",
+            "licença registrada na fonte",
+        }:
+            return "open_licensed"
+        return "unknown"
 
     def _import_pdf(
         self,
@@ -236,6 +282,10 @@ class HeroesKnowledgeBuilder:
             and (
                 not self._description_is_verified(entity)
                 or not self._has_local_image(entity)
+                or not entity.occupation
+                or not entity.affiliations
+                or not entity.creators
+                or not entity.gender
             )
         ]
         if limit > 0:
@@ -385,6 +435,21 @@ class HeroesKnowledgeBuilder:
             and self._description_is_verified(entity)
             for entity in entities
         )
+        report.rich_cards = sum(
+            self._has_local_image(entity)
+            and self._description_is_verified(entity)
+            and any(
+                (
+                    entity.powers,
+                    entity.abilities,
+                    entity.equipment,
+                    entity.occupation,
+                    entity.affiliations,
+                    entity.team,
+                )
+            )
+            for entity in entities
+        )
         report.with_pdf_source = sum(
             any(
                 source.source_type == "PDF"
@@ -403,6 +468,87 @@ class HeroesKnowledgeBuilder:
             )
             for entity in entities
         )
+        report.with_supplemental_source = sum(
+            any(
+                source.source_type in {
+                    "wikidata",
+                    "wikimedia_commons",
+                }
+                for source in entity.sources
+            )
+            for entity in entities
+        )
+
+        rights = [self._image_rights_kind(entity) for entity in entities]
+        report.sourced_images = sum(
+            value in {"official_reference", "open_licensed"}
+            for value in rights
+        )
+        report.open_licensed_images = rights.count("open_licensed")
+        report.official_reference_images = rights.count("official_reference")
+        report.images_without_rights_metadata = rights.count("unknown")
+
+        tracked_fields = (
+            "verified_description",
+            "real_name",
+            "powers",
+            "abilities",
+            "equipment",
+            "occupation",
+            "affiliations",
+            "team",
+            "origin_place",
+            "first_appearance",
+            "relationships",
+            "creators",
+            "species",
+            "gender",
+        )
+        by_universe: dict[str, list] = {}
+        for entity in entities:
+            key = str(entity.universe or "Unknown")
+            by_universe.setdefault(key, []).append(entity)
+
+        report.field_coverage = {}
+        report.field_coverage_by_universe = {}
+        report.missing_by_field = {}
+        total = max(1, len(entities))
+
+        for field_name in tracked_fields:
+            count = sum(
+                self._field_present(entity, field_name)
+                for entity in entities
+            )
+            missing = [
+                entity.name
+                for entity in entities
+                if not self._field_present(entity, field_name)
+            ]
+            report.field_coverage[field_name] = {
+                "count": count,
+                "total": len(entities),
+                "percent": round(count * 100 / total, 2) if entities else 0.0,
+                "missing": len(missing),
+            }
+            report.missing_by_field[field_name] = missing[:500]
+
+        for universe, universe_entities in sorted(by_universe.items()):
+            universe_total = len(universe_entities)
+            report.field_coverage_by_universe[universe] = {}
+            for field_name in tracked_fields:
+                count = sum(
+                    self._field_present(entity, field_name)
+                    for entity in universe_entities
+                )
+                report.field_coverage_by_universe[universe][field_name] = {
+                    "count": count,
+                    "total": universe_total,
+                    "percent": (
+                        round(count * 100 / universe_total, 2)
+                        if universe_total
+                        else 0.0
+                    ),
+                }
 
         missing_images = [
             entity.name
@@ -421,30 +567,40 @@ class HeroesKnowledgeBuilder:
         ]
 
         report.missing_image_count = len(missing_images)
-        report.missing_description_count = len(
-            missing_descriptions
-        )
-        report.missing_verified_description_count = len(
-            missing_verified
-        )
+        report.missing_description_count = len(missing_descriptions)
+        report.missing_verified_description_count = len(missing_verified)
         report.missing_images = missing_images[:500]
-        report.missing_descriptions = (
-            missing_descriptions[:500]
-        )
-        report.missing_verified_descriptions = (
-            missing_verified[:500]
-        )
+        report.missing_descriptions = missing_descriptions[:500]
+        report.missing_verified_descriptions = missing_verified[:500]
 
         if report.missing_image_count:
             report.warnings.append(
                 f"{report.missing_image_count} registros "
                 "ainda sem imagem local válida."
             )
+        if report.images_without_rights_metadata:
+            report.warnings.append(
+                f"{report.images_without_rights_metadata} imagens locais "
+                "ainda não possuem metadados de direitos/proveniência suficientes."
+            )
         if report.missing_verified_description_count:
             report.warnings.append(
                 f"{report.missing_verified_description_count} "
                 "registros usam descrição básica do catálogo."
             )
+
+    def audit(self) -> HeroesBuildReport:
+        """Gera cobertura do catálogo atual sem alterar entidades nem acessar a rede."""
+        report = HeroesBuildReport(
+            generated_at=datetime.now(timezone.utc).isoformat()
+        )
+        self._coverage(report)
+        report_path = self.reports_dir / "heroes_coverage_report.json"
+        report_path.write_text(
+            json.dumps(report.to_dict(), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        return report
 
     def build(
         self,
@@ -490,7 +646,7 @@ class HeroesKnowledgeBuilder:
                 self.engine,
                 progress=self._progress,
             )
-            report.marvel.master_image_refs = self.marvel_master.image_reference_count
+            report.marvel.master_image_refs = self.marvel_master.image_reference_count()
 
         marvel_pdf_stats = self._import_pdf(
             marvel_path,
