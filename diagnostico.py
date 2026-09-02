@@ -62,6 +62,8 @@ MODULES = [
     "knowledge.importers.pdf",
     "knowledge.importers.heroes",
     "knowledge.sources.official",
+    "knowledge.sources.marvel_catalog",
+    "knowledge.sources.wikidata",
     "knowledge.heroes_builder",
     "knowledge.recipes",
     "modules.computer_control",
@@ -123,7 +125,10 @@ def main():
 
         from core.islands import get_islands
         from core.media_intents import parse_media_intent
+        from core.photo_library import PhotoLibrary
         from knowledge.recipes import RecipeBook
+        from knowledge.sources.marvel_catalog import MarvelMasterCatalog
+        from modules.media_controller import MediaController
         from gui.navigation import NavigationManager
 
         recipe_count = len(
@@ -146,6 +151,11 @@ def main():
 
         media_restore = parse_media_intent("sair da tela cheia da TV")
         media_volume = parse_media_intent("volume da TV para 42")
+        media_state = MediaController().state()
+        photo_root = PhotoLibrary(Path(temp) / "photos").ensure_root()
+        marvel_coverage = MarvelMasterCatalog().source_metadata().get(
+            "coverage", {}
+        )
 
         checks = [
             (
@@ -177,6 +187,11 @@ def main():
                 "Cozinha disponível",
                 islands["casa"]["subareas"]["cozinha"]["status"] == "available",
             ),
+            (
+                "Álbum disponível",
+                islands["casa"]["subareas"]["album"]["status"] == "available"
+                and photo_root.is_dir(),
+            ),
             ("Navegação STAR WORLD", navigation_ok),
             (
                 "Media intents",
@@ -184,6 +199,24 @@ def main():
                 and media_restore.get("action") == "restore"
                 and media_volume is not None
                 and media_volume.get("value") == 42,
+            ),
+            (
+                "STAR TV lifecycle",
+                media_state.get("opened") is False
+                and media_state.get("starting") is False
+                and media_state.get("ready") is False,
+            ),
+            (
+                "Marvel coverage metadata",
+                int(marvel_coverage.get("snapshot_records") or 0) == 1564
+                and int(
+                    marvel_coverage.get("official_site_reported_results") or 0
+                )
+                == 2896
+                and int(
+                    marvel_coverage.get("verified_snapshot_results_gap") or 0
+                )
+                == 1332,
             ),
         ]
         for name, ok in checks:
