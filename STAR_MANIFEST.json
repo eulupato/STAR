@@ -111,19 +111,13 @@
     ],
     "marvel_catalog": {
       "source_mode": "versioned_master_snapshot",
-      "snapshot_records": 1564,
-      "image_references": 1007,
-      "official_site_reported_results": 2896,
-      "official_site_observed_date": "2026-09-01",
       "coverage_status": "partial_verified_snapshot",
       "identity_disambiguation": true,
       "local_cache": true,
       "ocr_identity_discovery": false,
       "pdf_role": "supplement_only_existing_entities",
       "live_web_optional": true,
-      "verified_snapshot_results_gap": 1332,
-      "verified_snapshot_coverage_percent": 54.01,
-      "count_semantics": "official index = profiles/results including variants; not unique codenames"
+      "coverage_metadata": "knowledge/packs/heroes/marvel_sources.json"
     }
   },
   "voice": {
