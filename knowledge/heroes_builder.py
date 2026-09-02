@@ -16,7 +16,7 @@ from knowledge.sources.official import (
     merge_official_profile,
     source_for_entity,
 )
-from knowledge.sources.marvel_catalog import MarvelOfficialCatalog
+from knowledge.sources.marvel_catalog import MarvelMasterCatalog
 
 log = get_logger("heroes.builder")
 
@@ -27,6 +27,10 @@ class UniverseBuildStats:
     pdf_saved: int = 0
     pdf_rejected: int = 0
     ocr_pages: int = 0
+    master_catalog_saved: int = 0
+    master_image_refs: int = 0
+    master_images_cached: int = 0
+    purged_untrusted_pdf: int = 0
     official_catalog_saved: int = 0
     official_profiles: int = 0
     official_missing: int = 0
@@ -49,7 +53,13 @@ class HeroesBuildReport:
 
 
 class HeroesKnowledgeBuilder:
-    def __init__(self, engine: KnowledgeEngine, local_root: str | Path):
+    def __init__(
+        self,
+        engine: KnowledgeEngine,
+        local_root: str | Path,
+        *,
+        marvel_pack_root: str | Path | None = None,
+    ):
         self.engine = engine
         self.local_root = Path(local_root)
         self.local_root.mkdir(parents=True, exist_ok=True)
@@ -59,6 +69,17 @@ class HeroesKnowledgeBuilder:
         self.reports_dir.mkdir(parents=True, exist_ok=True)
         self.importer = HeroEncyclopediaImporter(engine, self.pdf_cache)
         self.web = OfficialWebClient(self.official_cache)
+        self.marvel_master = MarvelMasterCatalog(marvel_pack_root)
+
+    @staticmethod
+    def _progress(stage: str, current: int, total: int):
+        total = max(1, int(total))
+        current = min(max(0, int(current)), total)
+        percent = current * 100 / total
+        print(
+            f"[STAR] {stage}: {current} / {total} ({percent:5.1f}%)",
+            flush=True,
+        )
 
     @staticmethod
     def _check_pdf(path: str | Path | None, label: str) -> Path | None:
@@ -85,6 +106,7 @@ class HeroesKnowledgeBuilder:
         universe: str,
         publisher: str,
         allow_ocr: bool,
+        existing_only: bool = False,
     ) -> UniverseBuildStats:
         stats = UniverseBuildStats()
         if path is None:
@@ -96,6 +118,7 @@ class HeroesKnowledgeBuilder:
             publisher=publisher,
             allow_ocr=allow_ocr,
             render_images=True,
+            existing_only=existing_only,
         )
         stats.pdf_pages = imported.pages_seen
         stats.pdf_saved = imported.entities_saved
@@ -112,16 +135,19 @@ class HeroesKnowledgeBuilder:
         force: bool,
         limit: int = 0,
         delay_seconds: float = 0.20,
+        include_marvel: bool = False,
     ):
         entities = self.engine.search_entities(
             "",
             filters={"category": "character"},
-            limit=5000,
+            limit=10000,
         )
         if limit > 0:
             entities = entities[:limit]
 
         for entity in entities:
+            if entity.universe == "Marvel" and not include_marvel:
+                continue
             stats = stats_by_universe.get(entity.universe or "")
             if stats is None:
                 continue
@@ -159,7 +185,7 @@ class HeroesKnowledgeBuilder:
         entities = self.engine.search_entities(
             "",
             filters={"category": "character"},
-            limit=5000,
+            limit=10000,
         )
         report.total_characters = len(entities)
         report.with_images = sum(bool(entity.image) for entity in entities)
@@ -169,7 +195,11 @@ class HeroesKnowledgeBuilder:
         )
         report.with_official_source = sum(
             any(
-                source.source_type in {"official_web", "official_catalog"}
+                source.source_type in {
+                    "official_web",
+                    "official_catalog",
+                    "marvel_master",
+                }
                 for source in entity.sources
             )
             for entity in entities
@@ -189,8 +219,10 @@ class HeroesKnowledgeBuilder:
         cache_images: bool = True,
         force_web: bool = False,
         enrichment_limit: int = 0,
-        import_marvel_catalog: bool = True,
-        marvel_catalog_max_pages: int = 120,
+        import_marvel_master: bool = True,
+        cache_marvel_images: bool = False,
+        marvel_image_limit: int = 0,
+        live_marvel_enrichment: bool = False,
     ) -> HeroesBuildReport:
         marvel_path = self._check_pdf(marvel_pdf, "PDF Marvel")
         dc_path = self._check_pdf(dc_pdf, "PDF DC")
@@ -198,27 +230,53 @@ class HeroesKnowledgeBuilder:
         report = HeroesBuildReport(
             generated_at=datetime.now(timezone.utc).isoformat()
         )
-        report.marvel = self._import_pdf(
+
+        if import_marvel_master:
+            report.marvel.purged_untrusted_pdf = (
+                self.engine.store.delete_source_only_characters(
+                    universe="Marvel",
+                    source_type="PDF",
+                    trusted_source_types=(
+                        "marvel_master",
+                        "official_web",
+                        "official_catalog",
+                        "knowledge_pack",
+                    ),
+                )
+            )
+            report.marvel.master_catalog_saved = self.marvel_master.import_into(
+                self.engine,
+                progress=self._progress,
+            )
+            report.marvel.master_image_refs = self.marvel_master.image_reference_count
+
+        marvel_pdf_stats = self._import_pdf(
             marvel_path,
             universe="Marvel",
             publisher="Marvel Comics",
             allow_ocr=marvel_ocr,
+            existing_only=True,
         )
+        report.marvel.pdf_pages = marvel_pdf_stats.pdf_pages
+        report.marvel.pdf_saved = marvel_pdf_stats.pdf_saved
+        report.marvel.pdf_rejected = marvel_pdf_stats.pdf_rejected
+        report.marvel.ocr_pages = marvel_pdf_stats.ocr_pages
+
         report.dc = self._import_pdf(
             dc_path,
             universe="DC",
             publisher="DC Comics",
             allow_ocr=dc_ocr,
+            existing_only=False,
         )
 
-        if online_enrichment and import_marvel_catalog:
-            report.marvel.official_catalog_saved = MarvelOfficialCatalog(
-                self.web
-            ).import_into(
+        if cache_marvel_images and import_marvel_master:
+            report.marvel.master_images_cached = self.marvel_master.cache_images(
                 self.engine,
+                self.web,
                 online=True,
-                force=force_web,
-                max_pages=marvel_catalog_max_pages,
+                limit=max(0, int(marvel_image_limit)),
+                progress=self._progress,
             )
 
         if online_enrichment:
@@ -228,6 +286,7 @@ class HeroesKnowledgeBuilder:
                 images=cache_images,
                 force=force_web,
                 limit=enrichment_limit,
+                include_marvel=live_marvel_enrichment,
             )
 
         self._coverage(report)
@@ -237,7 +296,7 @@ class HeroesKnowledgeBuilder:
             encoding="utf-8",
         )
         log.info(
-            "Heroes build: %s personagens; %s imagens; %s fontes oficiais.",
+            "Heroes build: %s personagens; %s imagens; %s fontes verificadas.",
             report.total_characters,
             report.with_images,
             report.with_official_source,
