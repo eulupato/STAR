@@ -102,10 +102,16 @@ Knowledge Engine / SQLite local
 Ilha dos Heróis
 ```
 
-O snapshot atual contém **1.564 identidades verificáveis** derivadas de dados da
-Marvel API e **1.007 referências visuais**. A página pública da Marvel foi
-observada com **2.896 resultados em 01/09/2026**; portanto, o snapshot é
-explicitamente marcado como **parcial**, nunca como catálogo completo.
+O snapshot atual contém **1.564 IDs/identidades verificáveis** derivados de
+dados da Marvel API e **1.007 referências visuais**. A página pública da Marvel
+foi observada com **2.896 perfis/resultados em 01/09/2026**. Esse número maior
+inclui variantes e nomes de exibição repetidos e **não equivale a 2.896
+codinomes únicos**.
+
+A lacuna verificável atual é de **1.332 resultados**: o snapshot cobre
+**54,01%** do total observado no índice. Por isso o catálogo permanece
+explicitamente **parcial**; a STAR não completa a diferença com OCR,
+inferência ou nomes não certificados.
 
 O repositório não incorpora biografias longas nem imagens oficiais em massa.
 O manifesto armazena apenas URLs de referência. As imagens são baixadas, quando
@@ -163,14 +169,17 @@ mantém a localização atual como contexto.
 
 Estado atual da Casa:
 
-- **Sala — experimental:** STAR TV implementada; validação física do WebView no
-  Windows ainda é necessária;
+- **Sala — experimental:** STAR TV possui processo WebView isolado, handshake
+  de inicialização, fechamento não bloqueante, ocultação antes do encerramento
+  e recuperação automática; validação física do WebView2 no Windows ainda é
+  necessária;
 - **Cozinha — disponível:** Livro de Receitas local, busca, ingredientes,
   preparo e guia passo a passo;
 - **Quarto — disponível:** espaço pessoal e acesso ao Closet;
 - **Closet — disponível:** skins e acesso ao Álbum;
-- **Álbum — parcial:** galeria local funcional; metadados/agrupamentos e seletor
-  visual de pasta ainda são expansões futuras.
+- **Álbum — disponível:** galeria local com Adicionar Fotos, Escolher Pasta,
+  Abrir Pasta, Pasta Padrão, atualização e pré-visualização; metadados e
+  agrupamentos avançados continuam como expansões futuras.
 
 ## 💬 Conversation Variation Engine
 
@@ -214,6 +223,28 @@ Controles:
 - restore;
 - fechar;
 - estado.
+
+O lifecycle da TV não bloqueia mais o Tkinter. Ao sair da Sala, o WebView é
+ocultado imediatamente e encerrado em worker separado. O processo envia um
+evento de `ready`; se a inicialização não responder, a STAR recupera o estado
+da Sala em vez de deixar a interface presa. A sincronização de posição também
+é limitada à Sala e só ocorre quando a TV está realmente ativa.
+
+## 📸 Álbum local
+
+O Álbum não exige edição manual de `user_settings.json`.
+
+Na interface:
+
+1. **ADICIONAR FOTOS** copia PNG/JPG/JPEG/WEBP para a biblioteca escolhida;
+2. **ESCOLHER PASTA** usa uma pasta existente sem copiar o conteúdo;
+3. **ABRIR PASTA** abre a biblioteca no sistema;
+4. **PASTA PADRÃO** usa/cria `STAR/photos/`;
+5. clicar numa miniatura abre uma pré-visualização.
+
+Importar uma foto **copia** o arquivo: a imagem original não é removida. Nomes
+repetidos recebem sufixos (`foto_2.jpg`, etc.). Todo o conteúdo do Álbum
+permanece local e fora do Git.
 
 ## 🎙️ Voz local
 
@@ -283,11 +314,11 @@ adaptadores oficiais.
 A arquitetura V3 está integrada. A release só deve ser marcada como **READY**
 depois de:
 
-1. importar e revisar integralmente as enciclopédias locais Marvel/DC;
-2. validar a cobertura e associação final de imagens;
-3. testar a STAR TV em Windows com WebView2/pywebview;
-4. validar microfone, alto-falante e voz oficial no hardware local;
-5. executar toda a suíte CI do HEAD final sem falhas.
+1. expandir/revisar a cobertura Marvel/DC e a associação final de imagens e
+   descrições verificadas;
+2. testar fisicamente a STAR TV em Windows com WebView2/pywebview;
+3. validar microfone, alto-falante e voz oficial no hardware local;
+4. executar toda a suíte CI do HEAD final sem falhas.
 
 A ausência de sprites emocionais específicos não é mascarada: os antigos
 arquivos eram placeholders vazios. Até existirem artes reais, a GUI usa uma
@@ -295,7 +326,8 @@ skin/asset válido com indicador de emoção.
 
 Veja:
 
-- `docs/V3_0_AUDIT_2026-09-01.md` — auditoria atual;
+- `docs/V3_0_AUDIT_2026-09-02.md` — auditoria atual;
+- `docs/V3_0_AUDIT_2026-09-01.md` — histórico da consolidação anterior;
 - `docs/V3_0_AUDIT_2026-08-31.md` — histórico da consolidação inicial;
 - `docs/V3_0_KNOWLEDGE.md`;
 - `docs/MASTER_ROADMAP.md`.
