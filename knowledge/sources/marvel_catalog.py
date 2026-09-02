@@ -1,310 +1,276 @@
-"""Descoberta em lote do catálogo oficial Marvel.
+"""Catálogo mestre Marvel versionado para a Ilha dos Heróis.
 
-O catálogo é importado somente quando o usuário executa explicitamente o
-builder com acesso online. A STAR continua totalmente funcional offline depois
-que o cache/banco local foi criado.
+A identidade dos personagens vem de um snapshot estruturado no repositório.
+Nenhum OCR cria personagens. Imagens são somente referências remotas no pack e
+são baixadas para cache local quando o usuário solicita.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from html.parser import HTMLParser
-import re
-from urllib.parse import parse_qs, urljoin, urlparse
+import json
+from pathlib import Path
+from typing import Callable
 
 from core.logging_config import get_logger
 from knowledge.entities import Entity, KnowledgeSource
 from knowledge.store import normalize_search_text
-from knowledge.sources.official import OfficialWebClient
 
 log = get_logger("knowledge.marvel_catalog")
 
-MARVEL_CATALOG_URL = "https://www.marvel.com/characters?target=Agent_X"
-MARVEL_LEGACY_INDEX_URL = "https://www.marvel.com/comics/characters?l=sem&o=603409"
+DEFAULT_PACK_ROOT = Path(__file__).resolve().parents[1] / "packs" / "heroes"
+MASTER_FILE = "marvel_characters.jsonl"
+IMAGE_MANIFEST_FILE = "marvel_image_manifest.json"
+SOURCES_FILE = "marvel_sources.json"
 
-
-class _CatalogParser(HTMLParser):
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.links: list[tuple[str, str]] = []
-        self._href: str | None = None
-        self._text: list[str] = []
-
-    def handle_starttag(self, tag, attrs):
-        if tag.lower() != "a":
-            return
-        self._href = dict(attrs).get("href")
-        self._text = []
-
-    def handle_data(self, data):
-        if self._href is not None:
-            value = re.sub(r"\s+", " ", str(data or "")).strip()
-            if value:
-                self._text.append(value)
-
-    def handle_endtag(self, tag):
-        if tag.lower() != "a" or self._href is None:
-            return
-        text = re.sub(r"\s+", " ", " ".join(self._text)).strip()
-        self.links.append((self._href, text))
-        self._href = None
-        self._text = []
+_BANNED_NAMES = {
+    "factfile",
+    "essential storylines",
+    "first appearance",
+    "character facts",
+    "contents",
+    "index",
+    "members",
+    "original members",
+    "key members",
+}
 
 
 @dataclass(frozen=True)
-class MarvelCatalogEntry:
+class MarvelMasterRecord:
+    id: str
+    source_id: int
     name: str
-    profile_url: str
-    real_name: str | None = None
+    original_name: str
     aliases: tuple[str, ...] = ()
-
-    @property
-    def identity_key(self) -> str:
-        return normalize_search_text(
-            " | ".join(filter(None, [self.name, self.real_name, self.profile_url]))
-        )
-
-
-def _clean_label(value: str) -> str:
-    return re.sub(r"\s+", " ", str(value or "")).strip(" \t\r\n-")
-
-
-def _split_identity(label: str) -> tuple[str, str | None, list[str]]:
-    """Preserva variantes oficiais sem fundir identidades diferentes."""
-    label = _clean_label(label)
-    match = re.match(r"^(.*?)\s*\(([^()]{2,100})\)\s*$", label)
-    if not match:
-        return label, None, []
-
-    base = _clean_label(match.group(1))
-    identity = _clean_label(match.group(2))
-    if not base or not identity:
-        return label, None, []
-
-    display = f"{base} ({identity})"
-    aliases = [base, identity]
-    return display, identity, aliases
-
-
-def _is_profile_path(path: str) -> bool:
-    normalized = path.rstrip("/")
-    if normalized.startswith("/characters/") and normalized != "/characters":
-        return True
-    if re.match(r"^/comics/characters/\d+/[^/]+$", normalized, re.I):
-        return True
-    return False
-
-
-def _is_catalog_page(url: str) -> bool:
-    parsed = urlparse(url)
-    if (parsed.hostname or "").lower() not in {"marvel.com", "www.marvel.com"}:
-        return False
-    path = parsed.path.rstrip("/")
-    if path != "/characters":
-        return False
-    query = parse_qs(parsed.query)
-    paging_keys = {"page", "p", "offset", "start", "target"}
-    return bool(paging_keys & set(query))
-
-
-def parse_catalog_html(html: str, source_url: str) -> tuple[list[MarvelCatalogEntry], list[str]]:
-    parser = _CatalogParser()
-    parser.feed(html)
-
-    entries: list[MarvelCatalogEntry] = []
-    pages: list[str] = []
-    seen_entries = set()
-    seen_pages = set()
-
-    for href, text in parser.links:
-        absolute = urljoin(source_url, href)
-        parsed = urlparse(absolute)
-        if (parsed.hostname or "").lower() not in {"marvel.com", "www.marvel.com"}:
-            continue
-
-        if _is_catalog_page(absolute):
-            if absolute not in seen_pages:
-                seen_pages.add(absolute)
-                pages.append(absolute)
-            continue
-
-        if not _is_profile_path(parsed.path):
-            continue
-
-        label = _clean_label(text)
-        if not label:
-            slug = parsed.path.rstrip("/").split("/")[-1]
-            label = slug.replace("-", " ").title()
-        if not label:
-            continue
-
-        name, real_name, aliases = _split_identity(label)
-        key = normalize_search_text(absolute)
-        if not key or key in seen_entries:
-            continue
-        seen_entries.add(key)
-        entries.append(
-            MarvelCatalogEntry(
-                name=name,
-                profile_url=absolute,
-                real_name=real_name,
-                aliases=tuple(aliases),
-            )
-        )
-
-    return entries, pages
-
-
-class MarvelOfficialCatalog:
-    """Importa todos os links de personagens que a Marvel expõe no índice."""
-
-    def __init__(self, client: OfficialWebClient):
-        self.client = client
-
-    def discover(
-        self,
-        *,
-        online: bool = True,
-        force: bool = False,
-        max_pages: int = 120,
-    ) -> list[MarvelCatalogEntry]:
-        queue = [MARVEL_LEGACY_INDEX_URL, MARVEL_CATALOG_URL]
-        visited = set()
-        collected: dict[str, MarvelCatalogEntry] = {}
-
-        while queue and len(visited) < max(1, int(max_pages)):
-            url = queue.pop(0)
-            if url in visited:
-                continue
-            visited.add(url)
-
-            html = self.client.fetch_html(url, online=online, force=force)
-            if not html:
-                continue
-
-            entries, pages = parse_catalog_html(html, url)
-            for entry in entries:
-                collected.setdefault(entry.identity_key, entry)
-
-            for page in pages:
-                if page not in visited and page not in queue:
-                    queue.append(page)
-
-        log.info(
-            "Catálogo Marvel oficial: %s entradas descobertas em %s páginas.",
-            len(collected),
-            len(visited),
-        )
-        return sorted(collected.values(), key=lambda item: item.name.lower())
-
-    def import_into(
-        self,
-        engine,
-        *,
-        online: bool = True,
-        force: bool = False,
-        max_pages: int = 120,
-    ) -> int:
-        entries = self.discover(
-            online=online,
-            force=force,
-            max_pages=max_pages,
-        )
-        retrieved = datetime.now(timezone.utc).isoformat()
-        saved_ids = set()
-
-        current = engine.search_entities(
-            "",
-            filters={"category": "character", "universe": "Marvel"},
-            limit=5000,
-        )
-        by_real_name = {}
-        for item in current:
-            real = normalize_search_text(
-                (item.attributes or {}).get("real_name") or ""
-            )
-            if real:
-                by_real_name.setdefault(real, item)
-
-        for entry in entries:
-            existing = engine.resolve_entity(entry.name, universe="Marvel")
-            real_key = normalize_search_text(entry.real_name or "")
-
-            # Um seed antigo com o mesmo nome real pode ser reaproveitado
-            # (Spider-Man/Peter Parker), mas compartilhar apenas o codinome
-            # nunca é suficiente para fundir identidades (Miles != Peter).
-            if existing is None and real_key:
-                existing = by_real_name.get(real_key)
-
-            if existing is None and not entry.real_name and entry.aliases:
-                for alias in entry.aliases:
-                    existing = engine.resolve_entity(alias, universe="Marvel")
-                    if existing is not None:
-                        break
-
-            if existing is None:
-                entity = Entity(
-                    name=entry.name,
-                    category="character",
-                    aliases=list(entry.aliases),
-                    universe="Marvel",
-                    publisher="Marvel Comics",
-                    tags=["marvel", "official-catalog"],
-                    attributes={
-                        "real_name": entry.real_name,
-                    },
-                    metadata={
-                        "official_profile_url": entry.profile_url,
-                        "catalog_seed": True,
-                    },
-                    sources=[
-                        KnowledgeSource(
-                            source_type="official_catalog",
-                            source_ref="Marvel Characters",
-                            url=entry.profile_url,
-                            retrieved_at=retrieved,
-                        )
-                    ],
-                )
-            else:
-                entity = existing
-                entity.aliases = _merge_values(entity.aliases, entry.aliases)
-                if entry.real_name and not entity.attributes.get("real_name"):
-                    entity.attributes["real_name"] = entry.real_name
-                entity.metadata["official_profile_url"] = entry.profile_url
-                entity.metadata["catalog_seed"] = entity.metadata.get(
-                    "catalog_seed", False
-                )
-                entity.tags = _merge_values(
-                    entity.tags,
-                    ["marvel", "official-catalog"],
-                )
-                if not any(source.url == entry.profile_url for source in entity.sources):
-                    entity.sources.append(
-                        KnowledgeSource(
-                            source_type="official_catalog",
-                            source_ref="Marvel Characters",
-                            url=entry.profile_url,
-                            retrieved_at=retrieved,
-                        )
-                    )
-
-            saved_ids.add(engine.upsert_entity(entity))
-            real = normalize_search_text(
-                (entity.attributes or {}).get("real_name") or ""
-            )
-            if real:
-                by_real_name.setdefault(real, entity)
-        return len(saved_ids)
+    universe: str = "Marvel"
+    publisher: str = "Marvel Comics"
+    official_api_uri: str | None = None
+    official_legacy_url: str | None = None
+    image_ref: str | None = None
 
 
 def _merge_values(current, incoming) -> list[str]:
     result = list(current or [])
     seen = {normalize_search_text(item) for item in result}
     for item in incoming or []:
-        value = _clean_label(item)
+        value = str(item or "").strip()
         key = normalize_search_text(value)
         if value and key and key not in seen:
             seen.add(key)
             result.append(value)
     return result
+
+
+def _valid_name(value: str) -> bool:
+    name = str(value or "").strip()
+    normalized = normalize_search_text(name)
+    if not name or len(name) > 140 or normalized in _BANNED_NAMES:
+        return False
+    if len(name.split()) > 18:
+        return False
+    return any(ch.isalpha() for ch in name)
+
+
+class MarvelMasterCatalog:
+    def __init__(self, pack_root: str | Path | None = None):
+        self.pack_root = Path(pack_root) if pack_root else DEFAULT_PACK_ROOT
+        self.master_path = self.pack_root / MASTER_FILE
+        self.image_manifest_path = self.pack_root / IMAGE_MANIFEST_FILE
+        self.sources_path = self.pack_root / SOURCES_FILE
+
+    def source_metadata(self) -> dict:
+        try:
+            return json.loads(self.sources_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError(f"Metadados do catálogo Marvel inválidos: {exc}") from exc
+
+    def load_records(self) -> list[MarvelMasterRecord]:
+        if not self.master_path.exists():
+            raise FileNotFoundError(f"Catálogo mestre Marvel ausente: {self.master_path}")
+
+        records = []
+        seen_ids = set()
+        for line_number, raw in enumerate(
+            self.master_path.read_text(encoding="utf-8").splitlines(),
+            start=1,
+        ):
+            if not raw.strip():
+                continue
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(
+                    f"JSONL Marvel inválido na linha {line_number}: {exc}"
+                ) from exc
+
+            record_id = str(data.get("id") or "").strip()
+            name = str(data.get("name") or "").strip()
+            source_id = data.get("source_id")
+            if (
+                not record_id
+                or record_id in seen_ids
+                or not isinstance(source_id, int)
+                or not _valid_name(name)
+            ):
+                raise RuntimeError(
+                    f"Registro Marvel inválido na linha {line_number}: {record_id or name}"
+                )
+            seen_ids.add(record_id)
+            records.append(
+                MarvelMasterRecord(
+                    id=record_id,
+                    source_id=source_id,
+                    name=name,
+                    original_name=str(data.get("original_name") or name).strip(),
+                    aliases=tuple(
+                        str(item).strip()
+                        for item in data.get("aliases", [])
+                        if str(item).strip()
+                    ),
+                    universe=str(data.get("universe") or "Marvel"),
+                    publisher=str(data.get("publisher") or "Marvel Comics"),
+                    official_api_uri=data.get("official_api_uri"),
+                    official_legacy_url=data.get("official_legacy_url"),
+                    image_ref=data.get("image_ref"),
+                )
+            )
+        return records
+
+    def image_manifest(self) -> dict[str, list[str]]:
+        try:
+            data = json.loads(self.image_manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError(f"Manifesto visual Marvel inválido: {exc}") from exc
+        images = data.get("images", {})
+        if not isinstance(images, dict):
+            raise RuntimeError("Manifesto visual Marvel precisa conter um mapa 'images'.")
+        return {
+            str(key): [str(url) for url in urls if str(url).startswith("https://")]
+            for key, urls in images.items()
+            if isinstance(urls, list)
+        }
+
+    @property
+    def image_reference_count(self) -> int:
+        return sum(bool(urls) for urls in self.image_manifest().values())
+
+    def import_into(
+        self,
+        engine,
+        *,
+        progress: Callable[[str, int, int], None] | None = None,
+    ) -> int:
+        records = self.load_records()
+        retrieved = datetime.now(timezone.utc).isoformat()
+
+        for index, record in enumerate(records, start=1):
+            existing = engine.store.find_exact(record.name, universe="Marvel")
+            if existing is None and record.original_name != record.name:
+                existing = engine.store.find_exact(
+                    record.original_name,
+                    universe="Marvel",
+                )
+
+            if existing is None:
+                entity = Entity(
+                    id=record.id,
+                    name=record.name,
+                    original_name=record.original_name,
+                    aliases=list(record.aliases),
+                    category="character",
+                    universe="Marvel",
+                    publisher="Marvel Comics",
+                )
+            else:
+                entity = existing
+                entity.aliases = _merge_values(entity.aliases, record.aliases)
+                if record.original_name != entity.name:
+                    entity.aliases = _merge_values(
+                        entity.aliases,
+                        [record.original_name],
+                    )
+
+            entity.tags = _merge_values(entity.tags, ["marvel", "master-catalog"])
+            entity.attributes["marvel_source_id"] = record.source_id
+            entity.metadata["master_catalog_id"] = record.id
+            entity.metadata["master_catalog"] = True
+            if record.image_ref:
+                entity.metadata["image_ref"] = record.image_ref
+            if record.official_legacy_url:
+                entity.metadata["official_legacy_url"] = record.official_legacy_url
+
+            if not any(
+                source.source_type == "marvel_master"
+                and source.url == record.official_api_uri
+                for source in entity.sources
+            ):
+                entity.sources.append(
+                    KnowledgeSource(
+                        source_type="marvel_master",
+                        source_ref="Marvel API snapshot",
+                        url=record.official_api_uri,
+                        retrieved_at=retrieved,
+                    )
+                )
+
+            engine.upsert_entity(entity)
+            if progress and (index == 1 or index == len(records) or index % 50 == 0):
+                progress("CATÁLOGO MARVEL", index, len(records))
+
+        return len(records)
+
+    def cache_images(
+        self,
+        engine,
+        web_client,
+        *,
+        online: bool = True,
+        limit: int = 0,
+        progress: Callable[[str, int, int], None] | None = None,
+    ) -> int:
+        records = [record for record in self.load_records() if record.image_ref]
+        if limit > 0:
+            records = records[: int(limit)]
+        manifest = self.image_manifest()
+        cached = 0
+
+        for index, record in enumerate(records, start=1):
+            entity = engine.store.find_exact(record.name, universe="Marvel")
+            if entity is None and record.original_name != record.name:
+                entity = engine.store.find_exact(
+                    record.original_name,
+                    universe="Marvel",
+                )
+
+            if entity is not None:
+                urls = manifest.get(record.image_ref or "", [])
+                local_paths = []
+                for url in urls:
+                    image_path = web_client.cache_image(url, online=online)
+                    if image_path:
+                        local_paths.append(image_path)
+
+                if local_paths:
+                    entity.metadata["image_candidates"] = _merge_values(
+                        entity.metadata.get("image_candidates", []),
+                        local_paths,
+                    )
+                    entity.metadata["image_kind"] = "marvel_master_cache"
+                    entity.image = local_paths[0]
+                    for url in urls:
+                        if not any(source.url == url for source in entity.sources):
+                            entity.sources.append(
+                                KnowledgeSource(
+                                    source_type="image_manifest",
+                                    source_ref="Marvel API thumbnail",
+                                    url=url,
+                                )
+                            )
+                    engine.upsert_entity(entity)
+                    cached += 1
+
+            if progress and (index == 1 or index == len(records) or index % 25 == 0):
+                progress("IMAGENS MARVEL", index, len(records))
+
+        return cached
