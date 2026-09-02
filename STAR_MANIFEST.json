@@ -64,14 +64,18 @@
     "heroes_dynamic_character_themes",
     "marvel_master_catalog_sync",
     "marvel_image_manifest_local_cache",
-    "marvel_pdf_supplement_only"
+    "marvel_pdf_supplement_only",
+    "photo_album_import",
+    "photo_album_folder_picker",
+    "photo_album_preview",
+    "star_tv_nonblocking_lifecycle",
+    "star_tv_startup_handshake"
   ],
   "features_in_progress": [
     "heroes_full_image_coverage",
     "star_tv_windows_webview_validation",
     "recipe_library_expansion",
     "photo_album_metadata",
-    "photo_album_folder_picker",
     "persistent_world_state",
     "emotion_sprite_pack",
     "dc_full_pdf_import",
@@ -116,7 +120,10 @@
       "local_cache": true,
       "ocr_identity_discovery": false,
       "pdf_role": "supplement_only_existing_entities",
-      "live_web_optional": true
+      "live_web_optional": true,
+      "verified_snapshot_results_gap": 1332,
+      "verified_snapshot_coverage_percent": 54.01,
+      "count_semantics": "official index = profiles/results including variants; not unique codenames"
     }
   },
   "voice": {
@@ -142,6 +149,6 @@
     "kitchen_status": "available",
     "bedroom_status": "available",
     "closet_status": "available",
-    "album_status": "partial"
+    "album_status": "available"
   }
 }
