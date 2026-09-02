@@ -189,3 +189,83 @@ def test_wikidata_claim_helpers_extract_qids():
         }
     }
     assert WikidataClient._claim_item_ids(data, "P21") == ["Q6581072"]
+
+
+def test_wikidata_accepts_exact_fictional_candidate_without_publisher_text():
+    entity = Entity(
+        name="Nova",
+        category="character",
+        universe="Marvel",
+        publisher="Marvel Comics",
+    )
+    candidate = {
+        "label": "Nova",
+        "description": "fictional superhero",
+        "aliases": [],
+    }
+
+    assert score_candidate(entity, candidate) >= 12
+
+
+def test_wikidata_cache_rejects_untrusted_host_with_reason(tmp_path):
+    from knowledge.sources.wikidata import WikidataClient
+
+    client = WikidataClient(tmp_path / "wikidata")
+    result = client.cache_commons_image(
+        "https://example.com/hero.jpg",
+        online=False,
+        entity_name="Hero",
+        qid="Q1",
+    )
+
+    assert result is None
+    assert client.image_rejections[-1]["reason"] == "unsupported_source_host"
+    assert client.image_rejections[-1]["entity"] == "Hero"
+
+
+def test_wikidata_commons_image_promotes_over_official_reference(tmp_path):
+    from knowledge.sources.wikidata import merge_wikidata_profile
+
+    official = tmp_path / "official.jpg"
+    commons = tmp_path / "commons.jpg"
+    official.write_bytes(b"official")
+    commons.write_bytes(b"commons")
+    entity = Entity(
+        name="Hero",
+        category="character",
+        universe="Marvel",
+        image=str(official),
+        metadata={
+            "image_candidates": [str(official)],
+            "image_attribution": {
+                str(official): {
+                    "license": "No open license recorded",
+                    "rights_status": "official_source_local_reference",
+                }
+            },
+        },
+    )
+    profile = WikidataProfile(
+        qid="Q1",
+        label="Hero",
+        description="",
+        description_language="",
+        entity_url="https://www.wikidata.org/wiki/Q1",
+        image_source_url="https://commons.wikimedia.org/wiki/File:Hero.jpg",
+        image_attribution={
+            "author": "Example",
+            "license": "CC BY-SA 4.0",
+            "source_url": "https://commons.wikimedia.org/wiki/File:Hero.jpg",
+            "rights_status": "open_license_verified",
+        },
+    )
+
+    merged = merge_wikidata_profile(
+        entity,
+        profile,
+        image_path=str(commons),
+    )
+
+    assert merged.image == str(commons)
+    assert str(official) in merged.metadata["image_candidates"]
+    assert str(commons) in merged.metadata["image_candidates"]
