@@ -85,55 +85,67 @@ A ilha está ligada ao Knowledge Engine e oferece:
 O antigo `heroes.json` permanece somente como seed de compatibilidade até que
 a base local seja importada integralmente.
 
-### Construir a Ilha dos Heróis
+### Sincronizar a Ilha dos Heróis
 
-O fluxo recomendado usa um único comando. O PDF é a base local complementar e
-mantém página/proveniência; quando `--online` é informado, a fonte oficial
-Marvel/DC é tratada como autoritativa para os campos que realmente fornece.
+A Marvel usa agora um **catálogo mestre versionado**, não OCR nem crawling web
+para descobrir identidades:
 
-Para Marvel, o builder também descobre em lote o índice oficial de personagens,
-preserva variantes de identidade (por exemplo, Peter Parker e Miles Morales)
-como entidades distintas e percorre todos os registros encontrados sem um
-limite artificial de enriquecimento.
-
-A enciclopédia Marvel usada no projeto é majoritariamente escaneada. Para a
-extração integral por OCR, o executável Tesseract precisa estar instalado e
-disponível no `PATH`. Se OCR for solicitado sem Tesseract, o builder interrompe
-com uma mensagem explícita em vez de fingir que a importação foi completa.
-
-```powershell
-.\.venv\Scripts\python.exe tools\build_heroes_island.py `
-  --marvel-pdf "C:\caminho\Marvel Encyclopedia New Edition.pdf" `
-  --dc-pdf "C:\caminho\The DC COMICS Encyclopedia.pdf" `
-  --online
+```text
+knowledge/packs/heroes/
+├── marvel_characters.jsonl
+├── marvel_image_manifest.json
+├── marvel_sources.json
+└── marvel_themes.json
+        ↓
+Knowledge Engine / SQLite local
+        ↓
+Ilha dos Heróis
 ```
 
-Fontes oficiais autorizadas pelo projeto:
+O snapshot atual contém **1.564 identidades verificáveis** derivadas de dados da
+Marvel API e **1.007 referências visuais**. A página pública da Marvel foi
+observada com **2.896 resultados em 01/09/2026**; portanto, o snapshot é
+explicitamente marcado como **parcial**, nunca como catálogo completo.
 
-- `https://www.marvel.com/characters`
-- índice A-Z oficial em `https://www.marvel.com/comics/characters`
-- `https://www.dc.com/characters`
+O repositório não incorpora biografias longas nem imagens oficiais em massa.
+O manifesto armazena apenas URLs de referência. As imagens são baixadas, quando
+solicitado, para o cache local gitignored.
 
-O builder grava apenas dados estruturados, proveniência e caches locais. Ele
-não coloca PDFs, páginas das enciclopédias ou cache web no GitHub.
-
-No Windows, o catálogo Marvel completo pode ser construído também por:
+No Windows:
 
 ```powershell
 ATUALIZAR_CATALOGO_MARVEL.bat
 ```
 
-O arquivo pede o caminho do PDF, executa a importação OCR, descobre o catálogo
-oficial, enriquece os perfis e salva as imagens apenas no cache local.
+Esse comando:
+
+- sincroniza o catálogo mestre para o SQLite;
+- remove somente antigas entidades Marvel criadas por OCR sem fonte confiável;
+- preserva seeds/fonte oficial/conteúdo confiável;
+- baixa as referências visuais disponíveis para o cache local;
+- mostra progresso real `X / total (%)`;
+- não exige PDF nem Tesseract.
+
+Um PDF Marvel ainda pode ser fornecido manualmente, mas ele é **somente
+complementar**: o importador não cria uma nova identidade Marvel a partir do
+OCR. Ele apenas acrescenta campos/proveniência a personagens já presentes no
+catálogo confiável.
+
+```powershell
+.\.venv\Scripts\python.exe tools\build_heroes_island.py `
+  --marvel-pdf "C:\caminho\Marvel Encyclopedia New Edition.pdf"
+```
+
+O acesso live a perfis Marvel deixou de ser requisito. Ele permanece opcional e
+explícito porque o site pode responder HTTP 403. DC continua podendo usar
+enriquecimento web opcional.
 
 Ao final é criado:
 
 `knowledge/local/reports/heroes_build_report.json`
 
-com total de personagens, cobertura de imagens, fontes PDF/oficiais e itens
-ainda incompletos.
-
-A ilha continua funcionando sem internet depois que a base foi construída.
+O banco, PDFs e imagens continuam locais. A Ilha funciona offline com o conteúdo
+já sincronizado.
 
 ## 🏠 STAR WORLD — Casa
 
