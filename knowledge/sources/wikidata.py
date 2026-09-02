@@ -610,6 +610,7 @@ class WikidataClient:
         online: bool = True,
         force: bool = False,
         include_image: bool = True,
+        image_only: bool = False,
     ) -> WikidataProfile | None:
         queries = []
         for value in (
@@ -621,14 +622,20 @@ class WikidataClient:
             if value and value not in queries:
                 queries.append(value)
         identity = _identity_hint(entity)
-        if identity and entity.name:
+        if identity and entity.name and not image_only:
             combined = f"{_base_name(entity.name)} {identity}".strip()
             if combined and combined not in queries:
                 queries.insert(0, combined)
 
+        # A varredura visual precisa somente resolver P18. Evita até seis
+        # buscas por personagem e várias chamadas de rótulos que não afetam
+        # a imagem.
+        search_queries = queries[:1] if image_only else queries[:3]
+        search_languages = ("en", "pt") if image_only else ("pt", "en")
+
         candidates: dict[str, tuple[int, dict, str]] = {}
-        for language in ("pt", "en"):
-            for query in queries[:3]:
+        for language in search_languages:
+            for query in search_queries:
                 for item in self._search(
                     query,
                     language,
@@ -693,27 +700,34 @@ class WikidataClient:
             description,
         )
 
-        aliases = self._aliases(entity_data)
-        gender_labels = self._labels_for_qids(
-            self._claim_item_ids(entity_data, "P21"),
-            online=online,
-            force=force,
-        )
-        occupation = self._labels_for_qids(
-            self._claim_item_ids(entity_data, "P106"),
-            online=online,
-            force=force,
-        )
-        affiliations = self._labels_for_qids(
-            self._claim_item_ids(entity_data, "P463"),
-            online=online,
-            force=force,
-        )
-        creators = self._labels_for_qids(
-            self._claim_item_ids(entity_data, "P170"),
-            online=online,
-            force=force,
-        )
+        if image_only:
+            aliases = []
+            gender_labels = []
+            occupation = []
+            affiliations = []
+            creators = []
+        else:
+            aliases = self._aliases(entity_data)
+            gender_labels = self._labels_for_qids(
+                self._claim_item_ids(entity_data, "P21"),
+                online=online,
+                force=force,
+            )
+            occupation = self._labels_for_qids(
+                self._claim_item_ids(entity_data, "P106"),
+                online=online,
+                force=force,
+            )
+            affiliations = self._labels_for_qids(
+                self._claim_item_ids(entity_data, "P463"),
+                online=online,
+                force=force,
+            )
+            creators = self._labels_for_qids(
+                self._claim_item_ids(entity_data, "P170"),
+                online=online,
+                force=force,
+            )
 
         image_url = None
         image_source_url = None
