@@ -71,16 +71,22 @@ Dados gerados em execução permanecem fora do Git.
 
 A ilha está ligada ao Knowledge Engine e oferece:
 
+- interface pixel-art integrada ao STAR WORLD conforme o concept aprovado;
 - busca livre por nome, alias e conteúdo indexado;
+- roster paginado com até 8 personagens por página e miniaturas locais;
 - filtros estruturados por universo, equipe, poder, habilidade, tag,
-  espécie/tipo e relacionamento;
+  espécie/tipo e relacionamento, preservados em painel sobreposto;
 - navegação anterior/próximo por componente genérico;
-- ficha ampliada do personagem;
+- palco visual do personagem com galeria multi-imagem e pedestal neon;
+- abas de Informações, Biografia, Relações, História e Aparições;
+- ficha completa do personagem em janela própria;
 - múltiplas fontes, página e URL quando disponíveis;
 - múltiplas referências visuais locais por personagem;
 - tema visual por personagem: overrides icônicos + paleta derivada da imagem;
 - fallback visual honesto quando não existe retrato válido;
 - contexto da entidade selecionada para a conversa.
+
+Estatísticas visuais só aparecem quando existem como dados estruturados explícitos; campos ausentes permanecem como `—`, sem valores inventados.
 
 O antigo `heroes.json` permanece somente como seed de compatibilidade até que
 a base local seja importada integralmente.
