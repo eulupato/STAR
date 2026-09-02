@@ -22,3 +22,38 @@ def test_photo_library_is_bounded(tmp_path):
 def test_photo_library_missing_folder_is_empty(tmp_path):
     library = PhotoLibrary(tmp_path / "missing")
     assert library.list_images() == []
+
+
+
+def test_photo_library_imports_images_without_removing_source(tmp_path):
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    source = source_root / "foto.jpg"
+    source.write_bytes(b"image")
+
+    target = tmp_path / "album"
+    library = PhotoLibrary(target)
+    imported = library.import_images([source])
+
+    assert source.exists()
+    assert len(imported) == 1
+    assert imported[0].parent == target
+    assert imported[0].read_bytes() == b"image"
+
+
+def test_photo_library_renames_collisions(tmp_path):
+    first_root = tmp_path / "one"
+    second_root = tmp_path / "two"
+    first_root.mkdir()
+    second_root.mkdir()
+    first = first_root / "foto.jpg"
+    second = second_root / "foto.jpg"
+    first.write_bytes(b"one")
+    second.write_bytes(b"two")
+
+    library = PhotoLibrary(tmp_path / "album")
+    imported = library.import_images([first, second])
+
+    assert [path.name for path in imported] == ["foto.jpg", "foto_2.jpg"]
+    assert imported[0].read_bytes() == b"one"
+    assert imported[1].read_bytes() == b"two"
