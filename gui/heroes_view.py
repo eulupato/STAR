@@ -9,6 +9,7 @@ from PIL import Image, ImageTk
 from core.logging_config import get_logger
 from gui.components.carousel import CarouselController
 from knowledge.hero_visuals import theme_for_entity, visual_references
+from knowledge.sources.marvel_catalog import MarvelMasterCatalog
 
 log = get_logger("gui.heroes")
 
@@ -40,6 +41,37 @@ class HeroesIslandView(tk.Frame):
         self.refresh()
 
     def _build(self):
+        try:
+            coverage = MarvelMasterCatalog().source_metadata().get("coverage", {})
+        except Exception as exc:
+            log.debug("Metadados do catálogo Marvel indisponíveis: %s", exc)
+            coverage = {}
+
+        snapshot = int(coverage.get("snapshot_records") or 0)
+        official = int(coverage.get("official_site_reported_results") or 0)
+        gap = max(0, official - snapshot) if official else 0
+        if snapshot and official:
+            catalog_text = (
+                f"Marvel: {snapshot:,} registros verificados de "
+                f"{official:,} perfis/resultados observados • "
+                f"lacuna explícita: {gap:,} • catálogo parcial"
+            ).replace(",", ".")
+        elif snapshot:
+            catalog_text = (
+                f"Marvel: {snapshot:,} registros verificados • catálogo parcial"
+            ).replace(",", ".")
+        else:
+            catalog_text = "Marvel: cobertura do catálogo ainda não certificada."
+
+        tk.Label(
+            self,
+            text=catalog_text,
+            bg=self.palette["bg"],
+            fg=self.palette["muted"],
+            font=("Segoe UI", 8, "bold"),
+            anchor="w",
+        ).pack(fill="x", padx=24, pady=(6, 0))
+
         controls = tk.Frame(self, bg=self.palette["bg"])
         controls.pack(fill="x", padx=24, pady=(8, 12))
 
