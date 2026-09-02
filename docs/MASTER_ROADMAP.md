@@ -85,7 +85,7 @@ Implementado nesta fundação:
 - índice estrutural `entity_values` e migração versionada;
 - Universal Search;
 - pipeline PDF reutilizável;
-- fontes oficiais DC/Marvel opcionais com validação de identidade;
+- fontes oficiais DC/Marvel opcionais com validação de identidade;\n- catálogo mestre Marvel versionado + manifesto visual + cache local;
 - primeira ilha de conhecimento navegável: Heróis;
 - busca, carrossel e filtros estruturados;
 - Conversation Variation Engine;
@@ -110,7 +110,7 @@ Status dos ambientes V3 atuais:
 - **Ilha dos Heróis:** partial.
 
 Pendente antes de release READY:
-- ingestão e revisão integral dos dois PDFs locais de heróis;
+- expansão do snapshot Marvel verificável até a cobertura desejada do índice atual e revisão do PDF DC;
 - validação da cobertura/associação final de imagens;
 - validação física da STAR TV no Windows real;
 - regressão física de microfone, alto-falante, Chatterbox e referência local;
