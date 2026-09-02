@@ -633,7 +633,7 @@ class HeroesKnowledgeBuilder:
         path = self._visual_scan_state_path()
         if not path.exists():
             return {
-                "schema_version": 1,
+                "schema_version": 2,
                 "updated_at": None,
                 "characters": {},
             }
@@ -641,13 +641,18 @@ class HeroesKnowledgeBuilder:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             return {
-                "schema_version": 1,
+                "schema_version": 2,
                 "updated_at": None,
                 "characters": {},
             }
         if not isinstance(data, dict):
             data = {}
-        data.setdefault("schema_version", 1)
+        if int(data.get("schema_version") or 0) != 2:
+            return {
+                "schema_version": 2,
+                "updated_at": None,
+                "characters": {},
+            }
         data.setdefault("characters", {})
         return data
 
@@ -720,7 +725,7 @@ class HeroesKnowledgeBuilder:
             self._load_visual_scan_state()
             if resume and not force
             else {
-                "schema_version": 1,
+                "schema_version": 2,
                 "updated_at": None,
                 "characters": {},
             }
@@ -756,6 +761,7 @@ class HeroesKnowledgeBuilder:
         for index, entity in enumerate(entities, start=1):
             key = str(entity.id or f"{entity.universe}:{entity.name}")
             previous = characters_state.get(key) or {}
+            current_status = self._visual_status(entity)
             if (
                 resume
                 and not force
@@ -763,10 +769,10 @@ class HeroesKnowledgeBuilder:
                     "accepted_open_license",
                     "accepted_official_reference",
                 }
+                and previous.get("status") == current_status
             ):
                 totals["skipped_resume"] += 1
-                status = previous.get("status")
-                totals[status] += 1
+                totals[current_status] += 1
                 continue
 
             web_rejection_start = len(self.web.image_rejections)
