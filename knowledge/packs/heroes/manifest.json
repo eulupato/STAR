@@ -5,7 +5,7 @@
   "status": "partial",
   "type": "knowledge",
   "data_model": "entity-v1",
-  "description": "Seed de compatibilidade e ponto de entrada da primeira ilha de conhecimento navegável; acervo real é construído por PDFs locais e fontes oficiais autorizadas.",
+  "description": "Catálogo estruturado da Ilha dos Heróis; identidades versionadas e enriquecimento local com fontes verificáveis, incluindo referências visuais com proveniência.",
   "topics": [
     "personagens",
     "Marvel",
@@ -23,9 +23,10 @@
   },
   "provenance_required": true,
   "notes": [
-    "PDFs, cache e banco local não são versionados.",
-    "O seed não substitui a importação das enciclopédias.",
-    "Internet enriquece a base; não é necessária para consultar o conhecimento já importado."
+    "PDFs, cache, imagens baixadas e banco local não são versionados.",
+    "O seed heroes.json permanece somente para compatibilidade/bootstrap.",
+    "A varredura visual é resumível e registra a origem/direitos de cada imagem.",
+    "Nenhuma imagem aleatória sem associação e proveniência verificáveis é incorporada."
   ],
   "sources": {
     "pdf": [
@@ -39,10 +40,11 @@
     "web_optional": true
   },
   "source_priority": [
-    "PDF local fornecido pelo usuário",
-    "asset local",
-    "perfil oficial DC/Marvel quando ONLINE for autorizado",
-    "placeholder"
+    "identidade versionada do catálogo mestre",
+    "Wikimedia Commons ligado por Wikidata com licença verificável",
+    "referência oficial Marvel/DC em cache local",
+    "dados locais autorizados",
+    "placeholder explícito somente quando nenhuma imagem verificável existe"
   ],
   "official_sources": [
     "https://www.dc.com/characters",
