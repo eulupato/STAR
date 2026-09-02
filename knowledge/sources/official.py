@@ -453,36 +453,6 @@ class DCOfficialSource(OfficialCharacterSource):
         for value in (alter, aka):
             aliases.extend(_split_csv(value))
 
-        appearances = []
-        appearance_seen = set()
-        for link in parser.links:
-            href = str(link.get("href") or "")
-            label = _clean(link.get("text"))
-            section = normalize_search_text(link.get("section") or "")
-            if not label:
-                continue
-            is_comic_link = (
-                "/comics/issue/" in href
-                or "/comics/series/" in href
-                or "/comics/comic/" in href
-            )
-            is_appearance_section = any(
-                token in section
-                for token in (
-                    "essential reading",
-                    "comics",
-                    "latest",
-                    "reading list",
-                )
-            )
-            if is_comic_link or is_appearance_section:
-                key = normalize_search_text(label)
-                if key and key not in appearance_seen:
-                    appearance_seen.add(key)
-                    appearances.append(label)
-                    if len(appearances) >= 100:
-                        break
-
         related = []
         seen = set()
         for link in parser.links:
@@ -673,6 +643,36 @@ class MarvelOfficialSource(OfficialCharacterSource):
             "GENDER",
             ("EYES", "HAIR", "Universe", "Other Aliases"),
         )
+
+        appearances = []
+        appearance_seen = set()
+        for link in parser.links:
+            href = str(link.get("href") or "")
+            label = _clean(link.get("text"))
+            section = normalize_search_text(link.get("section") or "")
+            if not label:
+                continue
+            is_comic_link = (
+                "/comics/issue/" in href
+                or "/comics/series/" in href
+                or "/comics/comic/" in href
+            )
+            is_appearance_section = any(
+                token in section
+                for token in (
+                    "essential reading",
+                    "comics",
+                    "latest",
+                    "reading list",
+                )
+            )
+            if is_comic_link or is_appearance_section:
+                key = normalize_search_text(label)
+                if key and key not in appearance_seen:
+                    appearance_seen.add(key)
+                    appearances.append(label)
+                    if len(appearances) >= 100:
+                        break
 
         related = []
         seen = set()
