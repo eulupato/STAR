@@ -128,15 +128,15 @@ lacunas. Para auditar sem alterar o banco:
 
 ### Política de imagens e motivos de rejeição
 
-A cadeia visual não depende exclusivamente da Marvel oficial. A preferência de
-seleção é:
+A cadeia visual não depende exclusivamente da Marvel oficial. Para reduzir
+falhas e travamentos, a ordem operacional agora é:
 
-1. **Wikimedia Commons ligado por Wikidata**, quando a associação do personagem
-   é forte e a licença aberta pode ser verificada;
-2. **perfil oficial Marvel/DC**, mantido como referência oficial local sem
-   alegação de licença aberta;
-3. **thumbnail do manifesto Marvel/API**, também marcada como referência oficial
-   local.
+1. **thumbnail do manifesto Marvel/API**, quando o personagem Marvel já possui
+   referência ligada por ID;
+2. **Wikimedia Commons ligado por Wikidata**, para preencher lacunas ou promover
+   uma alternativa com licença aberta verificável;
+3. **perfil oficial Marvel/DC**, somente quando ainda não existe imagem local
+   aceita, marcado como referência oficial sem alegar licença aberta.
 
 A correção de 02/09/2026 eliminou quatro fontes de falsos negativos:
 
@@ -158,6 +158,17 @@ O relatório `heroes_build_report.json` agora inclui
 Nenhuma imagem aleatória da web é aceita e nenhuma associação
 personagem-imagem é inferida apenas por semelhança de nome.
 
+### Limpeza do legado confirmado
+
+Nesta consolidação foram removidos apenas resíduos comprovadamente fora do
+runtime: backups antigos em `archive/legacy/` e o script redundante
+`tools/enrich_heroes_official.py`, já substituído pela pipeline única
+`tools/build_heroes_island.py`. A validação de higiene agora impede que
+`archive/legacy/` volte a ser versionado.
+
+Assets ativos, Knowledge Engine, Entity System, UI, seeds de compatibilidade e
+dados necessários ao runtime não foram apagados.
+
 ### Varredura visual personagem por personagem
 
 A STAR agora pode percorrer **todo o catálogo existente** e buscar uma referência
@@ -166,9 +177,9 @@ novos e usa a identidade já registrada como chave.
 
 Ordem aplicada a cada personagem:
 
-1. Wikidata → Wikimedia Commons com licença aberta verificável;
-2. perfil oficial Marvel/DC quando existir;
-3. thumbnail oficial do manifesto Marvel/API.
+1. Marvel por ID → manifesto/thumbnail oficial, quando disponível;
+2. Wikidata → Wikimedia Commons com licença aberta verificável;
+3. perfil oficial Marvel/DC apenas para personagens ainda sem imagem.
 
 Comando direto:
 
