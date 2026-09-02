@@ -138,6 +138,8 @@ class OfficialProfile:
     description: str | None = None
     aliases: list[str] = field(default_factory=list)
     powers: list[str] = field(default_factory=list)
+    abilities: list[str] = field(default_factory=list)
+    equipment: list[str] = field(default_factory=list)
     occupation: list[str] = field(default_factory=list)
     affiliations: list[str] = field(default_factory=list)
     origin_place: str | None = None
@@ -561,9 +563,47 @@ class MarvelOfficialSource(OfficialCharacterSource):
             self._section(
                 text,
                 "Powers",
-                ("Group Affiliation", "Connections", "Essential Reading"),
+                (
+                    "Abilities",
+                    "Weapons",
+                    "Equipment",
+                    "Paraphernalia",
+                    "Group Affiliation",
+                    "Connections",
+                    "Essential Reading",
+                ),
             )
         )
+        abilities = _split_csv(
+            self._section(
+                text,
+                "Abilities",
+                (
+                    "Weapons",
+                    "Equipment",
+                    "Paraphernalia",
+                    "Group Affiliation",
+                    "Connections",
+                    "Essential Reading",
+                ),
+            )
+        )
+        equipment_values = []
+        for label in ("Weapons", "Equipment", "Paraphernalia"):
+            equipment_values.extend(
+                _split_csv(
+                    self._section(
+                        text,
+                        label,
+                        (
+                            "Group Affiliation",
+                            "Connections",
+                            "Essential Reading",
+                            "Latest",
+                        ),
+                    )
+                )
+            )
         affiliations = _split_csv(
             self._section(
                 text,
@@ -607,6 +647,8 @@ class MarvelOfficialSource(OfficialCharacterSource):
             description=self._meta_description(parser),
             aliases=aliases,
             powers=powers,
+            abilities=abilities,
+            equipment=equipment_values,
             affiliations=affiliations,
             origin_place=origin_place,
             gender=gender,
@@ -623,6 +665,27 @@ def source_for_entity(entity: Entity, client: OfficialWebClient) -> OfficialChar
     if "marvel" == universe or "marvel comics" in publisher:
         return MarvelOfficialSource(client)
     return None
+
+
+def record_field_provenance(
+    entity: Entity,
+    field_name: str,
+    *,
+    source_type: str,
+    source_ref: str,
+    source_url: str | None = None,
+):
+    """Registra a origem de um campo sem duplicar conteúdo nem criar outra base."""
+    bucket = entity.metadata.setdefault("field_provenance", {})
+    entries = bucket.setdefault(str(field_name), [])
+    record = {
+        "source_type": str(source_type),
+        "source_ref": str(source_ref),
+    }
+    if source_url:
+        record["url"] = str(source_url)
+    if record not in entries:
+        entries.append(record)
 
 
 def merge_official_profile(
@@ -643,8 +706,31 @@ def merge_official_profile(
 
     entity.aliases = merge_list(entity.aliases, profile.aliases)
     entity.powers = merge_list(entity.powers, profile.powers)
+    entity.abilities = merge_list(entity.abilities, profile.abilities)
+    entity.equipment = merge_list(entity.equipment, profile.equipment)
     entity.occupation = merge_list(entity.occupation, profile.occupation)
     entity.affiliations = merge_list(entity.affiliations, profile.affiliations)
+
+    for field_name, value in (
+        ("aliases", profile.aliases),
+        ("powers", profile.powers),
+        ("abilities", profile.abilities),
+        ("equipment", profile.equipment),
+        ("occupation", profile.occupation),
+        ("affiliations", profile.affiliations),
+        ("description", profile.description),
+        ("origin_place", profile.origin_place),
+        ("first_appearance", profile.first_appearance),
+        ("gender", profile.gender),
+    ):
+        if value:
+            record_field_provenance(
+                entity,
+                field_name,
+                source_type="official_web",
+                source_ref=profile.publisher,
+                source_url=profile.source_url,
+            )
 
     # A fonte oficial é autoritativa quando fornece o campo. O conteúdo do PDF
     # continua preservado como apoio/proveniência em vez de ser descartado.
@@ -668,6 +754,20 @@ def merge_official_profile(
         entity.metadata["image_candidates"] = candidates
         entity.image = image_path
         entity.metadata["image_kind"] = "official_web_cache"
+        entity.metadata.setdefault("image_attribution", {})[str(image_path)] = {
+            "author": profile.publisher,
+            "credit": "Official character profile",
+            "license": "No open license recorded",
+            "source_url": profile.source_url,
+            "rights_status": "official_source_local_reference",
+        }
+        record_field_provenance(
+            entity,
+            "image",
+            source_type="official_web",
+            source_ref=profile.publisher,
+            source_url=profile.source_url,
+        )
 
     existing_relations = {
         (normalize_search_text(item.predicate), normalize_search_text(item.target_name))

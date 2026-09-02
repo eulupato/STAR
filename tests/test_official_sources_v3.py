@@ -60,6 +60,8 @@ def test_marvel_official_profile_parser(tmp_path):
       <div>Identity</div><div>Secret</div>
       <div>Known Relatives</div><div>Aunt May</div>
       <div>Powers</div><div>Superhuman Strength, Spider-Sense, Wallcrawling</div>
+      <div>Abilities</div><div>Science, Photography</div>
+      <div>Equipment</div><div>Web-Shooters</div>
       <div>Group Affiliation</div><div>Avengers, Fantastic Four</div>
       <h2>Connections</h2>
       <a href="/characters/iron-man-tony-stark">Iron Man</a>
@@ -70,6 +72,8 @@ def test_marvel_official_profile_parser(tmp_path):
     assert profile is not None
     assert "Friendly Neighborhood Spider-Man" in profile.aliases
     assert "Spider-Sense" in profile.powers
+    assert "Science" in profile.abilities
+    assert "Web-Shooters" in profile.equipment
     assert "Avengers" in profile.affiliations
     assert "Forest Hills" in profile.origin_place
     assert profile.image_url == "https://cdn.marvel.com/spider-man.jpg"
@@ -184,3 +188,31 @@ def test_marvel_catalog_discovered_url_is_tried_first(tmp_path):
     urls = source.candidate_urls(entity)
     assert urls[0] == "https://www.marvel.com/characters/spider-man-miles-morales"
 
+
+
+def test_official_merge_records_field_and_image_provenance(tmp_path):
+    source = MarvelOfficialSource(client(tmp_path))
+    profile = source.parse(
+        """
+        <html><head>
+        <meta property="og:title" content="Hero | Characters | Marvel">
+        <meta property="og:description" content="Official description">
+        </head><body>
+        <div>Powers</div><div>Flight</div>
+        <div>Abilities</div><div>Tactics</div>
+        <div>Equipment</div><div>Shield</div>
+        </body></html>
+        """,
+        "https://www.marvel.com/characters/hero",
+    )
+    entity = Entity(name="Hero", category="character", universe="Marvel")
+    merged = merge_official_profile(entity, profile, image_path="/cache/hero.jpg")
+
+    provenance = merged.metadata["field_provenance"]
+    assert provenance["powers"][0]["source_type"] == "official_web"
+    assert provenance["abilities"][0]["url"].startswith("https://www.marvel.com/")
+    assert provenance["equipment"][0]["source_ref"] == "Marvel Comics"
+    assert provenance["image"][0]["source_type"] == "official_web"
+    rights = merged.metadata["image_attribution"]["/cache/hero.jpg"]
+    assert rights["rights_status"] == "official_source_local_reference"
+    assert rights["license"] == "No open license recorded"
