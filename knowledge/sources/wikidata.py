@@ -628,6 +628,16 @@ class WikidataClient:
             reverse=True,
         )
         if not ranked or ranked[0][1][0] < 12:
+            if include_image:
+                self._record_image_rejection(
+                    entity_name=entity.name,
+                    reason="wikidata_identity_unresolved",
+                    detail=(
+                        f"melhor_score={ranked[0][1][0]}"
+                        if ranked
+                        else "sem candidatos"
+                    ),
+                )
             return None
 
         qid, (_score, search_item, search_language) = ranked[0]
