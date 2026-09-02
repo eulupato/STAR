@@ -117,3 +117,29 @@ def test_wikidata_merge_does_not_override_verified_description():
 
     merged = merge_wikidata_profile(entity, profile)
     assert merged.description == "Descrição oficial já validada."
+
+
+
+def test_wikidata_merge_replaces_stale_local_image(tmp_path):
+    replacement = Path(tmp_path) / "replacement.jpg"
+    replacement.write_bytes(b"image")
+    entity = Entity(
+        name="Storm",
+        category="character",
+        universe="Marvel",
+        image=str(Path(tmp_path) / "missing.jpg"),
+    )
+    profile = WikidataProfile(
+        qid="Q181300",
+        label="Storm",
+        description="Storm — fictional superhero appearing in Marvel Comics.",
+        description_language="en",
+        entity_url="https://www.wikidata.org/wiki/Q181300",
+    )
+
+    merged = merge_wikidata_profile(
+        entity,
+        profile,
+        image_path=str(replacement),
+    )
+    assert merged.image == str(replacement)
