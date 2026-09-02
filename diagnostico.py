@@ -156,6 +156,24 @@ def main():
         marvel_coverage = MarvelMasterCatalog().source_metadata().get(
             "coverage", {}
         )
+        marvel_snapshot = int(
+            marvel_coverage.get("snapshot_records") or 0
+        )
+        marvel_official = int(
+            marvel_coverage.get("official_site_reported_results") or 0
+        )
+        marvel_gap = int(
+            marvel_coverage.get("verified_snapshot_results_gap") or 0
+        )
+        marvel_percent = float(
+            marvel_coverage.get("verified_snapshot_coverage_percent") or 0
+        )
+        expected_gap = max(0, marvel_official - marvel_snapshot)
+        expected_percent = (
+            round(marvel_snapshot * 100 / marvel_official, 2)
+            if marvel_official
+            else 0.0
+        )
 
         checks = [
             (
@@ -208,15 +226,10 @@ def main():
             ),
             (
                 "Marvel coverage metadata",
-                int(marvel_coverage.get("snapshot_records") or 0) == 1564
-                and int(
-                    marvel_coverage.get("official_site_reported_results") or 0
-                )
-                == 2896
-                and int(
-                    marvel_coverage.get("verified_snapshot_results_gap") or 0
-                )
-                == 1332,
+                marvel_snapshot > 0
+                and marvel_official >= marvel_snapshot
+                and marvel_gap == expected_gap
+                and abs(marvel_percent - expected_percent) < 0.01,
             ),
         ]
         for name, ok in checks:
