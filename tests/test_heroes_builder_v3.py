@@ -237,3 +237,138 @@ def test_builder_collects_image_rejection_reasons(tmp_path):
     assert report.image_rejection_reasons["missing_license_metadata"] == 2
     assert report.image_rejection_reasons["http_403"] == 1
     assert len(report.image_rejections) == 3
+
+
+def test_visual_scan_prefers_commons_and_writes_checkpoint(tmp_path, monkeypatch):
+    from knowledge.entities import Entity
+    from knowledge.sources.wikidata import WikidataProfile
+    import knowledge.heroes_builder as heroes_builder_module
+
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    engine.upsert_entity(
+        Entity(
+            name="Visual Hero",
+            category="character",
+            universe="Marvel",
+            publisher="Marvel Comics",
+        )
+    )
+    builder = HeroesKnowledgeBuilder(engine, tmp_path / "local")
+
+    profile = WikidataProfile(
+        qid="Q123",
+        label="Visual Hero",
+        description="Visual Hero — fictional superhero.",
+        description_language="en",
+        entity_url="https://www.wikidata.org/wiki/Q123",
+        image_url="https://upload.wikimedia.org/visual-hero.jpg",
+        image_source_url=(
+            "https://commons.wikimedia.org/wiki/File:Visual_Hero.jpg"
+        ),
+        image_attribution={
+            "author": "Example Artist",
+            "license": "CC BY-SA 4.0",
+            "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "source_url": (
+                "https://commons.wikimedia.org/wiki/File:Visual_Hero.jpg"
+            ),
+            "rights_status": "open_license_verified",
+        },
+    )
+
+    monkeypatch.setattr(
+        builder.wikidata,
+        "fetch_profile",
+        lambda *args, **kwargs: profile,
+    )
+
+    def fake_cache(*args, **kwargs):
+        image = tmp_path / "commons.jpg"
+        image.write_bytes(b"image")
+        return str(image)
+
+    monkeypatch.setattr(builder.wikidata, "cache_commons_image", fake_cache)
+
+    def official_must_not_run(*args, **kwargs):
+        raise AssertionError("fonte oficial não deve substituir Commons licenciado")
+
+    monkeypatch.setattr(
+        heroes_builder_module,
+        "source_for_entity",
+        official_must_not_run,
+    )
+
+    report = builder.scan_visual_references(
+        online=False,
+        resume=False,
+        limit=1,
+        delay_seconds=0,
+    )
+
+    assert report["totals"]["accepted_open_license"] == 1
+    assert builder._visual_scan_state_path().exists()
+    state = json.loads(
+        builder._visual_scan_state_path().read_text(encoding="utf-8")
+    )
+    record = next(iter(state["characters"].values()))
+    assert record["status"] == "accepted_open_license"
+    assert record["accepted"]["license"] == "CC BY-SA 4.0"
+
+
+def test_visual_scan_resume_skips_completed_character(tmp_path, monkeypatch):
+    from knowledge.entities import Entity
+
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    image = tmp_path / "official.jpg"
+    image.write_bytes(b"image")
+    entity = Entity(
+        name="Resume Hero",
+        category="character",
+        universe="Marvel",
+        publisher="Marvel Comics",
+        image=str(image),
+        metadata={
+            "image_attribution": {
+                str(image): {
+                    "author": "Marvel",
+                    "license": "No open license recorded",
+                    "source_url": "https://www.marvel.com/characters/resume-hero",
+                    "rights_status": "official_source_local_reference",
+                }
+            }
+        },
+    )
+    engine.upsert_entity(entity)
+    builder = HeroesKnowledgeBuilder(engine, tmp_path / "local")
+    key = str(engine.resolve_entity("Resume Hero", universe="Marvel").id)
+    builder._save_visual_scan_state(
+        {
+            "schema_version": 1,
+            "characters": {
+                key: {
+                    "name": "Resume Hero",
+                    "universe": "Marvel",
+                    "status": "accepted_official_reference",
+                    "accepted": {},
+                    "rejections": [],
+                }
+            },
+        }
+    )
+
+    monkeypatch.setattr(
+        builder.wikidata,
+        "fetch_profile",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("checkpoint deveria evitar nova busca")
+        ),
+    )
+
+    report = builder.scan_visual_references(
+        online=False,
+        resume=True,
+        delay_seconds=0,
+    )
+
+    assert report["totals"]["skipped_resume"] == 1
+    assert report["totals"]["accepted_official_reference"] == 1
