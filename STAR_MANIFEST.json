@@ -75,7 +75,10 @@
     "heroes_official_first_enrichment",
     "heroes_field_provenance",
     "heroes_structured_coverage_report",
-    "heroes_image_rights_audit"
+    "heroes_image_rights_audit",
+    "heroes_manifest_first_image_pipeline",
+    "heroes_resumable_image_scan",
+    "legacy_runtime_cleanup"
   ],
   "features_in_progress": [
     "heroes_full_image_coverage",
