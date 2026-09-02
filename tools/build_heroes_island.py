@@ -60,6 +60,25 @@ def parser():
         action="store_true",
         help="Tenta perfis live da Marvel explicitamente; pode sofrer HTTP 403.",
     )
+    p.add_argument(
+        "--wikidata-fallback",
+        action="store_true",
+        help=(
+            "Preenche lacunas de descrição/imagem com Wikidata e "
+            "Wikimedia Commons, sem sobrescrever fontes primárias."
+        ),
+    )
+    p.add_argument(
+        "--wikidata-limit",
+        type=int,
+        default=0,
+        help="Limita o enriquecimento suplementar; 0 = todos os candidatos.",
+    )
+    p.add_argument(
+        "--no-wikidata-images",
+        action="store_true",
+        help="Usa Wikidata somente para descrições, sem cachear imagens do Commons.",
+    )
     return p
 
 
@@ -87,6 +106,9 @@ def main():
         cache_marvel_images=args.cache_marvel_images,
         marvel_image_limit=max(0, args.marvel_image_limit),
         live_marvel_enrichment=args.live_marvel_enrichment,
+        wikidata_fallback=args.wikidata_fallback,
+        wikidata_limit=max(0, args.wikidata_limit),
+        wikidata_images=not args.no_wikidata_images,
     )
     print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
 
