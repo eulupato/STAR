@@ -1,113 +1,98 @@
+import json
+from pathlib import Path
+
 from knowledge.engine import KnowledgeEngine
-from knowledge.sources.marvel_catalog import (
-    MARVEL_CATALOG_URL,
-    MarvelOfficialCatalog,
-    parse_catalog_html,
-)
+from knowledge.sources.marvel_catalog import MarvelMasterCatalog
 
 
-def test_marvel_catalog_parser_keeps_variants_distinct():
-    html = """
-    <html><body>
-      <a href="/characters/spider-man-peter-parker">Spider-Man (Peter Parker)</a>
-      <a href="/characters/spider-man-miles-morales">Spider-Man (Miles Morales)</a>
-      <a href="/characters/loki">Loki</a>
-      <a href="/news/story">Not a character</a>
-    </body></html>
-    """
-    entries, _pages = parse_catalog_html(html, MARVEL_CATALOG_URL)
-    assert [entry.name for entry in entries] == [
-        "Spider-Man (Peter Parker)",
-        "Spider-Man (Miles Morales)",
-        "Loki",
+ROOT = Path(__file__).resolve().parents[1]
+PACK = ROOT / "knowledge" / "packs" / "heroes"
+
+
+def _write_pack(root: Path):
+    root.mkdir(parents=True, exist_ok=True)
+    records = [
+        {
+            "id": "marvel-api:1",
+            "source_id": 1,
+            "name": "Spider-Man (Peter Parker)",
+            "original_name": "Spider-Man",
+            "aliases": ["Spider-Man"],
+            "universe": "Marvel",
+            "publisher": "Marvel Comics",
+            "official_api_uri": "https://gateway.marvel.com/v1/public/characters/1",
+            "image_ref": "marvel-api:1",
+        },
+        {
+            "id": "marvel-api:2",
+            "source_id": 2,
+            "name": "Spider-Man (Miles Morales)",
+            "original_name": "Spider-Man (Miles Morales)",
+            "aliases": [],
+            "universe": "Marvel",
+            "publisher": "Marvel Comics",
+            "official_api_uri": "https://gateway.marvel.com/v1/public/characters/2",
+            "image_ref": "marvel-api:2",
+        },
     ]
-    assert entries[0].real_name == "Peter Parker"
-    assert entries[1].real_name == "Miles Morales"
-    assert entries[0].identity_key != entries[1].identity_key
+    (root / "marvel_characters.jsonl").write_text(
+        "\n".join(json.dumps(item) for item in records) + "\n",
+        encoding="utf-8",
+    )
+    (root / "marvel_image_manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "images": {
+                    "marvel-api:1": ["https://i.annihil.us/peter.jpg"],
+                    "marvel-api:2": ["https://i.annihil.us/miles.jpg"],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (root / "marvel_sources.json").write_text(
+        json.dumps({"schema_version": 1, "coverage": {"snapshot_records": 2}}),
+        encoding="utf-8",
+    )
 
 
-def test_marvel_catalog_import_does_not_merge_miles_with_peter(tmp_path):
+def test_versioned_master_pack_is_structured_and_declares_coverage():
+    catalog = MarvelMasterCatalog(PACK)
+    records = catalog.load_records()
+    meta = catalog.source_metadata()
+
+    assert len(records) == meta["coverage"]["snapshot_records"]
+    assert len(records) >= 1500
+    assert meta["coverage"]["status"] == "partial_verified_snapshot"
+    assert meta["coverage"]["official_site_reported_results"] > len(records)
+    assert all("factfile" not in record.name.lower() for record in records)
+
+
+def test_master_catalog_import_is_offline_and_preserves_variants(tmp_path):
+    pack = tmp_path / "pack"
+    _write_pack(pack)
     engine = KnowledgeEngine(tmp_path / "knowledge.db")
-    html = """
-    <html><body>
-      <a href="/characters/spider-man-peter-parker">Spider-Man (Peter Parker)</a>
-      <a href="/characters/spider-man-miles-morales">Spider-Man (Miles Morales)</a>
-    </body></html>
-    """
 
-    class Client:
-        def fetch_html(self, *_args, **_kwargs):
-            return html
+    saved = MarvelMasterCatalog(pack).import_into(engine)
 
-    catalog = MarvelOfficialCatalog(Client())
-    saved = catalog.import_into(engine, online=True, max_pages=1)
     assert saved == 2
-
     peter = engine.resolve_entity("Spider-Man (Peter Parker)", universe="Marvel")
     miles = engine.resolve_entity("Spider-Man (Miles Morales)", universe="Marvel")
-    assert peter is not None
-    assert miles is not None
+    assert peter is not None and miles is not None
     assert peter.id != miles.id
-    assert peter.attributes["real_name"] == "Peter Parker"
-    assert miles.attributes["real_name"] == "Miles Morales"
+    assert any(source.source_type == "marvel_master" for source in peter.sources)
 
 
-def test_marvel_catalog_parser_accepts_legacy_official_index():
-    html = """
-    <html><body>
-      <a href="/comics/characters/1009187/black_panther">Black Panther</a>
-      <a href="/comics/characters/1009368/iron_man">Iron Man</a>
-    </body></html>
-    """
-    entries, _pages = parse_catalog_html(
-        html,
-        "https://www.marvel.com/comics/characters?l=sem&o=603409",
+def test_image_manifest_contains_urls_not_binary_assets():
+    catalog = MarvelMasterCatalog(PACK)
+    manifest = catalog.image_manifest()
+
+    assert manifest
+    assert all(
+        url.startswith("https://")
+        for urls in manifest.values()
+        for url in urls
     )
-    assert {entry.name for entry in entries} == {"Black Panther", "Iron Man"}
-
-
-
-def test_marvel_catalog_reuses_old_peter_seed_but_keeps_miles_separate(tmp_path):
-    from knowledge.entities import Entity
-
-    engine = KnowledgeEngine(tmp_path / "knowledge.db")
-    engine.upsert_entity(
-        Entity(
-            name="Spider-Man",
-            category="character",
-            universe="Marvel",
-            publisher="Marvel Comics",
-            aliases=["Homem-Aranha"],
-            attributes={"real_name": "Peter Parker"},
-        )
-    )
-    html = """
-    <html><body>
-      <a href="/characters/spider-man-peter-parker">Spider-Man (Peter Parker)</a>
-      <a href="/characters/spider-man-miles-morales">Spider-Man (Miles Morales)</a>
-    </body></html>
-    """
-
-    class Client:
-        def fetch_html(self, *_args, **_kwargs):
-            return html
-
-    catalog = MarvelOfficialCatalog(Client())
-    catalog.import_into(engine, online=True, max_pages=1)
-
-    items = engine.search_entities(
-        "",
-        filters={"category": "character", "universe": "Marvel"},
-        limit=20,
-    )
-    assert len(items) == 2
-
-    peter = next(
-        item for item in items
-        if item.attributes.get("real_name") == "Peter Parker"
-    )
-    miles = next(
-        item for item in items
-        if item.attributes.get("real_name") == "Miles Morales"
-    )
-    assert peter.id != miles.id
+    assert not list(PACK.glob("*.jpg"))
+    assert not list(PACK.glob("*.png"))
