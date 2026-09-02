@@ -158,6 +158,55 @@ O relatório `heroes_build_report.json` agora inclui
 Nenhuma imagem aleatória da web é aceita e nenhuma associação
 personagem-imagem é inferida apenas por semelhança de nome.
 
+### Varredura visual personagem por personagem
+
+A STAR agora pode percorrer **todo o catálogo existente** e buscar uma referência
+visual por personagem com checkpoint resumível. A varredura não cria personagens
+novos e usa a identidade já registrada como chave.
+
+Ordem aplicada a cada personagem:
+
+1. Wikidata → Wikimedia Commons com licença aberta verificável;
+2. perfil oficial Marvel/DC quando existir;
+3. thumbnail oficial do manifesto Marvel/API.
+
+Comando direto:
+
+```powershell
+.\.venv\Scripts\python.exe tools\build_heroes_island.py --scan-images
+```
+
+A execução salva progresso a cada lote e pode ser interrompida. Rodar o mesmo
+comando novamente continua do checkpoint:
+
+```text
+knowledge/local/reports/heroes_image_scan_state.json
+```
+
+Resumo final:
+
+```text
+knowledge/local/reports/heroes_image_scan_report.json
+```
+
+Para reavaliar personagens já concluídos, inclusive referências oficiais que
+possam agora ter uma alternativa Commons licenciada:
+
+```powershell
+.\.venv\Scripts\python.exe tools\build_heroes_island.py --scan-images --restart-image-scan
+```
+
+Para testar em um subconjunto:
+
+```powershell
+.\.venv\Scripts\python.exe tools\build_heroes_island.py --scan-images --image-scan-limit 50
+```
+
+O relatório classifica cada registro como `accepted_open_license`,
+`accepted_official_reference`, `accepted_unclassified_local` ou
+`unresolved`, além de guardar os motivos de rejeição encontrados durante a
+busca.
+
 ### Sincronizar a Ilha dos Heróis
 
 A Marvel usa agora um **catálogo mestre versionado**, não OCR nem crawling web
