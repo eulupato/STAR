@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "catalog": "marvel-master",
+  "generated_for_star": "2026-09-01",
+  "coverage": {
+    "snapshot_records": 1564,
+    "image_references": 1007,
+    "official_site_reported_results": 2896,
+    "official_site_observed_date": "2026-09-01",
+    "status": "partial_verified_snapshot",
+    "note": "O pack versionado não declara cobertura integral dos resultados atuais do site. Ele usa um snapshot agregado derivado da Marvel API e mantém a lacuna explicitamente registrada."
+  },
+  "provenance": [
+    {
+      "role": "master_snapshot",
+      "kind": "marvel_api_derived_dataset",
+      "origin": "Marvel public API",
+      "mirror_repository": "https://github.com/yanjunchenye/2506_dsft_thebridge",
+      "mirror_path": "2-Analytics/3-APIs/Práctica/API_Marvel/marvel_characthers_final2.csv",
+      "mirror_commit": "2e10a3f1ee88685f8caa1c21f67ce084e7f1d1e8",
+      "fields_used": [
+        "id",
+        "name",
+        "thumbnail URL"
+      ]
+    },
+    {
+      "role": "current_coverage_reference",
+      "kind": "official_index",
+      "url": "https://www.marvel.com/characters",
+      "observed_results": 2896,
+      "observed_date": "2026-09-01",
+      "automated_bulk_access": "blocked_http_403"
+    }
+  ],
+  "policy": {
+    "biographies_embedded": false,
+    "copyrighted_image_binaries_embedded": false,
+    "image_urls_only": true,
+    "pdf_embedded": false
+  }
+}

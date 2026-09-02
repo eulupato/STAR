@@ -1,0 +1,3029 @@
+{
+  "schema_version": 1,
+  "catalog": "marvel-master",
+  "count": 1007,
+  "storage": "url_references_only",
+  "images": {
+    "marvel-api:1011334": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/e0/535fecbbb9784.jpg"
+    ],
+    "marvel-api:1017100": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/20/5232158de5b16.jpg"
+    ],
+    "marvel-api:1009144": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/20/52602f21f29ec.jpg"
+    ],
+    "marvel-api:1009146": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/50/4ce18691cbf04.jpg"
+    ],
+    "marvel-api:1009148": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/b0/5269678709fb7.jpg"
+    ],
+    "marvel-api:1009149": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/30/535feab462a64.jpg"
+    ],
+    "marvel-api:1010903": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/80/4c00358ec7548.jpg"
+    ],
+    "marvel-api:1010354": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/f0/5202887448860.jpg"
+    ],
+    "marvel-api:1010846": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/e0/4c0035c9c425d.gif"
+    ],
+    "marvel-api:1012717": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/a0/4ce5a9bf70e19.jpg"
+    ],
+    "marvel-api:1011297": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/60/52695285d6e7e.jpg"
+    ],
+    "marvel-api:1009150": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4c0042121d790.jpg"
+    ],
+    "marvel-api:1011198": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/a0/4ce18a834b7f5.jpg"
+    ],
+    "marvel-api:1011136": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/c0/66f2d68d99dc8.jpg"
+    ],
+    "marvel-api:1011176": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/80/4c002f35c5215.jpg"
+    ],
+    "marvel-api:1010870": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/70/4c0035adc7d3a.jpg"
+    ],
+    "marvel-api:1010836": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/50/4ce5a385a2e82.jpg"
+    ],
+    "marvel-api:1010755": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/c0/4c00377144d5a.jpg"
+    ],
+    "marvel-api:1014990": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/70/4cd061e6d6573.jpg"
+    ],
+    "marvel-api:1009435": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/40/4c003d40ac7ae.jpg"
+    ],
+    "marvel-api:1010370": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/60/52695277ee088.jpg"
+    ],
+    "marvel-api:1011227": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/80/520288b9cb581.jpg"
+    ],
+    "marvel-api:1011361": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/80/4ce5a6d8b8f2a.jpg"
+    ],
+    "marvel-api:1009152": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/b0/4ce59ea2103ac.jpg"
+    ],
+    "marvel-api:1011396": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/03/531769834b15f.jpg"
+    ],
+    "marvel-api:1011338": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/50/531769ae4399f.jpg"
+    ],
+    "marvel-api:1017574": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/00/545a82f59dd73.jpg"
+    ],
+    "marvel-api:1010674": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/a0/4c0038fa14452.jpg"
+    ],
+    "marvel-api:1009154": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/f0/528d31f20a2f6.jpg"
+    ],
+    "marvel-api:1011301": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/4c002e635ddd9.jpg"
+    ],
+    "marvel-api:1010802": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/c0/53176aa9df48d.jpg"
+    ],
+    "marvel-api:1010801": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/20/52696868356a0.jpg"
+    ],
+    "marvel-api:1009156": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/e0/526166076a1d0.jpg"
+    ],
+    "marvel-api:1010866": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/50/4c0035b3630cd.jpg"
+    ],
+    "marvel-api:1010773": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/70/5269526591794.jpg"
+    ],
+    "marvel-api:1009158": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/a0/4c0042091ab69.jpg"
+    ],
+    "marvel-api:1009159": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/03/526165ed93180.jpg"
+    ],
+    "marvel-api:1009160": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/f0/4c0042067fd8b.jpg"
+    ],
+    "marvel-api:1010784": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/10/535ff3daea603.jpg"
+    ],
+    "marvel-api:1011012": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/40/4c0032754da02.jpg"
+    ],
+    "marvel-api:1011298": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/4c002e6cbf990.jpg"
+    ],
+    "marvel-api:1009740": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/b0/4c00393a4cb7c.jpg"
+    ],
+    "marvel-api:1010748": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/c0/4c00359a2be7b.jpg"
+    ],
+    "marvel-api:1011758": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/90/4ce5a862a6c48.jpg"
+    ],
+    "marvel-api:1009163": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/10/4c004203f1072.jpg"
+    ],
+    "marvel-api:1009164": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/10/4c0042010d383.jpg"
+    ],
+    "marvel-api:1009165": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/5102c774ebae7.jpg"
+    ],
+    "marvel-api:1011456": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/f0/4ce5a7c2814ba.gif"
+    ],
+    "marvel-api:1009168": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/03/52740e4619f54.jpg"
+    ],
+    "marvel-api:1009596": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/c0/4ce5a1a50e56b.jpg"
+    ],
+    "marvel-api:1011778": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/90/4ce5a86dba8a8.jpg"
+    ],
+    "marvel-api:1009169": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/80/4c0041fb5a90d.jpg"
+    ],
+    "marvel-api:1009170": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/4c0041f84c9fe.jpg"
+    ],
+    "marvel-api:1010906": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c0035890fb0a.jpg"
+    ],
+    "marvel-api:1009171": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/80/52695253215f4.jpg"
+    ],
+    "marvel-api:1009172": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/80/4ce59eb840da5.gif"
+    ],
+    "marvel-api:1009173": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4c002e0305708.gif"
+    ],
+    "marvel-api:1009174": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/4c0040b8329ad.jpg"
+    ],
+    "marvel-api:1009175": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/80/511a79a0451a3.jpg"
+    ],
+    "marvel-api:1010909": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c0035813dc4c.jpg"
+    ],
+    "marvel-api:1010908": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/d0/53176a9be110c.jpg"
+    ],
+    "marvel-api:1009178": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4c002e0305708.gif"
+    ],
+    "marvel-api:1011793": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/20/4ce5a878b487c.jpg"
+    ],
+    "marvel-api:1009489": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/c0/4c003d00c8ed9.jpg"
+    ],
+    "marvel-api:1011346": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/20/4ce5a6abaea69.jpg"
+    ],
+    "marvel-api:1010782": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/4c00373d10e5e.jpg"
+    ],
+    "marvel-api:1010829": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/70/5269523ee6c03.jpg"
+    ],
+    "marvel-api:1009180": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/90/52602f3e88d25.jpg"
+    ],
+    "marvel-api:1011907": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/40/4ce5a8b16ee4b.jpg"
+    ],
+    "marvel-api:1010325": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/a0/4c7c644f453fb.jpg"
+    ],
+    "marvel-api:1009548": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/b0/4ce5a12071562.jpg"
+    ],
+    "marvel-api:1011138": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/10/528d31df87c49.jpg"
+    ],
+    "marvel-api:1010843": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/d0/4c0035cfca8b6.jpg"
+    ],
+    "marvel-api:1009181": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/00/4c0040b26877d.jpg"
+    ],
+    "marvel-api:1009182": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/70/52602f4b42d98.jpg"
+    ],
+    "marvel-api:1009184": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/20/52696929dc721.jpg"
+    ],
+    "marvel-api:1017330": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/a0/5239c021b3bfc.jpg"
+    ],
+    "marvel-api:1009185": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/03/526952357d91c.jpg"
+    ],
+    "marvel-api:1010910": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/80/4c00357da502e.jpg"
+    ],
+    "marvel-api:1011809": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/d0/4ce5a883e8df0.gif"
+    ],
+    "marvel-api:1009186": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/b0/4ce59ed1590a7.jpg"
+    ],
+    "marvel-api:1009187": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/60/5261a80a67e7d.jpg"
+    ],
+    "marvel-api:1011130": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/20/53176a7b3a4e4.jpg"
+    ],
+    "marvel-api:1010687": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c0038dfc1270.jpg"
+    ],
+    "marvel-api:1009188": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/70/4c0040a736154.jpg"
+    ],
+    "marvel-api:1009189": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/30/50fecad1f395b.jpg"
+    ],
+    "marvel-api:1017296": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/30/5239c3722bdc5.jpg"
+    ],
+    "marvel-api:1010911": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/03/53176a690b261.jpg"
+    ],
+    "marvel-api:1011498": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/70/4c002dee5207a.jpg"
+    ],
+    "marvel-api:1017109": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/03/523219743a99b.jpg"
+    ],
+    "marvel-api:1009190": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/f0/4c0040a0ee5ba.jpg"
+    ],
+    "marvel-api:1011349": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/60/4ce5a6b641eb9.jpg"
+    ],
+    "marvel-api:1009191": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/a0/523ca6f2b11e4.jpg"
+    ],
+    "marvel-api:1009195": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/e0/52695222c22e0.jpg"
+    ],
+    "marvel-api:1010830": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/d0/4ce5a37a830a3.jpg"
+    ],
+    "marvel-api:1011291": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/10/4ce5a5f7cabea.jpg"
+    ],
+    "marvel-api:1009197": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/d0/4ce59eeb38a9a.jpg"
+    ],
+    "marvel-api:1009199": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/10/4c7c648178328.png"
+    ],
+    "marvel-api:1011132": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/00/4ce5a51b309b7.jpg"
+    ],
+    "marvel-api:1009200": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/60/4c0040969fa92.jpg"
+    ],
+    "marvel-api:1009202": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/60/4c00409415b3b.jpg"
+    ],
+    "marvel-api:1011416": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/00/4ce5a77360c30.jpg"
+    ],
+    "marvel-api:1009203": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/e0/4c7c647c3f069.jpg"
+    ],
+    "marvel-api:1011113": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/e0/4ce5a4b76d1c0.jpg"
+    ],
+    "marvel-api:1011119": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/a0/4ce5a4c2cd41b.jpg"
+    ],
+    "marvel-api:1010366": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/00/4ce5a25d34245.jpg"
+    ],
+    "marvel-api:1010371": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/30/4c00390504a3b.jpg"
+    ],
+    "marvel-api:1009206": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/e0/4ce59ef63362d.jpg"
+    ],
+    "marvel-api:1011236": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/e0/4ce5a592212cc.jpg"
+    ],
+    "marvel-api:1014981": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/00/4cd05b51df5c5.jpg"
+    ],
+    "marvel-api:1009208": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/40/5260321259f91.jpg"
+    ],
+    "marvel-api:1009209": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/30/539f01b910d91.jpg"
+    ],
+    "marvel-api:1009211": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/03/4dc8478464008.jpg"
+    ],
+    "marvel-api:1011038": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/30/4c00323e50dda.jpg"
+    ],
+    "marvel-api:1009212": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/30/539a08f322fd1.jpg"
+    ],
+    "marvel-api:1011101": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/00/4c0030b5dbc50.jpg"
+    ],
+    "marvel-api:1009214": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/90/526165df2b584.jpg"
+    ],
+    "marvel-api:1017317": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/50/5239c22332b00.jpg"
+    ],
+    "marvel-api:1017307": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/d0/5239b5f863d43.jpg"
+    ],
+    "marvel-api:1011252": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/10/53176a2ccd8bc.jpg"
+    ],
+    "marvel-api:1017472": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/b0/52d729bb9b84b.jpg"
+    ],
+    "marvel-api:1009216": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/52bc8ac6e48db.jpg"
+    ],
+    "marvel-api:1009217": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/90/4c004082711b8.jpg"
+    ],
+    "marvel-api:1010912": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/c0/535feb96ee0fb.jpg"
+    ],
+    "marvel-api:1009218": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/b0/4ce59f17087ab.jpg"
+    ],
+    "marvel-api:1011139": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/a0/4c00309587477.jpg"
+    ],
+    "marvel-api:1009219": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/c0/4c00407fb91b5.jpg"
+    ],
+    "marvel-api:1011276": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/10/4c002ee7bf3f5.jpg"
+    ],
+    "marvel-api:1009220": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/50/537ba56d31087.jpg"
+    ],
+    "marvel-api:1010914": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/10/53176a1e7c0d5.jpg"
+    ],
+    "marvel-api:1017295": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/b0/5239c38051946.jpg"
+    ],
+    "marvel-api:1017327": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/03/5239c005a4827.jpg"
+    ],
+    "marvel-api:1017575": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/80/545a84a75ddaf.jpg"
+    ],
+    "marvel-api:1010913": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/80/53176a0bb810c.jpg"
+    ],
+    "marvel-api:1017105": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/10/52321928eaa72.jpg"
+    ],
+    "marvel-api:1009223": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/50/4dbf0e5d57226.jpg"
+    ],
+    "marvel-api:1010915": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/a0/4c003574e99fb.jpg"
+    ],
+    "marvel-api:1010338": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/80/5269608c1be7a.jpg"
+    ],
+    "marvel-api:1009224": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/526032048d1a1.jpg"
+    ],
+    "marvel-api:1011095": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/00/4c0030bee8c86.jpg"
+    ],
+    "marvel-api:1011097": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c0030bc4629e.jpg"
+    ],
+    "marvel-api:1009225": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/a0/4c00407752be2.jpg"
+    ],
+    "marvel-api:1011027": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/c0/4c00324c12ba2.jpg"
+    ],
+    "marvel-api:1011052": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/70/4c003117e0b75.jpg"
+    ],
+    "marvel-api:1009226": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/50/4c0040744c205.jpg"
+    ],
+    "marvel-api:1009227": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/50/535fee423f170.jpg"
+    ],
+    "marvel-api:1010916": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/00/4c003571c756c.jpg"
+    ],
+    "marvel-api:1009478": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/60/4c003d0f3c80c.jpg"
+    ],
+    "marvel-api:1009230": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4c002e0305708.gif"
+    ],
+    "marvel-api:1010813": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/f0/4c0035efbf930.jpg"
+    ],
+    "marvel-api:1011039": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/80/4c00323b6ac57.jpg"
+    ],
+    "marvel-api:1011140": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/c0/4c7c63dd70fe7.jpg"
+    ],
+    "marvel-api:1009231": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4c002e0305708.gif"
+    ],
+    "marvel-api:1009232": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4ce59f2dcd04d.jpg"
+    ],
+    "marvel-api:1009233": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/80/4c00406e4731b.jpg"
+    ],
+    "marvel-api:1009234": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/00/4ce59f390463f.jpg"
+    ],
+    "marvel-api:1010756": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/b0/4c00376da82bb.jpg"
+    ],
+    "marvel-api:1011015": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/b0/4c00326c980ac.jpg"
+    ],
+    "marvel-api:1010754": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/d0/4ce5a2e831d0c.jpg"
+    ],
+    "marvel-api:1011359": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/50/4ce5a6cd63eaf.jpg"
+    ],
+    "marvel-api:1011411": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/80/4c002e1c622c8.jpg"
+    ],
+    "marvel-api:1012065": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/00/4ce5a8f848c62.jpg"
+    ],
+    "marvel-api:1011270": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/10/4c002ef39a9a5.jpg"
+    ],
+    "marvel-api:1009239": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4c00406b55161.jpg"
+    ],
+    "marvel-api:1009241": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/e0/528d31d76a2b0.jpg"
+    ],
+    "marvel-api:1010823": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/80/526955ef00db6.jpg"
+    ],
+    "marvel-api:1010676": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/e0/52740e24bddb4.jpg"
+    ],
+    "marvel-api:1009243": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/e0/51127cf4b996f.jpg"
+    ],
+    "marvel-api:1011410": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/c0/4c002e1f3f490.jpg"
+    ],
+    "marvel-api:1009245": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/b0/4c004065a3a78.jpg"
+    ],
+    "marvel-api:1011407": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/70/4c002e274342b.jpg"
+    ],
+    "marvel-api:1010346": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/60/4c003923719ff.jpg"
+    ],
+    "marvel-api:1009247": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/f0/4c004062d89bd.jpg"
+    ],
+    "marvel-api:1009249": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/a0/4c00405d04674.jpg"
+    ],
+    "marvel-api:1011272": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/70/4c002ef0eb443.jpg"
+    ],
+    "marvel-api:1009251": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/b0/526955e3c7c41.jpg"
+    ],
+    "marvel-api:1017323": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/b0/5239c1307d9c9.jpg"
+    ],
+    "marvel-api:1009252": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/c0/4c00405a403c0.jpg"
+    ],
+    "marvel-api:1009254": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/4c004057a5bc6.jpg"
+    ],
+    "marvel-api:1009255": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/c0/52695564bcf1e.jpg"
+    ],
+    "marvel-api:1009256": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/f0/4c0040521bc06.jpg"
+    ],
+    "marvel-api:1009257": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/70/526547e2d90ad.jpg"
+    ],
+    "marvel-api:1010918": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/80/53176b8fe1dfa.jpg"
+    ],
+    "marvel-api:1017473": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/40/52d72a169ddf0.jpg"
+    ],
+    "marvel-api:1011385": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/10/4ce5a70abf6fb.jpg"
+    ],
+    "marvel-api:1009258": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/e0/528d31c9eac10.jpg"
+    ],
+    "marvel-api:1010774": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/f0/4ce5a31605544.jpg"
+    ],
+    "marvel-api:1010719": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/4ce5a2959ba25.jpg"
+    ],
+    "marvel-api:1011001": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/a0/520289a920fd9.jpg"
+    ],
+    "marvel-api:1011333": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/d0/4ce5a6888f769.jpg"
+    ],
+    "marvel-api:1009259": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/00/4c00404b5e1a2.jpg"
+    ],
+    "marvel-api:1009453": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/20/4ce5a0614487a.jpg"
+    ],
+    "marvel-api:1010776": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/20/4c00374b1008a.jpg"
+    ],
+    "marvel-api:1009262": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/50/50febb79985ee.jpg"
+    ],
+    "marvel-api:1017312": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/00/5239be8a1c152.jpg"
+    ],
+    "marvel-api:1010919": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/a0/53176b9e705dc.jpg"
+    ],
+    "marvel-api:1011306": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/b0/4ce5a6299ade4.jpg"
+    ],
+    "marvel-api:1011367": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/a0/526032c703d06.jpg"
+    ],
+    "marvel-api:1010907": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/d0/52602f32efdab.jpg"
+    ],
+    "marvel-api:1009265": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/e0/4ce59f6c7e332.jpg"
+    ],
+    "marvel-api:1011387": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/40/4ce5a7160a79b.jpg"
+    ],
+    "marvel-api:1011020": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/a0/5269553f4bc6a.jpg"
+    ],
+    "marvel-api:1009266": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/20/4ce59f77ea6f1.jpg"
+    ],
+    "marvel-api:1011016": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/60/4c003269b12a4.jpg"
+    ],
+    "marvel-api:1009267": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/10/4fe364b0a2177.jpg"
+    ],
+    "marvel-api:1010920": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/20/4c0034510900d.jpg"
+    ],
+    "marvel-api:1011087": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/20/4c0030c61eb15.jpg"
+    ],
+    "marvel-api:1009268": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/90/5261a86cacb99.jpg"
+    ],
+    "marvel-api:1017316": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/f0/5239c232c227c.jpg"
+    ],
+    "marvel-api:1017336": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/a0/5239f9a8ee88d.jpg"
+    ],
+    "marvel-api:1017474": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/20/52d72a5b55a55.jpg"
+    ],
+    "marvel-api:1009269": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/80/526031f5a21eb.jpg"
+    ],
+    "marvel-api:1009270": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/60/4c004041be770.jpg"
+    ],
+    "marvel-api:1011037": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/d0/535ff379c7c1b.jpg"
+    ],
+    "marvel-api:1010890": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/10/526165a98dd8e.jpg"
+    ],
+    "marvel-api:1010717": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c0038c02e75a.jpg"
+    ],
+    "marvel-api:1011023": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/80/526031e9c785a.jpg"
+    ],
+    "marvel-api:1011071": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/80/535fedd611db9.jpg"
+    ],
+    "marvel-api:1011107": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/e0/4c0030a603d23.jpg"
+    ],
+    "marvel-api:1017583": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/90/54aedc448b925.jpg"
+    ],
+    "marvel-api:1017102": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/20/5232153150e10.jpg"
+    ],
+    "marvel-api:1011142": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/20/4c002f87999a7.jpg"
+    ],
+    "marvel-api:1011260": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/b0/4ce5a5d5d8932.jpg"
+    ],
+    "marvel-api:1009273": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/f0/4ce59f83af33f.jpg"
+    ],
+    "marvel-api:1009274": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/f0/526955c158ece.jpg"
+    ],
+    "marvel-api:1009275": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/10/5261a84c1707c.jpg"
+    ],
+    "marvel-api:1009281": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/60/53176bb096d17.jpg"
+    ],
+    "marvel-api:1011103": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/c0/53176ba52dea1.jpg"
+    ],
+    "marvel-api:1011206": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/e0/4ce5a54ac4d4b.jpg"
+    ],
+    "marvel-api:1009276": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/b0/528d31b62eaba.jpg"
+    ],
+    "marvel-api:1010921": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/50/4c00344e05ce0.jpg"
+    ],
+    "marvel-api:1010689": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/90/4dc2d94978576.jpg"
+    ],
+    "marvel-api:1009282": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/f0/5261a85a501fe.jpg"
+    ],
+    "marvel-api:1011358": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/f0/53176bbb6dc50.jpg"
+    ],
+    "marvel-api:1011500": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/80/4c002deb4092d.jpg"
+    ],
+    "marvel-api:1011235": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/d0/4ce5a586c3c95.jpg"
+    ],
+    "marvel-api:1009277": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/526031dc10516.jpg"
+    ],
+    "marvel-api:1010330": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/d0/4ce5a23640434.jpg"
+    ],
+    "marvel-api:1009279": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/80/4c7c646b68a2c.jpg"
+    ],
+    "marvel-api:1010879": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/00/4c00359cc7019.jpg"
+    ],
+    "marvel-api:1009280": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/70/4c003f1ddc0e5.jpg"
+    ],
+    "marvel-api:1017300": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/f0/5239b5e7d7f70.jpg"
+    ],
+    "marvel-api:1010677": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/03/526955af18612.jpg"
+    ],
+    "marvel-api:1009283": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/f0/4c003f1aa3a1f.jpg"
+    ],
+    "marvel-api:1010735": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/d0/526032deabbff.jpg"
+    ],
+    "marvel-api:1009284": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/00/4ce59f9fc788f.jpg"
+    ],
+    "marvel-api:1009285": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/f0/4c003f17db9a6.jpg"
+    ],
+    "marvel-api:1009286": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/90/4c003f153b571.jpg"
+    ],
+    "marvel-api:1010785": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/f0/4c00373a2629f.jpg"
+    ],
+    "marvel-api:1010787": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/80/4de932f1a298a.jpg"
+    ],
+    "marvel-api:1011072": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/40/4c0030e231f6b.jpg"
+    ],
+    "marvel-api:1011060": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/d0/535fec6d62b7f.jpg"
+    ],
+    "marvel-api:1009287": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/60/4c003f1214bd7.jpg"
+    ],
+    "marvel-api:1010922": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/d0/4c0034491f280.jpg"
+    ],
+    "marvel-api:1009288": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/d0/51114fec4a2c8.jpg"
+    ],
+    "marvel-api:1010923": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/03/53176bc813157.jpg"
+    ],
+    "marvel-api:1011082": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/d0/52740e1b4ad81.jpg"
+    ],
+    "marvel-api:1011122": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/50/5269559c8d0c9.jpg"
+    ],
+    "marvel-api:1010701": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/b0/4c0038ccbe4fa.jpg"
+    ],
+    "marvel-api:1009310": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/80/51151ef7cf4c8.jpg"
+    ],
+    "marvel-api:1009291": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4ce59faf350ea.jpg"
+    ],
+    "marvel-api:1009292": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/10/4bb3bcffb8325.jpg"
+    ],
+    "marvel-api:1010671": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/10/52740e0f3c733.jpg"
+    ],
+    "marvel-api:1011313": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/90/4ce154e96ec1e.jpg"
+    ],
+    "marvel-api:1011065": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/50/4c0030f453da3.jpg"
+    ],
+    "marvel-api:1010807": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/30/539f0bda709d0.jpg"
+    ],
+    "marvel-api:1011061": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/90/4c0030fff0e3d.jpg"
+    ],
+    "marvel-api:1010771": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/f0/4c00374eb5d5d.jpg"
+    ],
+    "marvel-api:1009294": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/c0/4ce59fbab92f5.jpg"
+    ],
+    "marvel-api:1009295": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/20/52695589e1721.jpg"
+    ],
+    "marvel-api:1011199": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/c0/4c002f2268bd4.jpg"
+    ],
+    "marvel-api:1011317": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/50/4ce5a64fd283a.jpg"
+    ],
+    "marvel-api:1009248": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/f0/4c0040603dda1.jpg"
+    ],
+    "marvel-api:1009297": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/b0/5111505fb7009.jpg"
+    ],
+    "marvel-api:1017110": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/10/523219c347dd1.jpg"
+    ],
+    "marvel-api:1009299": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/50febc4f55525.jpg"
+    ],
+    "marvel-api:1011013": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/b0/4c0032727c038.jpg"
+    ],
+    "marvel-api:1011111": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/80/4c0030a052a1c.jpg"
+    ],
+    "marvel-api:1009301": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/535ff35da5ccd.jpg"
+    ],
+    "marvel-api:1011233": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/f0/4db58b3c6aaa6.jpg"
+    ],
+    "marvel-api:1009303": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/60/4ce59fc647d58.jpg"
+    ],
+    "marvel-api:1010868": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/30/4c0035b0a7de0.jpg"
+    ],
+    "marvel-api:1014987": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/a0/4cd0603234ecd.jpg"
+    ],
+    "marvel-api:1009305": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/b0/4ce59fd314c38.jpg"
+    ],
+    "marvel-api:1009306": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/03/526032b8247e8.jpg"
+    ],
+    "marvel-api:1011222": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/d0/4ce5a555585c6.jpg"
+    ],
+    "marvel-api:1009470": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/a0/4ce5a095e7625.jpg"
+    ],
+    "marvel-api:1009307": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/a0/52740df74b57d.jpg"
+    ],
+    "marvel-api:1009309": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/90/5269585071503.jpg"
+    ],
+    "marvel-api:1011177": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/70/4c002f332fb1f.jpg"
+    ],
+    "marvel-api:1011356": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/00/4d78fbb55546e.jpg"
+    ],
+    "marvel-api:1009539": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/00/535fedbaaf234.jpg"
+    ],
+    "marvel-api:1010980": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/e0/4c0032a9477bc.jpg"
+    ],
+    "marvel-api:1011240": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/50/4ce5a5b3cc0aa.jpg"
+    ],
+    "marvel-api:1012478": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/b0/526958a4c3cde.jpg"
+    ],
+    "marvel-api:1010799": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/a0/4c00372aafb39.jpg"
+    ],
+    "marvel-api:1011389": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/b0/4ce5a72d1a081.jpg"
+    ],
+    "marvel-api:1010670": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4def9bf15ce30.jpg"
+    ],
+    "marvel-api:1009377": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/f0/4ce5a0155d904.jpg"
+    ],
+    "marvel-api:1009312": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/03/528d31a791308.jpg"
+    ],
+    "marvel-api:1009313": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/40/52696aa8aee99.jpg"
+    ],
+    "marvel-api:1010763": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/526032a2cce62.jpg"
+    ],
+    "marvel-api:1017324": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/e0/5239bfe911e8e.jpg"
+    ],
+    "marvel-api:1009383": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/f0/4c003e9db374b.jpg"
+    ],
+    "marvel-api:1009315": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/f0/4c003ef236e72.jpg"
+    ],
+    "marvel-api:1009316": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/20/535ff2a48869b.jpg"
+    ],
+    "marvel-api:1011248": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/52740dec5e17a.jpg"
+    ],
+    "marvel-api:1009317": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/30/4c003eeedf93c.jpg"
+    ],
+    "marvel-api:1010749": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/c0/4c00359a2be7b.jpg"
+    ],
+    "marvel-api:1010925": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/50/535feaa671cc6.jpg"
+    ],
+    "marvel-api:1009318": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/80/52696ba1353e7.jpg"
+    ],
+    "marvel-api:1017329": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/f0/5239bfd918fb5.jpg"
+    ],
+    "marvel-api:1017833": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/10/622795c13e687.jpg"
+    ],
+    "marvel-api:1009320": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/e0/4ce43388b9255.jpg"
+    ],
+    "marvel-api:1010926": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/d0/4c00343fc70c8.jpg"
+    ],
+    "marvel-api:1011055": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/20/4c00311236811.jpg"
+    ],
+    "marvel-api:1014982": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/c0/4cd05c0c4ffad.jpg"
+    ],
+    "marvel-api:1009321": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/03/52696b33b7920.jpg"
+    ],
+    "marvel-api:1011256": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/90/4ce5a5ca49c7f.jpg"
+    ],
+    "marvel-api:1011144": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/e0/4c002f81ea1f8.jpg"
+    ],
+    "marvel-api:1009322": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/b0/52bc8219eb973.jpg"
+    ],
+    "marvel-api:1010927": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/f0/4c00343d177d6.jpg"
+    ],
+    "marvel-api:1009324": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/526033e7ac8ee.jpg"
+    ],
+    "marvel-api:1012610": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/20/4ce5a99149843.jpg"
+    ],
+    "marvel-api:1010731": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/30/4c00378d65a54.jpg"
+    ],
+    "marvel-api:1011076": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/10/4c0030dc410d6.jpg"
+    ],
+    "marvel-api:1010702": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/70/526033d50fa1b.jpg"
+    ],
+    "marvel-api:1011041": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/70/4c0032387d022.jpg"
+    ],
+    "marvel-api:1014985": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/f0/4cd05ee55faa2.jpg"
+    ],
+    "marvel-api:1011435": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/10/4ce18ad314ea8.jpg"
+    ],
+    "marvel-api:1010929": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/c0/4c003439f081b.jpg"
+    ],
+    "marvel-api:1011420": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/03/528d319931e60.jpg"
+    ],
+    "marvel-api:1011048": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/10/4ce5a473b81b3.jpg"
+    ],
+    "marvel-api:1009328": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/b0/4c003ee8885e4.jpg"
+    ],
+    "marvel-api:1010743": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/10/526033c8b474a.jpg"
+    ],
+    "marvel-api:1009330": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/50/4dd531d26079c.jpg"
+    ],
+    "marvel-api:1011299": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/70/50febd8be6b5d.jpg"
+    ],
+    "marvel-api:1009619": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/40/4c003ad20ab78.jpg"
+    ],
+    "marvel-api:1011400": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/c0/4ce5a7675d903.jpg"
+    ],
+    "marvel-api:1009332": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/e0/4ce59fe9811cb.jpg"
+    ],
+    "marvel-api:1009333": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/20/4ce59ff485b35.jpg"
+    ],
+    "marvel-api:1009334": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/c0/4c003ee47c207.jpg"
+    ],
+    "marvel-api:1011490": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/b0/5205305343bfd.jpg"
+    ],
+    "marvel-api:1009348": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/50/4ce5a00362b2c.jpg"
+    ],
+    "marvel-api:1010821": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/60/535ff2b245409.jpg"
+    ],
+    "marvel-api:1011069": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/30/4c0030e7aba3e.jpg"
+    ],
+    "marvel-api:1009486": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/e0/4ce5a0b3181d8.jpg"
+    ],
+    "marvel-api:1010816": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/50/4c0035ea3151e.jpg"
+    ],
+    "marvel-api:1009337": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/e0/5261659ebeaf8.jpg"
+    ],
+    "marvel-api:1009338": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/90/50fecaf4f101b.jpg"
+    ],
+    "marvel-api:1010808": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/10/537bad9caa831.jpg"
+    ],
+    "marvel-api:1017311": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/70/5239be7020a11.jpg"
+    ],
+    "marvel-api:1011131": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/03/53176be145914.jpg"
+    ],
+    "marvel-api:1017108": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/03/5232198a81c17.jpg"
+    ],
+    "marvel-api:1010351": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/30/4d751d6b1bc7d.jpg"
+    ],
+    "marvel-api:1009340": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/20/4c003eddcc659.jpg"
+    ],
+    "marvel-api:1010678": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/c0/4c0038ee5a898.jpg"
+    ],
+    "marvel-api:1011044": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/10/4c00323303deb.jpg"
+    ],
+    "marvel-api:1011371": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/c0/535fed9b1ae7f.jpg"
+    ],
+    "marvel-api:1009342": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/d0/4c003eda76ac7.jpg"
+    ],
+    "marvel-api:1009343": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/d0/52052ebddfa53.jpg"
+    ],
+    "marvel-api:1010759": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/f0/4c00376a77ce0.jpg"
+    ],
+    "marvel-api:1011274": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/f0/4c002eeb6ed5e.jpg"
+    ],
+    "marvel-api:1011300": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/f0/5269583a77bd3.jpg"
+    ],
+    "marvel-api:1010839": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/30/4c0035d60033c.jpg"
+    ],
+    "marvel-api:1010703": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/528d341abd6d9.jpg"
+    ],
+    "marvel-api:1011442": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/30/4ce69c2246c21.jpg"
+    ],
+    "marvel-api:1010931": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/40/4c00343625597.png"
+    ],
+    "marvel-api:1009347": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/80/4c003ed3cff99.jpg"
+    ],
+    "marvel-api:1011428": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/90/511155f5015e0.jpg"
+    ],
+    "marvel-api:1010373": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4ce5a268adef3.jpg"
+    ],
+    "marvel-api:1009351": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/538615ca33ab0.jpg"
+    ],
+    "marvel-api:1017098": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/10/5232027069e61.jpg"
+    ],
+    "marvel-api:1017333": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/f0/5239c399a35df.jpg"
+    ],
+    "marvel-api:1011118": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/00/53176c115da55.jpg"
+    ],
+    "marvel-api:1017303": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/b0/5239b5d891fc1.jpg"
+    ],
+    "marvel-api:1011005": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/03/53176c06e3974.jpg"
+    ],
+    "marvel-api:1017107": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/0/03/523219b086a17.jpg"
+    ],
+    "marvel-api:1009355": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/20/4c003ed070fa0.jpg"
+    ],
+    "marvel-api:1010722": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/4c7c642ee254c.jpg"
+    ],
+    "marvel-api:1009356": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/70/5261a7f7b0917.jpg"
+    ],
+    "marvel-api:1010932": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/70/53176bed3fe4c.jpg"
+    ],
+    "marvel-api:1011102": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/60/53176bfb07176.jpg"
+    ],
+    "marvel-api:1010675": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/20/4c7c6433e79f5.jpg"
+    ],
+    "marvel-api:1009357": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/e0/4c003eca01988.jpg"
+    ],
+    "marvel-api:1009358": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/e0/4c003ec700983.jpg"
+    ],
+    "marvel-api:1009359": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/40/4c003ec4331bd.jpg"
+    ],
+    "marvel-api:1009360": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/f0/4c003ec140c31.jpg"
+    ],
+    "marvel-api:1011246": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/f0/4c002ef943bbf.jpg"
+    ],
+    "marvel-api:1009362": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/d0/52696c836898c.jpg"
+    ],
+    "marvel-api:1010933": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/70/53176e6436aa6.jpg"
+    ],
+    "marvel-api:1017475": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/70/52d72ac3c45f9.jpg"
+    ],
+    "marvel-api:1011077": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/50/4c0030d8df78e.jpg"
+    ],
+    "marvel-api:1010758": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/70/526033bb40a5e.jpg"
+    ],
+    "marvel-api:1012923": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/a0/4ce5aa10cfeb5.jpg"
+    ],
+    "marvel-api:1011273": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/30/4c002eee45d85.jpg"
+    ],
+    "marvel-api:1009363": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/30/539a0286b06bf.jpg"
+    ],
+    "marvel-api:1009364": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/90/4c003eb8e1d23.jpg"
+    ],
+    "marvel-api:1011063": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/4c0030f999ecb.jpg"
+    ],
+    "marvel-api:1011064": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/60/4c0030f6eab3d.jpg"
+    ],
+    "marvel-api:1011146": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/f0/4c002f7854e02.jpg"
+    ],
+    "marvel-api:1009365": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/526033a73dca3.jpg"
+    ],
+    "marvel-api:1011024": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/539b3c2fca079.jpg"
+    ],
+    "marvel-api:1009366": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/a0/52695b9cd40b6.jpg"
+    ],
+    "marvel-api:1017301": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/80/5239b5c4cb782.jpg"
+    ],
+    "marvel-api:1010934": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/b0/4c00342d26fc5.jpg"
+    ],
+    "marvel-api:1011318": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/53176ebd40ad7.jpg"
+    ],
+    "marvel-api:1009367": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/f0/52616788ebc63.jpg"
+    ],
+    "marvel-api:1010888": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/e0/53176e979cca2.jpg"
+    ],
+    "marvel-api:1011413": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/20/53176e89b563e.jpg"
+    ],
+    "marvel-api:1016839": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/20/52321751dffa6.jpg"
+    ],
+    "marvel-api:1011412": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/03/53176f05a6851.jpg"
+    ],
+    "marvel-api:1010704": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/50/4c0038c9c6580.jpg"
+    ],
+    "marvel-api:1009368": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/c0/527bb7b37ff55.jpg"
+    ],
+    "marvel-api:1017320": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/03/5239c1408c936.jpg"
+    ],
+    "marvel-api:1017294": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/90/5239c3cc8a259.jpg"
+    ],
+    "marvel-api:1017310": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/40/5239be60a67da.jpg"
+    ],
+    "marvel-api:1017326": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/f0/5239bfbfeea88.jpg"
+    ],
+    "marvel-api:1010935": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/90/53176e7785d95.jpg"
+    ],
+    "marvel-api:1017104": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/d0/5232190d42df2.jpg"
+    ],
+    "marvel-api:1009538": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/70/526035f38cd5d.jpg"
+    ],
+    "marvel-api:1010844": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/4c0035ccf2128.jpg"
+    ],
+    "marvel-api:1011876": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/f0/4ce5a8a61b18a.jpg"
+    ],
+    "marvel-api:1009372": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/d0/5269582835689.jpg"
+    ],
+    "marvel-api:1010736": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/50/4c003787cd7e1.jpg"
+    ],
+    "marvel-api:1011288": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/e0/4c002e7012876.jpg"
+    ],
+    "marvel-api:1010777": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/10/4c00374780cc6.jpg"
+    ],
+    "marvel-api:1010329": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/90/4ce5a22b0d5f1.jpg"
+    ],
+    "marvel-api:1011344": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/00/4c002e3dbc0b3.jpg"
+    ],
+    "marvel-api:1009496": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/30/4bc654cf9d0ac.jpg"
+    ],
+    "marvel-api:1009327": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/d0/528d3412090b4.jpg"
+    ],
+    "marvel-api:1010946": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/b0/53176f424c100.jpg"
+    ],
+    "marvel-api:1009378": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/00/5390e41260345.jpg"
+    ],
+    "marvel-api:1009374": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/30/4ce188192a0b6.jpg"
+    ],
+    "marvel-api:1011105": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/30/4c0030a8ec05b.jpg"
+    ],
+    "marvel-api:1009376": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/a0/4c003eac7419a.jpg"
+    ],
+    "marvel-api:1010812": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/90/4c7c641e86d14.jpg"
+    ],
+    "marvel-api:1009196": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/50/4c003442a3ea6.jpg"
+    ],
+    "marvel-api:1009380": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/00/5260339868b8c.jpg"
+    ],
+    "marvel-api:1010938": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/70/4c003423be2c7.jpg"
+    ],
+    "marvel-api:1011033": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/f0/4c0032437ece7.jpg"
+    ],
+    "marvel-api:1009381": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/c0/4e7a2148b6e59.jpg"
+    ],
+    "marvel-api:1010936": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/03/53616326ca627.jpg"
+    ],
+    "marvel-api:1009382": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/c0/528d340442cca.jpg"
+    ],
+    "marvel-api:1011314": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/20/4c002e5a298b8.jpg"
+    ],
+    "marvel-api:1010760": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/90/4c0037678b4ff.jpg"
+    ],
+    "marvel-api:1011310": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/e0/4ce18ab1be1f6.jpg"
+    ],
+    "marvel-api:1011081": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/40/4dcc503738d3d.jpg"
+    ],
+    "marvel-api:1009384": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/30/52695ed19538d.jpg"
+    ],
+    "marvel-api:1014983": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/b0/4cd05c8be4587.jpg"
+    ],
+    "marvel-api:1011386": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/00/50febe78aacca.jpg"
+    ],
+    "marvel-api:1009385": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/c0/52740e5d96fcc.jpg"
+    ],
+    "marvel-api:1010752": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/50/4c00377435871.jpg"
+    ],
+    "marvel-api:1010810": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/60/4c0035f5b8c95.jpg"
+    ],
+    "marvel-api:1011250": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/90/4ce5a5bf6b872.jpg"
+    ],
+    "marvel-api:1011319": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/80/4c002e50c1a87.jpg"
+    ],
+    "marvel-api:1009389": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/526034fb5aff7.jpg"
+    ],
+    "marvel-api:1009508": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/03/5261677b30b64.jpg"
+    ],
+    "marvel-api:1017476": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/60/52d72adad132a.jpg"
+    ],
+    "marvel-api:1009390": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/526034e1c6ede.jpg"
+    ],
+    "marvel-api:1010818": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/30/535ff55a6d8f6.jpg"
+    ],
+    "marvel-api:1011147": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/a0/4c002f7453eaa.jpg"
+    ],
+    "marvel-api:1011080": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/70/5269581a55d0c.jpg"
+    ],
+    "marvel-api:1011312": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/00/4ce5a6396201b.jpg"
+    ],
+    "marvel-api:1009391": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/e0/527410063de71.jpg"
+    ],
+    "marvel-api:1011148": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/50/53a0b4b5c40f1.jpg"
+    ],
+    "marvel-api:1011178": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/90/4c7c623c74db8.jpg"
+    ],
+    "marvel-api:1011058": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/b0/4c003108ee445.jpg"
+    ],
+    "marvel-api:1009392": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/10/4c003d76b5ec6.jpg"
+    ],
+    "marvel-api:1011327": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/90/4ce5a67d44f61.jpg"
+    ],
+    "marvel-api:1009393": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/535ff2c1ef191.jpg"
+    ],
+    "marvel-api:1011014": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/d0/4c00326f63d4c.jpg"
+    ],
+    "marvel-api:1014977": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/40/4cd053ea971ed.jpg"
+    ],
+    "marvel-api:1014976": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/10/4cd053529dd41.jpg"
+    ],
+    "marvel-api:1011100": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/00/52740e37c104f.jpg"
+    ],
+    "marvel-api:1009398": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/c0/52b0d25c3dbb9.jpg"
+    ],
+    "marvel-api:1009399": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/30/526547cc31b36.jpg"
+    ],
+    "marvel-api:1014988": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/80/4cd060cb94659.jpg"
+    ],
+    "marvel-api:1011421": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/50/4c002e13dd271.jpg"
+    ],
+    "marvel-api:1010977": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/30/4c0032b127cf1.jpg"
+    ],
+    "marvel-api:1011408": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/b0/4c002e24a1794.jpg"
+    ],
+    "marvel-api:1010450": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/a0/4c7c643921b8e.jpg"
+    ],
+    "marvel-api:1009402": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/20/52740ff3f2c50.jpg"
+    ],
+    "marvel-api:1011074": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/e0/52740fe6287e4.jpg"
+    ],
+    "marvel-api:1010854": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c0035c72cc26.jpg"
+    ],
+    "marvel-api:1011059": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/a0/4c0031062f91f.jpg"
+    ],
+    "marvel-api:1009404": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/50/528d33efe2cae.jpg"
+    ],
+    "marvel-api:1010939": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/60/4c0034207bd80.jpg"
+    ],
+    "marvel-api:1011414": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/a0/52740fd40a2cc.jpg"
+    ],
+    "marvel-api:1009405": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/20/4c7c6465c79c5.png"
+    ],
+    "marvel-api:1009406": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/20/4c003d64a5a99.jpg"
+    ],
+    "marvel-api:1009407": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/90/526547f509313.jpg"
+    ],
+    "marvel-api:1017299": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/20/5239c4e1c5351.jpg"
+    ],
+    "marvel-api:1010768": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/00/4c0037581a64e.jpg"
+    ],
+    "marvel-api:1009408": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/60/4c003d6176aa1.jpg"
+    ],
+    "marvel-api:1010940": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/40/4c00341b3ec43.jpg"
+    ],
+    "marvel-api:1011145": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/10/4c002f7d355de.jpg"
+    ],
+    "marvel-api:1014980": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/b0/4cd05ab2bd5ee.jpg"
+    ],
+    "marvel-api:1011405": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/e0/4c002e2ce2ba0.jpg"
+    ],
+    "marvel-api:1010751": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/50/4c00377435871.jpg"
+    ],
+    "marvel-api:1009215": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/a0/5112d8b6e596c.jpg"
+    ],
+    "marvel-api:1011200": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/b0/4c002f1f80d5c.jpg"
+    ],
+    "marvel-api:1010896": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/40/4c003594c52e8.jpg"
+    ],
+    "marvel-api:1011068": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/80/4c0030eabc66f.jpg"
+    ],
+    "marvel-api:1010726": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/0/03/526034ba37851.jpg"
+    ],
+    "marvel-api:1017321": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/00/5239c14fcddc0.jpg"
+    ],
+    "marvel-api:1010805": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/d0/4c003727804b4.jpg"
+    ],
+    "marvel-api:1009411": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/c0/52740faf0d0fb.jpg"
+    ],
+    "marvel-api:1009412": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/20/4d5c39a54b1dd.jpg"
+    ],
+    "marvel-api:1010352": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/00/4ce5a251c1100.jpg"
+    ],
+    "marvel-api:1010796": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/30/4c00373114b4b.jpg"
+    ],
+    "marvel-api:1009509": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/50/528d33ddaef70.jpg"
+    ],
+    "marvel-api:1011205": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/f0/4c7c6221db444.jpg"
+    ],
+    "marvel-api:1009413": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/30/52740fc5a4c7c.jpg"
+    ],
+    "marvel-api:1011053": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/20/4c003114d6700.jpg"
+    ],
+    "marvel-api:1011328": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/30/4d278ee344785.jpg"
+    ],
+    "marvel-api:1010942": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/b0/4c003414d6535.jpg"
+    ],
+    "marvel-api:1009415": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/b0/52695ca8391cc.jpg"
+    ],
+    "marvel-api:1009416": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/4c003d55e4ce8.jpg"
+    ],
+    "marvel-api:1009417": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/b0/5261a7e53f827.jpg"
+    ],
+    "marvel-api:1010944": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/70/53176f5026364.jpg"
+    ],
+    "marvel-api:1010945": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/60/53176f6222dd5.jpg"
+    ],
+    "marvel-api:1010943": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/60/53176fa65e0e3.jpg"
+    ],
+    "marvel-api:1017477": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/20/52d72b0f5dcd5.jpg"
+    ],
+    "marvel-api:1010904": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/f0/4c00358c0575c.jpg"
+    ],
+    "marvel-api:1009420": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/c0/4ce5a043191dc.jpg"
+    ],
+    "marvel-api:1010811": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/90/4c7c641e86d14.jpg"
+    ],
+    "marvel-api:1009421": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/50/535feda892f68.jpg"
+    ],
+    "marvel-api:1011243": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/4c002efee8164.jpg"
+    ],
+    "marvel-api:1009423": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/90/4c003d5308145.jpg"
+    ],
+    "marvel-api:1011026": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/20/52740fa12e826.jpg"
+    ],
+    "marvel-api:1009424": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/70/52b0d48aaecb1.jpg"
+    ],
+    "marvel-api:1011335": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/00/535ff3f5397cb.jpg"
+    ],
+    "marvel-api:1009735": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/10/4c00393d65a55.jpg"
+    ],
+    "marvel-api:1009425": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c003d4ce6711.jpg"
+    ],
+    "marvel-api:1009427": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/d0/4c003d4a0e1c0.jpg"
+    ],
+    "marvel-api:1011002": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/40/4ce5a430d93fd.jpg"
+    ],
+    "marvel-api:1009708": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/03/528d33d000749.jpg"
+    ],
+    "marvel-api:1010993": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4c003291616a1.jpg"
+    ],
+    "marvel-api:1011203": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/f0/4ce5a53fae2a5.jpg"
+    ],
+    "marvel-api:1010732": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/30/4ce5a2b669c3a.jpg"
+    ],
+    "marvel-api:1009434": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/d0/4c003d43b02ab.jpg"
+    ],
+    "marvel-api:1011279": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/30/4c002e75e67db.jpg"
+    ],
+    "marvel-api:1009677": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/c0/4ce5a1efc3b2c.jpg"
+    ],
+    "marvel-api:1010947": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/60/4c7c63f89c100.jpg"
+    ],
+    "marvel-api:1011305": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/80/52740f7c6f0b7.jpg"
+    ],
+    "marvel-api:1009490": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/30/535fec80bb4a6.jpg"
+    ],
+    "marvel-api:1009438": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/30/537bb549bebd0.jpg"
+    ],
+    "marvel-api:1011399": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/20/4c002e2fa3070.jpg"
+    ],
+    "marvel-api:1011241": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/20/4c002f01b93c0.jpg"
+    ],
+    "marvel-api:1011099": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/c0/4c0030b9256c6.jpg"
+    ],
+    "marvel-api:1009440": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/40/526034d178ddc.jpg"
+    ],
+    "marvel-api:1009442": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/70/4c003d3b033e8.jpg"
+    ],
+    "marvel-api:1011340": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/c0/4ce5a69fe70f2.jpg"
+    ],
+    "marvel-api:1010690": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/10/4c0038dd065c8.jpg"
+    ],
+    "marvel-api:1010871": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c0035aac6564.jpg"
+    ],
+    "marvel-api:1010924": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/30/52740f71b50f5.jpg"
+    ],
+    "marvel-api:1010894": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/00/4c003597aefd0.jpg"
+    ],
+    "marvel-api:1011204": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/d0/4c002f18eabe7.jpg"
+    ],
+    "marvel-api:1013727": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/545a820a2dc50.jpg"
+    ],
+    "marvel-api:1009447": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/80/526034ac3c53a.jpg"
+    ],
+    "marvel-api:1017318": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/10/5239c24883863.jpg"
+    ],
+    "marvel-api:1010948": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/00/4c00340427a12.jpg"
+    ],
+    "marvel-api:1010682": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/90/511151789a863.jpg"
+    ],
+    "marvel-api:1011220": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/b0/51e829af23af9.jpg"
+    ],
+    "marvel-api:1009410": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/d0/4c003d5e64f22.jpg"
+    ],
+    "marvel-api:1010941": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/d0/4c7c640312deb.jpg"
+    ],
+    "marvel-api:1009448": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/a0/4c003d3444dce.jpg"
+    ],
+    "marvel-api:1009449": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/60/4c003d3176a50.jpg"
+    ],
+    "marvel-api:1011019": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/d0/528d33c2a72b2.jpg"
+    ],
+    "marvel-api:1010691": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/60/4c0037783e8b3.jpg"
+    ],
+    "marvel-api:1011370": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/b0/4c002e34d7cdc.jpg"
+    ],
+    "marvel-api:1010876": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/4c00359f53bde.jpg"
+    ],
+    "marvel-api:1009452": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/30/52028af90e516.jpg"
+    ],
+    "marvel-api:1009451": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/a0/4c003d2ebd6c5.jpg"
+    ],
+    "marvel-api:1010362": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/00/535ff3e867252.jpg"
+    ],
+    "marvel-api:1009454": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/c0/535fee11e0e1a.jpg"
+    ],
+    "marvel-api:1013190": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/00/4ce5aa7d1e5e1.jpg"
+    ],
+    "marvel-api:1011008": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/90/537f6cfa0e8bd.jpg"
+    ],
+    "marvel-api:1011088": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/00/527411be42b48.jpg"
+    ],
+    "marvel-api:1009456": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/10/4ce5a06d6a8ad.jpg"
+    ],
+    "marvel-api:1009459": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/c0/51127e9337538.jpg"
+    ],
+    "marvel-api:1010950": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/d0/53176fc75a448.jpg"
+    ],
+    "marvel-api:1010347": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/30/4c7c64437b5a1.jpg"
+    ],
+    "marvel-api:1010840": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/d0/4c0035d2872f0.jpg"
+    ],
+    "marvel-api:1014984": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/4cd05e49a431f.jpg"
+    ],
+    "marvel-api:1011244": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/70/4c002efc322e3.jpg"
+    ],
+    "marvel-api:1009462": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/30/4ce5a07872800.jpg"
+    ],
+    "marvel-api:1017577": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/b0/548730dac2a40.jpg"
+    ],
+    "marvel-api:1011056": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c00310e9dc27.jpg"
+    ],
+    "marvel-api:1010826": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/50/4ce5a36f31b94.jpg"
+    ],
+    "marvel-api:1009464": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/70/4ce5a083d8346.jpg"
+    ],
+    "marvel-api:1009465": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/03/5390dc2225782.jpg"
+    ],
+    "marvel-api:1010953": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/03/528d33b473550.jpg"
+    ],
+    "marvel-api:1010954": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/70/4c0033fbbdb54.jpg"
+    ],
+    "marvel-api:1009466": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/90/50febf4ae101d.jpg"
+    ],
+    "marvel-api:1009468": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/a0/4c003d248f331.jpg"
+    ],
+    "marvel-api:1009469": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/03/528d33a253447.jpg"
+    ],
+    "marvel-api:1014978": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/40/4cd054abbdc21.jpg"
+    ],
+    "marvel-api:1010365": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/30/528d339973337.jpg"
+    ],
+    "marvel-api:1011422": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/c0/4c002e11323ba.jpg"
+    ],
+    "marvel-api:1011336": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/e0/53ea47c1d41a6.jpg"
+    ],
+    "marvel-api:1010683": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/0/03/527411a7204f7.jpg"
+    ],
+    "marvel-api:1011271": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/90/535ff4561d2d5.jpg"
+    ],
+    "marvel-api:1010685": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/d0/4c0038e2924ca.jpg"
+    ],
+    "marvel-api:1009471": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/c0/5261a745e658d.jpg"
+    ],
+    "marvel-api:1011007": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/70/4c0032832d0de.jpg"
+    ],
+    "marvel-api:1010746": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/b0/4c00377e2a541.jpg"
+    ],
+    "marvel-api:1011282": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/b0/4ce5a5ecbf8b9.jpg"
+    ],
+    "marvel-api:1010684": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/e0/52695ac9de43e.jpg"
+    ],
+    "marvel-api:1014063": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/80/4ce5ab3d8bf66.jpg"
+    ],
+    "marvel-api:1009472": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/40/526034979bc98.jpg"
+    ],
+    "marvel-api:1011337": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/a0/4c002e438799c.jpg"
+    ],
+    "marvel-api:1010349": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/80/4c00391ba3a93.jpg"
+    ],
+    "marvel-api:1009473": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/40/4c003d1b26622.jpg"
+    ],
+    "marvel-api:1011409": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/70/4c002e21e16a8.jpg"
+    ],
+    "marvel-api:1010797": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/f0/4c00372e0847c.jpg"
+    ],
+    "marvel-api:1009475": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/50/4c003d1875f38.jpg"
+    ],
+    "marvel-api:1011427": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/50/4ce5a79501bd6.jpg"
+    ],
+    "marvel-api:1009325": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/f0/51e829cd06982.jpg"
+    ],
+    "marvel-api:1010063": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/50/4c00393385563.jpg"
+    ],
+    "marvel-api:1009476": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/c0/4c003d15985a0.jpg"
+    ],
+    "marvel-api:1009477": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/00/51756578d2a75.jpg"
+    ],
+    "marvel-api:1010956": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/f0/53176fd93dbc9.jpg"
+    ],
+    "marvel-api:1017078": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/20/5269615681f91.jpg"
+    ],
+    "marvel-api:1016837": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/03/523217e5c9327.jpg"
+    ],
+    "marvel-api:1010707": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/10/4ce5a28ac1c48.jpg"
+    ],
+    "marvel-api:1009620": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/e0/4ce5a1b721545.jpg"
+    ],
+    "marvel-api:1009480": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/00/539a06a64b262.jpg"
+    ],
+    "marvel-api:1009481": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/a0/4c003d0c92efb.jpg"
+    ],
+    "marvel-api:1010882": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/c0/4c00359a2be7b.jpg"
+    ],
+    "marvel-api:1009482": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/d0/4c003d09267ae.jpg"
+    ],
+    "marvel-api:1011329": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/70/4c002e4dc5f11.jpg"
+    ],
+    "marvel-api:1011123": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/10/4ce5a4e4cd15d.jpg"
+    ],
+    "marvel-api:1009483": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/60/535febc427605.jpg"
+    ],
+    "marvel-api:1009484": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4c003d0361454.jpg"
+    ],
+    "marvel-api:1011202": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/40/4c002f1c476f9.jpg"
+    ],
+    "marvel-api:1010957": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/50/4c7c63f383bac.jpg"
+    ],
+    "marvel-api:1014198": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/e0/4ce59d3a80ff7.jpg"
+    ],
+    "marvel-api:1011028": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/40/4ce5a45d60e63.jpg"
+    ],
+    "marvel-api:1011150": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/30/4c002f617817e.jpg"
+    ],
+    "marvel-api:1010873": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/30/535ff3bef14c1.jpg"
+    ],
+    "marvel-api:1011321": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/10/4ce5a65b2e406.jpg"
+    ],
+    "marvel-api:1009492": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/b0/4c003cfda4644.jpg"
+    ],
+    "marvel-api:1009493": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/90/52695808ada2e.jpg"
+    ],
+    "marvel-api:1009494": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/f0/4ce188e09af9c.jpg"
+    ],
+    "marvel-api:1011388": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/50/4ce5a721b6817.jpg"
+    ],
+    "marvel-api:1010779": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/b0/4c003740c9027.png"
+    ],
+    "marvel-api:1011021": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/03/527411987e35d.jpg"
+    ],
+    "marvel-api:1011419": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/90/4ce5a77f0492c.jpg"
+    ],
+    "marvel-api:1011369": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/80/4ce5a6f45075d.jpg"
+    ],
+    "marvel-api:1010886": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/e0/4ce5a3bf4b3c4.jpg"
+    ],
+    "marvel-api:1010762": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/30/4ce5a30a8249e.jpg"
+    ],
+    "marvel-api:1011179": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/e0/4c002f2d626ee.jpg"
+    ],
+    "marvel-api:1009499": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/c0/5274122562b05.jpg"
+    ],
+    "marvel-api:1016840": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/00/52321806b45cf.jpg"
+    ],
+    "marvel-api:1010770": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/40/528d338b532d2.jpg"
+    ],
+    "marvel-api:1011151": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/20/4c002f58eeeb4.jpg"
+    ],
+    "marvel-api:1011152": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/e0/4c002f5458faa.jpg"
+    ],
+    "marvel-api:1009502": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/80/66b279c6ca3f1.jpg"
+    ],
+    "marvel-api:1011104": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/b0/4c0030ac10524.jpg"
+    ],
+    "marvel-api:1014989": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/90/4cd0612ec055b.jpg"
+    ],
+    "marvel-api:1010750": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/60/4c0037783e8b3.jpg"
+    ],
+    "marvel-api:1011030": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/20/535feca6710cd.jpg"
+    ],
+    "marvel-api:1011153": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/f0/4c002f51c9436.jpg"
+    ],
+    "marvel-api:1009504": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/e0/528d3378de525.jpg"
+    ],
+    "marvel-api:1010958": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/70/51e82b7720a59.jpg"
+    ],
+    "marvel-api:1009505": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/10/535fedc85b486.jpg"
+    ],
+    "marvel-api:1010959": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/30/4c0033f0b31ed.jpg"
+    ],
+    "marvel-api:1009507": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/50/4c003c8acc314.jpg"
+    ],
+    "marvel-api:1009511": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/e0/4c003c82b377c.jpg"
+    ],
+    "marvel-api:1009512": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/50/526961ce86539.jpg"
+    ],
+    "marvel-api:1009513": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/d0/4c003c7cc0d8f.jpg"
+    ],
+    "marvel-api:1010962": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/60/4c0033edbce41.jpg"
+    ],
+    "marvel-api:1010865": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/c0/4c0035b602a0a.jpg"
+    ],
+    "marvel-api:1009514": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/c0/4c003c7a0ab21.jpg"
+    ],
+    "marvel-api:1009515": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/90/5261675f6b22f.jpg"
+    ],
+    "marvel-api:1009517": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/a0/53176fef7fa1c.jpg"
+    ],
+    "marvel-api:1017306": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/0/03/5239b5b358300.jpg"
+    ],
+    "marvel-api:1009519": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/40/4c003c738f74c.jpg"
+    ],
+    "marvel-api:1011207": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/90/5274118670d83.jpg"
+    ],
+    "marvel-api:1009520": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/60/4c003c7030b39.jpg"
+    ],
+    "marvel-api:1009522": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/c0/4ce5a0eeab435.jpg"
+    ],
+    "marvel-api:1014528": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/c0/553a9abceb412.jpg"
+    ],
+    "marvel-api:1009523": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/03/52741171e681e.jpg"
+    ],
+    "marvel-api:1010778": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/80/52741155a2994.jpg"
+    ],
+    "marvel-api:1010334": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/d0/4c00392ddd605.jpg"
+    ],
+    "marvel-api:1009387": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/40/4c003d7fc6294.jpg"
+    ],
+    "marvel-api:1009524": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/f0/53176ffc42f58.jpg"
+    ],
+    "marvel-api:1010964": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/50/528d36e27d0ae.jpg"
+    ],
+    "marvel-api:1010963": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/03/53177007431ee.jpg"
+    ],
+    "marvel-api:1009430": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/10/52741143108e7.jpg"
+    ],
+    "marvel-api:1009526": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/00/4c003c66d3393.jpg"
+    ],
+    "marvel-api:1010817": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/20/4c0035e72e3d8.jpg"
+    ],
+    "marvel-api:1011326": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/d0/4ce5a67201a4e.jpg"
+    ],
+    "marvel-api:1010767": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/c0/4c00375b36bd4.jpg"
+    ],
+    "marvel-api:1010892": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/90/4ce5a3e0dbd3a.jpg"
+    ],
+    "marvel-api:1009531": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/70/4ce5a1057fce9.jpg"
+    ],
+    "marvel-api:1009533": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/c0/4c003c63deac8.jpg"
+    ],
+    "marvel-api:1009534": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/10/535ff3cd59285.jpg"
+    ],
+    "marvel-api:1011360": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/5102cb7fc1262.jpg"
+    ],
+    "marvel-api:1017099": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/a0/523214eac3705.jpg"
+    ],
+    "marvel-api:1011436": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/70/50fec0bfb125a.jpg"
+    ],
+    "marvel-api:1009535": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/03/526036550cd37.jpg"
+    ],
+    "marvel-api:1011390": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/70/4ce5a7383561c.jpg"
+    ],
+    "marvel-api:1011376": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/00/4ce5a6ff4202c.jpg"
+    ],
+    "marvel-api:1011330": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/03/66b27a4286722.jpg"
+    ],
+    "marvel-api:1009537": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/60/4c003c58f1a0c.jpg"
+    ],
+    "marvel-api:1009379": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/e0/5274112b036ff.jpg"
+    ],
+    "marvel-api:1009542": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/03/527414130f76d.jpg"
+    ],
+    "marvel-api:1009544": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/f0/4c7c645aa1623.jpg"
+    ],
+    "marvel-api:1009545": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c003c50a94b7.jpg"
+    ],
+    "marvel-api:1010744": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/b0/50fec1e49298a.jpg"
+    ],
+    "marvel-api:1017314": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/40/5239be52b8c32.jpg"
+    ],
+    "marvel-api:1010769": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/e0/4c0037551d8c2.jpg"
+    ],
+    "marvel-api:1009546": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/10/5112d84e2166c.jpg"
+    ],
+    "marvel-api:1010967": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/00/528d36d415498.jpg"
+    ],
+    "marvel-api:1017319": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/20/5239c25861c1a.jpg"
+    ],
+    "marvel-api:1010966": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/a0/531771d5927db.jpg"
+    ],
+    "marvel-api:1017478": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/10/52d72b4157a62.jpg"
+    ],
+    "marvel-api:1011398": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/70/4ce5a75b67009.jpg"
+    ],
+    "marvel-api:1010344": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/f0/5260363fc40f2.jpg"
+    ],
+    "marvel-api:1010747": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/535fec953eaab.jpg"
+    ],
+    "marvel-api:1009551": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/10/4c003c4af200f.jpg"
+    ],
+    "marvel-api:1009552": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/20/51097abb8e306.jpg"
+    ],
+    "marvel-api:1009554": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/00/4ce1895117793.jpg"
+    ],
+    "marvel-api:1010969": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/90/5269580126d71.jpg"
+    ],
+    "marvel-api:1010970": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/80/4c0033dd26d33.jpg"
+    ],
+    "marvel-api:1010968": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/c0/4c0033dfc318e.jpg"
+    ],
+    "marvel-api:1009555": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/4c003c44095cb.png"
+    ],
+    "marvel-api:1011126": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/d0/4ce5a4ef4b966.jpg"
+    ],
+    "marvel-api:1011156": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/80/4c002f4ee689c.jpg"
+    ],
+    "marvel-api:1011035": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/a0/4ce5a46882aa9.jpg"
+    ],
+    "marvel-api:1009561": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/00/4c003c3d85554.jpg"
+    ],
+    "marvel-api:1011197": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/4ce5a531089da.jpg"
+    ],
+    "marvel-api:1011426": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/b0/4ed7bd3756650.jpg"
+    ],
+    "marvel-api:1009562": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/70/5261a7d7c394b.jpg"
+    ],
+    "marvel-api:1010972": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/10/536408dbb7cca.jpg"
+    ],
+    "marvel-api:1017308": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/5239be3a2a6e9.jpg"
+    ],
+    "marvel-api:1010971": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/03/53177154d219d.jpg"
+    ],
+    "marvel-api:1010790": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/40/4c0037366fae7.jpg"
+    ],
+    "marvel-api:1009563": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/e0/4ce5a1446341d.jpg"
+    ],
+    "marvel-api:1011230": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/a0/4c002f076451c.jpg"
+    ],
+    "marvel-api:1009581": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/c0/4c003c1e9a90e.jpg"
+    ],
+    "marvel-api:1011368": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/e0/5260362fd0fb3.jpg"
+    ],
+    "marvel-api:1009568": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/d0/4c003c337aff5.jpg"
+    ],
+    "marvel-api:1009569": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/f0/4ce5a14f2ea36.jpg"
+    ],
+    "marvel-api:1009570": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/60/4ce5a159e5082.jpg"
+    ],
+    "marvel-api:1011323": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/50/4ce5a66693659.jpg"
+    ],
+    "marvel-api:1009571": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/03/52695b1392c78.jpg"
+    ],
+    "marvel-api:1009572": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/d0/4c003c2e0c1d0.jpg"
+    ],
+    "marvel-api:1010345": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/40/528d36c261af4.jpg"
+    ],
+    "marvel-api:1009573": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/30/4ce5a16fd4182.jpg"
+    ],
+    "marvel-api:1010973": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/80/535feae2ecfc6.jpg"
+    ],
+    "marvel-api:1009574": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/e0/4c003c2b50b1d.jpg"
+    ],
+    "marvel-api:1010975": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/80/535feaf1a92ef.jpg"
+    ],
+    "marvel-api:1010974": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/00/4c0033d9d26de.jpg"
+    ],
+    "marvel-api:1011406": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/50/4c002e2a04c75.jpg"
+    ],
+    "marvel-api:1014979": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/60/4cd05a33ee0bb.jpg"
+    ],
+    "marvel-api:1009577": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/20/535ff3b116209.jpg"
+    ],
+    "marvel-api:1009578": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/e0/4d2b364a69f77.jpg"
+    ],
+    "marvel-api:1010712": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/e0/4c0038c68a450.jpg"
+    ],
+    "marvel-api:1009579": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/50/4c003c24b9222.jpg"
+    ],
+    "marvel-api:1009228": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/d0/4ce59f2323b88.jpg"
+    ],
+    "marvel-api:1009580": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/70/4c003c21cd9e1.jpg"
+    ],
+    "marvel-api:1017111": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/d0/523214b8ea2cf.jpg"
+    ],
+    "marvel-api:1009583": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/20/527bb5d64599e.jpg"
+    ],
+    "marvel-api:1011392": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/03/527413f4341f7.jpg"
+    ],
+    "marvel-api:1017331": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/20/5239bfa2c54fa.jpg"
+    ],
+    "marvel-api:1011393": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/60/531771492e3ae.jpg"
+    ],
+    "marvel-api:1015035": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/4cdd81a5743a4.jpg"
+    ],
+    "marvel-api:1011093": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/00/53a1c0e5a1f00.jpg"
+    ],
+    "marvel-api:1009582": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/a0/4c003c1bbf29f.jpg"
+    ],
+    "marvel-api:1010858": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/c0/4c0035c193fc3.jpg"
+    ],
+    "marvel-api:1009587": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/03/528d36b054844.jpg"
+    ],
+    "marvel-api:1009588": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/50/527bb6fc4ec43.jpg"
+    ],
+    "marvel-api:1009589": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/d0/4c003c19078c3.jpg"
+    ],
+    "marvel-api:1009590": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/535ff3a373ec3.jpg"
+    ],
+    "marvel-api:1009591": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/50/4c003c13058bd.jpg"
+    ],
+    "marvel-api:1010976": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/20/535ff6c2ee685.jpg"
+    ],
+    "marvel-api:1009592": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/50/527bb6490a176.jpg"
+    ],
+    "marvel-api:1010864": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/70/4c0035b922e12.jpg"
+    ],
+    "marvel-api:1009594": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/80/4c003c0fc6a28.jpg"
+    ],
+    "marvel-api:1010898": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/70/5269647684f61.jpg"
+    ],
+    "marvel-api:1011265": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/80/52b0d6f874e15.jpg"
+    ],
+    "marvel-api:1014975": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/10/4cd043b0a3b2d.jpg"
+    ],
+    "marvel-api:1010745": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/b0/4c00377e2a541.jpg"
+    ],
+    "marvel-api:1011223": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/20/4ce18a92c7a50.jpg"
+    ],
+    "marvel-api:1017101": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/10/523214a2abcb4.jpg"
+    ],
+    "marvel-api:1009598": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/20/4c003c0ce4a43.jpg"
+    ],
+    "marvel-api:1011157": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/20/4c002f4a15c1c.jpg"
+    ],
+    "marvel-api:1009599": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/70/52028ba02bc7d.jpg"
+    ],
+    "marvel-api:1009600": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/b0/4c003c072eb58.jpg"
+    ],
+    "marvel-api:1011057": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c00310b887bc.jpg"
+    ],
+    "marvel-api:1010761": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/30/4c0037640501a.jpg"
+    ],
+    "marvel-api:1010874": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/90/4c0035a51844b.jpg"
+    ],
+    "marvel-api:1009603": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/d0/4c003ae66139c.jpg"
+    ],
+    "marvel-api:1009606": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/a0/4c003ae37eccd.jpg"
+    ],
+    "marvel-api:1010855": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/f0/4c7c641408c12.jpg"
+    ],
+    "marvel-api:1010693": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/10/4c0038da16738.jpg"
+    ],
+    "marvel-api:1010705": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/00/4c0030bee8c86.jpg"
+    ],
+    "marvel-api:1010833": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/10/4c0035d87180e.jpg"
+    ],
+    "marvel-api:1011032": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/4c0032463bef2.jpg"
+    ],
+    "marvel-api:1010694": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/30/4d52f6a668e76.jpg"
+    ],
+    "marvel-api:1009157": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/10/528d369de3e4f.jpg"
+    ],
+    "marvel-api:1009609": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/70/4c003adccbe4f.jpg"
+    ],
+    "marvel-api:1017603": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/90/54edf8eb8f102.jpg"
+    ],
+    "marvel-api:1011054": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/03/5317713c9e746.jpg"
+    ],
+    "marvel-api:1014873": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/c0/520d1ad3e543f.jpg"
+    ],
+    "marvel-api:1016452": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/60/4fce7a4d900f4.jpg"
+    ],
+    "marvel-api:1014858": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/c0/5317717bed6fe.jpg"
+    ],
+    "marvel-api:1012200": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/60/5317718f0a2e7.jpg"
+    ],
+    "marvel-api:1017332": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/03/5239c4d095611.jpg"
+    ],
+    "marvel-api:1011114": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/00/531772716d0ac.jpg"
+    ],
+    "marvel-api:1017305": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/03/5239b59f49020.jpg"
+    ],
+    "marvel-api:1016181": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/50/537bcfa1eed73.jpg"
+    ],
+    "marvel-api:1012295": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/40/531771a14fcf6.jpg"
+    ],
+    "marvel-api:1009610": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/50/526548a343e4b.jpg"
+    ],
+    "marvel-api:1011377": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/50/4be86ad8ada17.jpg"
+    ],
+    "marvel-api:1011010": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/50/531771b4e8c60.jpg"
+    ],
+    "marvel-api:1010795": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/60/531771afe4ffa.jpg"
+    ],
+    "marvel-api:1009608": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/50/5265479097743.jpg"
+    ],
+    "marvel-api:1010794": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/30/531771c2ab020.jpg"
+    ],
+    "marvel-api:1009614": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c003ad84f314.jpg"
+    ],
+    "marvel-api:1011158": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/90/4c002f471444a.jpg"
+    ],
+    "marvel-api:1010899": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/4c00359222ceb.jpg"
+    ],
+    "marvel-api:1009616": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/b0/4c003ad4d2e8d.jpg"
+    ],
+    "marvel-api:1010814": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/a0/4c0035eca1466.jpg"
+    ],
+    "marvel-api:1010860": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/60/4c0035beb0c55.jpg"
+    ],
+    "marvel-api:1010733": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/a0/537bc55e8b1f5.jpg"
+    ],
+    "marvel-api:1009621": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/70/4c003acf4e4bc.jpg"
+    ],
+    "marvel-api:1011084": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/70/4c0030cbcba98.jpg"
+    ],
+    "marvel-api:1011078": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/537f74ae55a3a.jpg"
+    ],
+    "marvel-api:1010828": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/60/527413be6077d.jpg"
+    ],
+    "marvel-api:1010889": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/90/4ce5a3cacb3af.jpg"
+    ],
+    "marvel-api:1011159": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/e0/4c002f4445ce5.jpg"
+    ],
+    "marvel-api:1009625": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/4c003acc72680.jpg"
+    ],
+    "marvel-api:1009627": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/f0/4c003ac98d3ce.jpg"
+    ],
+    "marvel-api:1009628": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/d0/4c003ac5e5195.jpg"
+    ],
+    "marvel-api:1009629": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/40/526963dad214d.jpg"
+    ],
+    "marvel-api:1010979": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/00/5317732bcc91a.jpg"
+    ],
+    "marvel-api:1017309": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/30/5239be29833f9.jpg"
+    ],
+    "marvel-api:1010978": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/10/5317733a7ab7a.jpg"
+    ],
+    "marvel-api:1011062": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/80/4c0030fd08ad6.jpg"
+    ],
+    "marvel-api:1011051": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/10/4c00322a3173c.jpg"
+    ],
+    "marvel-api:1009632": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/a0/527413b06270b.jpg"
+    ],
+    "marvel-api:1010791": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/b0/5245ef8c83126.jpg"
+    ],
+    "marvel-api:1009631": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/a0/52695b9cd40b6.jpg"
+    ],
+    "marvel-api:1011212": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/d0/527413a2480b5.jpg"
+    ],
+    "marvel-api:1009636": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/00/53629b9e24ef5.jpg"
+    ],
+    "marvel-api:1010981": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/40/53629baa391c6.jpg"
+    ],
+    "marvel-api:1009637": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/10/4c003ab9ed7d6.jpg"
+    ],
+    "marvel-api:1009638": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/50/4c003ab716add.jpg"
+    ],
+    "marvel-api:1011022": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/e0/4c00325af279c.jpg"
+    ],
+    "marvel-api:1009639": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/b0/5274138fe6deb.jpg"
+    ],
+    "marvel-api:1011232": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/4c002f048e0b6.jpg"
+    ],
+    "marvel-api:1011160": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/40/52b0d1eb0ca73.jpg"
+    ],
+    "marvel-api:1010695": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/d0/4c0038d51109f.jpg"
+    ],
+    "marvel-api:1011075": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/50/4c0030df47ab2.jpg"
+    ],
+    "marvel-api:1011017": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/40/4c003266ccbab.jpg"
+    ],
+    "marvel-api:1009641": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/40/535ff38904fff.jpg"
+    ],
+    "marvel-api:1009643": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4c002e0305708.gif"
+    ],
+    "marvel-api:1011161": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/80/4c002f3ec91c0.jpg"
+    ],
+    "marvel-api:1011149": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/40/4c002f68816cd.jpg"
+    ],
+    "marvel-api:1009648": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/c0/526957dc0c27f.jpg"
+    ],
+    "marvel-api:1011162": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/f0/4c002f3b92276.jpg"
+    ],
+    "marvel-api:1011034": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/80/4c0032410b8d8.jpg"
+    ],
+    "marvel-api:1010819": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/d0/4c0035e44d390.jpg"
+    ],
+    "marvel-api:1009652": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/40/5274137e3e2cd.jpg"
+    ],
+    "marvel-api:1015004": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/c0/5317734cbc1d0.jpg"
+    ],
+    "marvel-api:1009653": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/60/4c003aacdeca9.jpg"
+    ],
+    "marvel-api:1010728": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/d0/4ce5a2ab860be.jpg"
+    ],
+    "marvel-api:1011219": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/c0/4c002f0d934b6.jpg"
+    ],
+    "marvel-api:1010359": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/b0/52bc82337d577.jpg"
+    ],
+    "marvel-api:1010715": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/90/539a09a2863cf.jpg"
+    ],
+    "marvel-api:1011295": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/c0/4ce5a603588f5.jpg"
+    ],
+    "marvel-api:1014986": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/60/4cd05f86b27e1.jpg"
+    ],
+    "marvel-api:1010998": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/90/52740ddd98c4b.jpg"
+    ],
+    "marvel-api:1017103": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/50/523215acd4a50.jpg"
+    ],
+    "marvel-api:1009658": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/90/4c003aaa26ee9.jpg"
+    ],
+    "marvel-api:1009660": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/80/4c0030fd08ad6.jpg"
+    ],
+    "marvel-api:1011112": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/e0/4ce5a4acdfe22.jpg"
+    ],
+    "marvel-api:1011181": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/a0/4c002f2a83a8c.jpg"
+    ],
+    "marvel-api:1009662": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/00/527bb4d36b5c2.jpg"
+    ],
+    "marvel-api:1017313": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/20/5239be1a26d18.jpg"
+    ],
+    "marvel-api:1010983": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/40/4c0032a542533.jpg"
+    ],
+    "marvel-api:1009664": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/d0/5269657a74350.jpg"
+    ],
+    "marvel-api:1017576": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/10/545a857a38f92.jpg"
+    ],
+    "marvel-api:1017106": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/03/52321948a51f2.jpg"
+    ],
+    "marvel-api:1017315": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/20/5239be0b8ecd1.jpg"
+    ],
+    "marvel-api:1017328": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/d0/5239bf547de26.jpg"
+    ],
+    "marvel-api:1017302": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/03/5239b58b84821.jpg"
+    ],
+    "marvel-api:1011025": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/80/5317738e6dc12.jpg"
+    ],
+    "marvel-api:1010820": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/e0/526957cdcf6d1.jpg"
+    ],
+    "marvel-api:1009666": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/f0/4c003aa43b1ec.jpg"
+    ],
+    "marvel-api:1009667": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/c0/4c003aa0d9cf9.jpg"
+    ],
+    "marvel-api:1014812": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/f0/4ce59e13db02c.jpg"
+    ],
+    "marvel-api:1010360": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/a0/50fec50a26dc1.jpg"
+    ],
+    "marvel-api:1011304": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/80/4ce5a61df19e5.jpg"
+    ],
+    "marvel-api:1009669": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/10/4c003a9db2f77.jpg"
+    ],
+    "marvel-api:1011237": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/80/4ce5a59d27a81.jpg"
+    ],
+    "marvel-api:1009670": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/e0/526957bb909b3.jpg"
+    ],
+    "marvel-api:1011345": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/60/4c002e3aaf52e.jpg"
+    ],
+    "marvel-api:1010669": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/20/526957a91a469.jpg"
+    ],
+    "marvel-api:1009672": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/b0/528d368ab3f46.jpg"
+    ],
+    "marvel-api:1009673": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/f0/53ad8faa127fa.jpg"
+    ],
+    "marvel-api:1009675": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/40/4c003a981c496.jpg"
+    ],
+    "marvel-api:1011309": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/10/4e7a2165364ca.jpg"
+    ],
+    "marvel-api:1009676": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/30/4c003a94e668a.jpg"
+    ],
+    "marvel-api:1009692": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/80/52bc827d4ed09.jpg"
+    ],
+    "marvel-api:1010822": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/a/00/528d367cdee38.jpg"
+    ],
+    "marvel-api:1010825": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/b0/4c7c64195cbb9.jpg"
+    ],
+    "marvel-api:1010335": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/90/528d367108dfb.jpg"
+    ],
+    "marvel-api:1011047": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/00/4c00322ddea0c.jpg"
+    ],
+    "marvel-api:1010852": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/70/4ce5a390b929b.jpg"
+    ],
+    "marvel-api:1010369": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/f0/4c00390aa2403.jpg"
+    ],
+    "marvel-api:1011315": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/a0/4c002e56c5cd1.jpg"
+    ],
+    "marvel-api:1009681": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/a0/4c003a91d4fe1.jpg"
+    ],
+    "marvel-api:1009682": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/90/535febe8b095a.jpg"
+    ],
+    "marvel-api:1009683": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/03/5274135912e8d.jpg"
+    ],
+    "marvel-api:1010358": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/c0/4d3f3b2078758.jpg"
+    ],
+    "marvel-api:1016825": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/50/5232171a451bb.jpg"
+    ],
+    "marvel-api:1010803": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/04/4dd2e7ded884f.jpg"
+    ],
+    "marvel-api:1011311": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/50/4c002e5d2432b.jpg"
+    ],
+    "marvel-api:1010847": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/30/5269579e423ed.jpg"
+    ],
+    "marvel-api:1009685": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/70/5261a838e93c0.jpg"
+    ],
+    "marvel-api:1010862": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/40/4c0035bc1dcf1.jpg"
+    ],
+    "marvel-api:1010696": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/40/4c0038d27694a.jpg"
+    ],
+    "marvel-api:1010984": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/10/4c0032a211f54.jpg"
+    ],
+    "marvel-api:1009687": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/00/4c003a847f5d2.jpg"
+    ],
+    "marvel-api:1010987": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/c0/536165c7d94ae.jpg"
+    ],
+    "marvel-api:1010986": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4c002e0305708.gif"
+    ],
+    "marvel-api:1009525": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/60/4d541255f088a.jpg"
+    ],
+    "marvel-api:1010350": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/00/535fed8a3a00f.jpg"
+    ],
+    "marvel-api:1011239": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/4/20/53177396dc74f.jpg"
+    ],
+    "marvel-api:1011182": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/b0/4c002f27b9a1e.jpg"
+    ],
+    "marvel-api:1011316": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/40/4c002e541867f.jpg"
+    ],
+    "marvel-api:1009690": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/80/4c003a81cef50.jpg"
+    ],
+    "marvel-api:1010872": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/80/4c0035a7dd04d.jpg"
+    ],
+    "marvel-api:1009691": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/e0/528d3655b9f06.jpg"
+    ],
+    "marvel-api:1009663": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/7/80/5269668c7d5df.jpg"
+    ],
+    "marvel-api:1010788": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/50/531773a2ac20a.jpg"
+    ],
+    "marvel-api:1011128": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/e/10/531773a976816.jpg"
+    ],
+    "marvel-api:1011106": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/f0/535ff36a8fbef.jpg"
+    ],
+    "marvel-api:1010353": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/b0/528d3638185cb.jpg"
+    ],
+    "marvel-api:1011066": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/10/4c0030f13bcaf.jpg"
+    ],
+    "marvel-api:1009695": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/b0/4c003a7f39967.jpg"
+    ],
+    "marvel-api:1009697": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/d0/5111527040594.jpg"
+    ],
+    "marvel-api:1011011": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/80/528d3629c2a91.jpg"
+    ],
+    "marvel-api:1009699": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/50/4c003a7929d28.jpg"
+    ],
+    "marvel-api:1010990": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/50/4c00329c0dc23.jpg"
+    ],
+    "marvel-api:1011267": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/c0/4c002ef63d1e4.jpg"
+    ],
+    "marvel-api:1017322": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/80/5239c15d562d6.jpg"
+    ],
+    "marvel-api:1017304": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/03/5239b57a59812.jpg"
+    ],
+    "marvel-api:1010991": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/f0/535febf826de5.jpg"
+    ],
+    "marvel-api:1011226": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/a0/4ce5a5647d38b.jpg"
+    ],
+    "marvel-api:1011121": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/f0/53628de09a012.jpg"
+    ],
+    "marvel-api:1011287": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/e0/4da612d77cbd0.jpg"
+    ],
+    "marvel-api:1009705": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/e0/526035de08b23.jpg"
+    ],
+    "marvel-api:1009706": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/e0/4c003a73b6673.jpg"
+    ],
+    "marvel-api:1009707": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/c0/5390dfd5ef165.jpg"
+    ],
+    "marvel-api:1010992": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/70/4c00329438aa0.jpg"
+    ],
+    "marvel-api:1011133": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/a0/4ce5a526259fd.jpg"
+    ],
+    "marvel-api:1010742": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/80/4c003744919ef.jpg"
+    ],
+    "marvel-api:1009710": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/70/4ce5a1fa7a013.jpg"
+    ],
+    "marvel-api:1010765": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/a0/4c00375df1879.jpg"
+    ],
+    "marvel-api:1011588": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/c0/4ce5a8089c2c8.jpg"
+    ],
+    "marvel-api:1010348": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/a0/4c7c643e59215.jpg"
+    ],
+    "marvel-api:1016838": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/c0/52321764379a9.jpg"
+    ],
+    "marvel-api:1009714": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/50/4c003a6e38300.jpg"
+    ],
+    "marvel-api:1009715": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/00/4c003a6b5d11a.jpg"
+    ],
+    "marvel-api:1010994": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/c0/528d36110a1b9.jpg"
+    ],
+    "marvel-api:1011067": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/50/4c0030ee76e95.jpg"
+    ],
+    "marvel-api:1009633": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/90/4c003abcc72e7.jpg"
+    ],
+    "marvel-api:1011009": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/20/4c0032802a24d.jpg"
+    ],
+    "marvel-api:1010740": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/03/5265478293c1e.jpg"
+    ],
+    "marvel-api:1011043": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/b0/4c003235e6f1d.jpg"
+    ],
+    "marvel-api:1009717": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/70/4c003a687658c.jpg"
+    ],
+    "marvel-api:1010995": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/20/528d3602d37e0.jpg"
+    ],
+    "marvel-api:1009718": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/60/537bcaef0f6cf.jpg"
+    ],
+    "marvel-api:1017297": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/00/5239c3b29cb40.jpg"
+    ],
+    "marvel-api:1017325": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/1/60/5239bf9387906.jpg"
+    ],
+    "marvel-api:1011006": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/03/531773b76840c.jpg"
+    ],
+    "marvel-api:1017479": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/90/52d72b4c8376c.jpg"
+    ],
+    "marvel-api:1009719": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/40/4ce5a205a2322.jpg"
+    ],
+    "marvel-api:1009720": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/30/4ce5a21096f17.jpg"
+    ],
+    "marvel-api:1010883": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/60/528d35dc8db1d.jpg"
+    ],
+    "marvel-api:1009722": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/2/a0/50fec5ed6f3de.jpg"
+    ],
+    "marvel-api:1010804": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/d0/4c003727804b4.jpg"
+    ],
+    "marvel-api:1011418": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/10/4c002e198a6f3.jpg"
+    ],
+    "marvel-api:1010738": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/03/5274136b4372f.jpg"
+    ],
+    "marvel-api:1010739": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/80/528d35f020202.jpg"
+    ],
+    "marvel-api:1009724": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/03/52603663b553d.jpg"
+    ],
+    "marvel-api:1009725": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/10/535febd73f84f.jpg"
+    ],
+    "marvel-api:1009726": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/03/510c08f345938.jpg"
+    ],
+    "marvel-api:1011109": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/8/a0/4feb34f2017a0.jpg"
+    ],
+    "marvel-api:1010875": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/40/4c0035a250615.jpg"
+    ],
+    "marvel-api:1010806": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/40/4c003724ba21f.jpg"
+    ],
+    "marvel-api:1011094": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/3/a0/4ce5a49743462.jpg"
+    ],
+    "marvel-api:1009734": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/d/60/4c00394059727.jpg"
+    ],
+    "marvel-api:1009737": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/a0/4c002df3dd41f.jpg"
+    ],
+    "marvel-api:1010996": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/9/f0/5398a8a4b8ca9.jpg"
+    ],
+    "marvel-api:1010698": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/b/c0/50fec602eed20.jpg"
+    ],
+    "marvel-api:1011163": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/5/90/4c002f38d0e05.jpg"
+    ],
+    "marvel-api:1011515": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/f/60/4ce5a7fcaa386.png"
+    ],
+    "marvel-api:1009741": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/6/10/4c003937c9ba4.jpg"
+    ],
+    "marvel-api:1009742": [
+      "https://i.annihil.us/u/prod/marvel/i/mg/c/d0/4ced5ab9078c9.jpg"
+    ]
+  }
+}
