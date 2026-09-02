@@ -552,7 +552,14 @@ def merge_wikidata_profile(
         ] = profile.description_language
         entity.metadata["description_verified"] = True
 
-    if image_path and not entity.image:
+    current_image_valid = False
+    if entity.image:
+        try:
+            current_image_valid = Path(str(entity.image)).is_file()
+        except OSError:
+            current_image_valid = False
+
+    if image_path and not current_image_valid:
         entity.image = image_path
         candidates = list(
             entity.metadata.get("image_candidates", []) or []
