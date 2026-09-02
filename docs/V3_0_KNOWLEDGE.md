@@ -259,7 +259,7 @@ lacuna explícita em vez de inferir aparições ou vínculos.
 
 A imagem preferida de um personagem segue uma cadeia explícita de confiança:
 
-`Commons licenciado via Wikidata → perfil oficial → thumbnail oficial Marvel`.
+`manifesto Marvel por ID → Commons licenciado via Wikidata → perfil oficial`.
 
 O Commons é promovido sobre uma referência oficial existente quando sua licença
 é verificada, preservando a imagem oficial anterior em
@@ -281,8 +281,10 @@ formato incompatível e host não permitido.
 
 A busca visual não é mais uma operação agregada que apenas baixa o manifesto.
 `HeroesKnowledgeBuilder.scan_visual_references()` percorre cada `Entity`
-existente e tenta resolver sua referência visual na ordem de confiança definida
-pela V3.
+existente. Para Marvel, tenta primeiro a referência versionada associada por ID,
+depois procura Commons/Wikidata para preencher ou melhorar a imagem e só então
+consulta perfil oficial se o personagem continuar sem referência local aceita.
+Isso reduz drasticamente dependência de páginas HTML lentas.
 
 O estado incremental fica fora do Git em
 `knowledge/local/reports/heroes_image_scan_state.json`. Cada personagem guarda
@@ -297,6 +299,17 @@ resolvidos, além da contagem dos motivos de rejeição.
 A associação continua conservadora: a varredura pesquisa fontes conhecidas e
 documentadas, mas não transforma resultados genéricos da web em imagens de
 personagem sem evidência de identidade e direitos.
+
+### Consolidação e remoção de legado
+
+A limpeza desta etapa removeu apenas arquivos explicitamente históricos ou
+redundantes: `archive/legacy/` e `tools/enrich_heroes_official.py`. O fluxo
+ativo converge em `HeroesKnowledgeBuilder` + `tools/build_heroes_island.py`.
+A higiene do repositório bloqueia a reintrodução do diretório legado.
+
+Os timeouts padrão também foram reduzidos para impedir que uma única origem
+lenta faça a atualização parecer congelada: fonte oficial até 5 s e Wikidata
+até 7 s por requisição.
 
 ### Qualidade das fichas
 
