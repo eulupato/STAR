@@ -156,7 +156,7 @@ class OfficialWebClient:
         self,
         cache_dir: str | Path,
         *,
-        timeout: float = 12.0,
+        timeout: float = 5.0,
         cache_ttl_hours: int = 168,
     ):
         self.cache_dir = Path(cache_dir)
