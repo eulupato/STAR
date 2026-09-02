@@ -244,6 +244,8 @@ class MediaController:
                     return True
 
                 stale = process
+                self._write_command(stale, "hide")
+                self._write_command(stale, "close")
                 self._process = None
                 self._generation += 1
                 Thread(
@@ -377,6 +379,7 @@ class MediaController:
                 return False
             self._state.fullscreen = False
             rect = self._rect
+            self._rect = None
 
         if rect:
             self.sync_rect(rect)
