@@ -126,6 +126,30 @@ o sistema não inventa história.
 A seleção anterior/próximo usa `CarouselController`, reutilizável por Closet,
 Biblioteca e outras ilhas.
 
+### Interface de catálogo pixel-art
+
+A Ilha dos Heróis agora segue o concept visual aprovado do STAR WORLD sem
+substituir a arquitetura de dados já funcional. A tela é construída em Tkinter,
+sem novo framework e sem dependência visual de rede:
+
+- cabeçalho próprio STAR WORLD / ILHA DOS HERÓIS;
+- contador real do catálogo local e cobertura Marvel parcial explícita;
+- busca instantânea com roster paginado de 8 personagens e miniaturas locais;
+- filtros avançados preservados em painel sobreposto;
+- seleção por lista e navegação anterior/próximo;
+- palco central com múltiplas referências visuais e pedestal neon;
+- painel DADOS DO PERSONAGEM;
+- cards de poderes, equipamento, afiliações e estatísticas;
+- abas funcionais de Informações, Biografia, Relações, História e Aparições;
+- ficha completa em janela própria com fontes;
+- acesso ao HUB, Chat e Configurações sem quebrar o NavigationManager;
+- tema icônico/dinâmico continua sendo usado como acento do personagem.
+
+Estatísticas só são exibidas quando existem como dados estruturados explícitos
+em attributes.statistics, attributes.stats, metadata.statistics ou campos
+equivalentes em escala 0..10. A interface mostra — quando não existe dado, em
+vez de fabricar força, defesa ou inteligência.
+
 ## PDF pipeline
 
 `PdfDocumentReader`:

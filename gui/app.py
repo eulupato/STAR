@@ -565,18 +565,13 @@ class StarApp:
         self.nav.current = "heroes"
         self.current_screen = "heroes"
 
-        root = tk.Frame(self.window, bg=self.bg)
+        root = tk.Frame(self.window, bg="#102F68")
         root.pack(fill="both", expand=True)
-        self._gradient(root)
-        self._header(root, "ILHA DOS HERÓIS")
-        self._scene_title(
-            root,
-            "🦸 ILHA DOS HERÓIS",
-            "Busca local ativa; acervo em consolidação por PDFs e fontes oficiais.",
-        )
 
         knowledge = getattr(self.brain, "knowledge", None)
         if knowledge is None:
+            self._gradient(root)
+            self._header(root, "ILHA DOS HERÓIS")
             tk.Label(
                 root,
                 text="Knowledge Engine indisponível.",
@@ -598,8 +593,11 @@ class StarApp:
             knowledge=knowledge,
             palette=palette,
             on_selected=self._hero_selected,
+            on_home=lambda: self.navigate("hub"),
+            on_settings=self.open_settings,
+            on_chat=self.toggle_chat_panel,
         )
-        view.pack(fill="both", expand=True, padx=18, pady=(0, 18))
+        view.pack(fill="both", expand=True)
 
     def _hero_selected(self, entity):
         mind = getattr(self.brain, "mind", None)

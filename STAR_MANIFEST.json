@@ -54,6 +54,8 @@
     "entity_system",
     "knowledge_graph",
     "heroes_island_navigation",
+    "heroes_pixel_catalog_ui",
+    "heroes_catalog_tabs",
     "conversation_variation_engine",
     "media_controller",
     "pdf_ingestion_pipeline",

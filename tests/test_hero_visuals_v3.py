@@ -55,3 +55,47 @@ def test_unknown_character_derives_theme_from_image(tmp_path):
     assert theme.accent.startswith("#")
     assert theme.panel.startswith("#")
     assert theme.accent != "#E62429"
+
+
+def test_hero_catalog_tabs_do_not_invent_missing_data():
+    from gui.heroes_view import hero_tab_text
+
+    entity = Entity(
+        name="Test Hero",
+        category="character",
+        universe="Marvel",
+        publisher="Marvel Comics",
+        powers=["Flight"],
+    )
+
+    info = hero_tab_text(entity, "info")
+    biography = hero_tab_text(entity, "biography")
+    appearances = hero_tab_text(entity, "appearances")
+
+    assert "NOME DE HERÓI: Test Hero" in info
+    assert "PODERES: Flight" in info
+    assert "NOME REAL: —" in info
+    assert "AINDA NÃO INDEXADA" in biography
+    assert "AINDA NÃO INDEXADAS" in appearances
+
+
+def test_hero_catalog_statistics_only_use_explicit_0_to_10_values():
+    from gui.heroes_view import hero_statistic_value, statistic_bar
+
+    entity = Entity(
+        name="Stats Hero",
+        category="character",
+        attributes={
+            "statistics": {
+                "strength": 8,
+                "defense": "50%",
+                "speed": 90,
+            }
+        },
+    )
+
+    assert hero_statistic_value(entity, ("strength",)) == 8
+    assert hero_statistic_value(entity, ("defense",)) == 5
+    assert hero_statistic_value(entity, ("speed",)) is None
+    assert statistic_bar(None) == "—"
+    assert len(statistic_bar(10)) == 7

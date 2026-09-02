@@ -90,6 +90,7 @@ Implementado nesta fundação:
 - enriquecimento suplementar de lacunas via Wikidata/Wikimedia Commons, com proveniência e cache local;
 - relatório de qualidade de fichas separando imagem local, descrição verificada e fallback;
 - primeira ilha de conhecimento navegável: Heróis;
+- interface de catálogo pixel-art integrada ao STAR WORLD, com roster paginado, palco visual, abas e ficha completa;
 - busca, carrossel e filtros estruturados;
 - Conversation Variation Engine;
 - STAR TV com MediaController e WebView opcional, lifecycle não bloqueante, handshake de inicialização e recuperação automática;
