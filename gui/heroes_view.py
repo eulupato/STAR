@@ -392,7 +392,19 @@ class HeroesIslandView(tk.Frame):
         if entity.first_appearance:
             lines.append("Primeira aparição: " + entity.first_appearance)
         if entity.description:
-            lines.append("\n" + entity.description)
+            description_kind = (
+                entity.metadata or {}
+            ).get("description_kind")
+            if description_kind == "catalog_fallback":
+                lines.append(
+                    "\nDescrição básica do catálogo "
+                    "(biografia verificada pendente):"
+                )
+            elif description_kind == "wikidata_short_description":
+                lines.append("\nDescrição curta verificada (Wikidata):")
+            else:
+                lines.append("\nDescrição:")
+            lines.append(entity.description)
         if entity.history_summary:
             lines.append("\nHistória resumida: " + entity.history_summary)
         if entity.personality:
@@ -421,6 +433,39 @@ class HeroesIslandView(tk.Frame):
                 lines.append(f"• {source.source_ref}{page}{url}")
             if len(entity.sources) > 8:
                 lines.append(f"• +{len(entity.sources) - 8} fontes registradas")
+
+        attributions = (
+            (entity.metadata or {}).get("image_attribution", {})
+            or {}
+        )
+        if isinstance(attributions, dict) and attributions:
+            lines.append("\nCréditos de imagem:")
+            seen_credits = set()
+            for data in attributions.values():
+                if not isinstance(data, dict):
+                    continue
+                author = str(
+                    data.get("author")
+                    or data.get("credit")
+                    or "autor não informado"
+                ).strip()
+                license_name = str(
+                    data.get("license")
+                    or "licença registrada na fonte"
+                ).strip()
+                source_url = str(
+                    data.get("source_url")
+                    or ""
+                ).strip()
+                credit = f"{author} • {license_name}"
+                if credit in seen_credits:
+                    continue
+                seen_credits.add(credit)
+                lines.append("• " + credit)
+                if source_url:
+                    lines.append("  " + source_url)
+                if len(seen_credits) >= 3:
+                    break
 
         self._set_details(
             "\n".join(lines)
