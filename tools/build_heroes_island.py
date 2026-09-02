@@ -39,6 +39,25 @@ def parser():
         action="store_true",
         help="Gera apenas o relatório de cobertura atual, sem alterar entidades ou acessar a rede.",
     )
+    p.add_argument(
+        "--scan-images",
+        action="store_true",
+        help=(
+            "Varre personagem por personagem procurando referência visual "
+            "segura: Commons licenciado, perfil oficial e manifesto Marvel."
+        ),
+    )
+    p.add_argument(
+        "--restart-image-scan",
+        action="store_true",
+        help="Ignora checkpoint anterior e refaz a varredura visual.",
+    )
+    p.add_argument(
+        "--image-scan-limit",
+        type=int,
+        default=0,
+        help="Limita personagens na varredura visual; 0 = catálogo inteiro.",
+    )
     p.add_argument("--no-marvel-ocr", action="store_true")
     p.add_argument("--dc-ocr", action="store_true")
     p.add_argument("--no-images", action="store_true")
@@ -101,6 +120,22 @@ def main():
     if args.audit_only:
         report = builder.audit()
         print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        return
+
+    if args.scan_images:
+        # Garante que o snapshot versionado atual esteja presente antes da busca.
+        if not args.skip_marvel_master:
+            builder.marvel_master.import_into(
+                engine,
+                progress=builder._progress,
+            )
+        report = builder.scan_visual_references(
+            online=True,
+            resume=not args.restart_image_scan,
+            force=args.restart_image_scan or args.force_web,
+            limit=max(0, args.image_scan_limit),
+        )
+        print(json.dumps(report, ensure_ascii=False, indent=2))
         return
 
     report = builder.build(
