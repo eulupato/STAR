@@ -87,8 +87,10 @@ Implementado nesta fundação:
 - pipeline PDF reutilizável;
 - fontes oficiais DC/Marvel opcionais com validação de identidade;
 - catálogo mestre Marvel versionado + manifesto visual + cache local;
-- enriquecimento suplementar de lacunas via Wikidata/Wikimedia Commons, com proveniência e cache local;
-- relatório de qualidade de fichas separando imagem local, descrição verificada e fallback;
+- enriquecimento official-first com fallback Wikidata/Wikimedia Commons para lacunas verificáveis;
+- proveniência por campo e cobertura estruturada global/por universo;
+- auditoria de origem/direitos das imagens locais;
+- relatório de qualidade de fichas separando imagem local, descrição verificada, fallback e ficha rica;
 - primeira ilha de conhecimento navegável: Heróis;
 - interface de catálogo pixel-art integrada ao STAR WORLD, com roster paginado, palco visual, abas e ficha completa;
 - busca, carrossel e filtros estruturados;
