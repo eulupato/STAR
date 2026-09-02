@@ -147,6 +147,8 @@ class HeroesKnowledgeBuilder:
             return HeroesKnowledgeBuilder._description_is_verified(entity)
         if field_name == "real_name":
             return bool((entity.attributes or {}).get("real_name"))
+        if field_name == "appearances":
+            return bool((entity.attributes or {}).get("appearances"))
         value = getattr(entity, field_name, None)
         if isinstance(value, (list, tuple, set, dict)):
             return bool(value)
@@ -499,6 +501,7 @@ class HeroesKnowledgeBuilder:
             "team",
             "origin_place",
             "first_appearance",
+            "appearances",
             "relationships",
             "creators",
             "species",
