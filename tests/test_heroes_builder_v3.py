@@ -205,3 +205,35 @@ def test_builder_audit_counts_appearances_from_attributes(tmp_path):
 
     assert report.field_coverage["appearances"]["count"] == 1
     assert report.field_coverage["appearances"]["missing"] == 0
+
+
+def test_builder_collects_image_rejection_reasons(tmp_path):
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    builder = HeroesKnowledgeBuilder(engine, tmp_path / "local")
+    builder.web.image_rejections.append(
+        {
+            "source": "marvel_api_thumbnail",
+            "entity": "Hero A",
+            "reason": "http_403",
+        }
+    )
+    builder.wikidata.image_rejections.extend(
+        [
+            {
+                "source": "wikimedia_commons",
+                "entity": "Hero A",
+                "reason": "missing_license_metadata",
+            },
+            {
+                "source": "wikimedia_commons",
+                "entity": "Hero B",
+                "reason": "missing_license_metadata",
+            },
+        ]
+    )
+
+    report = builder.audit()
+
+    assert report.image_rejection_reasons["missing_license_metadata"] == 2
+    assert report.image_rejection_reasons["http_403"] == 1
+    assert len(report.image_rejections) == 3
