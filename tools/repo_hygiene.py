@@ -23,6 +23,7 @@ FORBIDDEN_PREFIXES = (
     "knowledge/local/",
     ".venv/",
     ".voice_venv/",
+    "archive/legacy/",
 )
 
 FORBIDDEN_SUFFIXES = (
