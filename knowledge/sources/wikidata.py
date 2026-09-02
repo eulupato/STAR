@@ -437,7 +437,9 @@ class WikidataClient:
             }
         )
         url = f"{COMMONS_API}?{params}"
-        cache_path = self.commons_cache / f"{self._cache_key(filename)}.json"
+        cache_path = self.commons_cache / (
+            f"v2-raster-1024-{self._cache_key(filename)}.json"
+        )
         data = (
             self._json_request(
                 url,
@@ -452,6 +454,24 @@ class WikidataClient:
             return None
         infos = pages[0].get("imageinfo", []) or []
         return infos[0] if infos else None
+
+    @staticmethod
+    def _is_supported_raster_cache(path: Path) -> bool:
+        try:
+            header = path.read_bytes()[:16]
+        except OSError:
+            return False
+        if header.startswith(b"\xff\xd8\xff"):
+            return True
+        if header.startswith(b"\x89PNG\r\n\x1a\n"):
+            return True
+        if header.startswith((b"GIF87a", b"GIF89a")):
+            return True
+        return (
+            len(header) >= 12
+            and header[:4] == b"RIFF"
+            and header[8:12] == b"WEBP"
+        )
 
     def cache_commons_image(
         self,
@@ -498,7 +518,19 @@ class WikidataClient:
             None,
         )
         if existing is not None:
-            return str(existing)
+            if self._is_supported_raster_cache(existing):
+                return str(existing)
+            try:
+                existing.unlink()
+            except OSError:
+                pass
+            self._record_image_rejection(
+                entity_name=entity_name,
+                qid=qid,
+                reason="invalid_stale_image_cache",
+                source_url=image_url,
+                detail=str(existing),
+            )
         if not online:
             self._record_image_rejection(
                 entity_name=entity_name,
