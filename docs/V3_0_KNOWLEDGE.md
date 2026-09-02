@@ -140,41 +140,42 @@ Biblioteca e outras ilhas.
 5. registra relações disponíveis;
 6. indexa no store.
 
-## Fontes oficiais DC/Marvel
+## Catálogo mestre Marvel + fontes oficiais
 
-Prioridade de conhecimento nesta etapa:
+A descoberta de identidades Marvel não depende mais de OCR nem de crawling do
+site. A fonte operacional é um snapshot estruturado e versionado:
 
 ```text
-catálogo/perfil oficial DC/Marvel, quando ONLINE for autorizado
-+
-PDF local como base complementar e referência de página
-+
-dados já indexados/cache
+marvel_characters.jsonl
++ marvel_sources.json
++ marvel_image_manifest.json
++ marvel_themes.json
 ↓
-campo desconhecido permanece nulo
+MarvelMasterCatalog
+↓
+Entity Store local
 ```
 
-Dados oficiais substituem somente campos que a própria fonte oficial fornece.
-O valor anterior do PDF é preservado quando útil como material complementar e
-a proveniência continua registrada.
+O snapshot atual possui 1.564 registros e 1.007 referências visuais. A
+proveniência registra também que o índice público Marvel foi observado com
+2.896 resultados em 01/09/2026; portanto, a cobertura é
+`partial_verified_snapshot`, sem alegação de completude.
 
-O enriquecimento usa somente hosts oficiais autorizados, mantém cache local e
-registra URL/proveniência.
+Regras atuais:
 
-Antes de mesclar um perfil, a fonte verifica se a identidade do perfil é
-compatível com a entidade local. Nome real pode ser usado para desambiguar
-personagens que compartilham um mesmo codinome.
+- OCR nunca cria identidade Marvel;
+- PDF Marvel só complementa uma entidade já conhecida;
+- resíduos do antigo OCR só são removidos quando dependem exclusivamente de
+  fonte PDF não confiável;
+- seeds, catálogo mestre, knowledge packs e fontes oficiais são preservados;
+- biografias longas e imagens oficiais não são versionadas;
+- o manifesto guarda apenas URLs e o cache visual permanece local;
+- variantes distintas permanecem entidades distintas;
+- acesso live à Marvel é opcional e explicitamente habilitado, pois pode sofrer
+  HTTP 403;
+- DC mantém enriquecimento oficial opcional com validação de identidade.
 
-Uma falha HTTP nunca impede a consulta dos dados locais.
-
-O `HeroesKnowledgeBuilder` orquestra os dois PDFs, enriquecimento opcional,
-cache de imagens e relatório de cobertura.
-
-`MarvelOfficialCatalog` descobre o índice oficial em lote. Ele preserva
-variantes que compartilham o mesmo codinome como entidades distintas quando a
-identidade é explícita, evitando fundir, por exemplo, Peter Parker e Miles
-Morales. O processo é executado apenas por comando explícito; nunca durante o
-startup normal da STAR.
+Falha de rede nunca impede a consulta do catálogo já importado.
 
 ## Imagens
 
@@ -231,7 +232,7 @@ Core.
 A arquitetura KNOWLEDGE está implementada e testada progressivamente. A
 classificação permanece **DEVELOPMENT / PARTIAL NO CONTEÚDO** até:
 
-- importação e revisão integral dos dois PDFs locais;
+- expansão progressiva do snapshot Marvel até cobrir o índice atual e revisão do PDF DC;
 - validação de cobertura final de imagens;
 - validação física da STAR TV e voz no Windows do projeto.
 
