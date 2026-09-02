@@ -91,6 +91,41 @@ Estatísticas visuais só aparecem quando existem como dados estruturados explí
 O antigo `heroes.json` permanece somente como seed de compatibilidade até que
 a base local seja importada integralmente.
 
+### Cobertura estruturada e enriquecimento official-first
+
+A auditoria do snapshot Marvel versionado confirmou **1.564 identidades** e
+**1.007 referências visuais** (**64,39%** dos registros). O pack versionado é
+um catálogo de identidade: os campos detalhados são enriquecidos no banco
+**local**, preservando a arquitetura local-first e evitando publicar conteúdo
+de terceiros em massa no GitHub.
+
+Ordem de enriquecimento:
+
+1. perfil oficial Marvel/DC compatível com a identidade;
+2. PDF local já autorizado, quando aplicável;
+3. Wikidata para descrição curta e campos estruturados ainda ausentes;
+4. Wikimedia Commons somente para imagens com licença/metadados recuperáveis.
+
+A proveniência é registrada por campo em `metadata.field_provenance`.
+Imagens do Commons guardam autor, licença, URL de licença e URL de origem.
+Imagens vindas de perfis oficiais ficam somente no cache local e são marcadas
+como referência oficial sem alegar licença aberta.
+
+Relatórios locais:
+
+```text
+knowledge/local/reports/heroes_build_report.json
+knowledge/local/reports/heroes_coverage_report.json
+```
+
+O relatório mede cobertura por campo global e por universo, imagens com
+proveniência/licença, imagens oficiais de referência, fichas ricas e listas de
+lacunas. Para auditar sem alterar o banco:
+
+```powershell
+.\.venv\Scripts\python.exe tools\build_heroes_island.py --audit-only
+```
+
 ### Sincronizar a Ilha dos Heróis
 
 A Marvel usa agora um **catálogo mestre versionado**, não OCR nem crawling web
@@ -133,8 +168,10 @@ Esse comando:
 
 - sincroniza o catálogo mestre para o SQLite;
 - remove somente antigas entidades Marvel criadas por OCR sem fonte confiável;
-- preserva seeds/fonte oficial/conteúdo confiável;
-- baixa as referências visuais disponíveis para o cache local;
+- tenta primeiro enriquecer os perfis pela fonte oficial;
+- usa Wikidata/Commons apenas para lacunas verificáveis;
+- preserva seeds, fontes, proveniência e direitos das imagens;
+- baixa referências visuais somente para o cache local;
 - mostra progresso real `X / total (%)`;
 - não exige PDF nem Tesseract.
 
@@ -148,9 +185,10 @@ catálogo confiável.
   --marvel-pdf "C:\caminho\Marvel Encyclopedia New Edition.pdf"
 ```
 
-O acesso live a perfis Marvel deixou de ser requisito. Ele permanece opcional e
-explícito porque o site pode responder HTTP 403. DC continua podendo usar
-enriquecimento web opcional.
+O acesso live a perfis Marvel continua sujeito a HTTP 403. O atualizador tenta
+a fonte oficial primeiro e, quando ela não responde ou não fornece um campo,
+segue para fontes suplementares verificáveis sem fabricar conteúdo. DC usa a
+mesma regra de prioridade de fonte.
 
 Ao final é criado:
 
