@@ -3,18 +3,17 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 
 echo ============================================================
-echo   STAR V3.0 - SINCRONIZAR CATALOGO MARVEL
+echo   STAR V3.0 - CATALOGO + IMAGENS DOS HEROIS
 echo ============================================================
 echo.
 echo Este processo:
-echo - importa o catalogo mestre Marvel versionado no GitHub;
-echo - remove somente residuos Marvel criados pelo antigo OCR sem fonte confiavel;
-echo - tenta enriquecer cada perfil pela fonte oficial Marvel primeiro;
-echo - usa Commons/Wikidata licenciado como referencia visual preferida;
-echo - aceita referencias oficiais Marvel/DC como fallback documentado;
-echo - registra o motivo de cada imagem recusada;
-echo - preenche campos estruturados quando a fonte confiavel os fornece;
-echo - preserva fontes primarias, proveniencia, autoria e direitos da imagem;
+echo - sincroniza o catalogo mestre Marvel versionado;
+echo - procura imagens personagem por personagem;
+echo - usa primeiro referencias Marvel ja associadas por ID;
+echo - tenta Commons/Wikidata com licenca verificavel;
+echo - usa perfil oficial apenas quando ainda nao existe imagem;
+echo - registra fonte, credito, direitos e motivo de rejeicao;
+echo - salva checkpoint e continua de onde parou;
 echo - nao exige PDF nem Tesseract;
 echo - nao envia imagens, banco ou dados locais ao GitHub.
 echo.
@@ -26,38 +25,27 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
-echo [STAR] Fase 1/2 - sincronizando identidades e conteudo...
-".venv\Scripts\python.exe" tools\build_heroes_island.py --online --live-marvel-enrichment --wikidata-fallback --no-images
-
-if errorlevel 1 (
-    echo.
-    echo [ERRO] A sincronizacao do catalogo falhou. Consulte os logs acima.
-    pause
-    exit /b 1
-)
-
-echo.
-echo [STAR] Fase 2/2 - varrendo imagens personagem por personagem...
+echo [STAR] Atualizando catalogo e imagens...
 ".venv\Scripts\python.exe" tools\build_heroes_island.py --scan-images
 
 if errorlevel 1 (
     echo.
-    echo [ERRO] A varredura visual falhou. O checkpoint foi preservado.
-    echo Execute este arquivo novamente para continuar de onde parou.
+    echo [ERRO] A atualizacao foi interrompida.
+    echo O checkpoint foi preservado.
+    echo Execute este arquivo novamente para continuar.
     pause
     exit /b 1
 )
 
 echo.
 echo ============================================================
-echo   CATALOGO MARVEL SINCRONIZADO
+echo   ATUALIZACAO CONCLUIDA
 echo ============================================================
-echo Relatorio:
-echo knowledge\local\reports\heroes_build_report.json
+echo Relatorios:
 echo knowledge\local\reports\heroes_image_scan_report.json
 echo knowledge\local\reports\heroes_image_scan_state.json
 echo.
-echo A varredura visual e resumivel: execute novamente para continuar.
-echo Use --restart-image-scan apenas se quiser reavaliar todos os personagens.
+echo Para medir a cobertura atual:
+echo .\.venv\Scripts\python.exe tools\build_heroes_island.py --audit-only
 echo.
 pause
