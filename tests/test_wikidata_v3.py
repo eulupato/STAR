@@ -269,3 +269,25 @@ def test_wikidata_commons_image_promotes_over_official_reference(tmp_path):
     assert merged.image == str(commons)
     assert str(official) in merged.metadata["image_candidates"]
     assert str(commons) in merged.metadata["image_candidates"]
+
+
+def test_wikidata_invalid_stale_image_cache_is_removed(tmp_path):
+    from knowledge.sources.wikidata import WikidataClient
+
+    client = WikidataClient(tmp_path / "wikidata")
+    url = "https://upload.wikimedia.org/hero.svg"
+    cache_key = client._cache_key(url)
+    stale = client.image_cache / f"{cache_key}.jpg"
+    stale.write_text("<svg></svg>", encoding="utf-8")
+
+    result = client.cache_commons_image(
+        url,
+        online=False,
+        entity_name="Hero",
+        qid="Q1",
+    )
+
+    assert result is None
+    assert not stale.exists()
+    reasons = [item["reason"] for item in client.image_rejections]
+    assert "invalid_stale_image_cache" in reasons
