@@ -261,6 +261,69 @@ class MarvelMasterCatalog:
 
         return len(records)
 
+    def cache_entity_image(
+        self,
+        entity,
+        web_client,
+        *,
+        online: bool = True,
+        manifest: dict[str, list[str]] | None = None,
+    ) -> str | None:
+        """Cacheia uma referência visual Marvel já associada ao Entity."""
+        image_ref = str((entity.metadata or {}).get("image_ref") or "").strip()
+        if not image_ref:
+            return None
+        manifest = manifest or self.image_manifest()
+        urls = list(manifest.get(image_ref, []) or [])
+        if not urls:
+            return None
+
+        local_paths = []
+        paired_urls = []
+        for url in urls:
+            image_path = web_client.cache_image(
+                url,
+                online=online,
+                context=entity.name,
+                source_ref="marvel_api_thumbnail",
+            )
+            if image_path:
+                local_paths.append(image_path)
+                paired_urls.append(url)
+
+        if not local_paths:
+            return None
+
+        entity.metadata["image_candidates"] = _merge_values(
+            entity.metadata.get("image_candidates", []),
+            local_paths,
+        )
+        entity.metadata["image_kind"] = "marvel_master_cache"
+        entity.image = local_paths[0]
+        attribution = entity.metadata.setdefault(
+            "image_attribution",
+            {},
+        )
+        for image_path, url in zip(local_paths, paired_urls):
+            attribution[str(image_path)] = {
+                "author": "Marvel",
+                "credit": "Marvel API thumbnail",
+                "license": "No open license recorded",
+                "source_url": url,
+                "rights_status": "official_source_local_reference",
+            }
+        for url in paired_urls:
+            if not any(source.url == url for source in entity.sources):
+                entity.sources.append(
+                    KnowledgeSource(
+                        source_type="image_manifest",
+                        source_ref="Marvel API thumbnail",
+                        url=url,
+                        field_name="image",
+                    )
+                )
+        return local_paths[0]
+
     def cache_images(
         self,
         engine,
@@ -285,47 +348,13 @@ class MarvelMasterCatalog:
                 )
 
             if entity is not None:
-                urls = manifest.get(record.image_ref or "", [])
-                local_paths = []
-                for url in urls:
-                    image_path = web_client.cache_image(
-                        url,
-                        online=online,
-                        context=record.name,
-                        source_ref="marvel_api_thumbnail",
-                    )
-                    if image_path:
-                        local_paths.append(image_path)
-
-                if local_paths:
-                    entity.metadata["image_candidates"] = _merge_values(
-                        entity.metadata.get("image_candidates", []),
-                        local_paths,
-                    )
-                    entity.metadata["image_kind"] = "marvel_master_cache"
-                    entity.image = local_paths[0]
-                    attribution = entity.metadata.setdefault(
-                        "image_attribution",
-                        {},
-                    )
-                    for image_path, url in zip(local_paths, urls):
-                        attribution[str(image_path)] = {
-                            "author": "Marvel",
-                            "credit": "Marvel API thumbnail",
-                            "license": "No open license recorded",
-                            "source_url": url,
-                            "rights_status": "official_source_local_reference",
-                        }
-                    for url in urls:
-                        if not any(source.url == url for source in entity.sources):
-                            entity.sources.append(
-                                KnowledgeSource(
-                                    source_type="image_manifest",
-                                    source_ref="Marvel API thumbnail",
-                                    url=url,
-                                    field_name="image",
-                                )
-                            )
+                image_path = self.cache_entity_image(
+                    entity,
+                    web_client,
+                    online=online,
+                    manifest=manifest,
+                )
+                if image_path:
                     engine.upsert_entity(entity)
                     cached += 1
 
