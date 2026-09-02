@@ -85,17 +85,18 @@ Implementado nesta fundação:
 - índice estrutural `entity_values` e migração versionada;
 - Universal Search;
 - pipeline PDF reutilizável;
-- fontes oficiais DC/Marvel opcionais com validação de identidade;\n- catálogo mestre Marvel versionado + manifesto visual + cache local;
+- fontes oficiais DC/Marvel opcionais com validação de identidade;
+- catálogo mestre Marvel versionado + manifesto visual + cache local;
 - enriquecimento suplementar de lacunas via Wikidata/Wikimedia Commons, com proveniência e cache local;
 - relatório de qualidade de fichas separando imagem local, descrição verificada e fallback;
 - primeira ilha de conhecimento navegável: Heróis;
 - busca, carrossel e filtros estruturados;
 - Conversation Variation Engine;
-- STAR TV com MediaController e WebView opcional;
+- STAR TV com MediaController e WebView opcional, lifecycle não bloqueante, handshake de inicialização e recuperação automática;
 - STAR WORLD com navegação contextual e overlays sem ciclos;
 - Casa navegável: Sala, Cozinha, Quarto, Closet e Álbum;
 - Cozinha com RecipeBook e guia passo a passo;
-- PhotoLibrary local inicial;
+- PhotoLibrary local com importação, seletor de pasta, preview e abertura no sistema;
 - memória de conversa persistente gravada e restaurada;
 - voz degradável no startup;
 - Whisper/Piper preparados explicitamente pelo instalador;
@@ -107,17 +108,18 @@ Status dos ambientes V3 atuais:
 - **Cozinha:** available;
 - **Quarto:** available;
 - **Closet:** available;
-- **Álbum:** partial;
+- **Álbum:** available;
 - **Sala / STAR TV:** experimental;
 - **Ilha dos Heróis:** partial.
 
 Pendente antes de release READY:
-- expansão do snapshot Marvel verificável até a cobertura desejada do índice atual e revisão do PDF DC;
+- expansão do snapshot Marvel verificável além dos 1.564 IDs atuais; o índice observado possui 2.896 perfis/resultados e lacuna explícita de 1.332;
+- revisão do PDF/DC e cobertura complementar sem reintroduzir OCR permissivo;
 - validação da cobertura/associação final de imagens e descrições verificadas;
 - validação física da STAR TV no Windows real;
 - regressão física de microfone, alto-falante, Chatterbox e referência local;
 - sprites emocionais reais para substituir indicadores de fallback;
-- expansão de metadados/seletor de pasta do Álbum;
+- metadados e agrupamentos avançados do Álbum são expansão, não bloqueador do fluxo principal;
 - persistência completa do estado de objetos/cenas do STAR WORLD;
 - expansão progressiva da Biblioteca/Scientific Engine.
 
@@ -125,7 +127,7 @@ A ausência desses itens não deve ser mascarada por porcentagens ou estados
 falsos: componentes incompletos permanecem `partial`, `experimental` ou
 `planned` no catálogo.
 
-Auditoria atual: `docs/V3_0_AUDIT_2026-09-01.md`.
+Auditoria atual: `docs/V3_0_AUDIT_2026-09-02.md`.
 
 ---
 
