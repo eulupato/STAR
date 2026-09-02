@@ -62,6 +62,8 @@ class HeroesBuildReport:
     open_licensed_images: int = 0
     official_reference_images: int = 0
     images_without_rights_metadata: int = 0
+    image_rejection_reasons: dict[str, int] = field(default_factory=dict)
+    image_rejections: list[dict] = field(default_factory=list)
     rich_cards: int = 0
     field_coverage: dict[str, dict] = field(default_factory=dict)
     field_coverage_by_universe: dict[str, dict[str, dict]] = field(default_factory=dict)
@@ -171,6 +173,8 @@ class HeroesKnowledgeBuilder:
             return "unknown"
         rights_status = str(record.get("rights_status") or "").strip()
         license_name = str(record.get("license") or "").strip().lower()
+        if rights_status == "open_license_verified":
+            return "open_licensed"
         if rights_status == "official_source_local_reference":
             return "official_reference"
         if license_name and license_name not in {
@@ -250,6 +254,8 @@ class HeroesKnowledgeBuilder:
                 image_path = self.web.cache_image(
                     profile.image_url,
                     online=online,
+                    context=entity.name,
+                    source_ref="official_web",
                 )
             self.engine.upsert_entity(
                 merge_official_profile(
@@ -283,7 +289,7 @@ class HeroesKnowledgeBuilder:
             if entity.universe in stats_by_universe
             and (
                 not self._description_is_verified(entity)
-                or not self._has_local_image(entity)
+                or self._image_rights_kind(entity) != "open_licensed"
                 or not entity.occupation
                 or not entity.affiliations
                 or not entity.creators
@@ -297,7 +303,10 @@ class HeroesKnowledgeBuilder:
         for index, entity in enumerate(candidates, start=1):
             stats = stats_by_universe[entity.universe]
             needed_description = not self._description_is_verified(entity)
-            needed_image = images and not self._has_local_image(entity)
+            needed_image = (
+                images
+                and self._image_rights_kind(entity) != "open_licensed"
+            )
             before_description = entity.description
             before_image = entity.image
 
@@ -315,6 +324,8 @@ class HeroesKnowledgeBuilder:
                     image_path = self.wikidata.cache_commons_image(
                         profile.image_url,
                         online=online,
+                        entity_name=entity.name,
+                        qid=profile.qid,
                     )
                 merged = merge_wikidata_profile(
                     entity,
@@ -407,6 +418,26 @@ class HeroesKnowledgeBuilder:
             self.engine.upsert_entity(entity)
             updated += 1
         return updated
+
+    def _collect_image_rejections(
+        self,
+        report: HeroesBuildReport,
+    ) -> None:
+        records = [
+            *getattr(self.web, "image_rejections", []),
+            *getattr(self.wikidata, "image_rejections", []),
+        ]
+        report.image_rejections = records[:1000]
+        counts: dict[str, int] = {}
+        for record in records:
+            reason = str((record or {}).get("reason") or "unknown")
+            counts[reason] = counts.get(reason, 0) + 1
+        report.image_rejection_reasons = dict(
+            sorted(
+                counts.items(),
+                key=lambda item: (-item[1], item[0]),
+            )
+        )
 
     def _coverage(self, report: HeroesBuildReport):
         entities = self.engine.search_entities(
@@ -598,6 +629,7 @@ class HeroesKnowledgeBuilder:
             generated_at=datetime.now(timezone.utc).isoformat()
         )
         self._coverage(report)
+        self._collect_image_rejections(report)
         report_path = self.reports_dir / "heroes_coverage_report.json"
         report_path.write_text(
             json.dumps(report.to_dict(), ensure_ascii=False, indent=2),
@@ -701,6 +733,7 @@ class HeroesKnowledgeBuilder:
 
         self._ensure_descriptions()
         self._coverage(report)
+        self._collect_image_rejections(report)
         report_path = self.reports_dir / "heroes_build_report.json"
         report_path.write_text(
             json.dumps(report.to_dict(), ensure_ascii=False, indent=2),
