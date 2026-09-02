@@ -1,17 +1,17 @@
 @echo off
-setlocal EnableExtensions EnableDelayedExpansion
+setlocal EnableExtensions
 cd /d "%~dp0"
 
 echo ============================================================
-echo   STAR V3.0 - ATUALIZAR CATALOGO MARVEL
+echo   STAR V3.0 - SINCRONIZAR CATALOGO MARVEL
 echo ============================================================
 echo.
 echo Este processo:
-echo - importa o PDF local;
-echo - descobre o catalogo oficial Marvel;
-echo - enriquece todos os perfis encontrados;
-echo - salva imagens e dados no cache LOCAL;
-echo - nao envia o PDF nem as imagens ao GitHub.
+echo - importa o catalogo mestre Marvel versionado no GitHub;
+echo - remove somente residuos Marvel criados pelo antigo OCR sem fonte confiavel;
+echo - baixa referencias visuais para o cache LOCAL;
+echo - nao exige PDF nem Tesseract;
+echo - nao envia imagens, banco ou dados locais ao GitHub.
 echo.
 
 if not exist ".venv\Scripts\python.exe" (
@@ -21,70 +21,19 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
-where tesseract >nul 2>nul
-if errorlevel 1 (
-    echo [ERRO] Tesseract nao foi encontrado no PATH.
-    echo O PDF Marvel enviado e escaneado; OCR e necessario para extrair suas fichas.
-    echo Instale/configure o Tesseract e execute este arquivo novamente.
-    pause
-    exit /b 1
-)
-
-set "MARVEL_PDF=%~1"
-
-:ASK_PDF
-if not defined MARVEL_PDF (
-    set /p "MARVEL_PDF=Arraste o PDF Marvel para esta janela e pressione ENTER: "
-)
-
-rem PowerShell pode inserir arquivos arrastados como: & 'C:\caminho\arquivo.pdf'
-rem Delayed expansion evita que o & seja interpretado pelo CMD durante a limpeza.
-set "MARVEL_PDF=!MARVEL_PDF:"=!"
-
-if "!MARVEL_PDF:~0,2!"=="& " (
-    set "MARVEL_PDF=!MARVEL_PDF:~2!"
-)
-
-if "!MARVEL_PDF:~0,1!"=="'" if "!MARVEL_PDF:~-1!"=="'" (
-    set "MARVEL_PDF=!MARVEL_PDF:~1,-1!"
-)
-
-for /f "tokens=* delims= " %%A in ("!MARVEL_PDF!") do set "MARVEL_PDF=%%~A"
-
-if not exist "!MARVEL_PDF!" (
-    echo.
-    echo [ERRO] PDF nao encontrado:
-    echo !MARVEL_PDF!
-    echo.
-    echo Informe novamente apenas o arquivo PDF.
-    echo Voce tambem pode cancelar com CTRL+C.
-    echo.
-    set "MARVEL_PDF="
-    goto ASK_PDF
-)
-
-for %%A in ("!MARVEL_PDF!") do set "MARVEL_PDF=%%~fA"
-
-echo.
-echo [STAR] PDF confirmado:
-echo !MARVEL_PDF!
-echo.
-echo [STAR] Construindo catalogo Marvel completo...
-".venv\Scripts\python.exe" tools\build_heroes_island.py ^
-  --marvel-pdf "!MARVEL_PDF!" ^
-  --online ^
-  --marvel-catalog-max-pages 120
+echo [STAR] Sincronizando identidades e imagens Marvel...
+".venv\Scripts\python.exe" tools\build_heroes_island.py --cache-marvel-images
 
 if errorlevel 1 (
     echo.
-    echo [ERRO] A atualizacao do catalogo falhou. Consulte os logs acima.
+    echo [ERRO] A sincronizacao do catalogo falhou. Consulte os logs acima.
     pause
     exit /b 1
 )
 
 echo.
 echo ============================================================
-echo   CATALOGO MARVEL ATUALIZADO
+echo   CATALOGO MARVEL SINCRONIZADO
 echo ============================================================
 echo Relatorio:
 echo knowledge\local\reports\heroes_build_report.json
