@@ -623,6 +623,283 @@ class HeroesKnowledgeBuilder:
                 "registros usam descrição básica do catálogo."
             )
 
+    def _visual_scan_state_path(self) -> Path:
+        return self.reports_dir / "heroes_image_scan_state.json"
+
+    def _visual_scan_report_path(self) -> Path:
+        return self.reports_dir / "heroes_image_scan_report.json"
+
+    def _load_visual_scan_state(self) -> dict:
+        path = self._visual_scan_state_path()
+        if not path.exists():
+            return {
+                "schema_version": 1,
+                "updated_at": None,
+                "characters": {},
+            }
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return {
+                "schema_version": 1,
+                "updated_at": None,
+                "characters": {},
+            }
+        if not isinstance(data, dict):
+            data = {}
+        data.setdefault("schema_version", 1)
+        data.setdefault("characters", {})
+        return data
+
+    def _save_visual_scan_state(self, state: dict) -> None:
+        state["updated_at"] = datetime.now(timezone.utc).isoformat()
+        self._visual_scan_state_path().write_text(
+            json.dumps(state, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+    @staticmethod
+    def _visual_status(entity) -> str:
+        metadata = getattr(entity, "metadata", {}) or {}
+        attribution = metadata.get("image_attribution", {}) or {}
+        record = (
+            attribution.get(str(entity.image), {})
+            if entity.image and isinstance(attribution, dict)
+            else {}
+        )
+        rights = (
+            str(record.get("rights_status") or "").strip()
+            if isinstance(record, dict)
+            else ""
+        )
+        if rights == "open_license_verified":
+            return "accepted_open_license"
+        if rights == "official_source_local_reference":
+            return "accepted_official_reference"
+        if HeroesKnowledgeBuilder._has_local_image(entity):
+            return "accepted_unclassified_local"
+        return "unresolved"
+
+    @staticmethod
+    def _visual_source_record(entity) -> dict:
+        metadata = getattr(entity, "metadata", {}) or {}
+        attribution = metadata.get("image_attribution", {}) or {}
+        record = (
+            attribution.get(str(entity.image), {})
+            if entity.image and isinstance(attribution, dict)
+            else {}
+        )
+        if not isinstance(record, dict):
+            record = {}
+        return {
+            "image": str(entity.image or ""),
+            "rights_status": str(record.get("rights_status") or ""),
+            "author": str(record.get("author") or ""),
+            "credit": str(record.get("credit") or ""),
+            "license": str(record.get("license") or ""),
+            "license_url": str(record.get("license_url") or ""),
+            "source_url": str(record.get("source_url") or ""),
+        }
+
+    def scan_visual_references(
+        self,
+        *,
+        online: bool = True,
+        resume: bool = True,
+        force: bool = False,
+        limit: int = 0,
+        delay_seconds: float = 0.12,
+    ) -> dict:
+        """Procura referência visual segura para cada personagem já catalogado.
+
+        Ordem: Commons/Wikidata licenciado -> perfil oficial -> manifesto Marvel.
+        O estado é salvo incrementalmente para permitir retomar após interrupção.
+        """
+        state = (
+            self._load_visual_scan_state()
+            if resume and not force
+            else {
+                "schema_version": 1,
+                "updated_at": None,
+                "characters": {},
+            }
+        )
+        characters_state = state.setdefault("characters", {})
+        entities = self.engine.search_entities(
+            "",
+            filters={"category": "character"},
+            limit=10000,
+        )
+        entities = sorted(
+            entities,
+            key=lambda item: (
+                str(item.universe or ""),
+                str(item.name or "").casefold(),
+                str(item.id or ""),
+            ),
+        )
+        if limit > 0:
+            entities = entities[: int(limit)]
+
+        totals = {
+            "total": len(entities),
+            "processed": 0,
+            "skipped_resume": 0,
+            "accepted_open_license": 0,
+            "accepted_official_reference": 0,
+            "accepted_unclassified_local": 0,
+            "unresolved": 0,
+        }
+
+        manifest = self.marvel_master.image_manifest()
+        for index, entity in enumerate(entities, start=1):
+            key = str(entity.id or f"{entity.universe}:{entity.name}")
+            previous = characters_state.get(key) or {}
+            if (
+                resume
+                and not force
+                and previous.get("status") in {
+                    "accepted_open_license",
+                    "accepted_official_reference",
+                }
+            ):
+                totals["skipped_resume"] += 1
+                status = previous.get("status")
+                totals[status] += 1
+                continue
+
+            web_rejection_start = len(self.web.image_rejections)
+            wiki_rejection_start = len(self.wikidata.image_rejections)
+
+            # 1) Commons/Wikidata: preferir licença aberta verificável.
+            profile = self.wikidata.fetch_profile(
+                entity,
+                online=online,
+                force=force,
+                include_image=True,
+            )
+            if profile is not None:
+                image_path = None
+                if profile.image_url:
+                    image_path = self.wikidata.cache_commons_image(
+                        profile.image_url,
+                        online=online,
+                        entity_name=entity.name,
+                        qid=profile.qid,
+                    )
+                entity = merge_wikidata_profile(
+                    entity,
+                    profile,
+                    image_path=image_path,
+                )
+                self.engine.upsert_entity(entity)
+
+            # 2) Perfil oficial: referência local quando Commons não resolveu.
+            if self._visual_status(entity) != "accepted_open_license":
+                source = source_for_entity(entity, self.web)
+                if source is not None:
+                    official_profile = source.fetch_profile(
+                        entity,
+                        online=online,
+                        force=force,
+                    )
+                    if official_profile is not None:
+                        image_path = None
+                        if official_profile.image_url:
+                            image_path = self.web.cache_image(
+                                official_profile.image_url,
+                                online=online,
+                                context=entity.name,
+                                source_ref="official_web",
+                            )
+                        entity = merge_official_profile(
+                            entity,
+                            official_profile,
+                            image_path=image_path,
+                        )
+                        self.engine.upsert_entity(entity)
+
+            # 3) Manifesto Marvel/API: último fallback oficial documentado.
+            if (
+                self._visual_status(entity) not in {
+                    "accepted_open_license",
+                    "accepted_official_reference",
+                }
+                and str(entity.universe or "") == "Marvel"
+            ):
+                image_path = self.marvel_master.cache_entity_image(
+                    entity,
+                    self.web,
+                    online=online,
+                    manifest=manifest,
+                )
+                if image_path:
+                    self.engine.upsert_entity(entity)
+
+            status = self._visual_status(entity)
+            totals["processed"] += 1
+            totals[status] = totals.get(status, 0) + 1
+
+            rejections = [
+                *self.web.image_rejections[web_rejection_start:],
+                *self.wikidata.image_rejections[wiki_rejection_start:],
+            ]
+            characters_state[key] = {
+                "name": entity.name,
+                "universe": entity.universe,
+                "status": status,
+                "accepted": self._visual_source_record(entity),
+                "rejections": rejections[:50],
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+            if (
+                index == 1
+                or index == len(entities)
+                or index % 10 == 0
+            ):
+                self._save_visual_scan_state(state)
+                self._progress("VARREDURA VISUAL", index, len(entities))
+
+            if online and delay_seconds > 0:
+                time.sleep(delay_seconds)
+
+        self._save_visual_scan_state(state)
+
+        reason_counts: dict[str, int] = {}
+        unresolved = []
+        for record in characters_state.values():
+            if record.get("status") == "unresolved":
+                unresolved.append(record.get("name"))
+            for rejection in record.get("rejections", []) or []:
+                reason = str((rejection or {}).get("reason") or "unknown")
+                reason_counts[reason] = reason_counts.get(reason, 0) + 1
+
+        report = {
+            "schema_version": 1,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "source_priority": [
+                "wikimedia_commons_via_wikidata_open_license",
+                "official_character_profile_local_reference",
+                "marvel_api_thumbnail_local_reference",
+            ],
+            "totals": totals,
+            "rejection_reasons": dict(
+                sorted(
+                    reason_counts.items(),
+                    key=lambda item: (-item[1], item[0]),
+                )
+            ),
+            "unresolved_count": len(unresolved),
+            "unresolved": unresolved[:1000],
+            "state_file": str(self._visual_scan_state_path()),
+        }
+        self._visual_scan_report_path().write_text(
+            json.dumps(report, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        return report
+
     def audit(self) -> HeroesBuildReport:
         """Gera cobertura do catálogo atual sem alterar entidades nem acessar a rede."""
         report = HeroesBuildReport(
