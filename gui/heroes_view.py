@@ -175,6 +175,52 @@ def hero_tab_text(entity, tab: str) -> str:
     return "\n".join(lines)
 
 
+def image_credit_text(entity, image_path=None) -> str:
+    """Crédito associado à imagem atual, quando a fonte exige atribuição."""
+    if entity is None:
+        return ""
+    metadata = getattr(entity, "metadata", {}) or {}
+    attributions = metadata.get("image_attribution", {}) or {}
+    if not isinstance(attributions, dict) or not attributions:
+        return ""
+
+    record = None
+    if image_path is not None:
+        path = Path(str(image_path))
+        keys = [str(path)]
+        try:
+            keys.append(str(path.resolve()))
+        except OSError:
+            pass
+        for key in keys:
+            if isinstance(attributions.get(key), dict):
+                record = attributions[key]
+                break
+
+    if record is None:
+        record = next(
+            (value for value in attributions.values() if isinstance(value, dict)),
+            None,
+        )
+    if not record:
+        return ""
+
+    author = _as_text(
+        record.get("author")
+        or record.get("credit")
+        or "autor não informado"
+    )
+    license_name = _as_text(
+        record.get("license")
+        or "licença registrada na fonte"
+    )
+    source_url = _as_text(record.get("source_url"))
+    text = f"{author} • {license_name}"
+    if source_url:
+        text += f" • {source_url}"
+    return text
+
+
 def hero_statistic_value(entity, aliases: tuple[str, ...]) -> float | None:
     """Lê somente estatísticas explícitas e já estruturadas (escala 0..10)."""
     if entity is None:
@@ -238,21 +284,56 @@ def full_profile_text(entity) -> str:
         sections.append("")
 
     aliases = _as_text(getattr(entity, "aliases", []))
+    original_name = _as_text(getattr(entity, "original_name", ""))
+    gender = _as_text(getattr(entity, "gender", ""))
+    occupation = _as_text(getattr(entity, "occupation", []))
     weaknesses = _as_text(getattr(entity, "weaknesses", []))
     weapons = _as_text(getattr(entity, "weapons", []))
     tags = _as_text(getattr(entity, "tags", []))
-    if any((aliases, weaknesses, weapons, tags)):
+    if any(
+        (
+            aliases,
+            original_name,
+            gender,
+            occupation,
+            weaknesses,
+            weapons,
+            tags,
+        )
+    ):
         sections.extend(
             [
                 "DADOS COMPLEMENTARES",
                 "===================",
+                f"NOME ORIGINAL: {_field(original_name)}",
                 f"ALIASES: {_field(aliases)}",
+                f"GÊNERO: {_field(gender)}",
+                f"OCUPAÇÃO: {_field(occupation)}",
                 f"FRAQUEZAS: {_field(weaknesses)}",
                 f"ARMAS: {_field(weapons)}",
                 f"TAGS: {_field(tags)}",
                 "",
             ]
         )
+
+    attributions = (
+        (getattr(entity, "metadata", {}) or {}).get("image_attribution", {})
+        or {}
+    )
+    if isinstance(attributions, dict) and attributions:
+        sections.extend(["CRÉDITOS DE IMAGEM", "=================="])
+        seen = set()
+        for image_path, record in attributions.items():
+            if not isinstance(record, dict):
+                continue
+            credit = image_credit_text(entity, image_path)
+            if not credit or credit in seen:
+                continue
+            seen.add(credit)
+            sections.append(f"• {credit}")
+            if len(seen) >= 3:
+                break
+        sections.append("")
 
     sources = getattr(entity, "sources", []) or []
     if sources:
@@ -855,6 +936,17 @@ class HeroesIslandView(tk.Frame):
         )
         self.image_next.pack(side="right")
 
+        self.image_credit_label = tk.Label(
+            center,
+            text="",
+            bg=COLORS["panel_soft"],
+            fg=COLORS["muted"],
+            font=self._retro_font(6),
+            justify="center",
+            wraplength=350,
+        )
+        self.image_credit_label.pack(fill="x", padx=6, pady=(0, 3))
+
         self.hero_next = tk.Button(
             image_area,
             text="❯",
@@ -1314,6 +1406,7 @@ class HeroesIslandView(tk.Frame):
         if not self._image_refs:
             self.image_label.config(image="", text="SEM IMAGEM\nDE REFERÊNCIA")
             self.image_counter.config(text="0 / 0")
+            self.image_credit_label.config(text="")
             self.image_prev.config(state=tk.DISABLED)
             self.image_next.config(state=tk.DISABLED)
             return
@@ -1330,6 +1423,9 @@ class HeroesIslandView(tk.Frame):
             log.debug("Imagem de personagem indisponível (%s): %s", path, exc)
             self.image_label.config(image="", text="IMAGEM INDISPONÍVEL")
 
+        self.image_credit_label.config(
+            text=image_credit_text(self.carousel.current, path)
+        )
         enabled = tk.NORMAL if len(self._image_refs) > 1 else tk.DISABLED
         self.image_prev.config(state=enabled)
         self.image_next.config(state=enabled)

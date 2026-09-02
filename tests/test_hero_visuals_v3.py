@@ -99,3 +99,34 @@ def test_hero_catalog_statistics_only_use_explicit_0_to_10_values():
     assert hero_statistic_value(entity, ("speed",)) is None
     assert statistic_bar(None) == "—"
     assert len(statistic_bar(10)) == 7
+
+
+def test_full_hero_profile_preserves_image_attribution_and_complementary_fields():
+    from gui.heroes_view import full_profile_text, image_credit_text
+
+    entity = Entity(
+        name="Credit Hero",
+        category="character",
+        original_name="Original Credit Hero",
+        gender="female",
+        occupation=["Reporter"],
+        metadata={
+            "image_attribution": {
+                "cache/hero.png": {
+                    "author": "Example Artist",
+                    "license": "CC BY 4.0",
+                    "source_url": "https://example.test/hero",
+                }
+            }
+        },
+    )
+
+    profile = full_profile_text(entity)
+    credit = image_credit_text(entity, "cache/hero.png")
+
+    assert "NOME ORIGINAL: Original Credit Hero" in profile
+    assert "GÊNERO: female" in profile
+    assert "OCUPAÇÃO: Reporter" in profile
+    assert "CRÉDITOS DE IMAGEM" in profile
+    assert "Example Artist" in credit
+    assert "CC BY 4.0" in credit
