@@ -157,3 +157,20 @@ def test_full_profile_displays_field_provenance():
     assert "PROVENIÊNCIA POR CAMPO" in profile
     assert "POWERS: Marvel Comics" in profile
     assert "https://www.marvel.com/characters/provenance-hero" in profile
+
+
+def test_appearances_tab_renders_indexed_titles():
+    from gui.heroes_view import hero_tab_text
+
+    entity = Entity(
+        name="Appearance Hero",
+        category="character",
+        first_appearance="Hero #1",
+        attributes={"appearances": ["Hero #1", "Hero #2"]},
+    )
+
+    text = hero_tab_text(entity, "appearances")
+
+    assert "APARIÇÕES INDEXADAS" in text
+    assert "Hero #1, Hero #2" in text
+    assert "PRIMEIRA APARIÇÃO: Hero #1" in text
