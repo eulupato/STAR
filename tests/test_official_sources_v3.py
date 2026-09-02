@@ -29,6 +29,8 @@ def test_dc_official_profile_parser(tmp_path):
       <div>AKA:</div><div>Dark Knight, Caped Crusader</div>
       <div>Base of Operations:</div><div>Gotham City</div>
       <div>Occupation:</div><div>CEO of Wayne Enterprises</div>
+      <h2>Comics</h2>
+      <a href="/comics/detective-comics-27">Detective Comics #27</a>
       <h2>Related Characters</h2>
       <a href="/characters/robin">Robin</a>
       <a href="/characters/superman">Superman</a>
@@ -43,6 +45,7 @@ def test_dc_official_profile_parser(tmp_path):
     assert "Gotham City" in profile.origin_place
     assert "martial arts" in profile.powers
     assert {r.target_name for r in profile.relationships} == {"Robin", "Superman"}
+    assert "Detective Comics #27" in profile.appearances
     assert profile.image_url == "https://static.dc.com/batman.jpg"
 
 
@@ -63,6 +66,8 @@ def test_marvel_official_profile_parser(tmp_path):
       <div>Abilities</div><div>Science, Photography</div>
       <div>Equipment</div><div>Web-Shooters</div>
       <div>Group Affiliation</div><div>Avengers, Fantastic Four</div>
+      <h2>Essential Reading</h2>
+      <a href="/comics/issue/100/spider-man_1">Amazing Spider-Man #1</a>
       <h2>Connections</h2>
       <a href="/characters/iron-man-tony-stark">Iron Man</a>
     </body></html>
@@ -75,6 +80,7 @@ def test_marvel_official_profile_parser(tmp_path):
     assert "Science" in profile.abilities
     assert "Web-Shooters" in profile.equipment
     assert "Avengers" in profile.affiliations
+    assert "Amazing Spider-Man #1" in profile.appearances
     assert "Forest Hills" in profile.origin_place
     assert profile.image_url == "https://cdn.marvel.com/spider-man.jpg"
 
@@ -216,3 +222,28 @@ def test_official_merge_records_field_and_image_provenance(tmp_path):
     rights = merged.metadata["image_attribution"]["/cache/hero.jpg"]
     assert rights["rights_status"] == "official_source_local_reference"
     assert rights["license"] == "No open license recorded"
+
+
+def test_official_merge_preserves_appearances_and_relation_provenance(tmp_path):
+    source = MarvelOfficialSource(client(tmp_path))
+    profile = source.parse(
+        """
+        <html><head>
+          <meta property="og:title" content="Hero | Characters | Marvel">
+        </head><body>
+          <h2>Essential Reading</h2>
+          <a href="/comics/issue/42/hero_1">Hero #1</a>
+          <h2>Connections</h2>
+          <a href="/characters/ally">Ally</a>
+        </body></html>
+        """,
+        "https://www.marvel.com/characters/hero",
+    )
+    entity = Entity(name="Hero", category="character", universe="Marvel")
+    merged = merge_official_profile(entity, profile)
+
+    assert merged.attributes["appearances"] == ["Hero #1"]
+    assert any(r.target_name == "Ally" for r in merged.relationships)
+    provenance = merged.metadata["field_provenance"]
+    assert provenance["appearances"][0]["source_type"] == "official_web"
+    assert provenance["relationships"][0]["source_ref"] == "Marvel Comics"
