@@ -18,7 +18,7 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from core.logging_config import get_logger
-from knowledge.entities import Entity, KnowledgeSource, Relationship
+from knowledge.entities import Entity, KnowledgeSource, Relationship, record_field_provenance
 from knowledge.store import normalize_search_text
 
 log = get_logger("knowledge.official")
@@ -665,27 +665,6 @@ def source_for_entity(entity: Entity, client: OfficialWebClient) -> OfficialChar
     if "marvel" == universe or "marvel comics" in publisher:
         return MarvelOfficialSource(client)
     return None
-
-
-def record_field_provenance(
-    entity: Entity,
-    field_name: str,
-    *,
-    source_type: str,
-    source_ref: str,
-    source_url: str | None = None,
-):
-    """Registra a origem de um campo sem duplicar conteúdo nem criar outra base."""
-    bucket = entity.metadata.setdefault("field_provenance", {})
-    entries = bucket.setdefault(str(field_name), [])
-    record = {
-        "source_type": str(source_type),
-        "source_ref": str(source_ref),
-    }
-    if source_url:
-        record["url"] = str(source_url)
-    if record not in entries:
-        entries.append(record)
 
 
 def merge_official_profile(

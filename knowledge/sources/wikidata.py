@@ -21,7 +21,7 @@ from urllib.parse import quote, urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from core.logging_config import get_logger
-from knowledge.entities import Entity, KnowledgeSource
+from knowledge.entities import Entity, KnowledgeSource, record_field_provenance
 from knowledge.store import normalize_search_text
 
 log = get_logger("knowledge.wikidata")
@@ -50,6 +50,11 @@ class WikidataProfile:
     description: str
     description_language: str
     entity_url: str
+    aliases: list[str] = field(default_factory=list)
+    gender: str | None = None
+    occupation: list[str] = field(default_factory=list)
+    affiliations: list[str] = field(default_factory=list)
+    creators: list[str] = field(default_factory=list)
     image_url: str | None = None
     image_source_url: str | None = None
     image_attribution: dict = field(default_factory=dict)
@@ -307,6 +312,85 @@ class WikidataClient:
                 return filename
         return None
 
+    @staticmethod
+    def _claim_item_ids(entity_data: dict, property_id: str) -> list[str]:
+        claims = entity_data.get("claims", {}) or {}
+        result = []
+        for claim in claims.get(property_id, []) or []:
+            try:
+                value = claim["mainsnak"]["datavalue"]["value"]
+                qid = str(value["id"]).strip().upper()
+            except (KeyError, TypeError):
+                continue
+            if re.fullmatch(r"Q\d+", qid) and qid not in result:
+                result.append(qid)
+        return result
+
+    @staticmethod
+    def _aliases(entity_data: dict) -> list[str]:
+        aliases = entity_data.get("aliases", {}) or {}
+        result = []
+        for language in ("pt", "en"):
+            for payload in aliases.get(language, []) or []:
+                value = _clean_text((payload or {}).get("value"))
+                if value and value not in result:
+                    result.append(value)
+                    if len(result) >= 30:
+                        return result
+        return result
+
+    def _labels_for_qids(
+        self,
+        qids: list[str],
+        *,
+        online: bool,
+        force: bool,
+    ) -> list[str]:
+        clean = []
+        for qid in qids:
+            value = str(qid or "").strip().upper()
+            if re.fullmatch(r"Q\d+", value) and value not in clean:
+                clean.append(value)
+        if not clean:
+            return []
+
+        result = []
+        for offset in range(0, len(clean), 50):
+            chunk = clean[offset:offset + 50]
+            key = "|".join(chunk)
+            params = urlencode(
+                {
+                    "action": "wbgetentities",
+                    "ids": key,
+                    "props": "labels",
+                    "languages": "pt|en",
+                    "languagefallback": 1,
+                    "format": "json",
+                }
+            )
+            url = f"{WIKIDATA_API}?{params}"
+            cache_path = self.entity_cache / (
+                f"labels-{self._cache_key(key)}.json"
+            )
+            data = (
+                self._json_request(
+                    url,
+                    cache_path,
+                    online=online,
+                    force=force,
+                )
+                or {}
+            )
+            by_id = data.get("entities", {}) or {}
+            for qid in chunk:
+                labels = (by_id.get(qid) or {}).get("labels", {}) or {}
+                value = _clean_text(
+                    (labels.get("pt") or labels.get("en") or {}).get("value")
+                )
+                if value and value not in result:
+                    result.append(value)
+        return result
+
     def _commons_info(
         self,
         filename: str,
@@ -467,8 +551,28 @@ class WikidataClient:
             entity,
             description,
         )
-        if not description:
-            return None
+
+        aliases = self._aliases(entity_data)
+        gender_labels = self._labels_for_qids(
+            self._claim_item_ids(entity_data, "P21"),
+            online=online,
+            force=force,
+        )
+        occupation = self._labels_for_qids(
+            self._claim_item_ids(entity_data, "P106"),
+            online=online,
+            force=force,
+        )
+        affiliations = self._labels_for_qids(
+            self._claim_item_ids(entity_data, "P463"),
+            online=online,
+            force=force,
+        )
+        creators = self._labels_for_qids(
+            self._claim_item_ids(entity_data, "P170"),
+            online=online,
+            force=force,
+        )
 
         image_url = None
         image_source_url = None
@@ -516,12 +620,30 @@ class WikidataClient:
                             "source_url": image_source_url,
                         }
 
+        if not any(
+            (
+                description,
+                aliases,
+                gender_labels,
+                occupation,
+                affiliations,
+                creators,
+                image_url,
+            )
+        ):
+            return None
+
         return WikidataProfile(
             qid=qid,
             label=_clean_text(search_item.get("label")) or entity.name,
             description=description,
             description_language=language,
             entity_url=f"https://www.wikidata.org/wiki/{qid}",
+            aliases=aliases,
+            gender=gender_labels[0] if gender_labels else None,
+            occupation=occupation,
+            affiliations=affiliations,
+            creators=creators,
             image_url=image_url,
             image_source_url=image_source_url,
             image_attribution=attribution,
@@ -536,6 +658,63 @@ def merge_wikidata_profile(
 ) -> Entity:
     """Preenche somente lacunas; fonte suplementar nunca sobrescreve fonte primária."""
     entity.metadata["wikidata_id"] = profile.qid
+
+    def merge_unique(current, incoming):
+        result = list(current or [])
+        seen = {normalize_search_text(item) for item in result}
+        for item in incoming or []:
+            key = normalize_search_text(item)
+            if key and key not in seen:
+                seen.add(key)
+                result.append(item)
+        return result
+
+    entity.aliases = merge_unique(entity.aliases, profile.aliases)
+    if profile.aliases:
+        record_field_provenance(
+            entity,
+            "aliases",
+            source_type="wikidata",
+            source_ref="Wikidata",
+            source_url=profile.entity_url,
+        )
+    if profile.gender and not entity.gender:
+        entity.gender = profile.gender
+        record_field_provenance(
+            entity,
+            "gender",
+            source_type="wikidata",
+            source_ref="Wikidata",
+            source_url=profile.entity_url,
+        )
+    if profile.occupation and not entity.occupation:
+        entity.occupation = list(profile.occupation)
+        record_field_provenance(
+            entity,
+            "occupation",
+            source_type="wikidata",
+            source_ref="Wikidata",
+            source_url=profile.entity_url,
+        )
+    if profile.affiliations and not entity.affiliations:
+        entity.affiliations = list(profile.affiliations)
+        record_field_provenance(
+            entity,
+            "affiliations",
+            source_type="wikidata",
+            source_ref="Wikidata",
+            source_url=profile.entity_url,
+        )
+    if profile.creators and not entity.creators:
+        entity.creators = list(profile.creators)
+        record_field_provenance(
+            entity,
+            "creators",
+            source_type="wikidata",
+            source_ref="Wikidata",
+            source_url=profile.entity_url,
+        )
+
     description_kind = (
         entity.metadata or {}
     ).get("description_kind")
@@ -551,6 +730,13 @@ def merge_wikidata_profile(
             "description_language"
         ] = profile.description_language
         entity.metadata["description_verified"] = True
+        record_field_provenance(
+            entity,
+            "description",
+            source_type="wikidata",
+            source_ref="Wikidata",
+            source_url=profile.entity_url,
+        )
 
     current_image_valid = False
     if entity.image:
@@ -575,6 +761,13 @@ def merge_wikidata_profile(
                 "image_attribution",
                 {},
             )[image_path] = profile.image_attribution
+        record_field_provenance(
+            entity,
+            "image",
+            source_type="wikimedia_commons",
+            source_ref="Wikimedia Commons",
+            source_url=profile.image_source_url,
+        )
 
     if not any(
         source.url == profile.entity_url

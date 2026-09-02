@@ -143,3 +143,49 @@ def test_wikidata_merge_replaces_stale_local_image(tmp_path):
         image_path=str(replacement),
     )
     assert merged.image == str(replacement)
+
+
+def test_wikidata_merge_fills_only_missing_structured_fields():
+    entity = Entity(
+        name="Structured Hero",
+        category="character",
+        universe="Marvel",
+        occupation=["Official occupation"],
+    )
+    profile = WikidataProfile(
+        qid="Q123",
+        label="Structured Hero",
+        description="Structured Hero — fictional superhero appearing in Marvel Comics.",
+        description_language="en",
+        entity_url="https://www.wikidata.org/wiki/Q123",
+        aliases=["Hero Alias"],
+        gender="female",
+        occupation=["Supplemental occupation"],
+        affiliations=["Example Team"],
+        creators=["Example Creator"],
+    )
+
+    merged = merge_wikidata_profile(entity, profile)
+
+    assert "Hero Alias" in merged.aliases
+    assert merged.gender == "female"
+    assert merged.occupation == ["Official occupation"]
+    assert merged.affiliations == ["Example Team"]
+    assert merged.creators == ["Example Creator"]
+    provenance = merged.metadata["field_provenance"]
+    assert provenance["gender"][0]["source_type"] == "wikidata"
+    assert provenance["affiliations"][0]["source_ref"] == "Wikidata"
+
+
+def test_wikidata_claim_helpers_extract_qids():
+    from knowledge.sources.wikidata import WikidataClient
+
+    data = {
+        "claims": {
+            "P21": [
+                {"mainsnak": {"datavalue": {"value": {"id": "Q6581072"}}}},
+                {"mainsnak": {}},
+            ]
+        }
+    }
+    assert WikidataClient._claim_item_ids(data, "P21") == ["Q6581072"]

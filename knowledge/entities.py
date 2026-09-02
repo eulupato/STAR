@@ -67,3 +67,24 @@ class Entity:
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         return data
+
+
+def record_field_provenance(
+    entity: Entity,
+    field_name: str,
+    *,
+    source_type: str,
+    source_ref: str,
+    source_url: str | None = None,
+) -> None:
+    """Registra proveniência por campo sem duplicar o conteúdo da entidade."""
+    bucket = entity.metadata.setdefault("field_provenance", {})
+    entries = bucket.setdefault(str(field_name), [])
+    record = {
+        "source_type": str(source_type),
+        "source_ref": str(source_ref),
+    }
+    if source_url:
+        record["url"] = str(source_url)
+    if record not in entries:
+        entries.append(record)
