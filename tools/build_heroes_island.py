@@ -1,4 +1,4 @@
-"""Constrói a base local completa da Ilha dos Heróis."""
+"""Constrói/sincroniza a base local da Ilha dos Heróis."""
 from __future__ import annotations
 
 import argparse
@@ -18,26 +18,47 @@ from knowledge.heroes_builder import HeroesKnowledgeBuilder
 
 def parser():
     p = argparse.ArgumentParser(
-        description="Importa os PDFs Marvel/DC e opcionalmente enriquece pelos sites oficiais."
+        description=(
+            "Sincroniza o catálogo mestre Marvel versionado, aceita PDFs como "
+            "complemento e pode enriquecer DC por fonte oficial."
+        )
     )
-    p.add_argument("--marvel-pdf", type=Path)
+    p.add_argument(
+        "--marvel-pdf",
+        type=Path,
+        help="PDF Marvel opcional; complementa apenas identidades já catalogadas.",
+    )
     p.add_argument("--dc-pdf", type=Path)
-    p.add_argument("--online", action="store_true", help="Consulta dc.com e marvel.com.")
+    p.add_argument(
+        "--online",
+        action="store_true",
+        help="Enriquecimento web opcional; Marvel live fica desligado por padrão.",
+    )
     p.add_argument("--no-marvel-ocr", action="store_true")
     p.add_argument("--dc-ocr", action="store_true")
     p.add_argument("--no-images", action="store_true")
     p.add_argument("--force-web", action="store_true")
     p.add_argument("--enrichment-limit", type=int, default=0)
     p.add_argument(
-        "--skip-marvel-catalog",
+        "--skip-marvel-master",
         action="store_true",
-        help="Não descobre o catálogo A-Z oficial da Marvel.",
+        help="Não sincroniza o catálogo mestre Marvel versionado.",
     )
     p.add_argument(
-        "--marvel-catalog-max-pages",
+        "--cache-marvel-images",
+        action="store_true",
+        help="Baixa as referências visuais Marvel para o cache local.",
+    )
+    p.add_argument(
+        "--marvel-image-limit",
         type=int,
-        default=120,
-        help="Limite de páginas do índice oficial a percorrer.",
+        default=0,
+        help="Limita downloads visuais; 0 = todas as referências.",
+    )
+    p.add_argument(
+        "--live-marvel-enrichment",
+        action="store_true",
+        help="Tenta perfis live da Marvel explicitamente; pode sofrer HTTP 403.",
     )
     return p
 
@@ -62,8 +83,10 @@ def main():
         cache_images=not args.no_images,
         force_web=args.force_web,
         enrichment_limit=max(0, args.enrichment_limit),
-        import_marvel_catalog=not args.skip_marvel_catalog,
-        marvel_catalog_max_pages=max(1, args.marvel_catalog_max_pages),
+        import_marvel_master=not args.skip_marvel_master,
+        cache_marvel_images=args.cache_marvel_images,
+        marvel_image_limit=max(0, args.marvel_image_limit),
+        live_marvel_enrichment=args.live_marvel_enrichment,
     )
     print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
 
