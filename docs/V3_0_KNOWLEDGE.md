@@ -217,6 +217,32 @@ Regras atuais:
 
 Falha de rede nunca impede a consulta do catálogo já importado.
 
+### Auditoria por campo e proveniência
+
+A Ilha agora mede a cobertura dos campos realmente consumidos pela interface:
+descrição verificada, nome real, poderes, habilidades, equipamento, ocupação,
+afiliações, equipes, origem, primeira aparição, relações, criadores, espécie e
+gênero. O relatório separa ainda imagem local válida, imagem com metadados de
+origem/direitos, imagem licenciada do Wikimedia Commons e referência visual
+oficial usada somente no cache local.
+
+A auditoria do snapshot Marvel versionado em 02/09/2026 confirmou **1.564
+identidades** e **1.007 referências visuais** (**64,39%**). O pack mestre é um
+catálogo de identidade; os campos detalhados não são versionados em massa e são
+preenchidos no banco local pelas fontes autorizadas.
+
+A proveniência é registrada por campo em `metadata.field_provenance`. A ficha
+completa mostra essa origem junto das fontes gerais, permitindo distinguir dados
+oficiais de complementos estruturados. O enriquecimento segue a ordem:
+Marvel/DC oficial → dados locais autorizados → Wikidata → Wikimedia Commons
+licenciado para imagens.
+
+Dois relatórios ficam disponíveis em `knowledge/local/reports/`:
+
+- `heroes_build_report.json` após sincronização/enriquecimento;
+- `heroes_coverage_report.json` para auditoria somente-leitura com
+  `--audit-only`.
+
 ### Qualidade das fichas
 
 `heroes_build_report.json` agora diferencia:
