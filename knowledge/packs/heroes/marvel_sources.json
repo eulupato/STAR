@@ -11,7 +11,21 @@
     "note": "O pack versionado não declara cobertura integral do índice atual. Os 1.564 registros são IDs verificáveis do snapshot derivado da Marvel API; o índice oficial observado reportava 2.896 perfis/resultados. A lacuna de 1.332 permanece explícita e não é preenchida por OCR ou inferência.",
     "verified_snapshot_results_gap": 1332,
     "verified_snapshot_coverage_percent": 54.01,
-    "count_semantics": "O total do índice oficial representa perfis/resultados, incluindo variantes e nomes de exibição repetidos; não equivale a 2.896 codinomes únicos."
+    "count_semantics": "O total do índice oficial representa perfis/resultados, incluindo variantes e nomes de exibição repetidos; não equivale a 2.896 codinomes únicos.",
+    "snapshot_field_coverage_baseline": {
+      "description": 0,
+      "powers": 0,
+      "abilities": 0,
+      "equipment": 0,
+      "occupation": 0,
+      "affiliations": 0,
+      "origin_place": 0,
+      "first_appearance": 0,
+      "gender": 0,
+      "species": 0
+    },
+    "snapshot_image_reference_percent": 64.39,
+    "enrichment_note": "O snapshot mestre versionado contém identidades e referências oficiais. O enriquecimento detalhado é aplicado localmente: fonte oficial primeiro, Wikidata/Wikimedia Commons para lacunas verificáveis, com proveniência por campo. A cobertura pós-enriquecimento é medida em knowledge/local/reports/heroes_build_report.json."
   },
   "provenance": [
     {
