@@ -277,6 +277,27 @@ URL quando disponível e motivo técnico. Isso permite distinguir falha de rede,
 HTTP 403, falta de P18, identidade Wikidata não resolvida, licença ausente,
 formato incompatível e host não permitido.
 
+### Varredura visual resumível
+
+A busca visual não é mais uma operação agregada que apenas baixa o manifesto.
+`HeroesKnowledgeBuilder.scan_visual_references()` percorre cada `Entity`
+existente e tenta resolver sua referência visual na ordem de confiança definida
+pela V3.
+
+O estado incremental fica fora do Git em
+`knowledge/local/reports/heroes_image_scan_state.json`. Cada personagem guarda
+nome, universo, status final, crédito/licença/origem da imagem aceita, rejeições
+daquela tentativa e timestamp. Isso permite retomar uma execução longa sem
+refazer personagens já validados.
+
+O relatório `heroes_image_scan_report.json` agrega totais de Commons
+licenciado, referência oficial, registros ainda sem classificação e não
+resolvidos, além da contagem dos motivos de rejeição.
+
+A associação continua conservadora: a varredura pesquisa fontes conhecidas e
+documentadas, mas não transforma resultados genéricos da web em imagens de
+personagem sem evidência de identidade e direitos.
+
 ### Qualidade das fichas
 
 `heroes_build_report.json` agora diferencia:
