@@ -126,3 +126,32 @@ def test_master_catalog_reuses_seed_by_exact_real_name(tmp_path):
     assert original_seed is not None
     assert peter.id == original_seed.id
     assert peter.id != miles.id
+
+
+def test_master_catalog_cached_image_has_official_reference_metadata(tmp_path):
+    pack = tmp_path / "pack"
+    _write_pack(pack)
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    catalog = MarvelMasterCatalog(pack)
+    catalog.import_into(engine)
+
+    class FakeWeb:
+        def __init__(self):
+            self.calls = []
+
+        def cache_image(self, url, *, online=True, context="", source_ref=""):
+            self.calls.append((url, context, source_ref))
+            path = tmp_path / (context.replace(" ", "_") + ".jpg")
+            path.write_bytes(b"image")
+            return str(path)
+
+    web = FakeWeb()
+    cached = catalog.cache_images(engine, web)
+
+    assert cached == 2
+    peter = engine.resolve_entity("Spider-Man (Peter Parker)", universe="Marvel")
+    assert peter is not None
+    record = peter.metadata["image_attribution"][peter.image]
+    assert record["rights_status"] == "official_source_local_reference"
+    assert record["license"] == "No open license recorded"
+    assert web.calls[0][2] == "marvel_api_thumbnail"
