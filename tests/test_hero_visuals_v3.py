@@ -130,3 +130,30 @@ def test_full_hero_profile_preserves_image_attribution_and_complementary_fields(
     assert "CRÉDITOS DE IMAGEM" in profile
     assert "Example Artist" in credit
     assert "CC BY 4.0" in credit
+
+
+def test_full_profile_displays_field_provenance():
+    from gui.heroes_view import full_profile_text
+
+    entity = Entity(
+        name="Provenance Hero",
+        category="character",
+        universe="Marvel",
+        powers=["Flight"],
+        metadata={
+            "field_provenance": {
+                "powers": [
+                    {
+                        "source_type": "official_web",
+                        "source_ref": "Marvel Comics",
+                        "url": "https://www.marvel.com/characters/provenance-hero",
+                    }
+                ]
+            }
+        },
+    )
+
+    profile = full_profile_text(entity)
+    assert "PROVENIÊNCIA POR CAMPO" in profile
+    assert "POWERS: Marvel Comics" in profile
+    assert "https://www.marvel.com/characters/provenance-hero" in profile

@@ -335,6 +335,26 @@ def full_profile_text(entity) -> str:
                 break
         sections.append("")
 
+    provenance = (
+        (getattr(entity, "metadata", {}) or {}).get("field_provenance", {})
+        or {}
+    )
+    if isinstance(provenance, dict) and provenance:
+        sections.extend(["PROVENIÊNCIA POR CAMPO", "======================"])
+        for field_name in sorted(provenance):
+            entries = provenance.get(field_name) or []
+            readable = []
+            for entry in entries[:3]:
+                if not isinstance(entry, dict):
+                    continue
+                label = _as_text(entry.get("source_ref") or entry.get("source_type"))
+                url = _as_text(entry.get("url"))
+                if label:
+                    readable.append(label + (f" — {url}" if url else ""))
+            if readable:
+                sections.append(f"{field_name.upper()}: " + " | ".join(readable))
+        sections.append("")
+
     sources = getattr(entity, "sources", []) or []
     if sources:
         sections.extend(["FONTES", "======"])

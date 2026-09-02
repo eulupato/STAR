@@ -19,8 +19,8 @@ from knowledge.heroes_builder import HeroesKnowledgeBuilder
 def parser():
     p = argparse.ArgumentParser(
         description=(
-            "Sincroniza o catálogo mestre Marvel versionado, aceita PDFs como "
-            "complemento e pode enriquecer DC por fonte oficial."
+            "Sincroniza o catálogo mestre, prioriza fontes oficiais e usa "
+            "Wikidata/Commons somente para lacunas verificáveis."
         )
     )
     p.add_argument(
@@ -32,7 +32,12 @@ def parser():
     p.add_argument(
         "--online",
         action="store_true",
-        help="Enriquecimento web opcional; Marvel live fica desligado por padrão.",
+        help="Habilita enriquecimento web; fontes oficiais são consultadas primeiro.",
+    )
+    p.add_argument(
+        "--audit-only",
+        action="store_true",
+        help="Gera apenas o relatório de cobertura atual, sem alterar entidades ou acessar a rede.",
     )
     p.add_argument("--no-marvel-ocr", action="store_true")
     p.add_argument("--dc-ocr", action="store_true")
@@ -64,8 +69,8 @@ def parser():
         "--wikidata-fallback",
         action="store_true",
         help=(
-            "Preenche lacunas de descrição/imagem com Wikidata e "
-            "Wikimedia Commons, sem sobrescrever fontes primárias."
+            "Preenche lacunas de descrição, campos estruturados e imagem com "
+            "Wikidata/Wikimedia Commons, sem sobrescrever fontes primárias."
         ),
     )
     p.add_argument(
@@ -93,6 +98,11 @@ def main():
         engine,
         ROOT / "knowledge" / "local",
     )
+    if args.audit_only:
+        report = builder.audit()
+        print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        return
+
     report = builder.build(
         marvel_pdf=args.marvel_pdf,
         dc_pdf=args.dc_pdf,

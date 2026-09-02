@@ -9,9 +9,11 @@ echo.
 echo Este processo:
 echo - importa o catalogo mestre Marvel versionado no GitHub;
 echo - remove somente residuos Marvel criados pelo antigo OCR sem fonte confiavel;
+echo - tenta enriquecer cada perfil pela fonte oficial Marvel primeiro;
 echo - baixa referencias visuais Marvel para o cache LOCAL;
-echo - tenta preencher descricoes/imagens ausentes via Wikidata/Commons;
-echo - preserva fontes primarias e registra proveniencia/atribuicao;
+echo - usa Wikidata/Commons apenas para lacunas verificaveis;
+echo - preenche campos estruturados quando a fonte confiavel os fornece;
+echo - preserva fontes primarias, proveniencia, autoria e direitos da imagem;
 echo - nao exige PDF nem Tesseract;
 echo - nao envia imagens, banco ou dados locais ao GitHub.
 echo.
@@ -24,7 +26,7 @@ if not exist ".venv\Scripts\python.exe" (
 )
 
 echo [STAR] Sincronizando identidades e imagens Marvel...
-".venv\Scripts\python.exe" tools\build_heroes_island.py --cache-marvel-images --wikidata-fallback
+".venv\Scripts\python.exe" tools\build_heroes_island.py --online --live-marvel-enrichment --cache-marvel-images --wikidata-fallback
 
 if errorlevel 1 (
     echo.
