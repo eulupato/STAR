@@ -8,7 +8,10 @@
     "official_site_reported_results": 2896,
     "official_site_observed_date": "2026-09-01",
     "status": "partial_verified_snapshot",
-    "note": "O pack versionado não declara cobertura integral dos resultados atuais do site. Ele usa um snapshot agregado derivado da Marvel API e mantém a lacuna explicitamente registrada."
+    "note": "O pack versionado não declara cobertura integral do índice atual. Os 1.564 registros são IDs verificáveis do snapshot derivado da Marvel API; o índice oficial observado reportava 2.896 perfis/resultados. A lacuna de 1.332 permanece explícita e não é preenchida por OCR ou inferência.",
+    "verified_snapshot_results_gap": 1332,
+    "verified_snapshot_coverage_percent": 54.01,
+    "count_semantics": "O total do índice oficial representa perfis/resultados, incluindo variantes e nomes de exibição repetidos; não equivale a 2.896 codinomes únicos."
   },
   "provenance": [
     {
