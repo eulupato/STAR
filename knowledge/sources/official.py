@@ -164,6 +164,7 @@ class OfficialWebClient:
         self.image_cache = self.cache_dir / "images"
         self.html_cache.mkdir(parents=True, exist_ok=True)
         self.image_cache.mkdir(parents=True, exist_ok=True)
+        self.image_rejections: list[dict] = []
         self.timeout = float(timeout)
         self.cache_ttl_seconds = max(0, int(cache_ttl_hours)) * 3600
 
@@ -173,6 +174,26 @@ class OfficialWebClient:
         if parsed.scheme != "https" or (parsed.hostname or "").lower() not in ALLOWED_PAGE_HOSTS:
             raise ValueError(f"Fonte web não autorizada: {url}")
         return url
+
+    def _record_image_rejection(
+        self,
+        *,
+        url: str | None,
+        reason: str,
+        context: str = "",
+        source_ref: str = "official_web",
+        detail: str | None = None,
+    ) -> None:
+        record = {
+            "source": source_ref,
+            "entity": str(context or ""),
+            "reason": str(reason),
+        }
+        if url:
+            record["source_url"] = str(url)
+        if detail:
+            record["detail"] = str(detail)[:240]
+        self.image_rejections.append(record)
 
     @staticmethod
     def _cache_key(url: str) -> str:
@@ -210,8 +231,21 @@ class OfficialWebClient:
         cache_path.write_text(html, encoding="utf-8")
         return html
 
-    def cache_image(self, url: str | None, *, online: bool = True) -> str | None:
+    def cache_image(
+        self,
+        url: str | None,
+        *,
+        online: bool = True,
+        context: str = "",
+        source_ref: str = "official_web",
+    ) -> str | None:
         if not url:
+            self._record_image_rejection(
+                url=url,
+                reason="missing_image_url",
+                context=context,
+                source_ref=source_ref,
+            )
             return None
         parsed = urlparse(url)
         host = (parsed.hostname or "").lower()
@@ -219,15 +253,38 @@ class OfficialWebClient:
             host == suffix or host.endswith("." + suffix)
             for suffix in ALLOWED_IMAGE_HOST_SUFFIXES
         ):
+            self._record_image_rejection(
+                url=url,
+                reason="unsupported_source_host",
+                context=context,
+                source_ref=source_ref,
+                detail=host or "host ausente",
+            )
             return None
 
         suffix = Path(parsed.path).suffix.lower()
-        if suffix not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
-            suffix = ".jpg"
-        path = self.image_cache / f"{self._cache_key(url)}{suffix}"
-        if path.exists() and path.stat().st_size > 0:
-            return str(path)
+        allowed = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+        if suffix not in allowed:
+            suffix = ""
+        cache_key = self._cache_key(url)
+        existing = next(
+            (
+                self.image_cache / f"{cache_key}{candidate}"
+                for candidate in allowed
+                if (self.image_cache / f"{cache_key}{candidate}").exists()
+                and (self.image_cache / f"{cache_key}{candidate}").stat().st_size > 0
+            ),
+            None,
+        )
+        if existing is not None:
+            return str(existing)
         if not online:
+            self._record_image_rejection(
+                url=url,
+                reason="cache_miss_offline",
+                context=context,
+                source_ref=source_ref,
+            )
             return None
 
         request = Request(
@@ -236,16 +293,77 @@ class OfficialWebClient:
         )
         try:
             with urlopen(request, timeout=self.timeout) as response:
-                content_type = (response.headers.get("Content-Type") or "").lower()
-                if not content_type.startswith("image/"):
+                final_url = response.geturl()
+                final_host = (urlparse(final_url).hostname or "").lower()
+                if not any(
+                    final_host == allowed_host
+                    or final_host.endswith("." + allowed_host)
+                    for allowed_host in ALLOWED_IMAGE_HOST_SUFFIXES
+                ):
+                    self._record_image_rejection(
+                        url=final_url,
+                        reason="redirected_to_untrusted_host",
+                        context=context,
+                        source_ref=source_ref,
+                    )
                     return None
+                content_type = (
+                    response.headers.get("Content-Type") or ""
+                ).lower().split(";", 1)[0].strip()
+                type_suffix = {
+                    "image/jpeg": ".jpg",
+                    "image/png": ".png",
+                    "image/webp": ".webp",
+                    "image/gif": ".gif",
+                }.get(content_type)
+                if not type_suffix:
+                    self._record_image_rejection(
+                        url=url,
+                        reason="unsupported_image_format",
+                        context=context,
+                        source_ref=source_ref,
+                        detail=content_type or "content-type ausente",
+                    )
+                    return None
+                suffix = suffix or type_suffix
                 data = response.read(12 * 1024 * 1024 + 1)
-        except (HTTPError, URLError, TimeoutError, OSError) as exc:
+        except HTTPError as exc:
+            self._record_image_rejection(
+                url=url,
+                reason=f"http_{exc.code}",
+                context=context,
+                source_ref=source_ref,
+            )
+            log.warning("Imagem oficial recusada %s: HTTP %s", url, exc.code)
+            return None
+        except (URLError, TimeoutError, OSError) as exc:
+            self._record_image_rejection(
+                url=url,
+                reason="network_error",
+                context=context,
+                source_ref=source_ref,
+                detail=str(exc),
+            )
             log.warning("Imagem oficial indisponível %s: %s", url, exc)
             return None
 
-        if not data or len(data) > 12 * 1024 * 1024:
+        if not data:
+            self._record_image_rejection(
+                url=url,
+                reason="empty_image",
+                context=context,
+                source_ref=source_ref,
+            )
             return None
+        if len(data) > 12 * 1024 * 1024:
+            self._record_image_rejection(
+                url=url,
+                reason="image_too_large",
+                context=context,
+                source_ref=source_ref,
+            )
+            return None
+        path = self.image_cache / f"{cache_key}{suffix}"
         path.write_bytes(data)
         return str(path)
 
