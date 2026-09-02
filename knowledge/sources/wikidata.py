@@ -165,7 +165,7 @@ def format_short_description(entity: Entity, description: str) -> str:
 
 
 class WikidataClient:
-    def __init__(self, cache_dir: str | Path, *, timeout: float = 12.0):
+    def __init__(self, cache_dir: str | Path, *, timeout: float = 7.0):
         self.cache_dir = Path(cache_dir)
         self.search_cache = self.cache_dir / "search"
         self.entity_cache = self.cache_dir / "entities"
