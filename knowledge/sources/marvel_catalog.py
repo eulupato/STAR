@@ -72,6 +72,15 @@ def _valid_name(value: str) -> bool:
     return any(ch.isalpha() for ch in name)
 
 
+def _parenthetical_identity(value: str) -> str | None:
+    """Retorna apenas o rótulo entre parênteses; a validação é por real_name exato."""
+    name = str(value or "").strip()
+    if not name.endswith(")") or "(" not in name:
+        return None
+    identity = name.rsplit("(", 1)[1][:-1].strip()
+    return identity or None
+
+
 class MarvelMasterCatalog:
     def __init__(self, pack_root: str | Path | None = None):
         self.pack_root = Path(pack_root) if pack_root else DEFAULT_PACK_ROOT
@@ -164,6 +173,19 @@ class MarvelMasterCatalog:
         records = self.load_records()
         retrieved = datetime.now(timezone.utc).isoformat()
 
+        current = engine.search_entities(
+            "",
+            filters={"category": "character", "universe": "Marvel"},
+            limit=10000,
+        )
+        by_real_name = {}
+        for item in current:
+            real_name = normalize_search_text(
+                (item.attributes or {}).get("real_name") or ""
+            )
+            if real_name:
+                by_real_name.setdefault(real_name, item)
+
         for index, record in enumerate(records, start=1):
             existing = engine.store.find_exact(record.name, universe="Marvel")
             if existing is None and record.original_name != record.name:
@@ -171,6 +193,14 @@ class MarvelMasterCatalog:
                     record.original_name,
                     universe="Marvel",
                 )
+
+            # Seeds antigos podem usar apenas o codinome, mas já guardar a
+            # identidade real. Só convergimos por igualdade EXATA do real_name;
+            # compartilhar "Spider-Man" nunca une Peter e Miles.
+            identity = _parenthetical_identity(record.name)
+            identity_key = normalize_search_text(identity or "")
+            if existing is None and identity_key:
+                existing = by_real_name.get(identity_key)
 
             if existing is None:
                 entity = Entity(
@@ -215,6 +245,12 @@ class MarvelMasterCatalog:
                 )
 
             engine.upsert_entity(entity)
+            real_name = normalize_search_text(
+                (entity.attributes or {}).get("real_name") or ""
+            )
+            if real_name:
+                by_real_name.setdefault(real_name, entity)
+
             if progress and (index == 1 or index == len(records) or index % 50 == 0):
                 progress("CATÁLOGO MARVEL", index, len(records))
 
