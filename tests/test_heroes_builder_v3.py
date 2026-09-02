@@ -43,6 +43,7 @@ def test_builder_coverage_report_is_local_and_deterministic(tmp_path):
     assert report.with_pdf_source == 1
     assert report.field_coverage["verified_description"]["count"] == 1
     assert report.field_coverage["powers"]["missing"] == 1
+    assert report.field_coverage["appearances"]["missing"] == 1
     assert report.field_coverage_by_universe["DC"]["verified_description"]["percent"] == 100.0
     assert report.with_official_source == 1
     saved = json.loads(
@@ -184,3 +185,23 @@ def test_builder_audit_reports_field_and_image_rights_coverage(tmp_path):
         / "reports"
         / "heroes_coverage_report.json"
     ).exists()
+
+
+def test_builder_audit_counts_appearances_from_attributes(tmp_path):
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    engine.upsert_entity(
+        Entity(
+            name="Appearance Hero",
+            category="character",
+            universe="Marvel",
+            attributes={"appearances": ["Hero #1", "Hero #2"]},
+        )
+    )
+
+    report = HeroesKnowledgeBuilder(
+        engine,
+        tmp_path / "local",
+    ).audit()
+
+    assert report.field_coverage["appearances"]["count"] == 1
+    assert report.field_coverage["appearances"]["missing"] == 0
