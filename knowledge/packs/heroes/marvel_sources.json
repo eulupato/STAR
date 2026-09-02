@@ -22,7 +22,10 @@
       "origin_place": 0,
       "first_appearance": 0,
       "gender": 0,
-      "species": 0
+      "species": 0,
+      "appearances": 0,
+      "relationships": 0,
+      "creators": 0
     },
     "snapshot_image_reference_percent": 64.39,
     "enrichment_note": "O snapshot mestre versionado contém identidades e referências oficiais. O enriquecimento detalhado é aplicado localmente: fonte oficial primeiro, Wikidata/Wikimedia Commons para lacunas verificáveis, com proveniência por campo. A cobertura pós-enriquecimento é medida em knowledge/local/reports/heroes_build_report.json."
