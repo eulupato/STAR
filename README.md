@@ -126,6 +126,38 @@ lacunas. Para auditar sem alterar o banco:
 .\.venv\Scripts\python.exe tools\build_heroes_island.py --audit-only
 ```
 
+### Política de imagens e motivos de rejeição
+
+A cadeia visual não depende exclusivamente da Marvel oficial. A preferência de
+seleção é:
+
+1. **Wikimedia Commons ligado por Wikidata**, quando a associação do personagem
+   é forte e a licença aberta pode ser verificada;
+2. **perfil oficial Marvel/DC**, mantido como referência oficial local sem
+   alegação de licença aberta;
+3. **thumbnail do manifesto Marvel/API**, também marcada como referência oficial
+   local.
+
+A correção de 02/09/2026 eliminou quatro fontes de falsos negativos:
+
+- o match Wikidata exigia texto explícito da editora mesmo em resultados
+  claramente ficcionais e de nome exato;
+- o Commons não solicitava thumbnail rasterizada, então arquivos vetoriais
+  podiam chegar em formato incompatível com a UI;
+- somente `LicenseShortName` era aceito, embora o Commons também exponha
+  termos verificáveis em `UsageTerms`;
+- thumbnails Marvel cacheadas não recebiam metadados de direitos, fazendo o
+  auditor tratá-las como imagem sem proveniência suficiente.
+
+O relatório `heroes_build_report.json` agora inclui
+`image_rejection_reasons` e `image_rejections`, com motivos como
+`http_403`, `wikidata_identity_unresolved`,
+`missing_license_metadata`, `non_open_license`,
+`unsupported_image_format` e `unsupported_source_host`.
+
+Nenhuma imagem aleatória da web é aceita e nenhuma associação
+personagem-imagem é inferida apenas por semelhança de nome.
+
 ### Sincronizar a Ilha dos Heróis
 
 A Marvel usa agora um **catálogo mestre versionado**, não OCR nem crawling web
