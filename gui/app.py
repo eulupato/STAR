@@ -6,12 +6,14 @@ delegam conhecimento e conversação aos serviços do Core.
 from __future__ import annotations
 
 import json
+import os
 import queue
+import subprocess
 import sys
 import threading
 import tkinter as tk
 from pathlib import Path
-from tkinter import scrolledtext
+from tkinter import filedialog, scrolledtext
 
 from PIL import Image, ImageTk
 
@@ -55,6 +57,9 @@ class StarApp:
         self.media = MediaController()
         self.tv_frame = None
         self.tv_status_label = None
+        self._media_sync_job = None
+        self._media_status_job = None
+        self._media_status_attempts = 0
 
         self.online_mode = False
         self.processing = False
@@ -839,20 +844,46 @@ class StarApp:
             return
 
         if self.media.open_youtube(rect=rect):
-            self._set_tv_status("YouTube carregado na STAR TV.")
-            self.window.after(600, self._refresh_media_status)
+            self._media_status_attempts = 0
+            self._set_tv_status("Inicializando YouTube na STAR TV...")
+            self._schedule_media_status_refresh(120)
         else:
             state = self.media.state()
             error = state.get("last_error") or "backend WebView indisponível"
             self._set_tv_status(f"TV indisponível: {error}", False)
 
+    def _schedule_media_status_refresh(self, delay=250):
+        if self._media_status_job is not None:
+            try:
+                self.window.after_cancel(self._media_status_job)
+            except tk.TclError:
+                pass
+        self._media_status_job = self.window.after(
+            max(50, int(delay)),
+            self._refresh_media_status,
+        )
+
     def _schedule_media_sync(self, _event=None):
+        if self._closing or self.nav.current != "living_room":
+            return
+        try:
+            state = self.media.state()
+        except Exception as exc:
+            log.debug("Estado da STAR TV indisponível durante Configure: %s", exc)
+            return
+        if (
+            not state.get("opened")
+            or state.get("starting")
+            or state.get("fullscreen")
+        ):
+            return
+
         if self._media_sync_job is not None:
             try:
                 self.window.after_cancel(self._media_sync_job)
             except tk.TclError as exc:
                 log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
-        self._media_sync_job = self.window.after(90, self._sync_media_to_tv)
+        self._media_sync_job = self.window.after(120, self._sync_media_to_tv)
 
     def _sync_media_to_tv(self):
         self._media_sync_job = None
@@ -870,12 +901,37 @@ class StarApp:
             self.media.sync_rect(rect)
 
     def _refresh_media_status(self):
-        state = self.media.state()
+        self._media_status_job = None
+        try:
+            state = self.media.state()
+        except Exception as exc:
+            self._set_tv_status(f"TV indisponível: {exc}", False)
+            return
+
         if not state.get("opened"):
             error = state.get("last_error")
-            if error:
-                self._set_tv_status(f"TV indisponível: {error}", False)
+            self._set_tv_status(
+                f"TV indisponível: {error}"
+                if error
+                else "Mídia pronta • WebView sob demanda",
+                not bool(error),
+            )
             return
+
+        if state.get("starting") or not state.get("ready"):
+            self._media_status_attempts += 1
+            if self._media_status_attempts >= 60:
+                self.media.close()
+                self._set_tv_status(
+                    "TV não respondeu ao iniciar. O processo foi recuperado; tente abrir novamente.",
+                    False,
+                )
+                return
+            self._set_tv_status("Inicializando WebView2 / YouTube...")
+            self._schedule_media_status_refresh(250)
+            return
+
+        self._media_status_attempts = 0
         self._set_tv_status(
             "YouTube • tela cheia"
             if state.get("fullscreen")
@@ -901,16 +957,23 @@ class StarApp:
 
     def _close_media_if_open(self):
         try:
-            if self.media.state().get("opened"):
-                self.media.close()
+            self.media.close()
         except Exception as exc:
             log.warning("Falha ao fechar mídia: %s", exc)
-        if self._media_sync_job is not None:
-            try:
-                self.window.after_cancel(self._media_sync_job)
-            except tk.TclError as exc:
-                log.debug("Operação Tk ignorada após destruição de widget: %s", exc)
-            self._media_sync_job = None
+
+        for attr in ("_media_sync_job", "_media_status_job"):
+            job = getattr(self, attr, None)
+            if job is not None:
+                try:
+                    self.window.after_cancel(job)
+                except tk.TclError as exc:
+                    log.debug(
+                        "Operação Tk ignorada após destruição de widget: %s",
+                        exc,
+                    )
+                setattr(self, attr, None)
+
+        self._media_status_attempts = 0
         self.tv_frame = None
         self.tv_status_label = None
 
@@ -1395,6 +1458,112 @@ class StarApp:
         self._save_skin_selection()
         self._render_closet_skin()
 
+    def _photo_library_root(self) -> Path:
+        configured = self._read_user_settings().get("photo_library")
+        if configured:
+            return Path(str(configured)).expanduser()
+        return PROJECT_ROOT / "photos"
+
+    def _choose_photo_library(self):
+        initial = self._photo_library_root()
+        selected = filedialog.askdirectory(
+            parent=self.window,
+            title="Escolher pasta do Álbum da STAR",
+            initialdir=str(
+                initial if initial.exists() else initial.parent
+            ),
+        )
+        if not selected:
+            return
+        self._write_user_settings(photo_library=str(Path(selected)))
+        self.show_gallery()
+
+    def _use_default_photo_library(self):
+        root = PROJECT_ROOT / "photos"
+        try:
+            PhotoLibrary(root).ensure_root()
+        except OSError as exc:
+            log.warning("Não foi possível criar pasta de fotos: %s", exc)
+            return
+        self._write_user_settings(photo_library=str(root))
+        self.show_gallery()
+
+    def _add_album_photos(self):
+        root = self._photo_library_root()
+        library = PhotoLibrary(root)
+        try:
+            library.ensure_root()
+        except OSError as exc:
+            log.warning("Pasta do Álbum indisponível: %s", exc)
+            return
+
+        selected = filedialog.askopenfilenames(
+            parent=self.window,
+            title="Adicionar fotos ao Álbum da STAR",
+            filetypes=(
+                ("Imagens", "*.png *.jpg *.jpeg *.webp"),
+                ("Todos os arquivos", "*.*"),
+            ),
+        )
+        if not selected:
+            return
+        imported = library.import_images(selected)
+        log.info(
+            "Álbum STAR: %s de %s imagens importadas para %s.",
+            len(imported),
+            len(selected),
+            root,
+        )
+        self.show_gallery()
+
+    def _open_photo_library_folder(self):
+        root = self._photo_library_root()
+        try:
+            PhotoLibrary(root).ensure_root()
+            if sys.platform.startswith("win"):
+                os.startfile(str(root))
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", str(root)])
+            else:
+                subprocess.Popen(["xdg-open", str(root)])
+        except (OSError, subprocess.SubprocessError) as exc:
+            log.warning("Não foi possível abrir a pasta do Álbum: %s", exc)
+
+    def _preview_album_photo(self, path: Path):
+        preview = tk.Toplevel(self.window)
+        preview.title(f"STAR • {path.name}")
+        preview.geometry("900x680")
+        preview.minsize(520, 420)
+        preview.configure(bg=self.bg)
+        preview.transient(self.window)
+
+        holder = tk.Frame(preview, bg=self.bg)
+        holder.pack(fill="both", expand=True, padx=18, pady=18)
+        label = tk.Label(
+            holder,
+            bg=self.bg,
+            fg=self.muted,
+            text=path.name,
+        )
+        label.pack(fill="both", expand=True)
+
+        try:
+            image = Image.open(path).convert("RGB")
+            image.thumbnail((840, 590), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(image)
+            label.config(image=photo, text="", compound="center")
+            label.image = photo
+        except (OSError, ValueError, tk.TclError) as exc:
+            label.config(text=f"Imagem indisponível\n{exc}")
+
+        tk.Label(
+            preview,
+            text=str(path),
+            fg=self.muted,
+            bg=self.bg,
+            font=("Segoe UI", 8),
+        ).pack(pady=(0, 12))
+
     def show_gallery(self):
         self.clear_screen()
         self.nav.current = "gallery"
@@ -1407,24 +1576,61 @@ class StarApp:
         self._scene_title(
             root,
             "📸 ÁLBUM DA STAR",
-            "Galeria local. Imagens privadas permanecem no computador do usuário.",
+            "Galeria local. As fotos permanecem no computador e não são enviadas ao Git.",
         )
 
         body = tk.Frame(root, bg=self.bg)
         body.pack(fill="both", expand=True, padx=42, pady=14)
 
-        configured = self._read_user_settings().get("photo_library")
-        library_root = (
-            Path(str(configured)).expanduser()
-            if configured
-            else PROJECT_ROOT / "photos"
-        )
-        images = PhotoLibrary(library_root).list_images(limit=500)
+        library_root = self._photo_library_root()
+        library = PhotoLibrary(library_root)
+        if library_root == PROJECT_ROOT / "photos":
+            try:
+                library.ensure_root()
+            except OSError as exc:
+                log.warning("Pasta padrão do Álbum indisponível: %s", exc)
+
+        controls = tk.Frame(body, bg=self.bg)
+        controls.pack(fill="x", pady=(0, 10))
+        self._button(
+            controls,
+            "＋ ADICIONAR FOTOS",
+            self._add_album_photos,
+            small=True,
+            accent=True,
+        ).pack(side="left", padx=(0, 6))
+        self._button(
+            controls,
+            "📁 ESCOLHER PASTA",
+            self._choose_photo_library,
+            small=True,
+        ).pack(side="left", padx=6)
+        self._button(
+            controls,
+            "ABRIR PASTA",
+            self._open_photo_library_folder,
+            small=True,
+        ).pack(side="left", padx=6)
+        self._button(
+            controls,
+            "PASTA PADRÃO",
+            self._use_default_photo_library,
+            small=True,
+        ).pack(side="left", padx=6)
+        self._button(
+            controls,
+            "↻ ATUALIZAR",
+            self.show_gallery,
+            small=True,
+        ).pack(side="left", padx=6)
+
+        exists = library_root.exists() and library_root.is_dir()
+        images = library.list_images(limit=500) if exists else []
 
         tk.Label(
             body,
             text=f"📁 {library_root}",
-            fg=self.muted,
+            fg=self.muted if exists else self.red,
             bg=self.bg,
             font=("Segoe UI", 8),
             anchor="w",
@@ -1435,7 +1641,11 @@ class StarApp:
             empty.pack(fill="x")
             tk.Label(
                 empty,
-                text="Nenhuma imagem encontrada no álbum local.",
+                text=(
+                    "Pasta do álbum não encontrada."
+                    if not exists
+                    else "Nenhuma imagem encontrada no álbum local."
+                ),
                 fg=self.gold,
                 bg=self.panel,
                 font=("Segoe UI", 12, "bold"),
@@ -1443,13 +1653,13 @@ class StarApp:
             tk.Label(
                 empty,
                 text=(
-                    "Por padrão a STAR usa a pasta local 'photos'. "
-                    "Também é possível definir 'photo_library' em user_settings.json. "
-                    "Imagens pessoais não são enviadas nem versionadas pelo projeto."
+                    "Use ADICIONAR FOTOS para copiar imagens para esta biblioteca, "
+                    "ou ESCOLHER PASTA para apontar a STAR para uma pasta que já contém fotos. "
+                    "PNG, JPG, JPEG e WEBP são aceitos. Fotos pessoais continuam locais."
                 ),
                 fg=self.muted,
                 bg=self.panel,
-                wraplength=760,
+                wraplength=820,
                 justify="left",
             ).pack(anchor="w", pady=(6, 0))
             return
@@ -1469,13 +1679,29 @@ class StarApp:
         self.gallery_photos = []
         for idx, path in enumerate(images):
             card = tk.Frame(grid, bg=self.panel, padx=8, pady=8)
-            card.grid(row=idx // 5, column=idx % 5, padx=5, pady=5, sticky="nsew")
+            card.grid(
+                row=idx // 5,
+                column=idx % 5,
+                padx=5,
+                pady=5,
+                sticky="nsew",
+            )
             try:
                 image = Image.open(path).convert("RGB")
                 image.thumbnail((150, 110), Image.Resampling.LANCZOS)
                 photo = ImageTk.PhotoImage(image)
                 self.gallery_photos.append(photo)
-                tk.Label(card, image=photo, bg=self.panel).pack()
+                picture = tk.Label(
+                    card,
+                    image=photo,
+                    bg=self.panel,
+                    cursor="hand2",
+                )
+                picture.pack()
+                picture.bind(
+                    "<Button-1>",
+                    lambda _e, value=path: self._preview_album_photo(value),
+                )
             except (OSError, ValueError, tk.TclError) as exc:
                 log.debug("Thumbnail indisponível para %s: %s", path, exc)
                 tk.Label(
@@ -1492,6 +1718,9 @@ class StarApp:
                 bg=self.panel,
                 font=("Segoe UI", 8),
             ).pack(pady=(5, 0))
+
+        for column in range(5):
+            grid.grid_columnconfigure(column, weight=1)
 
     # ------------------------------------------------------------------
     # Chat global contextual
@@ -2345,7 +2574,7 @@ class StarApp:
             return
         self._closing = True
         try:
-            self.media.close()
+            self.media.shutdown()
         except Exception as exc:
             log.warning("Falha ao encerrar mídia: %s", exc)
         try:
