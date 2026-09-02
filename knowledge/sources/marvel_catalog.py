@@ -288,7 +288,12 @@ class MarvelMasterCatalog:
                 urls = manifest.get(record.image_ref or "", [])
                 local_paths = []
                 for url in urls:
-                    image_path = web_client.cache_image(url, online=online)
+                    image_path = web_client.cache_image(
+                        url,
+                        online=online,
+                        context=record.name,
+                        source_ref="marvel_api_thumbnail",
+                    )
                     if image_path:
                         local_paths.append(image_path)
 
@@ -299,6 +304,18 @@ class MarvelMasterCatalog:
                     )
                     entity.metadata["image_kind"] = "marvel_master_cache"
                     entity.image = local_paths[0]
+                    attribution = entity.metadata.setdefault(
+                        "image_attribution",
+                        {},
+                    )
+                    for image_path, url in zip(local_paths, urls):
+                        attribution[str(image_path)] = {
+                            "author": "Marvel",
+                            "credit": "Marvel API thumbnail",
+                            "license": "No open license recorded",
+                            "source_url": url,
+                            "rights_status": "official_source_local_reference",
+                        }
                     for url in urls:
                         if not any(source.url == url for source in entity.sources):
                             entity.sources.append(
@@ -306,6 +323,7 @@ class MarvelMasterCatalog:
                                     source_type="image_manifest",
                                     source_ref="Marvel API thumbnail",
                                     url=url,
+                                    field_name="image",
                                 )
                             )
                     engine.upsert_entity(entity)
