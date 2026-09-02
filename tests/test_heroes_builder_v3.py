@@ -7,12 +7,16 @@ from knowledge.heroes_builder import HeroesKnowledgeBuilder
 
 def test_builder_coverage_report_is_local_and_deterministic(tmp_path):
     engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    image = tmp_path / "batman.jpg"
+    image.write_bytes(b"image")
     engine.upsert_entity(
         Entity(
             name="Batman",
             category="character",
             universe="DC",
-            image=str(tmp_path / "batman.jpg"),
+            image=str(image),
+            description="Batman protege Gotham City.",
+            metadata={"description_kind": "official_web"},
             sources=[
                 KnowledgeSource("PDF", "dc.pdf", page=1),
                 KnowledgeSource(
@@ -33,6 +37,9 @@ def test_builder_coverage_report_is_local_and_deterministic(tmp_path):
 
     assert report.total_characters == 1
     assert report.with_images == 1
+    assert report.with_descriptions == 1
+    assert report.with_verified_descriptions == 1
+    assert report.complete_cards == 1
     assert report.with_pdf_source == 1
     assert report.with_official_source == 1
     saved = json.loads(
@@ -98,3 +105,37 @@ def test_builder_purges_only_untrusted_marvel_pdf_entities(tmp_path):
     assert engine.resolve_entity("FACTFILE aia", universe="Marvel") is None
     assert engine.resolve_entity("Spider-Man", universe="Marvel") is not None
     assert engine.resolve_entity("Black Panther", universe="Marvel") is not None
+
+
+
+def test_builder_never_leaves_character_description_blank(tmp_path):
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    engine.upsert_entity(
+        Entity(
+            name="Hero Without Bio",
+            category="character",
+            universe="Marvel",
+            publisher="Marvel Comics",
+        )
+    )
+
+    report = HeroesKnowledgeBuilder(
+        engine,
+        tmp_path / "local",
+    ).build(
+        import_marvel_master=False,
+        online_enrichment=False,
+        wikidata_fallback=False,
+    )
+
+    entity = engine.resolve_entity(
+        "Hero Without Bio",
+        universe="Marvel",
+    )
+    assert entity is not None
+    assert entity.description
+    assert entity.metadata["description_kind"] == "catalog_fallback"
+    assert entity.metadata["description_verified"] is False
+    assert report.missing_description_count == 0
+    assert report.fallback_descriptions == 1
+    assert report.missing_verified_description_count == 1
