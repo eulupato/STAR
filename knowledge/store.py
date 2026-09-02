@@ -367,6 +367,52 @@ class KnowledgeStore:
             count += 1
         return count
 
+    def delete_source_only_characters(
+        self,
+        *,
+        universe: str,
+        source_type: str,
+        trusted_source_types: tuple[str, ...] = (),
+    ) -> int:
+        """Remove personagens que dependem somente de uma fonte não confiável."""
+        trusted = tuple(str(item) for item in trusted_source_types if str(item))
+        trusted_sql = ""
+        params: list[object] = [str(universe), str(source_type)]
+        if trusted:
+            placeholders = ",".join("?" for _ in trusted)
+            trusted_sql = f"""
+                AND NOT EXISTS (
+                    SELECT 1 FROM sources trusted
+                    WHERE trusted.entity_id = e.id
+                      AND LOWER(trusted.source_type) IN ({placeholders})
+                )
+            """
+            params.extend(item.lower() for item in trusted)
+
+        where_sql = f"""
+            e.category = 'character'
+            AND LOWER(COALESCE(e.universe, '')) = LOWER(?)
+            AND EXISTS (
+                SELECT 1 FROM sources source
+                WHERE source.entity_id = e.id
+                  AND LOWER(source.source_type) = LOWER(?)
+            )
+            {trusted_sql}
+        """
+        with self._lock, self._connect() as db:
+            row = db.execute(
+                f"SELECT COUNT(*) AS total FROM entities e WHERE {where_sql}",
+                params,
+            ).fetchone()
+            total = int(row["total"] if row else 0)
+            if total:
+                db.execute(
+                    f"DELETE FROM entities WHERE id IN ("
+                    f"SELECT e.id FROM entities e WHERE {where_sql})",
+                    params,
+                )
+        return total
+
     def _row_to_entity(self, row: sqlite3.Row) -> Entity:
         data = json.loads(row["data_json"])
         data["relationships"] = [
