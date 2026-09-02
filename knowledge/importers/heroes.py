@@ -256,6 +256,93 @@ class HeroEncyclopediaImporter:
             unique[normalize_search_text(entity.name)] = entity
         return list(unique.values())
 
+    @staticmethod
+    def _merge_unique(current, incoming):
+        result = list(current or [])
+        seen = {normalize_search_text(item) for item in result}
+        for item in incoming or []:
+            value = str(item or "").strip()
+            key = normalize_search_text(value)
+            if value and key and key not in seen:
+                seen.add(key)
+                result.append(value)
+        return result
+
+    @classmethod
+    def _merge_supplement(cls, existing: Entity, incoming: Entity) -> Entity:
+        existing.aliases = cls._merge_unique(existing.aliases, incoming.aliases)
+        existing.team = cls._merge_unique(existing.team, incoming.team)
+        existing.occupation = cls._merge_unique(existing.occupation, incoming.occupation)
+        existing.affiliations = cls._merge_unique(
+            existing.affiliations, incoming.affiliations
+        )
+        existing.powers = cls._merge_unique(existing.powers, incoming.powers)
+        existing.abilities = cls._merge_unique(existing.abilities, incoming.abilities)
+        existing.tags = cls._merge_unique(
+            existing.tags,
+            ["pdf-supplement", *incoming.tags],
+        )
+
+        for field_name in (
+            "species",
+            "gender",
+            "origin",
+            "origin_place",
+            "status",
+            "first_appearance",
+            "description",
+        ):
+            if not getattr(existing, field_name, None) and getattr(
+                incoming, field_name, None
+            ):
+                setattr(existing, field_name, getattr(incoming, field_name))
+
+        if not existing.image and incoming.image:
+            existing.image = incoming.image
+
+        candidates = cls._merge_unique(
+            existing.metadata.get("image_candidates", []),
+            incoming.metadata.get("image_candidates", []),
+        )
+        if incoming.image:
+            candidates = cls._merge_unique(candidates, [incoming.image])
+        if candidates:
+            existing.metadata["image_candidates"] = candidates
+
+        pages = list(existing.metadata.get("pdf_supplement_pages", []) or [])
+        page = incoming.metadata.get("source_page")
+        if page and page not in pages:
+            pages.append(page)
+        if pages:
+            existing.metadata["pdf_supplement_pages"] = pages
+
+        known_sources = {
+            (s.source_type, s.source_ref, s.page, s.url)
+            for s in existing.sources
+        }
+        for source in incoming.sources:
+            key = (source.source_type, source.source_ref, source.page, source.url)
+            if key not in known_sources:
+                known_sources.add(key)
+                existing.sources.append(source)
+
+        known_relations = {
+            (
+                normalize_search_text(rel.predicate),
+                normalize_search_text(rel.target_name),
+            )
+            for rel in existing.relationships
+        }
+        for relation in incoming.relationships:
+            key = (
+                normalize_search_text(relation.predicate),
+                normalize_search_text(relation.target_name),
+            )
+            if key not in known_relations:
+                known_relations.add(key)
+                existing.relationships.append(relation)
+        return existing
+
     def import_pdf(
         self,
         pdf_path: str | Path,
@@ -266,6 +353,7 @@ class HeroEncyclopediaImporter:
         start_page: int = 1,
         end_page: int | None = None,
         render_images: bool = True,
+        existing_only: bool = False,
     ) -> ImportStats:
         source = Path(pdf_path)
         stats = ImportStats()
@@ -293,6 +381,23 @@ class HeroEncyclopediaImporter:
             stats.entities_detected += len(candidates)
             stats.entities_rejected += max(0, len(candidates) - len(entities))
             for entity in entities:
+                if existing_only:
+                    existing = self.engine.store.find_exact(
+                        entity.name,
+                        universe=universe,
+                    )
+                    if existing is None:
+                        real_name = (entity.attributes or {}).get("real_name")
+                        if real_name:
+                            existing = self.engine.store.find_exact(
+                                real_name,
+                                universe=universe,
+                            )
+                    if existing is None:
+                        stats.entities_rejected += 1
+                        continue
+                    entity = self._merge_supplement(existing, entity)
+
                 self.engine.upsert_entity(entity)
                 stats.entities_saved += 1
 
