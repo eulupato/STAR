@@ -35,6 +35,7 @@ ALLOWED_IMAGE_HOST_SUFFIXES = (
     "dc.com",
     "marvel.com",
     "marvelcdn.com",
+    "annihil.us",
 )
 
 
