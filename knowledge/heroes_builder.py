@@ -712,8 +712,9 @@ class HeroesKnowledgeBuilder:
     ) -> dict:
         """Procura referência visual segura para cada personagem já catalogado.
 
-        Ordem: Commons/Wikidata licenciado -> perfil oficial -> manifesto Marvel.
-        O estado é salvo incrementalmente para permitir retomar após interrupção.
+        Ordem prática: manifesto Marvel por ID -> Commons/Wikidata licenciado
+        -> perfil oficial somente se ainda não houver imagem. O estado é salvo
+        incrementalmente para permitir retomar após interrupção.
         """
         state = (
             self._load_visual_scan_state()
@@ -771,7 +772,23 @@ class HeroesKnowledgeBuilder:
             web_rejection_start = len(self.web.image_rejections)
             wiki_rejection_start = len(self.wikidata.image_rejections)
 
-            # 1) Commons/Wikidata: preferir licença aberta verificável.
+            # 1) Marvel: usar primeiro a referência já associada por ID no
+            # manifesto. É a rota mais rápida e não depende de página HTML.
+            if (
+                str(entity.universe or "") == "Marvel"
+                and self._visual_status(entity) == "unresolved"
+            ):
+                image_path = self.marvel_master.cache_entity_image(
+                    entity,
+                    self.web,
+                    online=online,
+                    manifest=manifest,
+                )
+                if image_path:
+                    self.engine.upsert_entity(entity)
+
+            # 2) Commons/Wikidata: procurar alternativa aberta e promovê-la
+            # sobre a referência oficial sem apagar a imagem anterior.
             profile = self.wikidata.fetch_profile(
                 entity,
                 online=online,
@@ -794,8 +811,9 @@ class HeroesKnowledgeBuilder:
                 )
                 self.engine.upsert_entity(entity)
 
-            # 2) Perfil oficial: referência local quando Commons não resolveu.
-            if self._visual_status(entity) != "accepted_open_license":
+            # 3) Perfil oficial live é último recurso. O timeout do cliente é
+            # curto para que um site lento não paralise a atualização inteira.
+            if self._visual_status(entity) == "unresolved":
                 source = source_for_entity(entity, self.web)
                 if source is not None:
                     official_profile = source.fetch_profile(
@@ -818,23 +836,6 @@ class HeroesKnowledgeBuilder:
                             image_path=image_path,
                         )
                         self.engine.upsert_entity(entity)
-
-            # 3) Manifesto Marvel/API: último fallback oficial documentado.
-            if (
-                self._visual_status(entity) not in {
-                    "accepted_open_license",
-                    "accepted_official_reference",
-                }
-                and str(entity.universe or "") == "Marvel"
-            ):
-                image_path = self.marvel_master.cache_entity_image(
-                    entity,
-                    self.web,
-                    online=online,
-                    manifest=manifest,
-                )
-                if image_path:
-                    self.engine.upsert_entity(entity)
 
             status = self._visual_status(entity)
             totals["processed"] += 1
