@@ -169,6 +169,33 @@ runtime: backups antigos em `archive/legacy/` e o script redundante
 Assets ativos, Knowledge Engine, Entity System, UI, seeds de compatibilidade e
 dados necessários ao runtime não foram apagados.
 
+### Atualização de dados das fichas
+
+O catálogo mestre Marvel versionado guarda principalmente identidade. Por isso,
+nomes e imagens podiam aparecer enquanto as abas continuavam vazias. A correção
+atual adiciona uma etapa resumível de dados:
+
+```powershell
+.\.venv\Scripts\python.exe tools\build_heroes_island.py --scan-data
+```
+
+Essa etapa usa Wikidata para identidade, descrição curta e campos estruturados e
+usa somente fatos de infobox da Wikipedia como fonte suplementar. O artigo
+completo não é copiado. Quando disponível, podem ser preenchidos nome real,
+ocupação, afiliações, equipes, poderes, habilidades, equipamento, espécie,
+primeira aparição, criadores e relações explícitas. Cada campo recebe
+proveniência.
+
+Checkpoint e relatório:
+
+```text
+knowledge/local/reports/heroes_data_scan_state.json
+knowledge/local/reports/heroes_data_scan_report.json
+```
+
+Se nenhuma fonte estruturada for encontrada, a ficha recebe apenas uma
+descrição básica marcada como `catalog_fallback`, sem inventar fatos.
+
 ### Varredura visual personagem por personagem
 
 A STAR agora pode percorrer **todo o catálogo existente** e buscar uma referência
