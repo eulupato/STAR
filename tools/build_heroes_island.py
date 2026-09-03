@@ -58,6 +58,16 @@ def parser():
         default=0,
         help="Limita personagens na varredura visual; 0 = catálogo inteiro.",
     )
+    p.add_argument(
+        "--improve-existing-images",
+        action="store_true",
+        help="Também consulta Commons para personagens que já possuem imagem válida.",
+    )
+    p.add_argument(
+        "--scan-live-official",
+        action="store_true",
+        help="Habilita fallback live Marvel/DC; desligado por padrão por causa de HTTP 403.",
+    )
     p.add_argument("--no-marvel-ocr", action="store_true")
     p.add_argument("--dc-ocr", action="store_true")
     p.add_argument("--no-images", action="store_true")
@@ -129,12 +139,22 @@ def main():
                 engine,
                 progress=builder._progress,
             )
-        report = builder.scan_visual_references(
-            online=True,
-            resume=not args.restart_image_scan,
-            force=args.restart_image_scan or args.force_web,
-            limit=max(0, args.image_scan_limit),
-        )
+        try:
+            report = builder.scan_visual_references(
+                online=True,
+                resume=not args.restart_image_scan,
+                force=args.restart_image_scan or args.force_web,
+                limit=max(0, args.image_scan_limit),
+                improve_existing=args.improve_existing_images,
+                live_official_fallback=args.scan_live_official,
+            )
+        except KeyboardInterrupt:
+            print(
+                "\n[STAR] Varredura interrompida pelo usuário. "
+                "O checkpoint anterior foi preservado.",
+                flush=True,
+            )
+            raise SystemExit(130)
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return
 
