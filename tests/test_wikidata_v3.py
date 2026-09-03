@@ -291,3 +291,73 @@ def test_wikidata_invalid_stale_image_cache_is_removed(tmp_path):
     assert not stale.exists()
     reasons = [item["reason"] for item in client.image_rejections]
     assert "invalid_stale_image_cache" in reasons
+
+
+def test_wikipedia_infobox_helpers_extract_structured_facts(tmp_path):
+    from knowledge.sources.wikidata import WikidataClient
+
+    client = WikidataClient(tmp_path / "wikidata")
+    wikitext = """
+    {{Infobox comics character
+    | alter_ego = [[Peter Parker]]
+    | occupation = Photographer<br>Scientist
+    | abilities = Wall-crawling<br>Spider-sense
+    | equipment = Web-shooters
+    | first = ''Amazing Fantasy'' #15
+    | creators = [[Stan Lee]], [[Steve Ditko]]
+    }}
+    """
+    infobox = client._extract_infobox(wikitext)
+    fields = client._parse_infobox_fields(infobox)
+
+    assert client._strip_wiki_markup(fields["alter_ego"]) == "Peter Parker"
+    assert client._wiki_values(fields["occupation"]) == [
+        "Photographer",
+        "Scientist",
+    ]
+    assert "Spider-sense" in client._wiki_values(fields["abilities"])
+
+
+def test_wikidata_merge_applies_wikipedia_structured_fields():
+    entity = Entity(
+        name="Spider-Man",
+        category="character",
+        universe="Marvel",
+        publisher="Marvel Comics",
+    )
+    profile = WikidataProfile(
+        qid="Q79015",
+        label="Spider-Man",
+        description="Spider-Man — fictional superhero appearing in Marvel Comics.",
+        description_language="en",
+        entity_url="https://www.wikidata.org/wiki/Q79015",
+        wikipedia_url="https://en.wikipedia.org/wiki/Spider-Man",
+        wikipedia_fields={
+            "real_name": "Peter Parker",
+            "occupation": ["Photographer", "Scientist"],
+            "abilities": ["Wall-crawling", "Spider-sense"],
+            "equipment": ["Web-shooters"],
+            "affiliations": ["Avengers"],
+            "first_appearance": "Amazing Fantasy #15",
+            "creators": ["Stan Lee", "Steve Ditko"],
+            "partners": ["Mary Jane Watson"],
+        },
+    )
+
+    merged = merge_wikidata_profile(entity, profile)
+
+    assert merged.attributes["real_name"] == "Peter Parker"
+    assert "Photographer" in merged.occupation
+    assert "Spider-sense" in merged.abilities
+    assert "Web-shooters" in merged.equipment
+    assert "Avengers" in merged.affiliations
+    assert merged.first_appearance == "Amazing Fantasy #15"
+    assert any(r.target_name == "Mary Jane Watson" for r in merged.relationships)
+    assert any(
+        source.source_type == "wikipedia_infobox"
+        for source in merged.sources
+    )
+    assert (
+        merged.metadata["field_provenance"]["abilities"][0]["source_type"]
+        == "wikipedia_infobox"
+    )
