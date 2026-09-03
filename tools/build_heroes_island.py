@@ -40,11 +40,27 @@ def parser():
         help="Gera apenas o relatório de cobertura atual, sem alterar entidades ou acessar a rede.",
     )
     p.add_argument(
+        "--scan-data",
+        action="store_true",
+        help="Preenche dados estruturados das fichas via Wikidata/Wikipedia infobox.",
+    )
+    p.add_argument(
+        "--restart-data-scan",
+        action="store_true",
+        help="Ignora checkpoint anterior e refaz o enriquecimento das fichas.",
+    )
+    p.add_argument(
+        "--data-scan-limit",
+        type=int,
+        default=0,
+        help="Limita personagens no enriquecimento; 0 = catálogo inteiro.",
+    )
+    p.add_argument(
         "--scan-images",
         action="store_true",
         help=(
             "Varre personagem por personagem procurando referência visual "
-            "segura: Commons licenciado, perfil oficial e manifesto Marvel."
+            "segura: Commons licenciado e manifesto Marvel."
         ),
     )
     p.add_argument(
@@ -130,6 +146,29 @@ def main():
     if args.audit_only:
         report = builder.audit()
         print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        return
+
+    if args.scan_data:
+        if not args.skip_marvel_master:
+            builder.marvel_master.import_into(
+                engine,
+                progress=builder._progress,
+            )
+        try:
+            report = builder.scan_structured_data(
+                online=True,
+                resume=not args.restart_data_scan,
+                force=args.restart_data_scan or args.force_web,
+                limit=max(0, args.data_scan_limit),
+            )
+        except KeyboardInterrupt:
+            print(
+                "\n[STAR] Enriquecimento interrompido pelo usuário. "
+                "Execute novamente para continuar do checkpoint.",
+                flush=True,
+            )
+            raise SystemExit(130)
+        print(json.dumps(report, ensure_ascii=False, indent=2))
         return
 
     if args.scan_images:
