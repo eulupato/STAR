@@ -594,3 +594,87 @@ def test_visual_scan_skips_wikidata_when_manifest_image_exists(tmp_path, monkeyp
     )
 
     assert report["totals"]["accepted_official_reference"] == 1
+
+
+def test_data_scan_populates_character_fields_and_checkpoint(tmp_path, monkeypatch):
+    from knowledge.sources.wikidata import WikidataProfile
+
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    engine.upsert_entity(
+        Entity(
+            name="Data Hero",
+            category="character",
+            universe="Marvel",
+            publisher="Marvel Comics",
+        )
+    )
+    builder = HeroesKnowledgeBuilder(engine, tmp_path / "local")
+    profile = WikidataProfile(
+        qid="Q42",
+        label="Data Hero",
+        description="Data Hero — fictional superhero.",
+        description_language="en",
+        entity_url="https://www.wikidata.org/wiki/Q42",
+        wikipedia_url="https://en.wikipedia.org/wiki/Data_Hero",
+        wikipedia_fields={
+            "real_name": "Dana Hero",
+            "powers": ["Flight"],
+            "abilities": ["Tactics"],
+            "equipment": ["Shield"],
+            "occupation": ["Pilot"],
+            "affiliations": ["Example Team"],
+            "first_appearance": "Example #1",
+        },
+    )
+    monkeypatch.setattr(
+        builder.wikidata,
+        "fetch_profile",
+        lambda *args, **kwargs: profile,
+    )
+
+    report = builder.scan_structured_data(
+        online=False,
+        resume=False,
+        delay_seconds=0,
+    )
+
+    hero = engine.resolve_entity("Data Hero", universe="Marvel")
+    assert hero is not None
+    assert hero.attributes["real_name"] == "Dana Hero"
+    assert hero.powers == ["Flight"]
+    assert hero.abilities == ["Tactics"]
+    assert hero.equipment == ["Shield"]
+    assert hero.first_appearance == "Example #1"
+    assert report["totals"]["enriched"] == 1
+    assert builder._data_scan_state_path().exists()
+    assert builder._data_scan_report_path().exists()
+
+
+def test_data_scan_never_leaves_description_empty(tmp_path, monkeypatch):
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    engine.upsert_entity(
+        Entity(
+            name="Fallback Data Hero",
+            category="character",
+            universe="Marvel",
+            publisher="Marvel Comics",
+        )
+    )
+    builder = HeroesKnowledgeBuilder(engine, tmp_path / "local")
+    monkeypatch.setattr(
+        builder.wikidata,
+        "fetch_profile",
+        lambda *args, **kwargs: None,
+    )
+
+    report = builder.scan_structured_data(
+        online=False,
+        resume=False,
+        delay_seconds=0,
+    )
+
+    hero = engine.resolve_entity("Fallback Data Hero", universe="Marvel")
+    assert hero is not None
+    assert hero.description
+    assert hero.metadata["description_kind"] == "catalog_fallback"
+    assert report["totals"]["fallback_only"] == 1
