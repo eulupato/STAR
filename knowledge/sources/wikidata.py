@@ -1132,6 +1132,113 @@ def merge_wikidata_profile(
             source_url=profile.entity_url,
         )
 
+    wiki = profile.wikipedia_fields or {}
+    wiki_url = profile.wikipedia_url
+    if wiki:
+        wiki_aliases = wiki.get("aliases", []) or []
+        if wiki_aliases:
+            entity.aliases = merge_unique(entity.aliases, wiki_aliases)
+            record_field_provenance(
+                entity,
+                "aliases",
+                source_type="wikipedia_infobox",
+                source_ref="Wikipedia infobox",
+                source_url=wiki_url,
+            )
+
+        real_name = str(wiki.get("real_name") or "").strip()
+        if real_name and not (entity.attributes or {}).get("real_name"):
+            entity.attributes["real_name"] = real_name
+            record_field_provenance(
+                entity,
+                "real_name",
+                source_type="wikipedia_infobox",
+                source_ref="Wikipedia infobox",
+                source_url=wiki_url,
+            )
+
+        species = str(wiki.get("species") or "").strip()
+        if species and not entity.species:
+            entity.species = species
+            record_field_provenance(
+                entity,
+                "species",
+                source_type="wikipedia_infobox",
+                source_ref="Wikipedia infobox",
+                source_url=wiki_url,
+            )
+
+        first_appearance = str(wiki.get("first_appearance") or "").strip()
+        if first_appearance and not entity.first_appearance:
+            entity.first_appearance = first_appearance
+            record_field_provenance(
+                entity,
+                "first_appearance",
+                source_type="wikipedia_infobox",
+                source_ref="Wikipedia infobox",
+                source_url=wiki_url,
+            )
+
+        for field_name in (
+            "powers",
+            "abilities",
+            "equipment",
+            "team",
+            "occupation",
+            "affiliations",
+            "creators",
+        ):
+            incoming = wiki.get(field_name, []) or []
+            if not incoming:
+                continue
+            current = getattr(entity, field_name)
+            merged = merge_unique(current, incoming)
+            if merged != list(current or []):
+                setattr(entity, field_name, merged)
+                record_field_provenance(
+                    entity,
+                    field_name,
+                    source_type="wikipedia_infobox",
+                    source_ref="Wikipedia infobox",
+                    source_url=wiki_url,
+                )
+
+        existing_relations = {
+            (
+                normalize_search_text(item.predicate),
+                normalize_search_text(item.target_name),
+            )
+            for item in entity.relationships
+        }
+        for predicate, values in (
+            ("relative", wiki.get("relatives", []) or []),
+            ("partner", wiki.get("partners", []) or []),
+        ):
+            for target in values:
+                key = (
+                    normalize_search_text(predicate),
+                    normalize_search_text(target),
+                )
+                if key[1] and key not in existing_relations:
+                    existing_relations.add(key)
+                    entity.relationships.append(
+                        Relationship(
+                            predicate=predicate,
+                            target_name=str(target),
+                            metadata={
+                                "source_type": "wikipedia_infobox",
+                                "source_url": wiki_url,
+                            },
+                        )
+                    )
+                    record_field_provenance(
+                        entity,
+                        "relationships",
+                        source_type="wikipedia_infobox",
+                        source_ref="Wikipedia infobox",
+                        source_url=wiki_url,
+                    )
+
     description_kind = (
         entity.metadata or {}
     ).get("description_kind")
@@ -1220,6 +1327,24 @@ def merge_wikidata_profile(
                     timezone.utc
                 ).isoformat(),
                 field_name="description",
+            )
+        )
+    if (
+        profile.wikipedia_url
+        and not any(
+            source.url == profile.wikipedia_url
+            for source in entity.sources
+        )
+    ):
+        entity.sources.append(
+            KnowledgeSource(
+                source_type="wikipedia_infobox",
+                source_ref="Wikipedia infobox",
+                url=profile.wikipedia_url,
+                retrieved_at=datetime.now(
+                    timezone.utc
+                ).isoformat(),
+                field_name="structured_facts",
             )
         )
     if (
