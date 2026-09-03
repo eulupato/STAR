@@ -713,13 +713,15 @@ class HeroesKnowledgeBuilder:
         resume: bool = True,
         force: bool = False,
         limit: int = 0,
-        delay_seconds: float = 0.12,
+        delay_seconds: float = 0.05,
+        improve_existing: bool = False,
+        live_official_fallback: bool = False,
     ) -> dict:
         """Procura referência visual segura para cada personagem já catalogado.
 
-        Ordem prática: manifesto Marvel por ID -> Commons/Wikidata licenciado
-        -> perfil oficial somente se ainda não houver imagem. O estado é salvo
-        incrementalmente para permitir retomar após interrupção.
+        Ordem prática: manifesto Marvel por ID -> Commons/Wikidata apenas para
+        lacunas -> perfil oficial live somente quando explicitamente habilitado.
+        O estado é salvo incrementalmente para permitir retomar após interrupção.
         """
         state = (
             self._load_visual_scan_state()
@@ -793,33 +795,38 @@ class HeroesKnowledgeBuilder:
                 if image_path:
                     self.engine.upsert_entity(entity)
 
-            # 2) Commons/Wikidata: procurar alternativa aberta e promovê-la
-            # sobre a referência oficial sem apagar a imagem anterior.
-            profile = self.wikidata.fetch_profile(
-                entity,
-                online=online,
-                force=force,
-                include_image=True,
-            )
-            if profile is not None:
-                image_path = None
-                if profile.image_url:
-                    image_path = self.wikidata.cache_commons_image(
-                        profile.image_url,
-                        online=online,
-                        entity_name=entity.name,
-                        qid=profile.qid,
-                    )
-                entity = merge_wikidata_profile(
+            # 2) Commons/Wikidata: por padrão só procura quando ainda falta
+            # imagem. improve_existing reavalia uma referência já aceita.
+            if self._visual_status(entity) == "unresolved" or improve_existing:
+                profile = self.wikidata.fetch_profile(
                     entity,
-                    profile,
-                    image_path=image_path,
+                    online=online,
+                    force=force,
+                    include_image=True,
+                    image_only=True,
                 )
-                self.engine.upsert_entity(entity)
+                if profile is not None:
+                    image_path = None
+                    if profile.image_url:
+                        image_path = self.wikidata.cache_commons_image(
+                            profile.image_url,
+                            online=online,
+                            entity_name=entity.name,
+                            qid=profile.qid,
+                        )
+                    entity = merge_wikidata_profile(
+                        entity,
+                        profile,
+                        image_path=image_path,
+                    )
+                    self.engine.upsert_entity(entity)
 
-            # 3) Perfil oficial live é último recurso. O timeout do cliente é
-            # curto para que um site lento não paralise a atualização inteira.
-            if self._visual_status(entity) == "unresolved":
+            # 3) Marvel/DC live retorna HTTP 403 com frequência. Fica fora do
+            # caminho padrão e só é usado quando explicitamente habilitado.
+            if (
+                live_official_fallback
+                and self._visual_status(entity) == "unresolved"
+            ):
                 source = source_for_entity(entity, self.web)
                 if source is not None:
                     official_profile = source.fetch_profile(
@@ -863,7 +870,7 @@ class HeroesKnowledgeBuilder:
             if (
                 index == 1
                 or index == len(entities)
-                or index % 10 == 0
+                or index % 5 == 0
             ):
                 self._save_visual_scan_state(state)
                 self._progress("VARREDURA VISUAL", index, len(entities))
