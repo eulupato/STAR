@@ -623,6 +623,202 @@ class HeroesKnowledgeBuilder:
                 "registros usam descrição básica do catálogo."
             )
 
+    def _data_scan_state_path(self) -> Path:
+        return self.reports_dir / "heroes_data_scan_state.json"
+
+    def _data_scan_report_path(self) -> Path:
+        return self.reports_dir / "heroes_data_scan_report.json"
+
+    def _load_data_scan_state(self) -> dict:
+        path = self._data_scan_state_path()
+        if not path.exists():
+            return {
+                "schema_version": 1,
+                "updated_at": None,
+                "characters": {},
+            }
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return {
+                "schema_version": 1,
+                "updated_at": None,
+                "characters": {},
+            }
+        if not isinstance(data, dict):
+            data = {}
+        if int(data.get("schema_version") or 0) != 1:
+            return {
+                "schema_version": 1,
+                "updated_at": None,
+                "characters": {},
+            }
+        data.setdefault("characters", {})
+        return data
+
+    def _save_data_scan_state(self, state: dict) -> None:
+        state["updated_at"] = datetime.now(timezone.utc).isoformat()
+        self._data_scan_state_path().write_text(
+            json.dumps(state, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+    @staticmethod
+    def _structured_field_snapshot(entity) -> dict[str, bool]:
+        return {
+            "description": HeroesKnowledgeBuilder._description_is_verified(entity),
+            "real_name": bool((entity.attributes or {}).get("real_name")),
+            "powers": bool(entity.powers),
+            "abilities": bool(entity.abilities),
+            "equipment": bool(entity.equipment),
+            "occupation": bool(entity.occupation),
+            "affiliations": bool(entity.affiliations),
+            "team": bool(entity.team),
+            "origin_place": bool(entity.origin_place),
+            "first_appearance": bool(entity.first_appearance),
+            "relationships": bool(entity.relationships),
+            "creators": bool(entity.creators),
+            "species": bool(entity.species),
+            "gender": bool(entity.gender),
+        }
+
+    def scan_structured_data(
+        self,
+        *,
+        online: bool = True,
+        resume: bool = True,
+        force: bool = False,
+        limit: int = 0,
+        delay_seconds: float = 0.05,
+    ) -> dict:
+        """Preenche fichas com dados verificáveis sem depender de Marvel.com.
+
+        Usa Wikidata para identidade/descrição/campos estruturados e, quando
+        disponível, apenas fatos de infobox da Wikipedia. O texto completo de
+        artigos não é copiado. A execução é resumível.
+        """
+        state = (
+            self._load_data_scan_state()
+            if resume and not force
+            else {
+                "schema_version": 1,
+                "updated_at": None,
+                "characters": {},
+            }
+        )
+        characters_state = state.setdefault("characters", {})
+        entities = self.engine.search_entities(
+            "",
+            filters={"category": "character"},
+            limit=10000,
+        )
+        entities = sorted(
+            entities,
+            key=lambda item: (
+                str(item.universe or ""),
+                str(item.name or "").casefold(),
+                str(item.id or ""),
+            ),
+        )
+        if limit > 0:
+            entities = entities[: int(limit)]
+
+        totals = {
+            "total": len(entities),
+            "processed": 0,
+            "skipped_resume": 0,
+            "enriched": 0,
+            "fallback_only": 0,
+            "unresolved": 0,
+        }
+
+        for index, entity in enumerate(entities, start=1):
+            key = str(entity.id or f"{entity.universe}:{entity.name}")
+            previous = characters_state.get(key) or {}
+            if (
+                resume
+                and not force
+                and previous.get("status") in {
+                    "enriched",
+                    "fallback_only",
+                }
+            ):
+                totals["skipped_resume"] += 1
+                totals[previous["status"]] += 1
+                continue
+
+            before = self._structured_field_snapshot(entity)
+            profile = self.wikidata.fetch_profile(
+                entity,
+                online=online,
+                force=force,
+                include_image=False,
+                image_only=False,
+            )
+            if profile is not None:
+                entity = merge_wikidata_profile(entity, profile)
+                self.engine.upsert_entity(entity)
+
+            if not entity.description:
+                entity.description = self._fallback_description(entity)
+                entity.metadata["description_kind"] = "catalog_fallback"
+                entity.metadata["description_verified"] = False
+                self.engine.upsert_entity(entity)
+
+            after = self._structured_field_snapshot(entity)
+            gained = [
+                field_name
+                for field_name, present in after.items()
+                if present and not before.get(field_name)
+            ]
+            if profile is not None and any(after.values()):
+                status = "enriched"
+            elif entity.description:
+                status = "fallback_only"
+            else:
+                status = "unresolved"
+
+            totals["processed"] += 1
+            totals[status] += 1
+            characters_state[key] = {
+                "name": entity.name,
+                "universe": entity.universe,
+                "status": status,
+                "gained_fields": gained,
+                "fields": after,
+                "wikidata_id": (entity.metadata or {}).get("wikidata_id"),
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+            if (
+                index == 1
+                or index == len(entities)
+                or index % 5 == 0
+            ):
+                self._save_data_scan_state(state)
+                self._progress("DADOS DOS HERÓIS", index, len(entities))
+
+            if online and delay_seconds > 0:
+                time.sleep(delay_seconds)
+
+        self._save_data_scan_state(state)
+        coverage = HeroesBuildReport(
+            generated_at=datetime.now(timezone.utc).isoformat()
+        )
+        self._coverage(coverage)
+        report = {
+            "schema_version": 1,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "totals": totals,
+            "field_coverage": coverage.field_coverage,
+            "state_file": str(self._data_scan_state_path()),
+        }
+        self._data_scan_report_path().write_text(
+            json.dumps(report, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        return report
+
     def _visual_scan_state_path(self) -> Path:
         return self.reports_dir / "heroes_image_scan_state.json"
 
