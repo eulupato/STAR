@@ -2,20 +2,22 @@ name: STAR CI
 
 on:
   push:
-    branches: [main, v1.9-development, v2.0-development, v1.9-stability-audit-20260831]
+    branches: [main, v2.0-development, v3.0-knowledge]
   pull_request:
-    branches: [main, v2.0-development]
+    branches: [main, v2.0-development, v3.0-knowledge]
 
 jobs:
   syntax:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
       - name: Validate Python syntax
-        run: python -m compileall -q core gui modules voice database tests main.py config.py diagnostico.py
+        run: python -m compileall -q core gui knowledge modules voice database tests tools main.py config.py diagnostico.py
+      - name: Validate repository hygiene
+        run: python tools/repo_hygiene.py
       - name: Validate project JSON manifests
         run: |
           python - <<'PY'

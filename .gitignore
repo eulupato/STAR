@@ -37,6 +37,9 @@ voice/cache/
 
 # Banco local e dados da máquina
 star.db
+star.db-*
+*.db-wal
+*.db-shm
 
 # Logs
 *.log
@@ -55,3 +58,11 @@ Thumbs.db
 
 # Preferências locais da interface
 user_settings.json
+
+# Álbum pessoal local
+photos/
+
+# Base de conhecimento, PDFs e caches locais
+knowledge/local/
+knowledge/cache/
+*.pdf

@@ -1,16 +1,53 @@
 {
   "id": "heroes",
   "name": "Ilha dos Heróis",
-  "version": "1.0",
-  "description": "Conhecimento inicial sobre heróis históricos, mitologia e super-heróis.",
+  "version": "2.0",
+  "status": "partial",
+  "type": "knowledge",
+  "data_model": "entity-v1",
+  "description": "Catálogo estruturado da Ilha dos Heróis; identidades versionadas e enriquecimento local com fontes verificáveis, incluindo referências visuais com proveniência.",
   "topics": [
-    "conceito de herói",
-    "heróis históricos",
-    "mitologia",
+    "personagens",
     "Marvel",
     "DC",
     "equipes",
     "poderes e habilidades",
-    "universos e cronologias"
+    "universos",
+    "relações",
+    "cronologias"
+  ],
+  "storage": {
+    "seed": "heroes.json",
+    "runtime_store": "knowledge/local/star_knowledge.db",
+    "local_sources_only": false
+  },
+  "provenance_required": true,
+  "notes": [
+    "PDFs, cache, imagens baixadas e banco local não são versionados.",
+    "O seed heroes.json permanece somente para compatibilidade/bootstrap.",
+    "A varredura visual é resumível e registra a origem/direitos de cada imagem.",
+    "Nenhuma imagem aleatória sem associação e proveniência verificáveis é incorporada."
+  ],
+  "sources": {
+    "pdf": [
+      "Marvel Encyclopedia New Edition",
+      "The DC Comics Encyclopedia"
+    ],
+    "official_web": [
+      "https://www.marvel.com/characters",
+      "https://www.dc.com/characters"
+    ],
+    "web_optional": true
+  },
+  "source_priority": [
+    "identidade versionada do catálogo mestre",
+    "Wikimedia Commons ligado por Wikidata com licença verificável",
+    "referência oficial Marvel/DC em cache local",
+    "dados locais autorizados",
+    "placeholder explícito somente quando nenhuma imagem verificável existe"
+  ],
+  "official_sources": [
+    "https://www.dc.com/characters",
+    "https://www.marvel.com/characters"
   ]
 }

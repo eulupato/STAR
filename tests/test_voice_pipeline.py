@@ -29,6 +29,8 @@ def test_voice_paths_are_local_and_optional():
     manager = VoiceManager()
     assert manager.piper.model_path.is_relative_to(ROOT)
     assert manager.official.worker_path.is_relative_to(ROOT)
+    assert Path(manager.stt.model_size).is_absolute()
+    assert Path(manager.stt.model_size).is_relative_to(ROOT)
     assert manager.piper.configured in (True, False)
     assert manager.official.configured in (True, False)
     manager.close()
@@ -61,7 +63,6 @@ def test_no_external_voice_service_is_required():
     manager.close()
 
 
-
 def test_tts_text_removes_emojis_without_changing_portuguese():
     text = "Perfeito! ✨⭐ Vamos continuar amanhã. 😊"
     assert prepare_tts_text(text) == "Perfeito! Vamos continuar amanhã."
@@ -75,3 +76,62 @@ def test_tts_text_removes_emoji_sequences_and_flags():
 def test_tts_text_keeps_normal_punctuation_and_accents():
     text = "Olá, Lu! Você está bem? Sim: estou ótima."
     assert prepare_tts_text(text) == text
+
+
+def test_fast_cancel_does_not_kill_official_worker():
+    manager = VoiceManager()
+    manager.mode = "fast"
+    calls = []
+    manager.official.cancel = lambda: calls.append("official")
+    manager._speaking.set()
+
+    manager.cancel_speech()
+
+    assert calls == []
+    manager._speaking.clear()
+    manager.close()
+
+
+def test_cancel_stops_official_worker_only_when_official_is_active():
+    manager = VoiceManager()
+    calls = []
+    manager.official.cancel = lambda: calls.append("official")
+    manager._official_active.set()
+
+    manager.cancel_speech()
+
+    assert calls == ["official"]
+    manager._official_active.clear()
+    manager.close()
+
+
+def test_voice_operational_config_is_applied(monkeypatch):
+    from config import (
+        PIPER_MODEL,
+        STT_MODEL,
+        STT_MODEL_NAME,
+        VOICE_FAST_PREFERENCE,
+    )
+
+    monkeypatch.delenv("STAR_STT_MODEL", raising=False)
+    monkeypatch.delenv("STAR_VOICE_FAST_PREFERENCE", raising=False)
+
+    manager = VoiceManager()
+    assert manager.stt.model_size == STT_MODEL
+    assert Path(manager.stt.model_size).name == STT_MODEL_NAME
+    assert Path(manager.stt.model_size).is_absolute()
+    assert manager.piper.model_path.name == Path(PIPER_MODEL).name
+    assert manager.fast_preference == VOICE_FAST_PREFERENCE
+    manager.close()
+
+
+def test_stt_runtime_uses_local_path_not_remote_model_identifier(monkeypatch):
+    from config import STT_MODEL
+
+    monkeypatch.delenv("STAR_STT_MODEL", raising=False)
+    stt = LocalSpeechToText()
+    model_path = Path(stt.model_size)
+
+    assert stt.model_size == STT_MODEL
+    assert model_path.is_absolute()
+    assert model_path.is_relative_to(ROOT)

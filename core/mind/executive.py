@@ -1,4 +1,4 @@
-"""Executive da STAR MIND V2."""
+"""Executive operacional da STAR MIND consolidada na V3."""
 
 from __future__ import annotations
 

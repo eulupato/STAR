@@ -34,7 +34,7 @@ Pós-release: bugs entram como V1.9.x.
 ## V2.0 — MIND
 **Objetivo:** criar a arquitetura cognitiva permanente.
 
-**Status em 31/08/2026: MIND FOUNDATION implementada na branch de desenvolvimento.**
+**Status em 31/08/2026: MIND consolidada e absorvida pela V3.0 KNOWLEDGE.**
 
 Implementado na fundação V2.0:
 - Cognitive Loop;
@@ -49,11 +49,17 @@ Implementado na fundação V2.0:
 - fallback seguro para a fundação V1.9;
 - diagnóstico da MIND.
 
-Expansões ainda planejadas nesta geração:
-- memória episódica, semântica, projetos e preferências;
-- Personality/Identity Core expandido;
-- Reasoning/Planning avançado;
-- Model Router com múltiplos motores.
+Consolidação incorporada à V3:
+- contexto com Entity Tracking e resolução de referências;
+- Personality Engine separado de modelos;
+- Conversation Variation Engine local;
+- Knowledge Search integrado ao Planner;
+- Capability Registry expandido;
+- Event Bus usado por WORLD/mídia;
+- modelos externos permanecem opcionais e desativados por padrão.
+
+Expansões profundas de memória persistente e múltiplos modelos continuam
+incrementais, sem redefinir a identidade da STAR.
 
 ### V2.1
 Memory Architecture.
@@ -67,11 +73,65 @@ Model Router e seleção automática de motores.
 ---
 
 ## V3.0 — KNOWLEDGE
-**Objetivo:** transformar a STAR em uma plataforma de conhecimento offline expansível.
+**Objetivo:** transformar a STAR em uma plataforma de conhecimento offline expansível e conectar essa base ao STAR WORLD funcional.
 
-Inclui Biblioteca, ingestão de PDF/texto, proveniência, embeddings locais,
-busca universal, Knowledge Packs V2, Knowledge Graph, Scientific Engine,
-matemática simbólica, estatística, unidades, física, química e simulações.
+**Status em 02/09/2026: arquitetura integrada em DEVELOPMENT / knowledge-foundation.**
+
+Implementado nesta fundação:
+- Entity System genérico;
+- SQLite local dedicado com conexões curtas para Windows;
+- aliases, fontes e proveniência;
+- Knowledge Graph;
+- índice estrutural `entity_values` e migração versionada;
+- Universal Search;
+- pipeline PDF reutilizável;
+- fontes oficiais DC/Marvel opcionais com validação de identidade;
+- catálogo mestre Marvel versionado + manifesto visual + cache local;
+- varredura visual resumível manifesto-first, com Commons/Wikidata e perfil oficial como fallback;
+- enriquecimento official-first com fallback Wikidata/Wikimedia Commons para lacunas verificáveis;
+- proveniência por campo e cobertura estruturada global/por universo;
+- auditoria de origem/direitos das imagens locais;
+- relatório de qualidade de fichas separando imagem local, descrição verificada, fallback e ficha rica;
+- primeira ilha de conhecimento navegável: Heróis;
+- interface de catálogo pixel-art integrada ao STAR WORLD, com roster paginado, palco visual, abas e ficha completa;
+- busca, carrossel e filtros estruturados;
+- Conversation Variation Engine;
+- STAR TV com MediaController e WebView opcional, lifecycle não bloqueante, handshake de inicialização e recuperação automática;
+- STAR WORLD com navegação contextual e overlays sem ciclos;
+- Casa navegável: Sala, Cozinha, Quarto, Closet e Álbum;
+- Cozinha com RecipeBook e guia passo a passo;
+- PhotoLibrary local com importação, seletor de pasta, preview e abertura no sistema;
+- memória de conversa persistente gravada e restaurada;
+- voz degradável no startup;
+- Whisper/Piper preparados explicitamente pelo instalador;
+- runtime sem download implícito de modelo;
+- higiene de repositório e CI Linux/Windows.
+
+Status dos ambientes V3 atuais:
+- **Casa:** available;
+- **Cozinha:** available;
+- **Quarto:** available;
+- **Closet:** available;
+- **Álbum:** available;
+- **Sala / STAR TV:** experimental;
+- **Ilha dos Heróis:** partial.
+
+Pendente antes de release READY:
+- expansão do snapshot Marvel verificável além dos 1.564 IDs atuais; o índice observado possui 2.896 perfis/resultados e lacuna explícita de 1.332;
+- revisão do PDF/DC e cobertura complementar sem reintroduzir OCR permissivo;
+- validação da cobertura/associação final de imagens e descrições verificadas;
+- validação física da STAR TV no Windows real;
+- regressão física de microfone, alto-falante, Chatterbox e referência local;
+- sprites emocionais reais para substituir indicadores de fallback;
+- metadados e agrupamentos avançados do Álbum são expansão, não bloqueador do fluxo principal;
+- persistência completa do estado de objetos/cenas do STAR WORLD;
+- expansão progressiva da Biblioteca/Scientific Engine.
+
+A ausência desses itens não deve ser mascarada por porcentagens ou estados
+falsos: componentes incompletos permanecem `partial`, `experimental` ou
+`planned` no catálogo.
+
+Auditoria atual: `docs/V3_0_AUDIT_2026-09-02.md`.
 
 ---
 
@@ -171,4 +231,4 @@ Cada geração segue especificação, arquitetura, implementação incremental,
 testes/diagnóstico, documentação, release e freeze.
 
 # Próximo marco
-**V2.0 MIND FOUNDATION → validar em hardware real e seguir para V2.1 Memory Architecture.**
+**V3.0 KNOWLEDGE → concluir validações locais de conteúdo, TV e voz; depois freeze.**

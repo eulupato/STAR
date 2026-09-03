@@ -1,0 +1,1 @@
+Diretório reservado para fontes próprias/licenciadas da interface STAR.\nNenhuma fonte externa é obrigatória na V3; a GUI usa fontes do sistema.\n

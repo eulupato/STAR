@@ -6,7 +6,6 @@ class Router:
         response_type=self.internal_knowledge.detect(text) if self.internal_knowledge else None
         internal=response_type is not None
         nuclei=["linguistic"]
-        normalized=self.internal_knowledge._norm(text) if False else text.lower()
         if response_type in {"brain","nuclei","core","how_work","systems","modules","decisions"}: nuclei.append("executive")
         if response_type in {"memory","remember_me","forget","memory_storage"}: nuclei.append("memory")
         if response_type in {"errors","unknown","admit_unknown","autonomy"}: nuclei.append("safety")

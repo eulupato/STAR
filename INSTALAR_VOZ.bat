@@ -3,13 +3,21 @@ setlocal
 cd /d "%~dp0"
 chcp 65001 >nul
 
+set "STAR_LABEL=STAR"
+if exist ".venv\Scripts\python.exe" (
+  for /f "delims=" %%V in ('".venv\Scripts\python.exe" -c "from core.release import RELEASE; print(RELEASE.label)"') do set "STAR_LABEL=%%V"
+)
+
 echo =====================================================
-echo        STAR V1.9 FINAL - INSTALACAO DE VOZ
+echo        %STAR_LABEL% - INSTALACAO DE VOZ
 echo =====================================================
 echo.
-echo ENTRADA : faster-whisper tiny (PT-BR, local)
+set "STAR_STT_MODEL=tiny"
+for /f "delims=" %%M in ('".venv\Scripts\python.exe" -c "from config import STT_MODEL_NAME; print(STT_MODEL_NAME)" 2^>nul') do set "STAR_STT_MODEL=%%M"
+
+echo ENTRADA : faster-whisper %STAR_STT_MODEL% (PT-BR, local)
 echo OFICIAL : Chatterbox + referencia local da STAR
-echo RAPIDA  : Piper PT-BR (somente se escolhido)
+echo RAPIDA  : SAPI/Piper conforme config.py
 echo.
 
 if not exist ".venv\Scripts\python.exe" (
@@ -19,7 +27,7 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
-echo [1/4] Instalando dependencias do ambiente principal...
+echo [1/3] Instalando dependencias do ambiente principal...
 ".venv\Scripts\python.exe" -m pip install -r requirements.txt
 if errorlevel 1 (
     echo ERRO ao instalar dependencias.
@@ -28,21 +36,15 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/4] Preparando Piper PT-BR para o modo rapido...
+echo [2/3] Preparando Piper e Whisper para uso totalmente local...
 ".venv\Scripts\python.exe" voice\install_models.py
 if errorlevel 1 (
-    echo AVISO: Piper nao ficou pronto. Isso nao impede a voz oficial.
+    echo AVISO: um ou mais modelos locais nao ficaram prontos.
+    echo A interface ainda pode abrir, mas STT/Piper podem ficar indisponiveis.
 )
 
 echo.
-echo [3/4] Preparando Whisper Tiny...
-".venv\Scripts\python.exe" -c "from faster_whisper import WhisperModel; WhisperModel('tiny',device='cpu',compute_type='int8')"
-if errorlevel 1 (
-    echo AVISO: nao foi possivel preparar o Whisper agora.
-)
-
-echo.
-echo [4/4] Preparando Chatterbox...
+echo [3/3] Preparando Chatterbox...
 set STAR_SETUP_CHAIN=1
 call INSTALAR_CHATTERBOX.bat
 set STAR_SETUP_CHAIN=
@@ -52,7 +54,7 @@ if errorlevel 1 (
 )
 
 echo.
-".venv\Scripts\python.exe" -c "from voice.manager import ChatterboxOfficialTTS; e=ChatterboxOfficialTTS(); print('REFERENCIA OFICIAL:', e.reference_path if e.reference_path.exists() else 'AUSENTE')"
+".venv\Scripts\python.exe" -c "from pathlib import Path; from voice.manager import ChatterboxOfficialTTS, LocalSpeechToText; e=ChatterboxOfficialTTS(); s=LocalSpeechToText(); print('STT LOCAL:', s.model_size if Path(s.model_size).exists() else 'AUSENTE'); print('REFERENCIA OFICIAL:', e.reference_path if e.reference_path.exists() else 'AUSENTE')"
 
 echo.
 echo Se a referencia aparecer como AUSENTE:
@@ -62,7 +64,7 @@ echo e execute DIAGNOSTICO_VOZ.bat.
 echo O arquivo sera mantido apenas na sua maquina.
 echo.
 echo =====================================================
-echo        INSTALACAO V1.9 FINAL CONCLUIDA
+echo        INSTALACAO DE VOZ CONCLUIDA
 echo =====================================================
 echo Depois execute DIAGNOSTICO_VOZ.bat.
 echo.

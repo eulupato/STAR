@@ -1,17 +1,17 @@
 """Catálogo modular do STAR WORLD.
 
 As ilhas representam ambientes/capacidades da STAR. Uma ilha pode existir
-visualmente no HUB mesmo quando o respectivo pacote de conhecimento ainda
-não foi instalado. O campo ``status`` indica o estado do pacote.
+visualmente no HUB mesmo quando sua implementação ainda está em andamento.
+O campo ``status`` indica a maturidade real do ambiente.
 """
 
 ISLANDS = {
     "herois": {
         "name": "Heróis",
         "icon": "🦸",
-        "status": "planned",
+        "status": "partial",
         "type": "knowledge",
-        "description": "Catálogo aprofundado de heróis e personagens, com biografias e referências organizadas.",
+        "description": "Primeira ilha de conhecimento navegável da STAR; o motor está ativo e o acervo cresce por PDFs e fontes oficiais.",
         "contents": [
             "biografia, origem e história",
             "evolução do personagem e principais arcos",
@@ -135,32 +135,65 @@ ISLANDS = {
     "casa": {
         "name": "Casa",
         "icon": "🏠",
-        "status": "planned",
+        "status": "available",
         "type": "home",
-        "description": "A casa da STAR dentro do STAR WORLD, com ambientes pessoais e de rotina.",
+        "description": "Ilha residencial navegável da STAR; cada cômodo informa seu próprio nível de maturidade.",
         "contents": [
-            "🍳 Cozinha — receitas, pratos e preparo culinário",
+            "📺 Sala — entretenimento, mídia e conversa",
+            "🍳 Cozinha — receitas, busca, ingredientes e preparo passo a passo",
             "🛏️ Quarto — espaço pessoal da STAR",
             "👕 Closet — roupas, skins, acessórios e aparência",
+            "📸 Álbum — galeria local de imagens",
         ],
         "subareas": {
+            "sala": {
+                "name": "Sala",
+                "icon": "📺",
+                "description": "Entretenimento, mídia e conversa; STAR TV possui processo isolado, fechamento não bloqueante e recuperação automática, ainda aguardando validação física de WebView2/pywebview no Windows do projeto.",
+                "status": "experimental",
+                "contents": ["TV", "YouTube", "mídia", "modo conversa"],
+            },
             "cozinha": {
                 "name": "Cozinha",
                 "icon": "🍳",
-                "description": "Culinária e gastronomia, com a STAR realmente preparando receitas.",
-                "contents": ["receitas", "preparo", "aprendizado culinário", "experimentação gastronômica"],
+                "description": "Livro local de receitas funcional com busca, ingredientes, preparo e acompanhamento passo a passo.",
+                "status": "available",
+                "contents": [
+                    "receitas locais JSON/Markdown/TXT",
+                    "busca por nome, ingrediente e tag",
+                    "ingredientes",
+                    "modo de preparo",
+                    "guia passo a passo",
+                ],
             },
             "quarto": {
                 "name": "Quarto",
                 "icon": "🛏️",
-                "description": "Espaço pessoal da STAR dentro da Casa.",
+                "description": "Espaço pessoal navegável da STAR dentro da Casa.",
+                "status": "available",
                 "contents": ["rotina", "descanso", "organização pessoal", "acesso ao Closet"],
             },
             "closet": {
                 "name": "Closet",
                 "icon": "👕",
                 "description": "Espaço de personalização visual da STAR.",
-                "contents": ["roupas", "skins", "acessórios", "aparências", "itens especiais"],
+                "status": "available",
+                "contents": ["roupas", "skins", "acessórios", "aparências", "itens especiais", "acesso ao Álbum"],
+            },
+            "album": {
+                "name": "Álbum",
+                "icon": "📸",
+                "description": "Galeria local funcional com importação de fotos, seleção de pasta, abertura no sistema e pré-visualização; metadados e agrupamentos avançados continuam como expansão.",
+                "status": "available",
+                "contents": [
+                    "imagens locais",
+                    "adicionar fotos pela GUI",
+                    "seleção de pasta pela GUI",
+                    "pré-visualização",
+                    "ordenação por data de modificação",
+                    "metadados e agrupamentos futuros",
+                    "memórias visuais futuras",
+                ],
             },
         },
     },
@@ -199,5 +232,6 @@ ISLANDS = {
 
 
 def get_islands():
-    """Retorna uma cópia segura do catálogo para a interface."""
-    return {key: dict(value) for key, value in ISLANDS.items()}
+    """Retorna uma cópia profunda para impedir mutações acidentais pela GUI."""
+    from copy import deepcopy
+    return deepcopy(ISLANDS)

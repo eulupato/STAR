@@ -1,4 +1,4 @@
-"""Diagnóstico detalhado da voz local da STAR V1.9 FINAL."""
+"""Diagnóstico detalhado da voz local da STAR."""
 from __future__ import annotations
 
 import sys
@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from core.release import RELEASE
 from voice.manager import VoiceManager
 
 
@@ -16,16 +17,29 @@ def flag(value: bool) -> str:
     return "✅ OK" if value else "❌ AUSENTE"
 
 
+def whisper_model_ready(model_value: str) -> bool:
+    path = Path(str(model_value)).expanduser()
+    return path.is_dir() and all(
+        (path / filename).exists()
+        for filename in ("model.bin", "config.json")
+    )
+
+
 def main() -> int:
     print("=" * 64)
-    print("⭐ STAR V1.9 FINAL — DIAGNÓSTICO DE VOZ")
+    print(f"⭐ {RELEASE.label} — DIAGNÓSTICO DE VOZ")
     print("=" * 64)
 
     manager = VoiceManager()
+    stt_backend_ready = manager.stt_configured
+    stt_model_ready = whisper_model_ready(manager.stt.model_size)
 
     print(f"Modo de voz: {manager.mode.upper()}")
+    print(f"Preferência rápida: {manager.fast_preference.upper()}")
     print(f"Fallback automático: {'ATIVO' if manager.fallback_on_error else 'DESATIVADO'}")
-    print(f"STT: {'PRONTO' if manager.stt_configured else 'NÃO INSTALADO'}")
+    print(f"STT backend faster-whisper: {flag(stt_backend_ready)}")
+    print(f"STT modelo local: {flag(stt_model_ready)}")
+    print(f"STT caminho: {manager.stt.model_size}")
     print()
 
     print("VOZ OFICIAL")
@@ -83,7 +97,13 @@ def main() -> int:
             "❌ Áudio do sistema indisponível: "
             f"{type(exc).__name__}: {exc}"
         )
+        manager.close()
         return 2
+
+    if not stt_backend_ready or not stt_model_ready:
+        print()
+        print("⚠️ STT LOCAL NÃO ESTÁ COMPLETO.")
+        print("Execute INSTALAR_VOZ.bat para preparar o Whisper local.")
 
     if manager.mode == "official" and not manager.official.configured:
         print()
@@ -94,19 +114,21 @@ def main() -> int:
         return 3
 
     print()
-    print("Pré-carregando motores necessários...")
+    print("Pré-carregando o TTS selecionado...")
     started = time.perf_counter()
-    manager.warmup()
+    tts_error = None
+    try:
+        if manager.mode == "official":
+            manager.official.warmup()
+        elif manager.fast_preference == "piper" and manager.piper_configured:
+            manager.piper.warmup()
+    except Exception as exc:
+        tts_error = f"{type(exc).__name__}: {exc}"
     warmup_elapsed = time.perf_counter() - started
-    print(f"Warmup concluído em {warmup_elapsed:.2f}s")
+    print(f"Warmup TTS concluído em {warmup_elapsed:.2f}s")
 
-    if manager.last_error:
-        print(f"⚠️ Warmup: {manager.last_error}")
-
-    if manager.mode == "official" and manager.last_error:
-        print()
-        print("❌ Chatterbox não ficou pronto.")
-        print("Piper não será usado silenciosamente.")
+    if tts_error:
+        print(f"❌ Warmup TTS: {tts_error}")
         manager.close()
         return 4
 
@@ -123,6 +145,8 @@ def main() -> int:
 
     if ok:
         print("✅ TESTE DE VOZ: OK")
+        if not stt_backend_ready or not stt_model_ready:
+            print("⚠️ TTS está OK, mas o STT ainda precisa ser instalado.")
         manager.close()
         return 0
 

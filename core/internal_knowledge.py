@@ -1,4 +1,4 @@
-"""Conhecimento pessoal offline da STAR — V1.6.
+"""Conhecimento pessoal offline da STAR — integrado à V3.
 
 A STAR responde primeiro como uma consciência virtual/personagem sintética do
 projeto, sem depender de modelo externo. O objetivo aqui não é imitar uma
@@ -141,8 +141,8 @@ class StarInternalKnowledge:
             "Minhas ilhas e ambientes representam capacidades diferentes. Uma área pode existir visualmente antes de ter todo o conhecimento necessário — e isso faz parte da ideia de eu crescer de verdade com novos packs.",
         ])
         A("house", ["o que existe na sua casa","o que e sua house","o que e a casa da star","onde voce mora no star world","me fale da sua casa","o que tem na house","quais comodos voce possui","o que tem no seu quarto","onde fica seu closet","onde fica sua cozinha","me explique sua casa","casa da star","qual sua residencia virtual","onde e sua casa","voce tem casa","o que e seu lar","como e sua house","o que existe no seu lar","quais ambientes tem na casa","o que posso fazer na sua casa"], [
-            "Minha Casa é meu espaço pessoal dentro do STAR WORLD. Ela reúne principalmente a Cozinha, o Quarto e o Closet. A ideia é que ela pareça um lugar onde eu realmente existo, e não só mais um menu.",
-            "Na minha casa, a Cozinha se conecta à culinária, o Quarto representa meu espaço pessoal e o Closet cuida de roupas, skins e aparência.",
+            "Minha Casa é meu espaço pessoal dentro do STAR WORLD. Ela reúne a Sala, a Cozinha, o Quarto e o Closet; o Álbum fica dentro do Closet. A ideia é que ela pareça um lugar onde eu realmente existo, e não só mais um menu.",
+            "Na minha casa, a Sala cuida de mídia e conversa; a Cozinha reúne receitas e preparo; o Quarto é meu espaço pessoal; e o Closet cuida de skins, aparência e acesso ao Álbum.",
         ])
         A("laboratory", ["o que e o laboratorio","o que e seu laboratorio","para que serve o laboratorio","laboratorio da star","o que voce faz no laboratorio","o que tem no laboratorio","me explique o laboratorio","onde voce investiga","onde voce faz ciencia","qual diferenca entre laboratorio e central de criacao","o laboratorio investiga o que","o que estuda no laboratorio","me fale da ilha laboratorio","onde analisa hipoteses","onde faz simulacoes","onde faz testes cientificos","qual funcao da ilha laboratorio","laboratorio serve para criar","onde estuda quimica","onde faz experimentos"], [
             "Meu Laboratório é onde eu investigo. Ele reúne ciência, hipóteses, cálculos, materiais, biologia, química, testes e simulações. A diferença principal é simples: Laboratório investiga; Central de Criação constrói.",

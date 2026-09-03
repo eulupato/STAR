@@ -1,5 +1,4 @@
-"""Capability Registry da STAR MIND V2."""
-
+"""Capability Registry da STAR MIND."""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
@@ -48,10 +47,13 @@ class CapabilityRegistry:
     def defaults(cls):
         registry = cls()
         for capability in (
-            Capability("context", "MIND", "Continuidade e fatos da sessão."),
+            Capability("context", "MIND", "Continuidade, entidades e fatos da sessão."),
+            Capability("conversation", "EXPRESSION", "Small talk procedural e anti-repetição."),
+            Capability("media", "WORLD", "Controle da STAR TV por eventos."),
             Capability("computer_control", "ACTION", "Ações locais e comandos do computador."),
             Capability("math", "KNOWLEDGE", "Cálculo determinístico offline."),
-            Capability("legacy_reasoning", "MIND", "Router e Executive estáveis da V1.9."),
+            Capability("universal_search", "KNOWLEDGE", "Busca local em entidades, packs e memória."),
+            Capability("legacy_reasoning", "MIND", "Router e Executive consolidados."),
             Capability("internal_knowledge", "KNOWLEDGE", "Conhecimento interno local."),
             Capability("knowledge_packs", "KNOWLEDGE", "Pacotes locais de conhecimento."),
             Capability(
