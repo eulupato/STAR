@@ -21,7 +21,7 @@ from urllib.parse import quote, urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from core.logging_config import get_logger
-from knowledge.entities import Entity, KnowledgeSource, record_field_provenance
+from knowledge.entities import Entity, KnowledgeSource, Relationship, record_field_provenance
 from knowledge.store import normalize_search_text
 
 log = get_logger("knowledge.wikidata")
@@ -29,6 +29,7 @@ log = get_logger("knowledge.wikidata")
 WIKIDATA_API = "https://www.wikidata.org/w/api.php"
 WIKIDATA_ENTITY = "https://www.wikidata.org/wiki/Special:EntityData/{qid}.json"
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
+WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php"
 
 _FICTION_TOKENS = (
     "fictional character",
@@ -55,6 +56,8 @@ class WikidataProfile:
     occupation: list[str] = field(default_factory=list)
     affiliations: list[str] = field(default_factory=list)
     creators: list[str] = field(default_factory=list)
+    wikipedia_url: str | None = None
+    wikipedia_fields: dict = field(default_factory=dict)
     image_url: str | None = None
     image_source_url: str | None = None
     image_attribution: dict = field(default_factory=dict)
@@ -170,12 +173,14 @@ class WikidataClient:
         self.search_cache = self.cache_dir / "search"
         self.entity_cache = self.cache_dir / "entities"
         self.commons_cache = self.cache_dir / "commons"
+        self.wikipedia_cache = self.cache_dir / "wikipedia"
         self.image_cache = self.cache_dir / "images"
         self.image_rejections: list[dict] = []
         for path in (
             self.search_cache,
             self.entity_cache,
             self.commons_cache,
+            self.wikipedia_cache,
             self.image_cache,
         ):
             path.mkdir(parents=True, exist_ok=True)
@@ -284,6 +289,185 @@ class WikidataClient:
         )
         results = data.get("search", [])
         return [item for item in results if isinstance(item, dict)]
+
+    @staticmethod
+    def _strip_wiki_markup(value: str | None) -> str:
+        text = str(value or "")
+        text = re.sub(r"<ref\b[^>]*>.*?</ref>", " ", text, flags=re.I | re.S)
+        text = re.sub(r"<ref\b[^>]*/>", " ", text, flags=re.I)
+        text = re.sub(r"<br\s*/?>", ", ", text, flags=re.I)
+        text = re.sub(r"\[\[([^\]|]+)\|([^\]]+)\]\]", r"\2", text)
+        text = re.sub(r"\[\[([^\]]+)\]\]", r"\1", text)
+        text = re.sub(r"\{\{(?:ubl|unbulleted list|plainlist)\s*\|", "", text, flags=re.I)
+        text = text.replace("{{bulleted list|", "")
+        text = text.replace("}}", " ")
+        text = re.sub(r"\{\{[^{}]*\}\}", " ", text)
+        text = re.sub(r"<[^>]+>", " ", text)
+        text = text.replace("'''", "").replace("''", "")
+        text = re.sub(r"\[[^\s\]]+\s+([^\]]+)\]", r"\1", text)
+        text = re.sub(r"\s*\|\s*", ", ", text)
+        text = re.sub(r"[\n\r*;]+", ", ", text)
+        text = re.sub(r"\s*,\s*", ", ", text)
+        return re.sub(r"\s+", " ", text).strip(" ,")
+
+    @classmethod
+    def _wiki_values(cls, value: str | None) -> list[str]:
+        clean = cls._strip_wiki_markup(value)
+        if not clean:
+            return []
+        result = []
+        seen = set()
+        for item in re.split(r"\s*,\s*", clean):
+            item = item.strip(" .;:")
+            key = normalize_search_text(item)
+            if (
+                item
+                and len(item) <= 140
+                and key
+                and key not in seen
+                and key not in {"none", "n a", "unknown"}
+            ):
+                seen.add(key)
+                result.append(item)
+        return result[:40]
+
+    @staticmethod
+    def _extract_infobox(wikitext: str) -> str:
+        match = re.search(r"\{\{\s*Infobox\b", wikitext or "", flags=re.I)
+        if not match:
+            return ""
+        start = match.start()
+        depth = 0
+        index = start
+        while index < len(wikitext) - 1:
+            pair = wikitext[index:index + 2]
+            if pair == "{{":
+                depth += 1
+                index += 2
+                continue
+            if pair == "}}":
+                depth -= 1
+                index += 2
+                if depth == 0:
+                    return wikitext[start:index]
+                continue
+            index += 1
+        return ""
+
+    @staticmethod
+    def _parse_infobox_fields(infobox: str) -> dict[str, str]:
+        fields: dict[str, str] = {}
+        current = None
+        for raw in (infobox or "").splitlines():
+            match = re.match(r"^\s*\|\s*([^=]+?)\s*=\s*(.*)$", raw)
+            if match:
+                current = normalize_search_text(match.group(1)).replace(" ", "_")
+                fields[current] = match.group(2).strip()
+                continue
+            if current and raw.strip() and not raw.lstrip().startswith("}}"):
+                fields[current] += "\n" + raw.strip()
+        return fields
+
+    @staticmethod
+    def _field_first(fields: dict[str, str], *names: str) -> str:
+        for name in names:
+            key = normalize_search_text(name).replace(" ", "_")
+            value = str(fields.get(key) or "").strip()
+            if value:
+                return value
+        return ""
+
+    def _wikipedia_infobox(
+        self,
+        entity_data: dict,
+        *,
+        online: bool,
+        force: bool,
+    ) -> tuple[dict, str | None]:
+        sitelinks = entity_data.get("sitelinks", {}) or {}
+        link = sitelinks.get("enwiki") or {}
+        title = _clean_text(link.get("title"))
+        if not title:
+            return {}, None
+
+        params = urlencode(
+            {
+                "action": "query",
+                "prop": "revisions",
+                "rvprop": "content",
+                "rvslots": "main",
+                "titles": title,
+                "format": "json",
+                "formatversion": 2,
+            }
+        )
+        url = f"{WIKIPEDIA_API}?{params}"
+        cache_path = self.wikipedia_cache / (
+            f"{self._cache_key(title)}.json"
+        )
+        data = self._json_request(
+            url,
+            cache_path,
+            online=online,
+            force=force,
+        ) or {}
+        pages = ((data.get("query") or {}).get("pages") or [])
+        if not pages:
+            return {}, None
+        revisions = (pages[0] or {}).get("revisions") or []
+        if not revisions:
+            return {}, None
+        slot = ((revisions[0] or {}).get("slots") or {}).get("main") or {}
+        wikitext = str(slot.get("content") or "")
+        infobox = self._extract_infobox(wikitext)
+        if not infobox:
+            return {}, "https://en.wikipedia.org/wiki/" + quote(title.replace(" ", "_"))
+
+        fields = self._parse_infobox_fields(infobox)
+        result: dict[str, object] = {}
+
+        real_name = self._strip_wiki_markup(
+            self._field_first(fields, "alter ego", "alter_ego", "real name", "real_name")
+        )
+        if real_name:
+            result["real_name"] = real_name[:160]
+
+        species = self._strip_wiki_markup(self._field_first(fields, "species"))
+        if species:
+            result["species"] = species[:160]
+
+        first_appearance = self._strip_wiki_markup(
+            self._field_first(fields, "first", "first appearance", "first_appearance", "debut")
+        )
+        if first_appearance:
+            result["first_appearance"] = first_appearance[:240]
+
+        mapping = {
+            "aliases": ("aliases", "alias"),
+            "occupation": ("occupation", "occupations"),
+            "affiliations": (
+                "alliances",
+                "affiliations",
+                "team affiliations",
+                "team_affiliations",
+            ),
+            "team": ("teams", "team"),
+            "powers": ("powers",),
+            "abilities": ("abilities", "abilities and powers"),
+            "equipment": ("equipment", "weapons", "weapon"),
+            "creators": ("creators", "creator"),
+            "relatives": ("relatives",),
+            "partners": ("partners", "partner"),
+        }
+        for target, names in mapping.items():
+            values = self._wiki_values(self._field_first(fields, *names))
+            if values:
+                result[target] = values
+
+        return (
+            result,
+            "https://en.wikipedia.org/wiki/" + quote(title.replace(" ", "_")),
+        )
 
     def _entity_data(
         self,
@@ -700,6 +884,8 @@ class WikidataClient:
             description,
         )
 
+        wikipedia_fields = {}
+        wikipedia_url = None
         if image_only:
             aliases = []
             gender_labels = []
@@ -707,6 +893,11 @@ class WikidataClient:
             affiliations = []
             creators = []
         else:
+            wikipedia_fields, wikipedia_url = self._wikipedia_infobox(
+                entity_data,
+                online=online,
+                force=force,
+            )
             aliases = self._aliases(entity_data)
             gender_labels = self._labels_for_qids(
                 self._claim_item_ids(entity_data, "P21"),
@@ -851,6 +1042,7 @@ class WikidataClient:
                 occupation,
                 affiliations,
                 creators,
+                wikipedia_fields,
                 image_url,
             )
         ):
@@ -867,6 +1059,8 @@ class WikidataClient:
             occupation=occupation,
             affiliations=affiliations,
             creators=creators,
+            wikipedia_url=wikipedia_url,
+            wikipedia_fields=wikipedia_fields,
             image_url=image_url,
             image_source_url=image_source_url,
             image_attribution=attribution,
