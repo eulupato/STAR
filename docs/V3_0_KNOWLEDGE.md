@@ -311,6 +311,21 @@ Os timeouts padrão também foram reduzidos para impedir que uma única origem
 lenta faça a atualização parecer congelada: fonte oficial até 5 s e Wikidata
 até 7 s por requisição.
 
+### Enriquecimento estruturado resumível
+
+O snapshot Marvel versionado é um catálogo de identidade, não uma ficha
+enciclopédica completa. A etapa `scan_structured_data()` resolve essa lacuna
+sem depender de páginas Marvel.com que frequentemente retornam HTTP 403.
+
+Fontes suplementares:
+
+- Wikidata: identidade, descrição curta e propriedades estruturadas;
+- Wikipedia: somente fatos da infobox, nunca o artigo completo.
+
+Os campos suplementares só preenchem lacunas e recebem
+`metadata.field_provenance`. A execução é resumível por checkpoint local e
+gera cobertura por campo após o processamento.
+
 ### Qualidade das fichas
 
 `heroes_build_report.json` agora diferencia:
