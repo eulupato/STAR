@@ -78,7 +78,9 @@
     "heroes_image_rights_audit",
     "heroes_manifest_first_image_pipeline",
     "heroes_resumable_image_scan",
-    "legacy_runtime_cleanup"
+    "legacy_runtime_cleanup",
+    "heroes_structured_data_scan",
+    "heroes_wikipedia_infobox_facts"
   ],
   "features_in_progress": [
     "heroes_full_image_coverage",
