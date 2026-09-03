@@ -487,3 +487,110 @@ def test_visual_scan_discards_old_checkpoint_schema(tmp_path):
 
     assert state["schema_version"] == 2
     assert state["characters"] == {}
+
+
+def test_visual_scan_does_not_call_live_official_by_default(tmp_path, monkeypatch):
+    import knowledge.heroes_builder as heroes_builder_module
+
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    engine.upsert_entity(
+        Entity(
+            name="No Image Hero",
+            category="character",
+            universe="Marvel",
+            publisher="Marvel Comics",
+        )
+    )
+    builder = HeroesKnowledgeBuilder(engine, tmp_path / "local")
+    monkeypatch.setattr(
+        builder.wikidata,
+        "fetch_profile",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        heroes_builder_module,
+        "source_for_entity",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("live official must be opt-in in image scan")
+        ),
+    )
+
+    report = builder.scan_visual_references(
+        online=False,
+        resume=False,
+        delay_seconds=0,
+    )
+
+    assert report["totals"]["unresolved"] == 1
+
+
+def test_visual_scan_skips_wikidata_when_manifest_image_exists(tmp_path, monkeypatch):
+    pack = tmp_path / "pack_skip_wikidata"
+    pack.mkdir()
+    record = {
+        "id": "marvel-api:199",
+        "source_id": 199,
+        "name": "Fast Hero",
+        "original_name": "Fast Hero",
+        "aliases": [],
+        "universe": "Marvel",
+        "publisher": "Marvel Comics",
+        "official_api_uri": "https://gateway.marvel.com/v1/public/characters/199",
+        "image_ref": "marvel-api:199",
+    }
+    (pack / "marvel_characters.jsonl").write_text(
+        json.dumps(record) + "\n",
+        encoding="utf-8",
+    )
+    (pack / "marvel_image_manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "images": {
+                    "marvel-api:199": [
+                        "https://i.annihil.us/fast-hero.jpg"
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (pack / "marvel_sources.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "coverage": {"snapshot_records": 1},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    engine = KnowledgeEngine(tmp_path / "knowledge.db")
+    builder = HeroesKnowledgeBuilder(
+        engine,
+        tmp_path / "local",
+        marvel_pack_root=pack,
+    )
+    builder.marvel_master.import_into(engine)
+
+    def fake_cache(url, *, online=True, context="", source_ref=""):
+        image = tmp_path / "fast.jpg"
+        image.write_bytes(b"image")
+        return str(image)
+
+    monkeypatch.setattr(builder.web, "cache_image", fake_cache)
+    monkeypatch.setattr(
+        builder.wikidata,
+        "fetch_profile",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("Wikidata should not run after manifest success")
+        ),
+    )
+
+    report = builder.scan_visual_references(
+        online=False,
+        resume=False,
+        delay_seconds=0,
+    )
+
+    assert report["totals"]["accepted_official_reference"] == 1
