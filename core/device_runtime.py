@@ -76,7 +76,7 @@ class DeviceRuntime:
     def __init__(self, manifest_path: Path):
         self.manifest_path = Path(manifest_path)
         self._lock = threading.Lock()
-        self._mtime_ns = None
+        self._source_digest = None
         self._ecosystem = deepcopy(_DEFAULT_ECOSYSTEM)
         self._star_name = "STAR"
         self._star_version = "unknown"
@@ -86,49 +86,62 @@ class DeviceRuntime:
 
     def _reload(self, force: bool = False) -> None:
         try:
-            stat = self.manifest_path.stat()
-            mtime_ns = stat.st_mtime_ns
+            raw = self.manifest_path.read_bytes()
         except OSError:
-            mtime_ns = None
+            raw = b""
 
+        source_digest = sha256(raw).hexdigest()
         with self._lock:
-            if not force and mtime_ns == self._mtime_ns:
+            if not force and source_digest == self._source_digest:
                 return
 
-            manifest = {}
-            if mtime_ns is not None:
-                try:
-                    manifest = json.loads(self.manifest_path.read_text(encoding="utf-8"))
-                except (OSError, json.JSONDecodeError):
-                    manifest = {}
-
-            self._ecosystem = _merge(
-                _DEFAULT_ECOSYSTEM,
-                manifest.get("device_ecosystem") if isinstance(manifest, dict) else {},
-            )
-            self._star_name = str(manifest.get("name") or "STAR") if isinstance(manifest, dict) else "STAR"
-            self._star_version = str(manifest.get("version") or "unknown") if isinstance(manifest, dict) else "unknown"
-            gateway = manifest.get("device_gateway") if isinstance(manifest, dict) else {}
-            if not isinstance(gateway, dict):
-                gateway = {}
+        if raw:
             try:
-                self._protocol = int(gateway.get("protocol", 1))
-            except (TypeError, ValueError):
-                self._protocol = 1
+                manifest = json.loads(raw.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                # Preserva o último runtime válido se o arquivo estiver sendo
+                # regravado ou estiver temporariamente incompleto.
+                return
+        else:
+            manifest = {}
 
-            canonical = json.dumps(
-                {
-                    "name": self._star_name,
-                    "version": self._star_version,
-                    "protocol": self._protocol,
-                    "ecosystem": self._ecosystem,
-                },
-                ensure_ascii=False,
-                sort_keys=True,
-                separators=(",", ":"),
-            ).encode("utf-8")
-            self._revision = sha256(canonical).hexdigest()[:16]
-            self._mtime_ns = mtime_ns
+        if not isinstance(manifest, dict):
+            manifest = {}
+
+        ecosystem = _merge(
+            _DEFAULT_ECOSYSTEM,
+            manifest.get("device_ecosystem") if isinstance(manifest, dict) else {},
+        )
+        star_name = str(manifest.get("name") or "STAR")
+        star_version = str(manifest.get("version") or "unknown")
+        gateway = manifest.get("device_gateway")
+        if not isinstance(gateway, dict):
+            gateway = {}
+        try:
+            protocol = int(gateway.get("protocol", 1))
+        except (TypeError, ValueError):
+            protocol = 1
+
+        canonical = json.dumps(
+            {
+                "name": star_name,
+                "version": star_version,
+                "protocol": protocol,
+                "ecosystem": ecosystem,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        revision = sha256(canonical).hexdigest()[:16]
+
+        with self._lock:
+            self._ecosystem = ecosystem
+            self._star_name = star_name
+            self._star_version = star_version
+            self._protocol = protocol
+            self._revision = revision
+            self._source_digest = source_digest
 
     @property
     def revision(self) -> str:
