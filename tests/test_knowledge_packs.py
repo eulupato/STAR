@@ -15,13 +15,13 @@ class EmptyInternalKnowledge:
         return None
 
 
-def _make_pack(root):
-    pack = root / "matematica_teste"
+def _make_pack(root, pack_name="matematica_teste"):
+    pack = root / pack_name
     pack.mkdir(parents=True)
     (pack / "manifest.json").write_text(
         json.dumps(
             {
-                "id": "matematica_teste",
+                "id": pack_name,
                 "name": "Matemática Teste",
                 "version": "1.0",
                 "content_file": "knowledge.jsonl",
@@ -55,7 +55,7 @@ def _make_pack(root):
 
 def test_manager_loads_and_searches_structured_pack(tmp_path):
     _make_pack(tmp_path)
-    manager = KnowledgePackManager(tmp_path)
+    manager = KnowledgePackManager(tmp_path, auto_removable=False)
 
     assert manager.stats() == {"packs": 1, "entries": 2}
     answer = manager.answer("Você pode me dizer o que é uma fração?")
@@ -66,7 +66,7 @@ def test_manager_loads_and_searches_structured_pack(tmp_path):
 
 def test_executive_uses_pack_before_unknown_fallback(tmp_path):
     _make_pack(tmp_path)
-    manager = KnowledgePackManager(tmp_path)
+    manager = KnowledgePackManager(tmp_path, auto_removable=False)
     executive = Executive(
         internal_knowledge=EmptyInternalKnowledge(),
         knowledge_packs=manager,
@@ -77,3 +77,38 @@ def test_executive_uses_pack_before_unknown_fallback(tmp_path):
         {"response_type": None},
     )
     assert "hipotenusa" in answer
+
+
+def test_manager_reads_pack_from_external_star_knowledge_drive(tmp_path):
+    local = tmp_path / "local"
+    usb = tmp_path / "usb"
+    external_packs = usb / "STAR_KNOWLEDGE" / "packs"
+    _make_pack(external_packs, "fisica_usb")
+
+    manager = KnowledgePackManager(
+        local,
+        external_roots=[external_packs],
+        auto_removable=False,
+    )
+
+    assert manager.storage_stats() == {"local": 0, "removable": 1, "conflicts": 0}
+    assert manager.answer("qual é o teorema de pitágoras?") is not None
+    assert manager.list()["fisica_usb"]["storage"] == "removable"
+
+
+def test_pack_content_file_cannot_escape_pack_directory(tmp_path):
+    pack = tmp_path / "seguranca"
+    pack.mkdir(parents=True)
+    outside = tmp_path / "outside.json"
+    outside.write_text(
+        json.dumps([{"title": "segredo", "answer": "não carregar"}]),
+        encoding="utf-8",
+    )
+    (pack / "manifest.json").write_text(
+        json.dumps({"id": "seguranca", "content_file": "../outside.json"}),
+        encoding="utf-8",
+    )
+
+    manager = KnowledgePackManager(tmp_path, auto_removable=False)
+    assert manager.list()["seguranca"]["entries"] == 0
+    assert manager.answer("segredo") is None
