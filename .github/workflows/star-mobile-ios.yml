@@ -1,0 +1,36 @@
+name: STAR Mobile iOS
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "clients/star_mobile_ios/**"
+      - ".github/workflows/star-mobile-ios.yml"
+      - "core/device_gateway.py"
+      - "core/device_runtime.py"
+      - "STAR_MANIFEST.json"
+  push:
+    branches: [main, feature/star-mobile-unified-v0]
+    paths:
+      - "clients/star_mobile_ios/**"
+      - ".github/workflows/star-mobile-ios.yml"
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Build STAR Mobile for iOS Simulator
+        run: |
+          xcodebuild \
+            -project clients/star_mobile_ios/STARMobile.xcodeproj \
+            -target STARMobile \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build
