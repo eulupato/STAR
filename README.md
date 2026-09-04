@@ -10,13 +10,19 @@ STAR permanece separada dos modelos que ela utiliza.
 
 ## Execução no Windows
 
-Use:
+Para a STAR local, use:
 
 `INICIAR_STAR.bat`
 
 ou:
 
 `\.venv\Scripts\python.exe main.py`
+
+Para ativar os endpoints LAN experimentais (iPhone/Watch), use:
+
+`INICIAR_STAR_DEVICES.bat`
+
+`INICIAR_STAR_WATCH.bat` permanece como alias compatível.
 
 Se o ambiente principal ainda não existir, execute `CRIAR_AMBIENTE.bat`.
 Para instalar os modelos de voz locais, execute `INSTALAR_VOZ.bat`.
@@ -73,7 +79,7 @@ evitando que uma resposta atrasada seja reproduzida depois de outra pergunta.
 ```text
 STAR/
 ├── core/                  # identidade, roteamento, memória e cérebro
-├── clients/               # endpoints leves, como STAR Watch
+├── clients/               # endpoints leves iOS/Android
 ├── database/              # persistência
 ├── gui/                   # interface 2D atual / STAR WORLD
 ├── knowledge/             # Knowledge Packs
@@ -107,44 +113,63 @@ STAR/
 - diagnósticos;
 - CI de sintaxe, manifestos e smoke tests.
 
-## ⌚ STAR Watch V0 — experimental
+## 📡 STAR Devices V0.2 — experimental
 
-A Foundation possui uma ponte **opt-in** para validar o princípio do STAR ONI com
-um relógio Android. O Watch não possui um MIND separado: ele funciona como
-sensor/interface e envia entradas ao **mesmo STAR Core no PC**.
+A Foundation possui uma ponte **opt-in** para validar o princípio do STAR ONI sem
+antecipar o ECOSYSTEM completo da V9.0. Os endpoints não possuem MIND separado:
+eles funcionam como sensores/interfaces e enviam entradas ao **mesmo STAR Core no
+PC**.
 
 ```text
-Watch / celular / futuro corpo
-        │
-        │ LAN
-        ▼
-    STAR Core no PC
-        │
-        ▼
-   resposta / comando
+📱 iPhone / ⌚ Watch / futuros endpoints
+               │
+               │ LAN
+               ▼
+          ⭐ STAR Core PC
+               │
+               ▼
+        resposta / estado
 ```
 
 Para iniciar a STAR com o gateway experimental:
 
-`INICIAR_STAR_WATCH.bat`
+`INICIAR_STAR_DEVICES.bat`
 
-O cliente Android está em `clients/star_watch_android/` e suporta Android 8.1+
-(`minSdk 27`). A V0 possui pareamento, chat, microfone e captura de imagem.
+Atualmente:
 
+- `clients/star_mobile_ios/` — STAR Mobile iOS V0, iOS 15+;
+- `clients/star_watch_android/` — STAR Watch Android V0.2, Android 8.1+;
 - texto → STAR Core → resposta;
 - áudio → faster-whisper no PC → STAR Core → resposta;
 - imagem → inbox local do Core;
+- TTS do endpoint apenas vocaliza a resposta textual;
 - comandos locais do computador ficam **bloqueados para origem remota** enquanto
   o Permission Manager completo ainda não existe.
+
+### Adaptive Runtime
+
+`STAR_MANIFEST.json > device_ecosystem` é a fonte de verdade para tema, rótulos,
+feature flags e perfis `phone/watch`. O Gateway serve `/v1/runtime`; heartbeats
+permitem que os clientes detectem uma revisão nova e reapliquem configuração.
+
+Mudanças de configuração e comportamento central podem refletir nos endpoints
+sem duplicar a STAR. Mudanças em código nativo Swift/Java continuam exigindo
+rebuild/atualização do aplicativo.
 
 A imagem é transportada corretamente, porém **não é analisada na V1.9**. O Vision
 Engine continua reservado para a V5.0 SENSES.
 
-O APK debug é compilado pelo workflow `STAR Watch Android` e também pode ser
-gerado localmente; `INSTALAR_STAR_WATCH.bat` faz a instalação via ADB/USB após o
-relógio estar autorizado para depuração.
+O APK debug do Watch continua compilado pelo workflow `STAR Watch Android` e
+`INSTALAR_STAR_WATCH.bat` mantém a instalação via ADB/USB. O cliente iOS possui
+workflow próprio de build no Xcode; instalação em iPhone físico exige assinatura
+Apple válida.
 
-Veja `docs/STAR_WATCH_V0.md` e `clients/star_watch_android/README.md`.
+Veja:
+
+- `docs/STAR_DEVICE_ECOSYSTEM_V0.md`
+- `docs/STAR_WATCH_V0.md`
+- `clients/star_mobile_ios/README.md`
+- `clients/star_watch_android/README.md`
 
 ## 💾 Knowledge Packs em pendrive
 
@@ -215,6 +240,7 @@ Nenhuma integração externa de voz é necessária para a V1.9.
 
 Bugs descobertos após a release entram como V1.9.x.
 Novas arquiteturas cognitivas entram na V2.0 MIND.
+As pontes mobile/watch permanecem experimentais até seus marcos oficiais.
 
 ## Auditoria de estabilidade — 31/08/2026
 

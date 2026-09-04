@@ -35,8 +35,10 @@
     "star_mind_v2"
   ],
   "experimental_features": [
-    "star_device_gateway_v0",
-    "star_watch_android_v0"
+    "star_device_gateway_v0_2",
+    "star_watch_android_v0",
+    "star_mobile_ios_v0",
+    "adaptive_device_runtime_v0"
   ],
   "voice": {
     "stt": "faster-whisper tiny local PT-BR",
@@ -59,5 +61,48 @@
     "transport": "LAN HTTP",
     "default_port": 8765,
     "processing_location": "STAR Core no PC"
+  },
+  "device_ecosystem": {
+    "schema": 1,
+    "sync_interval_seconds": 30,
+    "theme": {
+      "background": "#080B12",
+      "surface": "#111827",
+      "primary": "#F6D35F",
+      "secondary": "#F18ACB",
+      "accent": "#6CC8FF",
+      "text": "#FFFFFF",
+      "muted": "#A8B0C0"
+    },
+    "labels": {
+      "title": "STAR",
+      "pair": "PAREAR",
+      "send": "ENVIAR",
+      "speak": "FALAR",
+      "stop_and_send": "ENVIAR ÁUDIO",
+      "camera": "MOSTRAR À STAR"
+    },
+    "features": {
+      "text": true,
+      "voice_input": true,
+      "spoken_reply": true,
+      "camera_transport": true,
+      "vision_analysis": false,
+      "remote_pc_actions": false
+    },
+    "profiles": {
+      "phone": {
+        "layout": "comfortable",
+        "show_connection_fields": true,
+        "show_response_transcript": true,
+        "preferred_columns": 1
+      },
+      "watch": {
+        "layout": "compact",
+        "show_connection_fields": true,
+        "show_response_transcript": true,
+        "preferred_columns": 1
+      }
+    }
   }
 }

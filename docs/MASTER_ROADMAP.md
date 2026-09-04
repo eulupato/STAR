@@ -45,13 +45,18 @@ sistemas completos de versões futuras.
 
 Atualmente:
 
-- **STAR Device Gateway V0** — ponte LAN experimental para Watch/endpoint;
-- **STAR Watch Android V0** — cliente sensor/interface, sem MIND próprio;
+- **STAR Device Gateway V0.2** — ponte LAN + Adaptive Runtime;
+- **STAR Mobile iOS V0** — iPhone como sensor/interface, sem MIND próprio;
+- **STAR Watch Android V0.2** — Watch como sensor/interface, sem MIND próprio;
 - **Knowledge Packs removíveis** — packs JSON/JSONL em `STAR_KNOWLEDGE/packs`.
+
+O runtime compartilhado centraliza tema, rótulos, feature flags e perfis
+`phone/watch` em `STAR_MANIFEST.json`. Isso valida adaptação entre endpoints sem
+criar Core, identidade ou memória paralelos.
 
 Esses itens não significam que V5 SENSES ou V9 ECOSYSTEM estão concluídos. O
 Gateway apenas entrega entradas ao Core atual; visão, Device Manager completo,
-sincronização e permissões avançadas continuam em seus marcos originais.
+Offline-first Sync e permissões avançadas continuam em seus marcos originais.
 
 ---
 
@@ -224,8 +229,8 @@ Inclui:
 - Network Awareness.
 
 Princípio permanente: endpoints percebem, transmitem e executam; a fonte central
-processa. O protótipo Watch V0 da Foundation valida esse princípio, mas não
-substitui o Device Manager/Sync desta versão.
+processa. Os protótipos Device Gateway/Mobile/Watch da Foundation validam esse
+princípio, mas não substituem o Device Manager/Sync desta versão.
 
 LOCAL continua funcional sem LAN ou Internet.
 

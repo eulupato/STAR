@@ -34,13 +34,14 @@ def _request(url, method="GET", payload=None, headers=None):
         return response.status, json.loads(response.read().decode("utf-8"))
 
 
-def test_gateway_pairs_and_routes_text_to_same_core_without_remote_actions(tmp_path):
+def test_gateway_pairs_routes_and_returns_adaptive_runtime(tmp_path):
     star = FakeStar()
     gateway = DeviceGateway(
         star,
         host="127.0.0.1",
         port=0,
         runtime_dir=tmp_path,
+        manifest_path=ROOT / "STAR_MANIFEST.json",
         pairing_code="123456",
     ).start()
     try:
@@ -48,6 +49,7 @@ def test_gateway_pairs_and_routes_text_to_same_core_without_remote_actions(tmp_p
         status, health = _request(base + "/v1/health")
         assert status == 200
         assert health["status"] == "online"
+        assert health["runtime_revision"]
 
         _, paired = _request(
             base + "/v1/pair",
@@ -57,13 +59,36 @@ def test_gateway_pairs_and_routes_text_to_same_core_without_remote_actions(tmp_p
                 "device_id": "watch-test",
                 "name": "STAR Watch",
                 "capabilities": ["microphone", "camera", "display"],
+                "metadata": {
+                    "platform": "android",
+                    "form_factor": "watch",
+                    "os_version": "8.1",
+                    "app_version": "0.2.0",
+                },
             },
         )
         token = paired["token"]
+        assert paired["runtime"]["form_factor"] == "watch"
+        assert paired["runtime"]["features"]["remote_pc_actions"] is False
+
         headers = {
             "Authorization": f"Bearer {token}",
             "X-STAR-Device": "watch-test",
         }
+        _, runtime = _request(base + "/v1/runtime", headers=headers)
+        assert runtime["form_factor"] == "watch"
+        assert runtime["labels"]["speak"]
+
+        heartbeat_headers = dict(headers)
+        heartbeat_headers["X-STAR-Runtime"] = runtime["revision"]
+        _, heartbeat = _request(
+            base + "/v1/heartbeat",
+            method="POST",
+            payload={},
+            headers=heartbeat_headers,
+        )
+        assert heartbeat["runtime_changed"] is False
+
         _, result = _request(
             base + "/v1/text",
             method="POST",
@@ -75,6 +100,7 @@ def test_gateway_pairs_and_routes_text_to_same_core_without_remote_actions(tmp_p
 
         registry = json.loads((tmp_path / "devices.json").read_text(encoding="utf-8"))
         record = registry["watch-test"]
+        assert record["metadata"]["form_factor"] == "watch"
         assert "token_sha256" in record
         assert len(record["token_sha256"]) == 64
         assert "token" not in record
@@ -88,6 +114,7 @@ def test_gateway_rejects_unauthenticated_requests(tmp_path):
         host="127.0.0.1",
         port=0,
         runtime_dir=tmp_path,
+        manifest_path=ROOT / "STAR_MANIFEST.json",
         pairing_code="123456",
     ).start()
     try:

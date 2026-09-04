@@ -68,9 +68,11 @@ def _start_device_gateway(star):
         host=os.getenv("STAR_DEVICE_HOST", DEVICE_GATEWAY_HOST),
         port=int(os.getenv("STAR_DEVICE_PORT", str(DEVICE_GATEWAY_PORT))),
         runtime_dir=ROOT / "runtime" / "oni",
+        manifest_path=ROOT / "STAR_MANIFEST.json",
     ).start()
-    print(f"⌚ STAR Device Gateway: {gateway.url}")
+    print(f"📡 STAR Device Gateway: {gateway.url}")
     print(f"🔐 Código de pareamento desta sessão: {gateway.pairing_code}")
+    print(f"🔄 Runtime adaptativo: {gateway.runtime.revision}")
     print("🛡️ Gateway disponível somente quando ativado explicitamente; mantenha-o na LAN privada.")
     return gateway
 

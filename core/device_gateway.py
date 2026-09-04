@@ -1,8 +1,8 @@
 """Ponte LAN experimental para dispositivos STAR.
 
 A V1.9 não implementa o ECOSYSTEM da V9.0. Este módulo fornece somente a
-infraestrutura mínima e opt-in necessária para prototipar clientes como o
-STAR Watch sem mover raciocínio para o dispositivo.
+infraestrutura mínima e opt-in necessária para prototipar clientes mobile/watch
+sem mover raciocínio para o dispositivo.
 
 Princípio: sensores e interfaces ficam nos endpoints; o STAR Core continua
 sendo a única fonte de processamento e resposta.
@@ -18,6 +18,8 @@ import socket
 import threading
 import time
 from urllib.parse import urlparse
+
+from core.device_runtime import DeviceRuntime
 
 MAX_JSON_BYTES = 64 * 1024
 MAX_MEDIA_BYTES = 16 * 1024 * 1024
@@ -42,6 +44,22 @@ def _token_hash(token: str) -> str:
 def _safe_device_id(value: str) -> str:
     text = "".join(ch for ch in str(value or "") if ch.isalnum() or ch in "-_.")
     return text[:80] or "unknown-device"
+
+
+def _safe_metadata(value):
+    if not isinstance(value, dict):
+        return {}
+    result = {}
+    for key in ("platform", "form_factor", "os_version", "app_version"):
+        if key in value:
+            result[key] = str(value.get(key) or "")[:80]
+    for key in ("screen_width", "screen_height"):
+        if key in value:
+            try:
+                result[key] = max(0, min(10000, int(value.get(key))))
+            except (TypeError, ValueError):
+                pass
+    return result
 
 
 def _now_ms() -> int:
@@ -76,7 +94,7 @@ class DeviceRegistry:
         )
         temp.replace(self.path)
 
-    def pair(self, device_id: str, name: str, capabilities, token: str) -> None:
+    def pair(self, device_id: str, name: str, capabilities, token: str, metadata=None) -> None:
         device_id = _safe_device_id(device_id)
         if not isinstance(capabilities, list):
             capabilities = []
@@ -84,6 +102,7 @@ class DeviceRegistry:
         record = {
             "name": str(name or "STAR Device")[:120],
             "capabilities": [str(item)[:80] for item in capabilities[:32]],
+            "metadata": _safe_metadata(metadata),
             "token_sha256": _token_hash(token),
             "paired_at": now,
             "last_seen": now,
@@ -101,8 +120,6 @@ class DeviceRegistry:
             expected = record.get("token_sha256")
             if not expected or not secrets.compare_digest(expected, _token_hash(token)):
                 return False
-            # last_seen é telemetria efêmera na V0. Não gravamos o arquivo a
-            # cada requisição para evitar I/O desnecessário no caminho quente.
             record["last_seen"] = _now_ms()
             return True
 
@@ -116,7 +133,7 @@ class DeviceRegistry:
 
 
 class _GatewayHandler(BaseHTTPRequestHandler):
-    server_version = "STARDeviceGateway/0.1"
+    server_version = "STARDeviceGateway/0.2"
 
     @property
     def gateway(self):
@@ -177,23 +194,22 @@ class _GatewayHandler(BaseHTTPRequestHandler):
                     "service": "STAR Device Gateway",
                     "status": "online",
                     "protocol": PROTOCOL_VERSION,
+                    "runtime_revision": self.gateway.runtime.revision,
                     "mode": "lan",
                 },
             )
             return
 
-        if path == "/v1/device":
+        if path in {"/v1/device", "/v1/runtime"}:
             device_id = self._auth()
             if not device_id:
                 self._json(401, {"error": "unauthorized"})
                 return
-            self._json(
-                200,
-                {
-                    "device_id": device_id,
-                    "device": self.gateway.registry.public_record(device_id),
-                },
-            )
+            record = self.gateway.registry.public_record(device_id)
+            if path == "/v1/device":
+                self._json(200, {"device_id": device_id, "device": record})
+            else:
+                self._json(200, self.gateway.runtime.profile_for(record))
             return
 
         self._json(404, {"error": "not_found"})
@@ -211,7 +227,18 @@ class _GatewayHandler(BaseHTTPRequestHandler):
                 return
 
             if path == "/v1/heartbeat":
-                self._json(200, {"ok": True, "server_time": _now_ms()})
+                record = self.gateway.registry.public_record(device_id)
+                runtime = self.gateway.runtime.profile_for(record)
+                client_revision = self.headers.get("X-STAR-Runtime", "")
+                self._json(
+                    200,
+                    {
+                        "ok": True,
+                        "server_time": _now_ms(),
+                        "runtime_revision": runtime["revision"],
+                        "runtime_changed": client_revision != runtime["revision"],
+                    },
+                )
             elif path == "/v1/text":
                 self._text(device_id)
             elif path == "/v1/audio":
@@ -239,10 +266,13 @@ class _GatewayHandler(BaseHTTPRequestHandler):
         token = secrets.token_urlsafe(32)
         self.gateway.registry.pair(
             device_id=device_id,
-            name=payload.get("name") or "STAR Watch",
+            name=payload.get("name") or "STAR Device",
             capabilities=payload.get("capabilities") or [],
+            metadata=payload.get("metadata") or {},
             token=token,
         )
+        record = self.gateway.registry.public_record(device_id)
+        runtime = self.gateway.runtime.profile_for(record)
         self._json(
             200,
             {
@@ -250,6 +280,7 @@ class _GatewayHandler(BaseHTTPRequestHandler):
                 "device_id": device_id,
                 "token": token,
                 "protocol": PROTOCOL_VERSION,
+                "runtime": runtime,
             },
         )
 
@@ -259,10 +290,7 @@ class _GatewayHandler(BaseHTTPRequestHandler):
         if not text:
             raise ValueError("Texto vazio.")
         response = self.gateway.process_text(text)
-        self._json(
-            200,
-            {"ok": True, "device_id": device_id, "response": response},
-        )
+        self._json(200, {"ok": True, "device_id": device_id, "response": response})
 
     def _audio(self, device_id: str):
         body = self._read_body(MAX_MEDIA_BYTES)
@@ -309,6 +337,7 @@ class DeviceGateway:
         host: str = "0.0.0.0",
         port: int = 8765,
         runtime_dir: Path | None = None,
+        manifest_path: Path | None = None,
         pairing_code: str | None = None,
         verbose: bool = False,
     ):
@@ -318,6 +347,7 @@ class DeviceGateway:
         self.runtime_dir = Path(runtime_dir or Path.cwd() / "runtime" / "oni")
         self.runtime_dir.mkdir(parents=True, exist_ok=True)
         self.registry = DeviceRegistry(self.runtime_dir / "devices.json")
+        self.runtime = DeviceRuntime(Path(manifest_path or Path.cwd() / "STAR_MANIFEST.json"))
         self.pairing_code = pairing_code or f"{secrets.randbelow(1_000_000):06d}"
         self.verbose = verbose
         self.last_error = None
@@ -374,8 +404,6 @@ class DeviceGateway:
             self._thread.join(timeout=1.0)
 
     def process_text(self, text: str) -> str:
-        # Até o Permission Manager existir, dispositivos remotos não recebem
-        # permissão para acionar comandos locais do computador.
         with self._star_lock:
             return str(self.star.process(text, allow_actions=False))
 
