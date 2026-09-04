@@ -10,20 +10,15 @@ STAR permanece separada dos modelos que ela utiliza.
 
 ## Execução no Windows
 
-Use:
+Use `INICIAR_STAR.bat` para a STAR local. Para ativar endpoints LAN experimentais
+(iPhone/Watch), use:
 
-`INICIAR_STAR.bat`
+`INICIAR_STAR_DEVICES.bat`
 
-ou:
-
-`\.venv\Scripts\python.exe main.py`
+`INICIAR_STAR_WATCH.bat` permanece como alias compatível.
 
 Se o ambiente principal ainda não existir, execute `CRIAR_AMBIENTE.bat`.
 Para instalar os modelos de voz locais, execute `INSTALAR_VOZ.bat`.
-
-Diagnóstico:
-
-`DIAGNOSTICO_VOZ.bat`
 
 ## Voz — arquitetura final da V1.9
 
@@ -43,37 +38,16 @@ sounddevice
 🔊 Alto-falante
 ```
 
-### Política definitiva da voz na V1.9
-
-No modo `official`, a STAR **não usa mais Piper silenciosamente** se o
-Chatterbox ou a referência de voz estiverem ausentes. Em vez disso, a GUI e o
-diagnóstico mostram a causa real.
-
-```text
-official → Chatterbox + referência local
-fast     → Windows SAPI PT-BR/feminina quando disponível → Piper PT-BR
-```
-
-Para escolher o modo rápido explicitamente:
-
-`STAR_VOICE_MODE=fast`
-
-A referência da voz oficial é local e privada. A V1.9 aceita um caminho definido
-por `STAR_VOICE_REFERENCE` e também detecta arquivos de áudio compatíveis dentro
-de `voice/reference/`, portanto o nome do arquivo não precisa ser fixo.
-
-Ela **não é distribuída pelo GitHub**. Use apenas uma referência de voz que você
-tenha autorização para utilizar.
-
-A V1.9 FINAL também cancela falas antigas quando uma nova interação começa,
-evitando que uma resposta atrasada seja reproduzida depois de outra pergunta.
+No modo `official`, a STAR não usa Piper silenciosamente se Chatterbox/referência
+estiverem ausentes. `STAR_VOICE_MODE=fast` ativa explicitamente o modo rápido.
+A referência da voz oficial é local, privada e não é distribuída pelo GitHub.
 
 ## Estrutura principal
 
 ```text
 STAR/
 ├── core/                  # identidade, roteamento, memória e cérebro
-├── clients/               # endpoints leves, como STAR Watch
+├── clients/               # endpoints leves iOS/Android
 ├── database/              # persistência
 ├── gui/                   # interface 2D atual / STAR WORLD
 ├── knowledge/             # Knowledge Packs
@@ -107,44 +81,46 @@ STAR/
 - diagnósticos;
 - CI de sintaxe, manifestos e smoke tests.
 
-## ⌚ STAR Watch V0 — experimental
+## 📡 STAR Devices V0.2 — experimental
 
-A Foundation possui uma ponte **opt-in** para validar o princípio do STAR ONI com
-um relógio Android. O Watch não possui um MIND separado: ele funciona como
-sensor/interface e envia entradas ao **mesmo STAR Core no PC**.
+A Foundation possui uma ponte opt-in para validar o princípio do STAR ONI sem
+antecipar V9. Endpoints não possuem MIND separado.
 
 ```text
-Watch / celular / futuro corpo
-        │
-        │ LAN
-        ▼
-    STAR Core no PC
-        │
-        ▼
-   resposta / comando
+📱 iPhone / ⌚ Watch / futuros endpoints
+               │
+               │ LAN
+               ▼
+          ⭐ STAR Core PC
+               │
+               ▼
+        resposta / estado
 ```
 
-Para iniciar a STAR com o gateway experimental:
+Atualmente:
 
-`INICIAR_STAR_WATCH.bat`
-
-O cliente Android está em `clients/star_watch_android/` e suporta Android 8.1+
-(`minSdk 27`). A V0 possui pareamento, chat, microfone e captura de imagem.
-
-- texto → STAR Core → resposta;
-- áudio → faster-whisper no PC → STAR Core → resposta;
+- `clients/star_mobile_ios/` — STAR Mobile iOS V0, iOS 15+;
+- `clients/star_watch_android/` — STAR Watch Android V0.2, Android 8.1+;
+- texto → mesmo STAR Core;
+- áudio → faster-whisper no PC → mesmo STAR Core;
 - imagem → inbox local do Core;
-- comandos locais do computador ficam **bloqueados para origem remota** enquanto
-  o Permission Manager completo ainda não existe.
+- TTS de endpoint apenas vocaliza a resposta textual;
+- ações locais do PC permanecem bloqueadas para origem remota.
 
-A imagem é transportada corretamente, porém **não é analisada na V1.9**. O Vision
-Engine continua reservado para a V5.0 SENSES.
+### Adaptive Runtime
 
-O APK debug é compilado pelo workflow `STAR Watch Android` e também pode ser
-gerado localmente; `INSTALAR_STAR_WATCH.bat` faz a instalação via ADB/USB após o
-relógio estar autorizado para depuração.
+`STAR_MANIFEST.json > device_ecosystem` é a fonte de verdade para tema, rótulos,
+feature flags e perfis `phone/watch`. O Gateway serve `/v1/runtime`; heartbeats
+permitem que clientes detectem revisão nova e reapliquem configuração.
 
-Veja `docs/STAR_WATCH_V0.md` e `clients/star_watch_android/README.md`.
+Isso sincroniza mudanças de configuração/comportamento sem duplicação. Código
+nativo Swift/Java ainda exige rebuild do aplicativo.
+
+A imagem é transportada corretamente, porém não é analisada na V1.9. O Vision
+Engine continua reservado para V5 SENSES.
+
+Veja `docs/STAR_DEVICE_ECOSYSTEM_V0.md`, `clients/star_mobile_ios/README.md` e
+`clients/star_watch_android/README.md`.
 
 ## 💾 Knowledge Packs em pendrive
 
@@ -164,23 +140,16 @@ tamanho dos arquivos e impede `content_file` de escapar da pasta do pack. A
 mídia não executa código. A ingestão automática de livros/PDFs, embeddings e RAG
 continuam pertencendo à V3.0 KNOWLEDGE.
 
-Veja `knowledge/README.md`.
-
 ## STAR WORLD
 
 O catálogo atual inclui HUB, Casa, Laboratório, Central de Criação, Biblioteca,
-Estúdio, Observatório, Jardim, Correio, Cura, Heróis e Idiomas.
-
-Na V1.9 alguns ambientes ainda são representações visuais ou pontos de entrada.
-A transformação em ambientes totalmente funcionais e posteriormente 3D está
-planejada no roadmap.
+Estúdio, Observatório, Jardim, Correio, Cura, Heróis e Idiomas. Na V1.9 alguns
+ambientes ainda são representações visuais ou pontos de entrada.
 
 ## Offline-first
 
-A arquitetura segue três estados:
-
 - **LOCAL** — STAR funciona no computador sem internet;
-- **LAN** — adiciona dispositivos da rede local;
+- **LAN** — adiciona dispositivos locais;
 - **ONLINE** — acrescenta recursos externos opcionais.
 
 Internet amplia a STAR; não constitui a STAR.
@@ -191,11 +160,7 @@ Internet amplia a STAR; não constitui a STAR.
 - `v1.9-development` — branch histórica da construção da V1.9;
 - a próxima geração é **V2.0 MIND**.
 
-Veja:
-
-- `docs/MASTER_ROADMAP.md`
-- `docs/V1_9_PLAN.md`
-- `docs/V1_9_TEST_CHECKLIST.md`
+Veja `docs/MASTER_ROADMAP.md`.
 
 ## Segurança e privacidade
 
@@ -207,24 +172,10 @@ O STAR Device Gateway fica desligado por padrão, usa pareamento local e deve se
 usado somente em LAN privada nesta fase. Não exponha a porta do protótipo à
 Internet.
 
-Nenhuma integração externa de voz é necessária para a V1.9.
-
 ## Estado
 
 **STAR V1.9 FINAL / stable**
 
-Bugs descobertos após a release entram como V1.9.x.
-Novas arquiteturas cognitivas entram na V2.0 MIND.
-
-## Auditoria de estabilidade — 31/08/2026
-
-A interface não depende mais da existência de um nome fixo de referência de voz
-para iniciar. O STT é pré-carregado em segundo plano, enquanto o Chatterbox
-oficial só é carregado quando solicitado.
-
-A conversa da GUI usa o modo rápido por padrão para que toda resposta textual
-também tenha retorno falado em baixa latência. O modo oficial Chatterbox continua
-disponível nas Configurações para testes e uso de alta fidelidade.
-
-O modo OFFLINE agora bloqueia comandos de internet; ações locais continuam
-disponíveis.
+Bugs descobertos após a release entram como V1.9.x. Novas arquiteturas cognitivas
+entram na V2.0 MIND. As pontes mobile/watch permanecem experimentais até seus
+marcos oficiais.

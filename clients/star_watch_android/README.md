@@ -23,32 +23,18 @@ para a evolução do STAR Vision.
 Na raiz da STAR:
 
 ```powershell
-.\INICIAR_STAR_WATCH.bat
+.\INICIAR_STAR_DEVICES.bat
 ```
 
-O launcher histórico agora ativa o Device Gateway geral, portanto atende Watch e
-STAR Mobile iOS. Anote o endereço e o código de 6 dígitos.
+`INICIAR_STAR_WATCH.bat` continua existindo como alias compatível.
 
 ## 2. Gerar o APK
 
-### GitHub Actions
-
-O workflow `STAR Watch Android` gera `star-watch-debug-apk` como artifact.
-
-### Android Studio
-
-Abra `clients/star_watch_android` como projeto e execute `Build > Build APK(s)`.
-
-### Gradle instalado no PC
+O workflow `STAR Watch Android` gera `star-watch-debug-apk` como artifact. Também
+é possível abrir `clients/star_watch_android` no Android Studio ou executar:
 
 ```powershell
 gradle -p clients\star_watch_android :app:assembleDebug
-```
-
-Saída:
-
-```text
-clients/star_watch_android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ## 3. Transferir por USB

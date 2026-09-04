@@ -31,12 +31,10 @@ de APIs novas dessas versões.
 Na raiz da STAR no Windows:
 
 ```powershell
-.\INICIAR_STAR_WATCH.bat
+.\INICIAR_STAR_DEVICES.bat
 ```
 
-Apesar do nome histórico do launcher, ele inicia o **STAR Device Gateway** geral,
-usado por iPhone e Watch. O terminal mostra o endereço LAN e o código de
-pareamento.
+O terminal mostra o endereço LAN e o código de pareamento.
 
 ## Abrir o projeto iOS
 
@@ -53,7 +51,7 @@ Selecione o target `STARMobile` e o iPhone desejado.
 iOS exige assinatura de código. Para instalar diretamente em um iPhone XR é
 necessário usar Xcode em macOS com uma Apple ID/equipe de desenvolvimento válida,
 ou futuramente distribuir por TestFlight/App Store. O workflow do GitHub valida
-compilação no Simulator, mas o artefato sem assinatura não pode ser instalado em
+compilação no Simulator, mas o build sem assinatura não pode ser instalado em
 um iPhone físico.
 
 ## Pareamento
