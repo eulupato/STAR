@@ -1,4 +1,9 @@
-"""Interface gráfica da STAR V1.9."""
+"""Interface 2D local-first da STAR, reconstruída a partir do STAR OS visual.
+
+Esta implementação mantém o Core Python, memória, voz e Knowledge Packs atuais,
+mas evita redesenhos recursivos de Canvas durante hover/resize. O objetivo é
+preservar o visual aprovado sem travar o event loop do Tkinter no Windows.
+"""
 from __future__ import annotations
 
 import json
@@ -7,23 +12,75 @@ import sys
 import threading
 import tkinter as tk
 from pathlib import Path
-from tkinter import scrolledtext
 
-from PIL import Image, ImageTk
+from PIL import Image, ImageOps, ImageTk
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import APP_NAME, VERSION, WINDOW_HEIGHT, WINDOW_WIDTH, MENU_HEIGHT, MENU_WIDTH, VOICE_CHAT_MODE
+from config import APP_NAME, VERSION, WINDOW_HEIGHT, WINDOW_WIDTH, VOICE_CHAT_MODE
 from core.avatar import AvatarManager
 from core.emotion import EmotionManager
 from database.memory import Memory
+from gui.theme import (
+    BG, BG_ALT, PANEL, PANEL_2, PANEL_3, BORDER, TEXT, MUTED, SOFT,
+    BLUE, BLUE_SOFT, PINK, GOLD, GREEN, RED, WHITE,
+    BODY_FONT, BODY_BOLD, SMALL_FONT, SMALL_BOLD,
+    draw_starfield, round_rect,
+)
 from voice.audio_input import AudioRecorder
 from voice.manager import VoiceManager
 
 
 class StarApp:
+    """Janela principal da STAR.
+
+    Navegação oficial: Menu -> HUB / STAR WORLD. O chat é acessível pelo HUB e
+    retorna a ele sem apagar a conversa. Toda tarefa pesada roda fora do event
+    loop da interface.
+    """
+
+    SETTINGS_SECTIONS = (
+        ("general", "⚙", "GERAL"),
+        ("appearance", "◉", "APARÊNCIA"),
+        ("voice", "🎙", "VOZ"),
+        ("audio", "◖", "ÁUDIO"),
+        ("models", "▣", "MODELOS"),
+        ("memory", "♧", "MEMÓRIA"),
+        ("knowledge", "▤", "CONHECIMENTO"),
+        ("privacy", "◇", "PRIVACIDADE"),
+        ("permissions", "⌕", "PERMISSÕES"),
+        ("world", "◎", "STAR WORLD"),
+        ("about", "ⓘ", "SOBRE A STAR"),
+    )
+
+    MENU_EMOTIONS = {
+        "iniciar": "happy",
+        "configuracoes": "thinking",
+        "sair": "sad",
+    }
+
+    ISLAND_POSITIONS = [
+        (.38, .28), (.55, .17), (.71, .28),
+        (.30, .53), (.55, .55), (.78, .53),
+        (.42, .75), (.66, .75), (.84, .73),
+        (.18, .72),
+    ]
+
+    ISLAND_COLORS = {
+        "casa": ("#eef8ff", "#8fd0ff"),
+        "laboratorio": ("#edf7ff", "#8fd0ff"),
+        "biblioteca": ("#ffe891", "#ffd36e"),
+        "estudio_musica": ("#ffb7d8", "#f39bc2"),
+        "jardim": ("#a6deb1", "#75d99c"),
+        "correio": ("#ffdc85", "#ffd36e"),
+        "cura": ("#d8edff", "#8fd0ff"),
+        "herois": ("#f3d1ff", "#cbb5ff"),
+        "idiomas": ("#a7ddff", "#5aa6ff"),
+        "atelie": ("#ffd5a8", "#ffb87a"),
+    }
+
     def __init__(self, brain):
         self.brain = brain
         self.memory = Memory()
@@ -32,37 +89,53 @@ class StarApp:
         self.voice = VoiceManager()
         self.voice.set_voice_mode(self._load_voice_mode())
         self.recorder = AudioRecorder()
-        self.online_mode = False
+
+        self.operation_mode = self._load_operation_mode()
+        self.online_mode = self.operation_mode == "online"
         self.processing = False
         self.recording = False
         self._closing = False
         self.response_queue: queue.Queue = queue.Queue()
         self.current_screen = "menu"
-        self.has_messages = False
-        self.chat = None
-        self.voice_test_label = None
-        self.avatar_photo = None
-        self.closet_photo = None
         self.selected_skin = self._load_skin_selection()
+        self.chat_history = self._load_chat_history()
 
-        self.bg = "#0b1018"; self.panel = "#131c29"; self.text = "#edf3fb"; self.muted = "#9aa8bb"
-        self.star = "#8fd0ff"; self.user = "#c9b8ff"; self.green = "#76e2a0"; self.red = "#ff7c87"; self.gold = "#ffd36e"
+        self.photo_cache: dict[str, ImageTk.PhotoImage] = {}
+        self._render_after_id = None
+        self._render_generation = 0
+        self.menu_emotion = "neutral"
+        self.menu_action_locked = False
+        self.hovered_island = None
+        self.hub_island_items = {}
+        self.is_maximized = False
+        self.normal_size = (WINDOW_WIDTH, WINDOW_HEIGHT)
+
+        self.entry = None
+        self.send_button = None
+        self.mic_button = None
+        self.status_label = None
+        self.voice_test_label = None
+        self.chat_scroll_canvas = None
+        self.chat_messages_frame = None
+        self.menu_canvas = None
+        self.menu_eye_items = []
+        self.menu_hero_box = None
+        self.menu_hero_item = None
+        self.hub_canvas = None
 
         self.window = tk.Tk()
         self.window.title(f"{APP_NAME} V{VERSION}")
         self.window.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
-        self.window.minsize(900, 600)
-        self.window.configure(bg=self.bg)
+        self.window.minsize(960, 620)
+        self.window.configure(bg=BG)
         self.window.protocol("WM_DELETE_WINDOW", self.close)
         self.window.bind("<F11>", self.toggle_maximize)
         self.window.bind("<Escape>", self.restore_normal_size)
-        self.is_maximized = False
-        self.normal_size = (WINDOW_WIDTH, WINDOW_HEIGHT)
+
         self.show_menu()
         self.window.after(60, self._check_response_queue)
-        # Pré-carrega somente o STT. O Chatterbox oficial leva minutos em CPU e
-        # não deve atrasar nem sobrecarregar a abertura da interface.
-        self.voice.warmup_stt_async()
+        # STT fica lazy: carregar o Whisper durante o startup pode disputar CPU
+        # com a pintura inicial do Tkinter em máquinas mais lentas.
 
     @property
     def _user_settings_path(self):
@@ -79,8 +152,7 @@ class StarApp:
             data = self._read_user_settings()
             data.update(values)
             self._user_settings_path.write_text(
-                json.dumps(data, ensure_ascii=False, indent=2),
-                encoding="utf-8",
+                json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
             )
         except Exception:
             pass
@@ -89,12 +161,17 @@ class StarApp:
         mode = str(self._read_user_settings().get("voice_mode", VOICE_CHAT_MODE)).lower()
         return mode if mode in {"official", "fast"} else VOICE_CHAT_MODE
 
+    def _load_operation_mode(self):
+        mode = str(self._read_user_settings().get("operation_mode", "local")).lower()
+        return mode if mode in {"local", "lan", "online"} else "local"
+
     def _load_skin_selection(self):
         local = self._read_user_settings().get("skin")
         if local:
             return str(local)
         try:
-            return json.loads((PROJECT_ROOT / "config_skin.json").read_text(encoding="utf-8")).get("skin", "original.jpeg")
+            data = json.loads((PROJECT_ROOT / "config_skin.json").read_text(encoding="utf-8"))
+            return data.get("skin", "original.jpeg")
         except Exception:
             return "original.jpeg"
 
@@ -104,241 +181,954 @@ class StarApp:
     def _save_voice_mode(self):
         self._write_user_settings(voice_mode=self.voice.mode)
 
+    def _save_operation_mode(self):
+        self._write_user_settings(operation_mode=self.operation_mode)
+
+    def _load_chat_history(self):
+        try:
+            rows = self.memory.load()
+            result = []
+            for row in rows[-80:]:
+                sender = str(getattr(row, "sender", ""))
+                content = str(getattr(row, "content", ""))
+                if content:
+                    result.append((sender, content))
+            return result
+        except Exception:
+            return []
+
     def clear_screen(self):
+        self._render_generation += 1
+        if self._render_after_id is not None:
+            try:
+                self.window.after_cancel(self._render_after_id)
+            except Exception:
+                pass
+            self._render_after_id = None
         for widget in self.window.winfo_children():
             widget.destroy()
-        self.chat = None
-        self.has_messages = False
+        self.entry = None
+        self.send_button = None
+        self.mic_button = None
+        self.status_label = None
         self.voice_test_label = None
+        self.chat_scroll_canvas = None
+        self.chat_messages_frame = None
+        self.menu_canvas = None
+        self.menu_eye_items = []
+        self.menu_hero_box = None
+        self.menu_hero_item = None
+        self.hub_canvas = None
+        self.hub_island_items = {}
 
-    def _header(self, parent):
-        header = tk.Frame(parent, bg="#172231", height=56); header.pack(fill="x"); header.pack_propagate(False)
-        tk.Label(header, text="⭐  STAR", fg=self.star, bg="#172231", font=("Segoe UI", 20, "bold")).pack(side="left", padx=18)
-        status = "ONLINE" if self.online_mode else "OFFLINE"; color = self.green if self.online_mode else self.red
-        self.status_label = tk.Label(header, text=f"● V{VERSION} • {status}", fg=color, bg="#172231", font=("Segoe UI", 9, "bold")); self.status_label.pack(side="right", padx=18)
-        for text, cmd in (("⚙", self.show_settings), ("◈ ILHAS", self.show_islands), ("CHAT", self.show_chat), ("MENU", self.show_menu)):
-            self._button(header, text, cmd, small=True).pack(side="right", padx=4, pady=8)
+    def _schedule_render(self, callback, delay=45):
+        """Debounce de Configure para não redesenhar dezenas de vezes por resize."""
+        generation = self._render_generation
+        if self._render_after_id is not None:
+            try:
+                self.window.after_cancel(self._render_after_id)
+            except Exception:
+                pass
 
-    def _gradient(self, parent):
-        canvas = tk.Canvas(parent, bg=self.bg, highlightthickness=0); canvas.place(x=0,y=0,relwidth=1,relheight=1); canvas.tk.call("lower", str(canvas))
-        def draw(_event=None):
-            canvas.delete("gradient"); width=max(canvas.winfo_width(),1); height=max(canvas.winfo_height(),1)
-            for i in range(70):
-                t=i/69; r=int(12+25*(1-t)); g=int(18+50*(1-t)); b=int(28+90*(1-t)); y=int(i*height/70)
-                canvas.create_rectangle(0,y,width,y+height/70+2,fill=f"#{r:02x}{g:02x}{b:02x}",outline="",tags="gradient")
-        canvas.bind("<Configure>",draw); self.window.after(20,draw)
+        def run():
+            self._render_after_id = None
+            if self._closing or generation != self._render_generation:
+                return
+            try:
+                callback()
+            except tk.TclError:
+                pass
+
+        self._render_after_id = self.window.after(delay, run)
+
+    def _photo(self, path: Path, size: tuple[int, int], *, fit=True, key=None):
+        path = Path(path)
+        width = max(1, int(size[0]))
+        height = max(1, int(size[1]))
+        cache_key = key or f"{path}:{width}x{height}:{fit}"
+        if cache_key in self.photo_cache:
+            return self.photo_cache[cache_key]
+        if not path.exists() or path.stat().st_size == 0:
+            return None
+        try:
+            with Image.open(path) as source:
+                image = source.convert("RGBA")
+            if fit:
+                image = ImageOps.fit(image, (width, height), Image.Resampling.LANCZOS, centering=(.5, .42))
+            else:
+                image.thumbnail((width, height), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(image)
+            self.photo_cache[cache_key] = photo
+            return photo
+        except Exception:
+            return None
+
+    def _avatar_path(self, emotion="neutral"):
+        path = PROJECT_ROOT / "assets" / "avatar" / f"{emotion}.png"
+        if path.exists() and path.stat().st_size > 0:
+            return path
+        return PROJECT_ROOT / "assets" / "avatar" / "neutral.png"
+
+    def _reference_path(self, name):
+        return PROJECT_ROOT / "assets" / "reference" / name
+
+    def _button(self, parent, text, command, *, accent=False, subtle=False, width=None):
+        bg = BLUE if accent else (BG_ALT if subtle else PANEL_3)
+        active = "#70b4ff" if accent else "#293650"
+        return tk.Button(
+            parent, text=text, command=command, bg=bg,
+            fg=WHITE if accent else TEXT,
+            activebackground=active, activeforeground=WHITE,
+            relief=tk.FLAT, borderwidth=0, highlightthickness=0,
+            cursor="hand2", font=BODY_BOLD, padx=16, pady=8, width=width,
+        )
+
+    def _pill(self, parent, text, *, fg=BLUE, bg=PANEL, font=SMALL_BOLD):
+        return tk.Label(parent, text=text, fg=fg, bg=bg, font=font, padx=12, pady=5)
+
+    def _status_text(self):
+        if self.processing:
+            return "THINKING"
+        if self.recording:
+            return "LISTENING"
+        return self.operation_mode.upper()
 
     def show_menu(self):
-        self.clear_screen(); self.current_screen="menu"
-        if not self.is_maximized:self.window.geometry(f"{MENU_WIDTH}x{MENU_HEIGHT}")
-        frame=tk.Frame(self.window,bg=self.bg); frame.pack(fill="both",expand=True)
-        tk.Label(frame,text="⭐  STAR",fg=self.star,bg=self.bg,font=("Segoe UI",34,"bold")).pack(pady=(120,20)); tk.Label(frame,text="System for Thought, Analysis and Response",fg=self.muted,bg=self.bg,font=("Segoe UI",11)).pack(pady=(0,45))
-        for label,cmd in (("INICIAR",self.show_chat),("CONFIGURAÇÕES",self.show_settings),("SAIR",self.close)):self._button(frame,label,cmd).pack(pady=7)
+        self.clear_screen()
+        self.current_screen = "menu"
+        self.menu_emotion = "neutral"
+        self.menu_action_locked = False
+        canvas = tk.Canvas(self.window, bg=BG, highlightthickness=0, cursor="arrow")
+        canvas.pack(fill="both", expand=True)
+        self.menu_canvas = canvas
+        canvas.bind("<Configure>", lambda _e: self._schedule_render(self._render_menu))
+        canvas.bind("<Motion>", self._menu_track_eyes)
+        self._schedule_render(self._render_menu, 10)
+
+    def _render_menu(self):
+        canvas = self.menu_canvas
+        if canvas is None or not canvas.winfo_exists():
+            return
+        w = max(canvas.winfo_width(), 960)
+        h = max(canvas.winfo_height(), 620)
+        canvas.delete("all")
+        draw_starfield(canvas, w, h, seed=16)
+        canvas.create_text(32, 30, text="STAR", fill=TEXT, anchor="nw", font=("Courier New", 22, "bold"))
+        canvas.create_text(32, 62, text=f"S.T.A.R. OS · V{VERSION}", fill=SOFT, anchor="nw", font=("Courier New", 7, "bold"))
+
+        box_w = min(390, int(w * .31))
+        box_h = min(330, int(h * .50))
+        x1 = max(54, int(w * .06))
+        y1 = max(155, h - box_h - 8)
+        self.menu_hero_box = (x1, y1, box_w, box_h)
+        round_rect(canvas, x1 - 2, y1 - 2, x1 + box_w + 2, y1 + box_h + 2,
+                   radius=26, fill="#132033", outline="#29405f", width=1)
+        hero = self._menu_emotion_photo("neutral", box_w, box_h)
+        if hero:
+            self.menu_hero_item = canvas.create_image(x1, y1, image=hero, anchor="nw")
+        else:
+            self.menu_hero_item = None
+            canvas.create_text(x1 + box_w/2, y1 + box_h/2, text="STAR", fill=BLUE_SOFT,
+                               font=("Courier New", 28, "bold"))
+
+        self.menu_eye_items = []
+        eye_y = y1 + box_h * .46
+        for ex in (x1 + box_w * .39, x1 + box_w * .62):
+            self.menu_eye_items.append(
+                canvas.create_oval(ex - 3, eye_y - 3, ex + 3, eye_y + 3,
+                                   fill="#13223c", outline="#bfdcff", width=1)
+            )
+
+        menu_x = w * .86
+        start_y = h * .50
+        for idx, (action, label) in enumerate((
+            ("iniciar", "◆  INICIAR"),
+            ("configuracoes", "◆  CONFIGURAÇÕES"),
+            ("sair", "◆  SAIR"),
+        )):
+            y = start_y + idx * 75
+            tag = f"menu_{action}"
+            canvas.create_text(menu_x, y, text=label, fill="#9296a6", anchor="center",
+                               font=("Courier New", 12, "bold"), tags=(tag, "menu_option"))
+            canvas.tag_bind(tag, "<Enter>", lambda e, a=action: self._menu_hover(a))
+            canvas.tag_bind(tag, "<Leave>", lambda e, a=action: self._menu_leave(a))
+            canvas.tag_bind(tag, "<Button-1>", lambda e, a=action: self._menu_click(a))
+
+        sx, sy = w - 112, h - 48
+        round_rect(canvas, sx - 74, sy - 13, sx + 74, sy + 13, radius=13,
+                   fill="#0c1422", outline=BORDER, width=1)
+        canvas.create_oval(sx - 57, sy - 3, sx - 51, sy + 3, fill=BLUE, outline="")
+        canvas.create_text(sx - 43, sy, text=self._status_text(), anchor="w", fill=BLUE,
+                           font=("Courier New", 7, "bold"))
+
+    def _menu_emotion_photo(self, emotion, width, height):
+        path = self._reference_path("star_menu_face.jpg") if emotion == "neutral" else self._avatar_path(emotion)
+        return self._photo(path, (width, height), fit=True, key=f"menu:{emotion}:{width}x{height}")
+
+    def _apply_menu_emotion(self, action=None):
+        if not self.menu_canvas or not self.menu_canvas.winfo_exists() or not self.menu_hero_box:
+            return
+        emotion = self.MENU_EMOTIONS.get(action, "neutral") if action else "neutral"
+        self.menu_emotion = emotion
+        try:
+            self.emotion.reset() if emotion == "neutral" else self.emotion.set_emotion(emotion)
+        except Exception:
+            pass
+        for name in self.MENU_EMOTIONS:
+            try:
+                self.menu_canvas.itemconfigure(f"menu_{name}", fill=TEXT if name == action else "#9296a6")
+            except tk.TclError:
+                pass
+        if self.menu_hero_item:
+            _x, _y, bw, bh = self.menu_hero_box
+            photo = self._menu_emotion_photo(emotion, bw, bh)
+            if photo:
+                try:
+                    self.menu_canvas.itemconfigure(self.menu_hero_item, image=photo)
+                except tk.TclError:
+                    pass
+
+    def _menu_hover(self, action):
+        if self.menu_action_locked:
+            return
+        if self.menu_canvas:
+            self.menu_canvas.config(cursor="hand2")
+        self._apply_menu_emotion(action)
+
+    def _menu_leave(self, action):
+        if self.menu_action_locked:
+            return
+        if self.menu_canvas:
+            self.menu_canvas.config(cursor="arrow")
+        if self.menu_emotion == self.MENU_EMOTIONS.get(action):
+            self._apply_menu_emotion(None)
+
+    def _menu_click(self, action):
+        if self.menu_action_locked:
+            return
+        self.menu_action_locked = True
+        self._apply_menu_emotion(action)
+        if action == "iniciar":
+            self.window.after(220, self.show_hub)
+        elif action == "configuracoes":
+            self.window.after(220, lambda: self.show_settings("general"))
+        elif action == "sair":
+            self.window.after(260, self.close)
+
+    def _menu_track_eyes(self, event):
+        canvas = self.menu_canvas
+        if not canvas or not self.menu_hero_box or len(self.menu_eye_items) != 2:
+            return
+        x1, y1, bw, bh = self.menu_hero_box
+        cx, cy = x1 + bw * .5, y1 + bh * .45
+        dx = max(-4.0, min(4.0, (event.x - cx) / max(1, canvas.winfo_width()) * 15))
+        dy = max(-3.0, min(3.0, (event.y - cy) / max(1, canvas.winfo_height()) * 11))
+        bases = ((x1 + bw * .39, y1 + bh * .46), (x1 + bw * .62, y1 + bh * .46))
+        for item, (bx, by) in zip(self.menu_eye_items, bases):
+            try:
+                canvas.coords(item, bx - 3 + dx, by - 3 + dy, bx + 3 + dx, by + 3 + dy)
+            except tk.TclError:
+                return
+
+    def show_hub(self):
+        self.clear_screen()
+        self.current_screen = "hub"
+        self.hovered_island = None
+        canvas = tk.Canvas(self.window, bg=BG, highlightthickness=0)
+        canvas.pack(fill="both", expand=True)
+        self.hub_canvas = canvas
+        canvas.bind("<Configure>", lambda _e: self._schedule_render(self._render_hub))
+        self._schedule_render(self._render_hub, 10)
+
+    show_islands = show_hub
+
+    def _render_hub(self):
+        canvas = self.hub_canvas
+        if canvas is None or not canvas.winfo_exists():
+            return
+        w = max(canvas.winfo_width(), 960)
+        h = max(canvas.winfo_height(), 620)
+        canvas.delete("all")
+        self.hub_island_items = {}
+        draw_starfield(canvas, w, h, seed=31, clouds=True)
+        canvas.create_text(w/2, 28, text="STAR WORLD", fill=TEXT, font=("Courier New", 18, "bold"), anchor="n")
+        canvas.create_text(w/2, 58, text="O MUNDO DA STAR", fill=SOFT, font=("Courier New", 7, "bold"), anchor="n")
+        self._canvas_pill(canvas, 20, 20, 96, 38, "←  Menu", self.show_menu)
+        self._canvas_pill(canvas, w - 194, 20, 90, 38, "👱  STAR", self.show_chat)
+        self._canvas_pill(canvas, w - 94, 20, 76, 38, f"● {self._status_text()}", None, fg=BLUE)
+        try:
+            from core.islands import get_islands
+            data = get_islands()
+        except Exception:
+            data = {}
+        for idx, (key, item) in enumerate(data.items()):
+            if idx >= len(self.ISLAND_POSITIONS):
+                break
+            rx, ry = self.ISLAND_POSITIONS[idx]
+            self._draw_island(canvas, key, item, int(w * rx), int(h * ry))
+        hx, hy = w/2, h - 38
+        round_rect(canvas, hx - 128, hy - 17, hx + 128, hy + 17, radius=17,
+                   fill="#171b27", outline="#3a3f4d", width=1)
+        canvas.create_text(hx, hy, text="◎  SELECIONE UMA ILHA PARA EXPLORAR",
+                           fill="#8d8f99", font=("Courier New", 7, "bold"))
+        self._canvas_pill(canvas, w - 118, h - 72, 96, 52, "◯  CHAT", self.show_chat,
+                          fg=TEXT, fill="#111625")
+
+    def _canvas_pill(self, canvas, x, y, width, height, text, command, *, fg=TEXT, fill="#101827"):
+        tag = f"pill_{id(command)}_{int(x)}_{int(y)}"
+        round_rect(canvas, x, y, x + width, y + height, radius=height/2,
+                   fill=fill, outline=BORDER, width=1, tags=tag)
+        canvas.create_text(x + width/2, y + height/2, text=text, fill=fg, font=BODY_BOLD, tags=tag)
+        if command:
+            canvas.tag_bind(tag, "<Enter>", lambda _e: canvas.config(cursor="hand2"))
+            canvas.tag_bind(tag, "<Leave>", lambda _e: canvas.config(cursor="arrow"))
+            canvas.tag_bind(tag, "<Button-1>", lambda _e: command())
+
+    def _draw_island(self, canvas, key, item, x, y):
+        primary, accent = self.ISLAND_COLORS.get(key, ("#d9e7f7", BLUE_SOFT))
+        tag = f"island_{key}"
+        base = canvas.create_oval(x - 44, y + 20, x + 44, y + 42,
+                                  fill="#070d24", outline="#182047", width=1, tags=tag)
+        glow = canvas.create_oval(x - 58, y - 38, x + 58, y + 66,
+                                  fill="", outline=accent, width=2, state="hidden", tags=(tag, "island_glow"))
+        self._pixel_building(canvas, x, y, primary, accent, 6, tag)
+        name = canvas.create_text(x, y + 76, text=item.get("name", key).upper(), fill=TEXT,
+                                  font=("Courier New", 9, "bold"), state="hidden", tags=tag)
+        status_text = self._island_status(item)
+        status = canvas.create_text(x, y + 96, text=status_text,
+                                    fill=GOLD if "DESENVOLVIMENTO" in status_text else GREEN,
+                                    font=("Courier New", 6, "bold"), state="hidden", tags=tag)
+        self.hub_island_items[key] = {"base": base, "glow": glow, "name": name, "status": status}
+        canvas.tag_bind(tag, "<Enter>", lambda _e, k=key: self._hub_hover(k))
+        canvas.tag_bind(tag, "<Leave>", lambda _e, k=key: self._hub_leave(k))
+        canvas.tag_bind(tag, "<Button-1>", lambda _e, k=key: self._open_island_modal(k))
+
+    def _pixel_building(self, canvas, x, y, body, accent, s, tag):
+        canvas.create_rectangle(x - 4*s, y - 3*s, x + 4*s, y + 4*s, fill=body, outline="", tags=tag)
+        canvas.create_rectangle(x - 3*s, y - 5*s, x + 3*s, y - 3*s, fill=body, outline="", tags=tag)
+        canvas.create_rectangle(x - s, y - 6*s, x + s, y - 5*s, fill=accent, outline="", tags=tag)
+        for dx in (-2, 1):
+            canvas.create_rectangle(x + dx*s, y - s, x + (dx + 1)*s, y + 2*s,
+                                    fill=accent, outline="", tags=tag)
+
+    def _set_island_hover_state(self, key, visible):
+        canvas = self.hub_canvas
+        items = self.hub_island_items.get(key)
+        if not canvas or not items:
+            return
+        state = "normal" if visible else "hidden"
+        try:
+            for name in ("glow", "name", "status"):
+                canvas.itemconfigure(items[name], state=state)
+        except tk.TclError:
+            pass
+
+    def _hub_hover(self, key):
+        if self.hovered_island == key:
+            return
+        if self.hovered_island:
+            self._set_island_hover_state(self.hovered_island, False)
+        self.hovered_island = key
+        self._set_island_hover_state(key, True)
+        if self.hub_canvas:
+            self.hub_canvas.config(cursor="hand2")
+
+    def _hub_leave(self, key):
+        if self.hovered_island != key:
+            return
+        self._set_island_hover_state(key, False)
+        self.hovered_island = None
+        if self.hub_canvas:
+            self.hub_canvas.config(cursor="arrow")
+
+    @staticmethod
+    def _island_status(item):
+        status = str(item.get("status", "planned")).lower()
+        return {
+            "installed": "● DISPONÍVEL", "available": "● DISPONÍVEL",
+            "development": "● EM DESENVOLVIMENTO", "planned": "● PLANEJADO",
+            "experimental": "● EXPERIMENTAL", "restricted": "● RESTRITO",
+            "unavailable": "● INDISPONÍVEL",
+        }.get(status, "● EM DESENVOLVIMENTO")
+
+    def _open_island_modal(self, key):
+        try:
+            from core.islands import get_islands
+            item = get_islands().get(key)
+        except Exception:
+            item = None
+        if not item:
+            return
+        overlay = tk.Frame(self.window, bg="#030710")
+        overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
+        card = tk.Frame(overlay, bg=PANEL_2, highlightbackground=BORDER, highlightthickness=1)
+        card.place(relx=.5, rely=.5, anchor="center", width=520, height=500)
+        top = tk.Frame(card, bg=PANEL_2)
+        top.pack(fill="x", padx=26, pady=(26, 10))
+        icon_box = tk.Frame(top, bg="#111a2b", width=80, height=80,
+                            highlightbackground=BORDER, highlightthickness=1)
+        icon_box.pack(side="left")
+        icon_box.pack_propagate(False)
+        tk.Label(icon_box, text=item.get("icon", "◆"), fg=BLUE_SOFT, bg="#111a2b",
+                 font=("Segoe UI Emoji", 30)).pack(expand=True)
+        title = tk.Frame(top, bg=PANEL_2)
+        title.pack(side="left", fill="both", expand=True, padx=(20, 0))
+        tk.Label(title, text=self._island_status(item), fg=GOLD, bg=PANEL_2,
+                 font=SMALL_BOLD).pack(anchor="w")
+        tk.Label(title, text=item.get("name", key).upper(), fg=TEXT, bg=PANEL_2,
+                 font=("Courier New", 17, "bold")).pack(anchor="w", pady=(10, 0))
+        self._button(top, "×", overlay.destroy, subtle=True, width=2).pack(side="right", anchor="n")
+        tk.Label(card, text=item.get("description", ""), fg="#d9dce5", bg=PANEL_2,
+                 font=BODY_FONT, justify="left", wraplength=450).pack(anchor="w", padx=28, pady=(10, 16))
+        tags = tk.Frame(card, bg=PANEL_2)
+        tags.pack(fill="x", padx=28)
+        for value in [str(value).split("—", 1)[0].strip() for value in item.get("contents", [])[:4]]:
+            tk.Label(tags, text=value, fg="#d8dce6", bg="#172033", font=SMALL_FONT,
+                     padx=10, pady=5, highlightbackground=BORDER,
+                     highlightthickness=1).pack(side="left", padx=(0, 6), pady=3)
+        quote = tk.Frame(card, bg="#151d2f", highlightbackground=BORDER, highlightthickness=1)
+        quote.pack(fill="x", padx=28, pady=(18, 0))
+        avatar = self._photo(self._avatar_path("neutral"), (42, 42), fit=True)
+        if avatar:
+            tk.Label(quote, image=avatar, bg="#151d2f").pack(side="left", padx=12, pady=12)
+        tk.Label(quote, text=f"STAR · {self._island_star_message(key, item)}",
+                 fg="#e5e8ef", bg="#151d2f", font=BODY_FONT, justify="left",
+                 wraplength=365).pack(side="left", fill="x", expand=True, padx=(0, 12), pady=12)
+        bottom = tk.Frame(card, bg=PANEL_2)
+        bottom.pack(side="bottom", fill="x", padx=28, pady=24)
+        self._button(bottom, "Voltar", overlay.destroy, subtle=True).pack(side="right", padx=(8, 0))
+        action = self._island_action(key)
+        if action:
+            self._button(bottom, "ENTRAR", lambda: (overlay.destroy(), action()), accent=True).pack(side="right")
+        else:
+            tk.Label(bottom, text="EM BREVE", fg=SOFT, bg="#171d2c", font=BODY_BOLD,
+                     padx=20, pady=9, highlightbackground=BORDER,
+                     highlightthickness=1).pack(side="right")
+
+    def _island_action(self, key):
+        return {"casa": self.show_house, "jardim": self.show_garden}.get(key)
+
+    def _island_star_message(self, key, item):
+        if key == "laboratorio":
+            return "No Laboratório eu investigo; na Central de Criação eu construo. Essa área ainda está em desenvolvimento."
+        if key == "cura":
+            return "Cura diagnostica, propõe, valida e testa. Ela não altera meu núcleo livremente."
+        if key == "jardim":
+            return "Este é um dos lugares mais vivos do meu mundo. O caminho para o Observatório também parte daqui."
+        return f"Eu já conheço o propósito de {item.get('name', 'esta área')}, mas algumas capacidades ainda estão sendo preparadas."
+
+    def _star_background(self, root, seed, clouds=False):
+        canvas = tk.Canvas(root, bg=BG, highlightthickness=0)
+        canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        pending = {"id": None}
+        def schedule(event):
+            if pending["id"] is not None:
+                try:
+                    self.window.after_cancel(pending["id"])
+                except Exception:
+                    pass
+            width, height = event.width, event.height
+            pending["id"] = self.window.after(55, lambda: self._safe_draw_background(canvas, width, height, seed, clouds))
+        canvas.bind("<Configure>", schedule)
+        return canvas
+
+    @staticmethod
+    def _safe_draw_background(canvas, width, height, seed, clouds):
+        try:
+            if canvas.winfo_exists():
+                draw_starfield(canvas, width, height, seed=seed, clouds=clouds)
+        except tk.TclError:
+            pass
 
     def show_chat(self):
-        self.clear_screen(); self.current_screen="chat"
-        root=tk.Frame(self.window,bg=self.bg); root.pack(fill="both",expand=True); self._gradient(root); self._header(root)
-        self.stage=tk.Frame(root,bg=self.bg); self.stage.pack(fill="both",expand=True)
-        self.center=tk.Frame(self.stage,bg=self.bg); self.center.place(relx=.5,rely=.47,anchor="center")
-        self.avatar_label=tk.Label(self.center,bg=self.bg); self.avatar_label.pack(); self._load_display_avatar(); self._build_input(root); self.entry.focus_set()
+        self.clear_screen()
+        self.current_screen = "chat"
+        root = tk.Frame(self.window, bg=BG)
+        root.pack(fill="both", expand=True)
+        self._star_background(root, 67)
+        top = tk.Frame(root, bg=BG)
+        top.pack(fill="x", padx=20, pady=(20, 0))
+        center_pill = tk.Frame(top, bg="#121a29", highlightbackground=BORDER, highlightthickness=1)
+        center_pill.place(relx=.5, y=0, anchor="n", width=112, height=58)
+        self._button(center_pill, "⚙", lambda: self.show_settings("general"), subtle=True, width=2).pack(side="left", padx=(8, 4), pady=9)
+        self._button(center_pill, "⌁", self.show_hub, subtle=True, width=2).pack(side="left", padx=(4, 8), pady=9)
+        self.status_label = tk.Label(top, text=f"● {self._status_text()}", fg=BLUE, bg="#101827",
+                                     font=SMALL_BOLD, padx=12, pady=6)
+        self.status_label.pack(side="right")
+        content = tk.Frame(root, bg=BG)
+        content.pack(fill="both", expand=True, padx=80, pady=(55, 92))
+        self._build_chat_history(content) if self.chat_history else self._build_chat_welcome(content)
+        self._build_chat_input(root)
+        if self.entry:
+            self.entry.focus_set()
 
-    def _build_input(self,root):
-        bottom=tk.Frame(root,bg=self.bg,height=92); bottom.pack(fill="x",side="bottom",padx=22,pady=(0,18)); bottom.pack_propagate(False)
-        box=tk.Frame(bottom,bg="#cbd9e8",padx=1,pady=1); box.place(relx=.5,rely=.5,anchor="center",relwidth=.64,height=62); inner=tk.Frame(box,bg="#25364b"); inner.pack(fill="both",expand=True)
-        tk.Label(inner,text="+",fg="#d8e7f5",bg="#25364b",font=("Segoe UI",23)).pack(side="left",padx=(16,8)); self.entry=tk.Entry(inner,bg="#25364b",fg=self.text,insertbackground=self.text,relief=tk.FLAT,font=("Segoe UI",12)); self.entry.pack(side="left",fill="both",expand=True,pady=7); self.entry.insert(0,"Pergunte algo à STAR..."); self.entry.config(fg="#aebdcd")
-        self.entry.bind("<FocusIn>",self._clear_placeholder); self.entry.bind("<FocusOut>",self._restore_placeholder); self.entry.bind("<Return>",self._on_enter)
-        self.mic=tk.Button(inner,text="🎤",command=self.toggle_microphone,bg="#25364b",fg="#d8e7f5",relief=tk.FLAT,borderwidth=0,font=("Segoe UI",14),cursor="hand2"); self.mic.pack(side="right",padx=4); self.send_button=tk.Button(inner,text="➜",command=self.send_message,bg="#395574",fg="white",relief=tk.FLAT,borderwidth=0,font=("Segoe UI",16,"bold"),width=3,cursor="hand2"); self.send_button.pack(side="right",padx=(2,8),pady=7)
+    def _build_chat_welcome(self, parent):
+        center = tk.Frame(parent, bg=BG)
+        center.place(relx=.5, rely=.47, anchor="center")
+        avatar = self._photo(self._avatar_path("happy"), (118, 118), fit=True)
+        if avatar:
+            tk.Label(center, image=avatar, bg=BG, highlightbackground="#2d405f",
+                     highlightthickness=1).pack()
+        tk.Label(center, text="Olá, eu sou a STAR", fg=TEXT, bg=BG,
+                 font=("Courier New", 18, "bold")).pack(pady=(24, 8))
+        tk.Label(center,
+                 text="Estou aqui com você. Pergunte, conte ou explore — e quando quiser,\nabra o meu mundo pelo ícone da ilha ali em cima.",
+                 fg="#b7bdca", bg=BG, font=BODY_FONT, justify="center").pack()
 
-    def _clear_placeholder(self,_event=None):
-        if self.entry.get()=="Pergunte algo à STAR...":self.entry.delete(0,tk.END);self.entry.config(fg=self.text)
-    def _restore_placeholder(self,_event=None):
-        if not self.entry.get().strip():self.entry.insert(0,"Pergunte algo à STAR...");self.entry.config(fg="#aebdcd")
-    def _on_enter(self,_event=None):self.send_message();return "break"
+    def _build_chat_history(self, parent):
+        outer = tk.Frame(parent, bg=BG)
+        outer.pack(fill="both", expand=True)
+        canvas = tk.Canvas(outer, bg=BG, highlightthickness=0)
+        scrollbar = tk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+        frame = tk.Frame(canvas, bg=BG)
+        window_id = canvas.create_window((0, 0), window=frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        frame.bind("<Configure>", lambda _e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(window_id, width=e.width))
+        self.chat_scroll_canvas = canvas
+        self.chat_messages_frame = frame
+        for sender, text in self.chat_history:
+            self._add_chat_bubble(sender, text)
+        self.window.after(30, lambda: canvas.yview_moveto(1.0))
+
+    def _add_chat_bubble(self, sender, text):
+        parent = self.chat_messages_frame
+        if parent is None or not parent.winfo_exists():
+            return
+        is_user = sender.lower() in {"você", "voce", "user", "lu"}
+        row = tk.Frame(parent, bg=BG)
+        row.pack(fill="x", pady=9)
+        if is_user:
+            tk.Label(row, text=text, fg="#07101f", bg=BLUE, font=BODY_FONT,
+                     wraplength=430, justify="left", padx=16, pady=12).pack(side="right", padx=(180, 22))
+        else:
+            avatar = self._photo(self._avatar_path("neutral"), (42, 42), fit=True)
+            if avatar:
+                tk.Label(row, image=avatar, bg=BG).pack(side="left", padx=(18, 10), anchor="n")
+            tk.Label(row, text=text, fg="#eef1f6", bg="#151a24", font=BODY_FONT,
+                     wraplength=680, justify="left", padx=16, pady=12,
+                     highlightbackground="#323746", highlightthickness=1).pack(side="left", padx=(0, 150))
+        if self.chat_scroll_canvas:
+            self.window.after(20, lambda: self.chat_scroll_canvas.yview_moveto(1.0))
+
+    def _build_chat_input(self, root):
+        holder = tk.Frame(root, bg=BG)
+        holder.place(relx=.5, rely=1, anchor="s", y=-26, relwidth=.58, height=64)
+        inner = tk.Frame(holder, bg="#0b1322", highlightbackground="#27334c", highlightthickness=1)
+        inner.pack(fill="both", expand=True)
+        tk.Label(inner, text="⌕", fg=MUTED, bg="#0b1322", font=("Segoe UI", 17)).pack(side="left", padx=(14, 8))
+        self.entry = tk.Entry(inner, bg="#0b1322", fg=TEXT, insertbackground=TEXT,
+                              relief=tk.FLAT, borderwidth=0, font=BODY_FONT)
+        self.entry.pack(side="left", fill="both", expand=True, pady=8)
+        self.entry.insert(0, "Converse com a STAR...")
+        self.entry.config(fg="#6f788b")
+        self.entry.bind("<FocusIn>", self._clear_placeholder)
+        self.entry.bind("<FocusOut>", self._restore_placeholder)
+        self.entry.bind("<Return>", self._on_enter)
+        self.mic_button = tk.Button(inner, text="♩", command=self.toggle_microphone,
+                                    bg="#0b1322", fg=MUTED, activebackground="#141d2d",
+                                    activeforeground=TEXT, relief=tk.FLAT, borderwidth=0,
+                                    font=("Segoe UI", 14), cursor="hand2")
+        self.mic_button.pack(side="right", padx=5)
+        self.send_button = tk.Button(inner, text="↑", command=self.send_message,
+                                     bg="#111b2e", fg="#4f5c75", activebackground=BLUE,
+                                     activeforeground=WHITE, relief=tk.FLAT, borderwidth=0,
+                                     font=("Segoe UI", 14, "bold"), width=3, cursor="hand2")
+        self.send_button.pack(side="right", padx=(4, 10), pady=8)
+        tk.Label(root, text=f"STAR · LOCAL-FIRST · {self.operation_mode.upper()}",
+                 fg=SOFT, bg=BG, font=("Courier New", 6, "bold")).place(relx=.5, rely=1, anchor="s", y=-7)
+
+    def _clear_placeholder(self, _event=None):
+        if self.entry and self.entry.get() == "Converse com a STAR...":
+            self.entry.delete(0, tk.END); self.entry.config(fg=TEXT)
+
+    def _restore_placeholder(self, _event=None):
+        if self.entry and not self.entry.get().strip():
+            self.entry.insert(0, "Converse com a STAR..."); self.entry.config(fg="#6f788b")
+
+    def _on_enter(self, _event=None):
+        self.send_message(); return "break"
+
+    def send_message(self):
+        if self.processing or self.entry is None:
+            return
+        self.voice.cancel_speech()
+        text = self.entry.get().strip()
+        if not text or text == "Converse com a STAR...":
+            return
+        self.entry.delete(0, tk.END)
+        self.chat_history.append(("Você", text))
+        try:
+            self.memory.save("Você", text)
+        except Exception:
+            pass
+        if self.chat_messages_frame is None:
+            self.show_chat()
+        else:
+            self._add_chat_bubble("Você", text)
+        self.processing = True
+        if self.entry: self.entry.config(state=tk.DISABLED)
+        if self.send_button: self.send_button.config(state=tk.DISABLED)
+        self._set_status("THINKING", GOLD)
+        threading.Thread(target=self._process_message, args=(text,), daemon=True, name="STAR-CoreRequest").start()
+
+    def _process_message(self, text):
+        try:
+            self.response_queue.put(("success", self.brain.process(text)))
+        except Exception as exc:
+            self.response_queue.put(("error", str(exc)))
 
     def toggle_microphone(self):
         self.voice.cancel_speech()
-        if not self.voice.stt_configured:self._activate_conversation();self._append_system("🎤 Reconhecimento local ainda não está instalado. Execute INSTALAR_VOZ.bat.");return
-        if not self.recorder.available:self._activate_conversation();self._append_system("🎤 Não consegui acessar o microfone. Verifique as configurações de áudio do Windows.");return
+        if not self.voice.stt_configured:
+            self._append_system("Reconhecimento local ainda não está instalado. Execute INSTALAR_VOZ.bat."); return
+        if not self.recorder.available:
+            self._append_system("Não consegui acessar o microfone. Verifique o áudio do Windows."); return
         if not self.recording:
-            try:self.recorder.start();self.recording=True;self.mic.config(text="■",bg="#8b3340",fg="white");self._activate_conversation();self._append_system("🎤 Estou ouvindo. Clique novamente quando terminar.");self._set_status("OUVINDO",self.green)
-            except Exception as exc:self._append_system(f"🎤 Erro ao abrir microfone: {exc}")
+            try:
+                self.recorder.start(); self.recording = True
+                if self.mic_button: self.mic_button.config(text="■", fg=RED)
+                self._set_status("LISTENING", GREEN)
+            except Exception as exc:
+                self._append_system(f"Erro ao abrir microfone: {exc}")
         else:
-            self.recording=False;self.mic.config(text="🎤",bg="#25364b",fg="#d8e7f5");self._set_status("TRANSCRIVENDO",self.gold);threading.Thread(target=self._finish_recording,daemon=True).start()
+            self.recording = False
+            if self.mic_button: self.mic_button.config(text="♩", fg=MUTED)
+            self._set_status("TRANSCRIBING", GOLD)
+            threading.Thread(target=self._finish_recording, daemon=True, name="STAR-STT").start()
 
     def _finish_recording(self):
-        path=None
-        try:path=self.recorder.stop_to_wav();text=self.voice.transcribe(path);self.response_queue.put(("transcript",text))
-        except Exception as exc:self.response_queue.put(("voice_error",str(exc)))
+        path = None
+        try:
+            path = self.recorder.stop_to_wav(); text = self.voice.transcribe(path)
+            self.response_queue.put(("transcript", text))
+        except Exception as exc:
+            self.response_queue.put(("voice_error", str(exc)))
         finally:
             if path:
-                try:path.unlink(missing_ok=True)
-                except Exception:pass
+                try: path.unlink(missing_ok=True)
+                except Exception: pass
 
-    def _activate_conversation(self):
-        if self.has_messages or not hasattr(self,"stage"):return
-        self.has_messages=True
-        if hasattr(self,"center"):
-            try:self.center.place_forget()
-            except tk.TclError:pass
-        self.chat=scrolledtext.ScrolledText(self.stage,wrap=tk.WORD,bg="#0e151f",fg=self.text,insertbackground=self.text,relief=tk.FLAT,borderwidth=0,font=("Segoe UI",11),padx=28,pady=22);self.chat.pack(fill="both",expand=True,padx=80,pady=(25,12));self.chat.configure(state=tk.DISABLED)
-        for tag,fg,font in (("user",self.user,("Segoe UI",10,"bold")),("star",self.star,("Segoe UI",10,"bold")),("message",self.text,("Segoe UI",11)),("system",self.muted,("Segoe UI",10))):self.chat.tag_configure(tag,foreground=fg,font=font)
+    def _append_system(self, text):
+        self.chat_history.append(("STAR", f"SISTEMA · {text}"))
+        if self.current_screen == "chat":
+            if self.chat_messages_frame is None: self.show_chat()
+            else: self._add_chat_bubble("STAR", f"SISTEMA · {text}")
 
-    def send_message(self):
-        if self.processing or not hasattr(self,"entry"):return
-        self.voice.cancel_speech()
-        text=self.entry.get().strip()
-        if not text or text=="Pergunte algo à STAR...":return
-        self.entry.delete(0,tk.END);self._activate_conversation();self._append_user(text)
-        try:self.memory.save("Você",text)
-        except Exception:pass
-        self.processing=True;self.entry.config(state=tk.DISABLED);self.send_button.config(state=tk.DISABLED);self._set_status("PROCESSANDO",self.gold);self._load_avatar("thinking");threading.Thread(target=self._process_message,args=(text,),daemon=True).start()
+    def show_settings(self, section="general"):
+        self.clear_screen(); self.current_screen = "settings"
+        root = tk.Frame(self.window, bg=BG); root.pack(fill="both", expand=True)
+        self._star_background(root, 91)
+        self._button(root, "←  Conversa", self.show_chat, subtle=True).place(x=20, y=20)
+        sidebar = tk.Frame(root, bg="#0b1220", highlightbackground=BORDER, highlightthickness=1)
+        sidebar.place(relx=.145, rely=.12, relwidth=.19, relheight=.76)
+        head = tk.Frame(sidebar, bg="#0b1220"); head.pack(fill="x", padx=14, pady=(18, 10))
+        avatar = self._photo(self._avatar_path("neutral"), (38, 38), fit=True)
+        if avatar: tk.Label(head, image=avatar, bg="#0b1220").pack(side="left")
+        namebox = tk.Frame(head, bg="#0b1220"); namebox.pack(side="left", padx=10)
+        tk.Label(namebox, text="STAR", fg=TEXT, bg="#0b1220", font=BODY_BOLD).pack(anchor="w")
+        tk.Label(namebox, text="CONFIGURAÇÕES", fg=SOFT, bg="#0b1220", font=("Courier New", 6, "bold")).pack(anchor="w")
+        for key, icon, label in self.SETTINGS_SECTIONS:
+            active = key == section
+            tk.Button(sidebar, text=f"{icon}   {label}", command=lambda k=key: self.show_settings(k),
+                      bg="#293143" if active else "#0b1220", fg=TEXT if active else "#b4bac6",
+                      activebackground="#293143", activeforeground=TEXT, relief=tk.FLAT,
+                      borderwidth=0, anchor="w", font=("Courier New", 8, "bold"),
+                      padx=14, pady=8, cursor="hand2").pack(fill="x", padx=12, pady=1)
+        panel = tk.Frame(root, bg="#0a1221", highlightbackground=BORDER, highlightthickness=1)
+        panel.place(relx=.35, rely=.12, relwidth=.51, relheight=.76)
+        self._render_settings_panel(panel, section)
 
-    def _process_message(self,text):
-        try:self.response_queue.put(("success",self.brain.process(text)))
-        except Exception as exc:self.response_queue.put(("error",str(exc)))
+    def _render_settings_panel(self, panel, section):
+        titles = {key: label.title() for key, _, label in self.SETTINGS_SECTIONS}
+        tk.Label(panel, text=titles.get(section, section.title()), fg=TEXT, bg="#0a1221",
+                 font=("Courier New", 16, "bold")).pack(anchor="w", padx=28, pady=(30, 6))
+        if section == "general":
+            tk.Label(panel, text="Modo de operação da STAR e preferências básicas.", fg=MUTED,
+                     bg="#0a1221", font=BODY_FONT).pack(anchor="w", padx=28)
+            tk.Label(panel, text="Modo de operação", fg=MUTED, bg="#0a1221", font=SMALL_BOLD).pack(anchor="w", padx=28, pady=(24, 8))
+            row = tk.Frame(panel, bg="#0a1221"); row.pack(anchor="w", padx=28)
+            for mode in ("local", "lan", "online"):
+                active = self.operation_mode == mode
+                tk.Button(row, text=mode.upper(), command=lambda m=mode: self._set_operation_mode(m),
+                          bg=BLUE if active else "#171d2c", fg="#06111f" if active else "#aeb6c7",
+                          activebackground=BLUE, activeforeground="#06111f", relief=tk.FLAT,
+                          borderwidth=0, font=BODY_BOLD, padx=18, pady=8, cursor="hand2").pack(side="left", padx=(0, 8))
+            tk.Label(panel, text="LOCAL é o estado nativo da STAR. LAN e ONLINE ampliam suas capacidades, mas não a definem.",
+                     fg=MUTED, bg="#0a1221", font=BODY_FONT, wraplength=650, justify="left").pack(anchor="w", padx=28, pady=(12, 0))
+            tk.Label(panel, text="Idioma", fg=MUTED, bg="#0a1221", font=SMALL_BOLD).pack(anchor="w", padx=28, pady=(28, 8))
+            self._pill(panel, "Português (Brasil)", fg=TEXT).pack(anchor="w", padx=28); return
+        if section == "appearance":
+            self._settings_card(panel, "APARÊNCIA ATUAL", f"Skin selecionada: {self.selected_skin}\nA identidade visual continua sendo a STAR.")
+            self._button(panel, "ABRIR CLOSET", self.show_closet, accent=True).pack(anchor="w", padx=28, pady=16); return
+        if section == "voice":
+            card = self._settings_card(panel, "VOZ DA STAR", self.voice.tts_description)
+            row = tk.Frame(card, bg=PANEL_2); row.pack(anchor="w", padx=18, pady=(0, 16))
+            self._button(row, "CONVERSA RÁPIDA", lambda: self._set_voice_mode("fast"), accent=self.voice.mode == "fast").pack(side="left", padx=(0, 8))
+            self._button(row, "VOZ OFICIAL", lambda: self._set_voice_mode("official"), accent=self.voice.mode == "official").pack(side="left")
+            self._button(panel, "TESTAR VOZ OFICIAL", self._test_voice).pack(anchor="w", padx=28, pady=(14, 6))
+            self.voice_test_label = tk.Label(panel, text="Pronto para testar.", fg=MUTED, bg="#0a1221", font=BODY_FONT)
+            self.voice_test_label.pack(anchor="w", padx=28); return
+        if section == "audio":
+            stt = "PRONTO" if self.voice.stt_configured else "INSTALAÇÃO PENDENTE"
+            self._settings_development(panel, "As configurações de áudio ainda estão sendo preparadas. O pipeline local já possui microfone, STT e reprodução de voz.")
+            self._settings_card(panel, "ESTADO ATUAL", f"Microfone: {'PRONTO' if self.recorder.available else 'INDISPONÍVEL'}\nSTT: {stt}\nTTS: {self.voice.tts_description}"); return
+        if section == "memory":
+            self._settings_card(panel, "MEMÓRIA PERSISTENTE", f"Mensagens carregadas: {len(self.chat_history)}\nO histórico continua local no banco da STAR."); return
+        if section == "knowledge":
+            packs = getattr(self.brain, "packs", None)
+            try: stats = packs.stats() if packs else {"packs": 0, "entries": 0}
+            except Exception: stats = {"packs": 0, "entries": 0}
+            self._settings_card(panel, "CONHECIMENTO LOCAL", f"Knowledge Packs: {stats.get('packs', 0)}\nEntradas carregadas: {stats.get('entries', 0)}\nA biblioteca massiva permanece uma evolução posterior do roadmap."); return
+        if section == "models": self._settings_development(panel, "Modelos são ferramentas da STAR, não sua identidade. O roteamento avançado pertence às próximas fases do MIND.")
+        elif section == "privacy": self._settings_card(panel, "LOCAL-FIRST", "Memória, voz e conhecimento fundamental permanecem locais por padrão. Recursos online são opcionais.")
+        elif section == "permissions": self._settings_development(panel, "O gerenciador completo de permissões será expandido conforme TRUST/Guardian. Ações críticas não devem ser silenciosas.")
+        elif section == "world":
+            self._settings_card(panel, "STAR WORLD", "HUB, Casa, Cozinha, Closet, Jardim e pontos de entrada das demais ilhas fazem parte desta interface 2D.")
+            self._button(panel, "ABRIR STAR WORLD", self.show_hub, accent=True).pack(anchor="w", padx=28, pady=16)
+        elif section == "about": self._settings_card(panel, "S.T.A.R.", f"System for Thought, Analysis and Response\nVersão: V{VERSION}\nArquitetura local-first e modular.")
 
-    def _check_response_queue(self):
-        if self._closing:return
-        try:
-            while True:
-                kind,result=self.response_queue.get_nowait()
-                if kind=="transcript":
-                    if self.current_screen=="chat":
-                        self.entry.config(state=tk.NORMAL);self.entry.delete(0,tk.END);self.entry.insert(0,str(result));self.entry.config(fg=self.text);self.send_message()
-                elif kind=="voice_error":
-                    self._activate_conversation();self._append_system(f"🎤 Falha no reconhecimento: {result}");self.processing=False
-                    if self.current_screen=="chat":self.entry.config(state=tk.NORMAL);self.send_button.config(state=tk.NORMAL)
-                elif kind=="voice_test":
-                    ok,error=result;self._set_voice_test_message(f"🔊 Voz da STAR funcionando ({self.voice.last_tts_engine})." if ok else f"🔊 Falha na voz: {error}",ok)
-                elif kind=="speech_result":
-                    ok,error=result
-                    if not ok and self.current_screen=="chat":self._append_system(f"🔊 A resposta foi gerada, mas a voz falhou: {error}")
-                    self._load_avatar("neutral")
-                    if self.current_screen=="chat":self._set_status("OFFLINE" if not self.online_mode else "ONLINE",self.red if not self.online_mode else self.green)
-                elif kind=="success":
-                    response=str(result);self._append_star(response)
-                    try:self.memory.save("STAR",response)
-                    except Exception:pass
-                    self._load_avatar("speaking");self.voice.speak_async(response,lambda ok,error:self.response_queue.put(("speech_result",(ok,error))));self.processing=False
-                    if self.current_screen=="chat":self.entry.config(state=tk.NORMAL);self.send_button.config(state=tk.NORMAL);self._set_status("FALANDO",self.green);self.entry.focus_set()
-                elif kind=="error":
-                    self._append_system(f"Erro ao processar: {result}");self._load_avatar("neutral");self.processing=False
-                    if self.current_screen=="chat":self.entry.config(state=tk.NORMAL);self.send_button.config(state=tk.NORMAL)
-        except queue.Empty:pass
-        if not self._closing:
-            try:self.window.after(60,self._check_response_queue)
-            except tk.TclError:pass
+    def _settings_card(self, panel, title, text):
+        card = tk.Frame(panel, bg=PANEL_2, highlightbackground=BORDER, highlightthickness=1)
+        card.pack(fill="x", padx=28, pady=(18, 0))
+        tk.Label(card, text=title, fg=PINK, bg=PANEL_2, font=SMALL_BOLD).pack(anchor="w", padx=18, pady=(16, 6))
+        tk.Label(card, text=text, fg="#d8dce5", bg=PANEL_2, font=BODY_FONT, wraplength=620, justify="left").pack(anchor="w", padx=18, pady=(0, 16))
+        return card
 
-    def _set_voice_test_message(self,message,ok):
-        label=self.voice_test_label
-        if label is not None:
-            try:
-                if label.winfo_exists():label.config(text=message,fg=self.green if ok else self.red);return
-            except tk.TclError:pass
-        if self.current_screen=="chat":self._append_system(message)
+    def _settings_development(self, panel, text):
+        card = tk.Frame(panel, bg=PANEL_2, highlightbackground=BORDER, highlightthickness=1)
+        card.pack(fill="x", padx=28, pady=(18, 0))
+        avatar = self._photo(self._avatar_path("thinking"), (42, 42), fit=True)
+        if avatar: tk.Label(card, image=avatar, bg=PANEL_2).pack(side="left", padx=16, pady=16)
+        body = tk.Frame(card, bg=PANEL_2); body.pack(side="left", fill="both", expand=True, pady=14)
+        tk.Label(body, text="EM DESENVOLVIMENTO", fg=PINK, bg=PANEL_2, font=SMALL_BOLD).pack(anchor="w")
+        tk.Label(body, text=text, fg="#d9dce4", bg=PANEL_2, font=BODY_FONT, wraplength=565, justify="left").pack(anchor="w", pady=(6, 0))
+        return card
 
-    def _append(self,name,text,tag):
-        if not self.chat:return
-        try:self.chat.configure(state=tk.NORMAL);self.chat.insert(tk.END,name+"\n",tag);self.chat.insert(tk.END,text+"\n\n","message");self.chat.configure(state=tk.DISABLED);self.chat.see(tk.END)
-        except tk.TclError:self.chat=None
-    def _append_user(self,text):self._append("Você",text,"user")
-    def _append_star(self,text):self._append("⭐ STAR",text,"star")
-    def _append_system(self,text):self._append("SISTEMA",text,"system")
+    def _set_operation_mode(self, mode):
+        self.operation_mode = mode; self.online_mode = mode == "online"
+        try: self.brain.network_enabled = self.online_mode
+        except Exception: pass
+        self._save_operation_mode(); self.show_settings("general")
 
-    def _load_display_avatar(self):
-        skin=PROJECT_ROOT/"SKINS"/self.selected_skin
-        if skin.exists():
-            try:image=Image.open(skin).convert("RGBA");image.thumbnail((300,330),Image.Resampling.LANCZOS);self.avatar_photo=ImageTk.PhotoImage(image);self.avatar_label.config(image=self.avatar_photo,text="");return
-            except Exception:pass
-        self._load_avatar("neutral")
-    def _load_avatar(self,emotion="neutral"):
-        path=self.avatar.avatar_dir/f"{emotion}.png"
-        if not path.exists() or path.stat().st_size == 0:path=self.avatar.avatar_dir/"neutral.png"
-        try:image=Image.open(path).convert("RGBA");image.thumbnail((250,250),Image.Resampling.LANCZOS);self.avatar_photo=ImageTk.PhotoImage(image);self.avatar_label.config(image=self.avatar_photo,text="")
-        except Exception:
-            try:self.avatar_label.config(text="⭐\nSTAR",fg=self.star,font=("Segoe UI",28,"bold"))
-            except tk.TclError:pass
-    def _set_status(self,text,color):
-        label=getattr(self,"status_label",None)
-        if label:
-            try:label.config(text=f"● V{VERSION} • {text}",fg=color)
-            except tk.TclError:pass
-
-    def show_settings(self):
-        self.clear_screen();self.current_screen="settings";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True,padx=80,pady=35);tk.Label(body,text="CONFIGURAÇÕES",fg=self.star,bg=self.bg,font=("Segoe UI",27,"bold")).pack(anchor="w")
-        mode=tk.Frame(body,bg=self.panel,padx=22,pady=18);mode.pack(fill="x",pady=(18,12));tk.Label(mode,text="MODO DE FUNCIONAMENTO",fg=self.text,bg=self.panel,font=("Segoe UI",12,"bold")).pack(anchor="w");row=tk.Frame(mode,bg=self.panel);row.pack(anchor="w",pady=12);self.online_btn=self._button(row,"🟢 ONLINE",lambda:self._set_mode(True));self.online_btn.pack(side="left",padx=(0,10));self.offline_btn=self._button(row,"🔴 OFFLINE",lambda:self._set_mode(False));self.offline_btn.pack(side="left");self._refresh_mode_buttons();tk.Label(mode,text="O modo online controla recursos de internet. A voz da STAR é local nos dois modos.",fg=self.muted,bg=self.panel).pack(anchor="w")
-        voicebox=tk.Frame(body,bg=self.panel,padx=22,pady=18);voicebox.pack(fill="x",pady=12)
-        tk.Label(voicebox,text="🎙️ VOZ DA STAR",fg=self.star,bg=self.panel,font=("Segoe UI",13,"bold")).pack(anchor="w")
-        tk.Label(voicebox,text=f"Entrada: faster-whisper tiny • Conversa: {self.voice.tts_description}",fg=self.text,bg=self.panel).pack(anchor="w",pady=(8,6))
-        voice_row=tk.Frame(voicebox,bg=self.panel);voice_row.pack(anchor="w",pady=(2,8))
-        self._button(voice_row,"⚡ CONVERSA RÁPIDA",lambda:self._set_voice_mode("fast"),small=True).pack(side="left",padx=(0,8))
-        self._button(voice_row,"⭐ VOZ OFICIAL",lambda:self._set_voice_mode("official"),small=True).pack(side="left")
-        tk.Label(voicebox,text="O modo rápido responde imediatamente usando uma voz local do Windows quando disponível. O modo oficial usa a referência Chatterbox e pode levar minutos neste computador.",fg=self.muted,bg=self.panel,wraplength=760,justify="left").pack(anchor="w")
-        self._button(voicebox,"TESTAR VOZ OFICIAL",self._test_voice).pack(anchor="w",pady=(12,4))
-        self.voice_test_label=tk.Label(voicebox,text="Pronto para testar.",fg=self.muted,bg=self.panel,wraplength=760,justify="left");self.voice_test_label.pack(anchor="w")
-        info=tk.Frame(body,bg=self.panel,padx=22,pady=16);info.pack(fill="x",pady=12)
-        for name,value in (("Versão",f"V{VERSION}"),("Conhecimento local","ATIVO"),("Modo de voz",self.voice.mode.upper()),("Reconhecimento local","PRONTO" if self.voice.stt_configured else "INSTALAÇÃO PENDENTE")):
-            line=tk.Frame(info,bg=self.panel);line.pack(fill="x",pady=4);tk.Label(line,text=name,fg=self.muted,bg=self.panel).pack(side="left");tk.Label(line,text=value,fg=self.green if value in {"ATIVO","PRONTO","Piper PT-BR (rápido)"} else self.gold,bg=self.panel,font=("Segoe UI",10,"bold")).pack(side="right")
-        self._button(body,"VOLTAR AO CHAT",self.show_chat).pack(anchor="w",pady=10)
+    def _set_voice_mode(self, mode):
+        self.voice.set_voice_mode(mode); self._save_voice_mode(); self.show_settings("voice")
 
     def _test_voice(self):
-        self._set_voice_test_message("🔊 Preparando teste da voz oficial...",True);self._set_status("TESTANDO VOZ",self.gold);self.voice.test_official_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
-    def _set_voice_mode(self,mode):
-        self.voice.set_voice_mode(mode);self._save_voice_mode();self.show_settings()
-    def _set_mode(self,online):
-        self.online_mode=bool(online)
-        try:self.brain.network_enabled=self.online_mode
-        except Exception:pass
-        self._refresh_mode_buttons();self._set_status("ONLINE" if self.online_mode else "OFFLINE",self.green if self.online_mode else self.red)
-    def _refresh_mode_buttons(self):
-        if hasattr(self,"online_btn"):self.online_btn.config(bg="#1f5a3a" if self.online_mode else "#24313f")
-        if hasattr(self,"offline_btn"):self.offline_btn.config(bg="#5a2630" if not self.online_mode else "#24313f")
+        self._set_voice_test_message("Preparando teste da voz oficial...", True)
+        self.voice.test_official_audio_async(lambda ok, error: self.response_queue.put(("voice_test", (ok, error))))
 
-    def show_islands(self):
-        self.clear_screen();self.current_screen="islands";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True,padx=35,pady=20);tk.Label(body,text="HUB • STAR WORLD",fg=self.star,bg=self.bg,font=("Segoe UI",24,"bold")).pack(anchor="w",pady=(0,12))
-        try:
-            from core.islands import get_islands;data=get_islands()
-        except Exception:data={}
-        for i,(key,item) in enumerate(data.items()):
-            card=tk.Frame(body,bg=self.panel,padx=16,pady=14);card.grid(row=i//3,column=i%3,sticky="nsew",padx=6,pady=6);tk.Label(card,text=f"{item.get('icon','🏝️')} {item.get('name',key)}",fg=self.star,bg=self.panel,font=("Segoe UI",14,"bold")).pack(anchor="w");tk.Label(card,text=item.get('description',''),fg=self.text,bg=self.panel,wraplength=270,justify="left").pack(anchor="w",pady=7)
-            if key.lower() in {"house","casa"}:self._button(card,"ENTRAR NA CASA",self.show_house,small=True).pack(anchor="w")
-            else:tk.Label(card,text="🟢 DISPONÍVEL" if item.get('status')=='installed' else "🔒 AGUARDANDO CONHECIMENTO",fg=self.green if item.get('status')=='installed' else self.gold,bg=self.panel,font=("Segoe UI",8,"bold")).pack(anchor="w")
+    def _set_voice_test_message(self, message, ok):
+        label = self.voice_test_label
+        if label is not None:
+            try:
+                if label.winfo_exists(): label.config(text=message, fg=GREEN if ok else RED); return
+            except tk.TclError: pass
+        if self.current_screen == "chat": self._append_system(message)
 
     def show_house(self):
-        self.clear_screen();self.current_screen="house";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True,padx=70,pady=45);tk.Label(body,text="🏠 CASA",fg=self.star,bg=self.bg,font=("Segoe UI",28,"bold")).pack(anchor="w");tk.Label(body,text="O espaço pessoal da STAR dentro do STAR WORLD.",fg=self.muted,bg=self.bg).pack(anchor="w",pady=(4,24));grid=tk.Frame(body,bg=self.bg);grid.pack(fill="x")
-        for i,(title,desc,cmd) in enumerate((("🍳 COZINHA","Receitas e experimentação gastronômica.",None),("👕 CLOSET","Skins e personalização visual da STAR.",self.show_closet))):
-            c=tk.Frame(grid,bg=self.panel,padx=22,pady=20,width=360,height=180);c.grid(row=0,column=i,padx=(0,14));c.grid_propagate(False);tk.Label(c,text=title,fg=self.star,bg=self.panel,font=("Segoe UI",16,"bold")).pack(anchor="w");tk.Label(c,text=desc,fg=self.text,bg=self.panel,wraplength=290,justify="left").pack(anchor="w",pady=12)
-            if cmd:self._button(c,"ABRIR CLOSET",cmd).pack(anchor="w")
+        self.clear_screen(); self.current_screen = "house"
+        root = tk.Frame(self.window, bg=BG); root.pack(fill="both", expand=True)
+        self._star_background(root, 101)
+        self._button(root, "←  STAR WORLD", self.show_hub, subtle=True).place(x=22, y=22)
+        tk.Label(root, text="CASA DA STAR", fg=TEXT, bg=BG, font=("Courier New", 20, "bold")).pack(pady=(72, 4))
+        tk.Label(root, text="O espaço pessoal da STAR", fg=MUTED, bg=BG, font=SMALL_FONT).pack()
+        grid = tk.Frame(root, bg=BG); grid.place(relx=.5, rely=.53, anchor="center")
+        cards = [("🍳", "COZINHA", "Receitas, pratos e experimentação gastronômica.", self.show_kitchen),
+                 ("🛏", "QUARTO", "Espaço pessoal, descanso e acesso ao Closet.", self.show_bedroom),
+                 ("👕", "CLOSET", "Roupas, skins, acessórios e aparência.", self.show_closet)]
+        for idx, (icon, title, desc, cmd) in enumerate(cards):
+            card = tk.Frame(grid, bg=PANEL_2, width=260, height=220, highlightbackground=BORDER, highlightthickness=1)
+            card.grid(row=0, column=idx, padx=9); card.grid_propagate(False)
+            tk.Label(card, text=icon, fg=BLUE_SOFT, bg=PANEL_2, font=("Segoe UI Emoji", 30)).pack(pady=(24, 8))
+            tk.Label(card, text=title, fg=TEXT, bg=PANEL_2, font=("Courier New", 12, "bold")).pack()
+            tk.Label(card, text=desc, fg=MUTED, bg=PANEL_2, font=BODY_FONT, wraplength=210, justify="center").pack(padx=12, pady=10)
+            self._button(card, "ABRIR", cmd, accent=title == "COZINHA").pack(pady=6)
+
+    def show_bedroom(self):
+        self._show_simple_environment("QUARTO", "O quarto é o espaço pessoal da STAR. Ele concentra descanso, objetos pessoais e o acesso ao Closet.", self.show_house, extra_button=("ABRIR CLOSET", self.show_closet))
+
+    def show_kitchen(self):
+        self.clear_screen(); self.current_screen = "kitchen"
+        canvas = tk.Canvas(self.window, bg="#21150f", highlightthickness=0); canvas.pack(fill="both", expand=True)
+        def render():
+            if not canvas.winfo_exists(): return
+            w = max(canvas.winfo_width(), 960); h = max(canvas.winfo_height(), 620)
+            canvas.delete("all")
+            bw = max(960, int(round(w / 32) * 32)); bh = max(620, int(round(h / 32) * 32))
+            photo = self._photo(self._reference_path("kitchen_reference.jpg"), (bw, bh), fit=True, key=f"kitchen:{bw}x{bh}")
+            if photo: canvas.create_image(w/2, h/2, image=photo, anchor="center")
+            else: canvas.create_rectangle(0, 0, w, h, fill="#3b2518", outline="")
+            canvas.create_rectangle(0, 0, w, 72, fill="#07101a", outline="")
+            canvas.create_text(w/2, 34, text="COZINHA", fill=TEXT, font=("Courier New", 17, "bold"))
+            round_rect(canvas, 24, 18, 148, 54, radius=18, fill="#0c1421", outline=BORDER, width=1, tags="kback")
+            canvas.create_text(86, 36, text="←  CASA", fill=TEXT, font=BODY_BOLD, tags="kback")
+            canvas.tag_bind("kback", "<Button-1>", lambda _e: self.show_house())
+            canvas.tag_bind("kback", "<Enter>", lambda _e: canvas.config(cursor="hand2")); canvas.tag_bind("kback", "<Leave>", lambda _e: canvas.config(cursor="arrow"))
+            round_rect(canvas, w*.18, h-98, w*.82, h-28, radius=20, fill="#09111d", outline="#33425b", width=1)
+            canvas.create_text(w/2, h-72, text="STAR cozinha de verdade dentro deste ambiente — não é apenas um catálogo de receitas.", fill=TEXT, font=BODY_BOLD)
+            canvas.create_text(w/2, h-48, text="Receitas  •  ingredientes  •  preparo  •  aprendizado culinário  •  experimentação", fill=GOLD, font=SMALL_BOLD)
+        canvas.bind("<Configure>", lambda _e: self._schedule_render(render, 70)); self._schedule_render(render, 10)
 
     def show_closet(self):
-        self.clear_screen();self.current_screen="closet";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True);top=tk.Frame(body,bg=self.bg);top.pack(fill="x",padx=45,pady=(25,0));tk.Label(top,text="👕 CLOSET",fg=self.star,bg=self.bg,font=("Segoe UI",27,"bold")).pack(anchor="w");tk.Label(top,text="Use as setas para navegar pelas aparências da STAR.",fg=self.muted,bg=self.bg).pack(anchor="w",pady=(3,8));self.closet_files=[p for p in sorted((PROJECT_ROOT/"SKINS").glob("*")) if p.suffix.lower() in {".png",".jpg",".jpeg",".webp"}]
-        if not self.closet_files:tk.Label(body,text="Nenhuma skin encontrada.",fg=self.red,bg=self.bg).pack(pady=80);return
-        try:self.closet_index=[p.name for p in self.closet_files].index(self.selected_skin)
-        except ValueError:self.closet_index=0
-        area=tk.Frame(body,bg=self.bg);area.pack(fill="both",expand=True);self._button(area,"◀",lambda:self._change_closet_skin(-1)).place(relx=.18,rely=.5,anchor="center");self._button(area,"▶",lambda:self._change_closet_skin(1)).place(relx=.82,rely=.5,anchor="center");card=tk.Frame(area,bg="#172231",padx=18,pady=16);card.place(relx=.5,rely=.47,anchor="center",width=430,height=455);self.closet_image=tk.Label(card,bg="#172231");self.closet_image.pack(expand=True,fill="both");self.closet_name=tk.Label(card,fg=self.text,bg="#172231",font=("Segoe UI",14,"bold"));self.closet_name.pack(pady=(8,4));self.closet_state=tk.Label(card,fg=self.green,bg="#172231",font=("Segoe UI",9,"bold"));self.closet_state.pack();self.closet_photo=None;bottom=tk.Frame(body,bg=self.bg);bottom.pack(fill="x",padx=45,pady=(0,22));self.select_skin_button=self._button(bottom,"SELECIONAR ESTA SKIN",self._confirm_closet_skin);self.select_skin_button.pack(side="left",padx=(0,10));self._button(bottom,"SAIR DO CLOSET",self.show_house).pack(side="left");self._render_closet_skin()
-    def _change_closet_skin(self,step):self.closet_index=(self.closet_index+step)%len(self.closet_files);self._render_closet_skin()
+        self.clear_screen(); self.current_screen = "closet"
+        root = tk.Frame(self.window, bg=BG); root.pack(fill="both", expand=True); self._star_background(root, 121)
+        self._button(root, "←  CASA", self.show_house, subtle=True).place(x=22, y=22)
+        tk.Label(root, text="CLOSET", fg=TEXT, bg=BG, font=("Courier New", 20, "bold")).pack(pady=(66, 3))
+        tk.Label(root, text="Aparência e personalização da STAR", fg=MUTED, bg=BG, font=SMALL_FONT).pack()
+        files = [p for p in sorted((PROJECT_ROOT / "SKINS").glob("*")) if p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}]
+        self.closet_files = files
+        if not files:
+            tk.Label(root, text="Nenhuma skin encontrada.", fg=RED, bg=BG, font=BODY_BOLD).pack(pady=80); return
+        try: self.closet_index = [p.name for p in files].index(self.selected_skin)
+        except ValueError: self.closet_index = 0
+        area = tk.Frame(root, bg=BG); area.place(relx=.5, rely=.55, anchor="center", width=730, height=460)
+        self._button(area, "◀", lambda: self._change_closet_skin(-1), subtle=True).place(x=8, rely=.5, anchor="w")
+        self._button(area, "▶", lambda: self._change_closet_skin(1), subtle=True).place(relx=1, x=-8, rely=.5, anchor="e")
+        card = tk.Frame(area, bg=PANEL_2, highlightbackground=BORDER, highlightthickness=1); card.place(relx=.5, rely=.47, anchor="center", width=420, height=405)
+        self.closet_image = tk.Label(card, bg=PANEL_2); self.closet_image.pack(expand=True, fill="both", padx=12, pady=(12, 4))
+        self.closet_name = tk.Label(card, fg=TEXT, bg=PANEL_2, font=("Courier New", 11, "bold")); self.closet_name.pack()
+        self.closet_state = tk.Label(card, fg=GREEN, bg=PANEL_2, font=SMALL_BOLD); self.closet_state.pack(pady=(3, 8))
+        self.select_skin_button = self._button(root, "SELECIONAR ESTA SKIN", self._confirm_closet_skin, accent=True); self.select_skin_button.place(relx=.5, rely=.92, anchor="center")
+        self.closet_photo = None; self._render_closet_skin()
+
+    def _change_closet_skin(self, step):
+        self.closet_index = (self.closet_index + step) % len(self.closet_files); self._render_closet_skin()
+
     def _render_closet_skin(self):
-        p=self.closet_files[self.closet_index]
-        try:im=Image.open(p).convert("RGBA");im.thumbnail((360,330),Image.Resampling.LANCZOS);self.closet_photo=ImageTk.PhotoImage(im);self.closet_image.config(image=self.closet_photo,text="")
-        except Exception:self.closet_image.config(image="",text="Não foi possível abrir esta skin",fg=self.red)
-        self.closet_name.config(text=p.stem.replace("_"," ").title());active=p.name==self.selected_skin;self.closet_state.config(text="✓ SKIN ATUALMENTE SELECIONADA" if active else f"{self.closet_index+1} de {len(self.closet_files)}");self.select_skin_button.config(text="SKIN SELECIONADA" if active else "SELECIONAR ESTA SKIN",bg="#1f5a3a" if active else "#243247")
-    def _confirm_closet_skin(self):self.selected_skin=self.closet_files[self.closet_index].name;self._save_skin_selection();self._render_closet_skin()
-    def _button(self,parent,text,command,small=False):return tk.Button(parent,text=text,command=command,bg="#243247",fg=self.text,activebackground="#38516f",activeforeground=self.text,relief=tk.FLAT,borderwidth=0,cursor="hand2",font=("Segoe UI",9 if small else 10,"bold"),padx=14,pady=7)
-    def toggle_maximize(self,_event=None):
-        if self.is_maximized:self.restore_normal_size()
-        else:self.normal_size=(self.window.winfo_width(),self.window.winfo_height());self.window.state("zoomed");self.is_maximized=True
-    def restore_normal_size(self,_event=None):
-        if self.is_maximized:self.window.state("normal");self.window.geometry(f"{max(900,self.normal_size[0])}x{max(600,self.normal_size[1])}");self.is_maximized=False
-    def close(self):
-        if self._closing:return
-        self._closing=True
+        path = self.closet_files[self.closet_index]
         try:
-            if self.recording:self.recorder.stop_to_wav()
-        except Exception:pass
-        try:self.voice.close()
-        except Exception:pass
-        try:self.memory.close()
+            with Image.open(path) as source: image = source.convert("RGBA")
+            image.thumbnail((360, 320), Image.Resampling.LANCZOS); self.closet_photo = ImageTk.PhotoImage(image)
+            self.closet_image.config(image=self.closet_photo, text="")
+        except Exception: self.closet_image.config(image="", text="Não foi possível abrir esta skin", fg=RED)
+        self.closet_name.config(text=path.stem.replace("_", " ").title())
+        active = path.name == self.selected_skin
+        self.closet_state.config(text="✓ SKIN ATUAL" if active else f"{self.closet_index + 1} de {len(self.closet_files)}")
+        self.select_skin_button.config(text="SKIN SELECIONADA" if active else "SELECIONAR ESTA SKIN", state=tk.DISABLED if active else tk.NORMAL, bg="#1f5a3a" if active else BLUE)
+
+    def _confirm_closet_skin(self):
+        self.selected_skin = self.closet_files[self.closet_index].name; self._save_skin_selection(); self._render_closet_skin()
+
+    def show_garden(self):
+        self.clear_screen(); self.current_screen = "garden"
+        canvas = tk.Canvas(self.window, bg=BG, highlightthickness=0); canvas.pack(fill="both", expand=True)
+        def render():
+            if not canvas.winfo_exists(): return
+            w = max(canvas.winfo_width(), 960); h = max(canvas.winfo_height(), 620)
+            canvas.delete("all"); draw_starfield(canvas, w, h, seed=151)
+            canvas.create_rectangle(0, h*.62, w, h, fill="#0c1c17", outline="")
+            canvas.create_oval(w*.18, h*.68, w*.56, h*.96, fill="#183b46", outline="#275769", width=2)
+            for i in range(15):
+                x = w*(.05 + i*.065); canvas.create_line(x, h*.70, x+8, h*.58, fill="#4d9a65", width=3)
+                canvas.create_oval(x+3, h*.575, x+12, h*.59, fill=PINK if i % 3 == 0 else GOLD, outline="")
+            canvas.create_text(w/2, 48, text="JARDIM", fill=TEXT, font=("Courier New", 18, "bold"))
+            canvas.create_text(w/2, 76, text="FAUNA · FLORA · ÁGUA · CULTIVO · DESCANSO", fill=MUTED, font=SMALL_BOLD)
+            canvas.create_text(w*.37, h*.79, text="🦦", font=("Segoe UI Emoji", 38), fill=TEXT); canvas.create_text(w*.37, h*.86, text="OSHA", font=("Courier New", 9, "bold"), fill=PINK)
+            round_rect(canvas, 22, 22, 150, 58, radius=18, fill="#0c1421", outline=BORDER, tags="gback"); canvas.create_text(86, 40, text="←  HUB", fill=TEXT, font=BODY_BOLD, tags="gback")
+            canvas.tag_bind("gback", "<Button-1>", lambda _e: self.show_hub())
+            ox, oy = w*.79, h*.64; round_rect(canvas, ox-105, oy-30, ox+105, oy+30, radius=18, fill="#101827", outline="#3b4d6f", tags="observ")
+            canvas.create_text(ox, oy, text="🔭  CAMINHO PARA O OBSERVATÓRIO", fill=BLUE_SOFT, font=("Courier New", 8, "bold"), tags="observ"); canvas.tag_bind("observ", "<Button-1>", lambda _e: self.show_observatory())
+            for tag in ("gback", "observ"):
+                canvas.tag_bind(tag, "<Enter>", lambda _e: canvas.config(cursor="hand2")); canvas.tag_bind(tag, "<Leave>", lambda _e: canvas.config(cursor="arrow"))
+        canvas.bind("<Configure>", lambda _e: self._schedule_render(render, 55)); self._schedule_render(render, 10)
+
+    def show_observatory(self):
+        self.clear_screen(); self.current_screen = "observatory"
+        root = tk.Frame(self.window, bg=BG); root.pack(fill="both", expand=True); self._star_background(root, 170)
+        self._button(root, "←  JARDIM", self.show_garden, subtle=True).place(x=22, y=22)
+        center = tk.Frame(root, bg=PANEL_2, highlightbackground=BORDER, highlightthickness=1); center.place(relx=.5, rely=.5, anchor="center", width=690, height=390)
+        tk.Label(center, text="🔭", bg=PANEL_2, fg=BLUE_SOFT, font=("Segoe UI Emoji", 42)).pack(pady=(28, 6)); tk.Label(center, text="OBSERVATÓRIO", bg=PANEL_2, fg=TEXT, font=("Courier New", 17, "bold")).pack()
+        tk.Label(center, text="Astronomia, observação do céu e exploração de corpos celestes.", bg=PANEL_2, fg=MUTED, font=BODY_FONT).pack(pady=(8, 22))
+        legend = tk.Frame(center, bg=PANEL_2); legend.pack()
+        for text, color in (("REAL", GREEN), ("HISTÓRICO", BLUE_SOFT), ("HIPOTÉTICO", GOLD), ("SIMULADO", PINK), ("FICTÍCIO", "#cbb5ff")):
+            tk.Label(legend, text=text, fg=color, bg="#111a2b", font=SMALL_BOLD, padx=10, pady=6, highlightbackground=BORDER, highlightthickness=1).pack(side="left", padx=4)
+        tk.Label(center, text="Objetos fictícios podem existir no catálogo, mas nunca serão apresentados como descobertas reais.", bg=PANEL_2, fg="#cfd4de", font=BODY_FONT, wraplength=590, justify="center").pack(pady=24)
+
+    def _show_simple_environment(self, title, description, back_command, extra_button=None):
+        self.clear_screen(); self.current_screen = title.lower()
+        root = tk.Frame(self.window, bg=BG); root.pack(fill="both", expand=True); self._star_background(root, 181)
+        self._button(root, "←  VOLTAR", back_command, subtle=True).place(x=22, y=22)
+        panel = tk.Frame(root, bg=PANEL_2, highlightbackground=BORDER, highlightthickness=1); panel.place(relx=.5, rely=.5, anchor="center", width=620, height=300)
+        tk.Label(panel, text=title, bg=PANEL_2, fg=TEXT, font=("Courier New", 18, "bold")).pack(pady=(44, 18))
+        tk.Label(panel, text=description, bg=PANEL_2, fg="#d6d9e1", font=BODY_FONT, wraplength=520, justify="center").pack()
+        if extra_button: self._button(panel, extra_button[0], extra_button[1], accent=True).pack(pady=28)
+
+    def _check_response_queue(self):
+        if self._closing: return
+        try:
+            while True:
+                kind, result = self.response_queue.get_nowait()
+                if kind == "transcript":
+                    if self.current_screen == "chat" and self.entry:
+                        self.entry.config(state=tk.NORMAL); self.entry.delete(0, tk.END); self.entry.insert(0, str(result)); self.entry.config(fg=TEXT); self.send_message()
+                elif kind == "voice_error":
+                    self._append_system(f"Falha no reconhecimento: {result}"); self.processing = False; self._restore_chat_controls()
+                elif kind == "voice_test":
+                    ok, error = result; self._set_voice_test_message(f"Voz da STAR funcionando ({self.voice.last_tts_engine})." if ok else f"Falha na voz: {error}", ok)
+                elif kind == "speech_result":
+                    ok, error = result
+                    if not ok and error and error != "cancelled": self._append_system(f"A resposta foi gerada, mas a voz falhou: {error}")
+                    self._set_status(self.operation_mode.upper(), BLUE)
+                elif kind == "success":
+                    response = str(result); self.chat_history.append(("STAR", response))
+                    try: self.memory.save("STAR", response)
+                    except Exception: pass
+                    if self.current_screen == "chat":
+                        if self.chat_messages_frame is None: self.show_chat()
+                        else: self._add_chat_bubble("STAR", response)
+                    self.processing = False; self._restore_chat_controls(); self._set_status("SPEAKING", GREEN)
+                    self.voice.speak_async(response, lambda ok, error: self.response_queue.put(("speech_result", (ok, error))))
+                elif kind == "error":
+                    self.processing = False; self._append_system(f"Erro ao processar: {result}"); self._restore_chat_controls()
+        except queue.Empty: pass
+        if not self._closing:
+            try: self.window.after(60, self._check_response_queue)
+            except tk.TclError: pass
+
+    def _restore_chat_controls(self):
+        if self.current_screen != "chat": return
+        if self.entry:
+            try: self.entry.config(state=tk.NORMAL); self.entry.focus_set()
+            except tk.TclError: pass
+        if self.send_button:
+            try: self.send_button.config(state=tk.NORMAL)
+            except tk.TclError: pass
+        self._set_status(self.operation_mode.upper(), BLUE)
+
+    def _set_status(self, text, color):
+        if self.status_label is not None:
+            try:
+                if self.status_label.winfo_exists(): self.status_label.config(text=f"● {text}", fg=color)
+            except tk.TclError: pass
+
+    def toggle_maximize(self, _event=None):
+        if self.is_maximized: self.restore_normal_size()
+        else:
+            self.normal_size = (self.window.winfo_width(), self.window.winfo_height()); self.window.state("zoomed"); self.is_maximized = True
+
+    def restore_normal_size(self, _event=None):
+        if self.is_maximized:
+            self.window.state("normal"); width, height = self.normal_size
+            self.window.geometry(f"{max(960, width)}x{max(620, height)}"); self.is_maximized = False
+
+    def close(self):
+        if self._closing: return
+        self._closing = True
+        if self._render_after_id is not None:
+            try: self.window.after_cancel(self._render_after_id)
+            except Exception: pass
+        try:
+            if self.recording: self.recorder.stop()
+        except Exception: pass
+        try: self.voice.close()
+        except Exception: pass
+        try: self.memory.close()
         finally:
-            try:self.window.destroy()
-            except Exception:pass
-    def run(self):self.window.mainloop()
+            try: self.window.destroy()
+            except Exception: pass
+
+    def run(self):
+        self.window.mainloop()
