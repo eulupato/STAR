@@ -12,7 +12,6 @@ from __future__ import annotations
 from hashlib import sha256
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
-import os
 from pathlib import Path
 import secrets
 import socket
@@ -81,12 +80,13 @@ class DeviceRegistry:
         device_id = _safe_device_id(device_id)
         if not isinstance(capabilities, list):
             capabilities = []
+        now = _now_ms()
         record = {
             "name": str(name or "STAR Device")[:120],
             "capabilities": [str(item)[:80] for item in capabilities[:32]],
             "token_sha256": _token_hash(token),
-            "paired_at": _now_ms(),
-            "last_seen": _now_ms(),
+            "paired_at": now,
+            "last_seen": now,
         }
         with self._lock:
             self.devices[device_id] = record
@@ -101,8 +101,9 @@ class DeviceRegistry:
             expected = record.get("token_sha256")
             if not expected or not secrets.compare_digest(expected, _token_hash(token)):
                 return False
+            # last_seen é telemetria efêmera na V0. Não gravamos o arquivo a
+            # cada requisição para evitar I/O desnecessário no caminho quente.
             record["last_seen"] = _now_ms()
-            self._save()
             return True
 
     def public_record(self, device_id: str):
@@ -186,7 +187,13 @@ class _GatewayHandler(BaseHTTPRequestHandler):
             if not device_id:
                 self._json(401, {"error": "unauthorized"})
                 return
-            self._json(200, {"device_id": device_id, "device": self.gateway.registry.public_record(device_id)})
+            self._json(
+                200,
+                {
+                    "device_id": device_id,
+                    "device": self.gateway.registry.public_record(device_id),
+                },
+            )
             return
 
         self._json(404, {"error": "not_found"})
@@ -252,7 +259,10 @@ class _GatewayHandler(BaseHTTPRequestHandler):
         if not text:
             raise ValueError("Texto vazio.")
         response = self.gateway.process_text(text)
-        self._json(200, {"ok": True, "device_id": device_id, "response": response})
+        self._json(
+            200,
+            {"ok": True, "device_id": device_id, "response": response},
+        )
 
     def _audio(self, device_id: str):
         body = self._read_body(MAX_MEDIA_BYTES)
@@ -389,8 +399,3 @@ class DeviceGateway:
         path = folder / filename
         path.write_bytes(data)
         return path
-
-
-def gateway_enabled() -> bool:
-    raw = os.getenv("STAR_DEVICE_GATEWAY", "").strip().lower()
-    return raw in {"1", "true", "yes", "on"}

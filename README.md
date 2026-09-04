@@ -68,12 +68,12 @@ tenha autorização para utilizar.
 A V1.9 FINAL também cancela falas antigas quando uma nova interação começa,
 evitando que uma resposta atrasada seja reproduzida depois de outra pergunta.
 
-
 ## Estrutura principal
 
 ```text
 STAR/
 ├── core/                  # identidade, roteamento, memória e cérebro
+├── clients/               # endpoints leves, como STAR Watch
 ├── database/              # persistência
 ├── gui/                   # interface 2D atual / STAR WORLD
 ├── knowledge/             # Knowledge Packs
@@ -95,7 +95,7 @@ STAR/
 - Core, router e Executive atuais;
 - memória persistente básica;
 - matemática em linguagem natural;
-- Knowledge Packs atuais;
+- Knowledge Packs locais e removíveis;
 - chat e interface 2D;
 - HUB, ilhas, Casa e Closet;
 - skins;
@@ -106,6 +106,61 @@ STAR/
 - navegador, busca e Spotify como primeiras ferramentas;
 - diagnósticos;
 - CI de sintaxe, manifestos e smoke tests.
+
+## ⌚ STAR Watch V0 — experimental
+
+A Foundation possui uma ponte **opt-in** para validar o princípio do STAR ONI com
+um relógio Android. O Watch não possui um MIND separado: ele funciona como
+sensor/interface e envia entradas ao **mesmo STAR Core no PC**.
+
+```text
+Watch / celular / futuro corpo
+        │
+        │ LAN
+        ▼
+    STAR Core no PC
+        │
+        ▼
+   resposta / comando
+```
+
+Para iniciar a STAR com o gateway experimental:
+
+`INICIAR_STAR_WATCH.bat`
+
+O cliente Android está em `clients/star_watch_android/` e suporta Android 8.1+
+(`minSdk 27`). A V0 possui pareamento, chat, microfone e captura de imagem.
+
+- texto → STAR Core → resposta;
+- áudio → faster-whisper no PC → STAR Core → resposta;
+- imagem → inbox local do Core;
+- comandos locais do computador ficam **bloqueados para origem remota** enquanto
+  o Permission Manager completo ainda não existe.
+
+A imagem é transportada corretamente, porém **não é analisada na V1.9**. O Vision
+Engine continua reservado para a V5.0 SENSES.
+
+Veja `docs/STAR_WATCH_V0.md` e `clients/star_watch_android/README.md`.
+
+## 💾 Knowledge Packs em pendrive
+
+A STAR reconhece packs estruturados em mídia removível sem copiá-los para o
+repositório. Na raiz do pendrive:
+
+```text
+STAR_KNOWLEDGE/
+└── packs/
+    └── nome_do_pack/
+        ├── manifest.json
+        └── knowledge.jsonl
+```
+
+O loader aceita somente JSON/JSONL estruturado, mantém proveniência, limita o
+tamanho dos arquivos e impede `content_file` de escapar da pasta do pack. A
+mídia não executa código. A ingestão automática de livros/PDFs, embeddings e RAG
+continuam pertencendo à V3.0 KNOWLEDGE.
+
+Veja `knowledge/README.md`.
 
 ## STAR WORLD
 
@@ -141,7 +196,12 @@ Veja:
 ## Segurança e privacidade
 
 Modelos, caches, bancos locais, ambientes virtuais, referências de voz,
-credenciais e arquivos temporários não devem ser versionados.
+credenciais, tokens de dispositivos e arquivos temporários não devem ser
+versionados.
+
+O STAR Device Gateway fica desligado por padrão, usa pareamento local e deve ser
+usado somente em LAN privada nesta fase. Não exponha a porta do protótipo à
+Internet.
 
 Nenhuma integração externa de voz é necessária para a V1.9.
 
@@ -151,7 +211,6 @@ Nenhuma integração externa de voz é necessária para a V1.9.
 
 Bugs descobertos após a release entram como V1.9.x.
 Novas arquiteturas cognitivas entram na V2.0 MIND.
-
 
 ## Auditoria de estabilidade — 31/08/2026
 
