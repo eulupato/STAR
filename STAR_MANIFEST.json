@@ -24,7 +24,8 @@
     "official_local_voice",
     "fast_local_tts_fallback",
     "voice_degraded_startup",
-    "automatic_spoken_replies"
+    "automatic_spoken_replies",
+    "removable_knowledge_packs"
   ],
   "features_prepared": [
     "expanded_automation",
@@ -32,6 +33,10 @@
     "web_tools",
     "knowledge_expansion",
     "star_mind_v2"
+  ],
+  "experimental_features": [
+    "star_device_gateway_v0",
+    "star_watch_android_v0"
   ],
   "voice": {
     "stt": "faster-whisper tiny local PT-BR",
@@ -46,5 +51,13 @@
     "interface_can_start_without_tts": true,
     "automatic_reply_from_gui": true,
     "fast_mode": "Windows SAPI preferencial + Piper PT-BR fallback"
+  },
+  "device_gateway": {
+    "status": "experimental",
+    "enabled_by_default": false,
+    "protocol": 1,
+    "transport": "LAN HTTP",
+    "default_port": 8765,
+    "processing_location": "STAR Core no PC"
   }
 }

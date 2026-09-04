@@ -37,6 +37,12 @@ voice/cache/
 
 # Banco local e dados da máquina
 star.db
+runtime/
+
+# Builds locais de clientes/dispositivos
+clients/**/build/
+clients/**/.gradle/
+local.properties
 
 # Logs
 *.log

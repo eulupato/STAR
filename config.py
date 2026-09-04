@@ -11,6 +11,12 @@ MIN_WINDOW_HEIGHT = 600
 
 EXTERNAL_AI_ENABLED = False
 
+# Ponte experimental de dispositivos. Permanece desligada por padrão para não
+# alterar o comportamento da Foundation. INICIAR_STAR_WATCH.bat ativa via env.
+DEVICE_GATEWAY_ENABLED = False
+DEVICE_GATEWAY_HOST = "0.0.0.0"
+DEVICE_GATEWAY_PORT = 8765
+
 # Voz oficial da STAR.
 VOICE_ENGINE = "Chatterbox"
 VOICE_CLONE_ENGINE = "Chatterbox"

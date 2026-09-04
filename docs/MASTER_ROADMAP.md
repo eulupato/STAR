@@ -37,6 +37,22 @@ Inclui:
 
 Pós-release: bugs entram como V1.9.x.
 
+### Infraestrutura experimental pós-release
+
+A Foundation pode receber **pontes pequenas, opt-in e sem mudança de geração**
+quando forem necessárias para validar hardware real, desde que não antecipem os
+sistemas completos de versões futuras.
+
+Atualmente:
+
+- **STAR Device Gateway V0** — ponte LAN experimental para Watch/endpoint;
+- **STAR Watch Android V0** — cliente sensor/interface, sem MIND próprio;
+- **Knowledge Packs removíveis** — packs JSON/JSONL em `STAR_KNOWLEDGE/packs`.
+
+Esses itens não significam que V5 SENSES ou V9 ECOSYSTEM estão concluídos. O
+Gateway apenas entrega entradas ao Core atual; visão, Device Manager completo,
+sincronização e permissões avançadas continuam em seus marcos originais.
+
 ---
 
 ## V2.0 — MIND
@@ -199,12 +215,17 @@ Inclui:
 - PC;
 - celular;
 - tablet;
+- Watch;
 - Device Manager;
 - Offline-first Sync;
 - automação residencial;
 - sensores;
 - Mobile STAR;
 - Network Awareness.
+
+Princípio permanente: endpoints percebem, transmitem e executam; a fonte central
+processa. O protótipo Watch V0 da Foundation valida esse princípio, mas não
+substitui o Device Manager/Sync desta versão.
 
 LOCAL continua funcional sem LAN ou Internet.
 

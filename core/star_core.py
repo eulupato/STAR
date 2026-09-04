@@ -33,17 +33,20 @@ class StarCore:
         except AttributeError:
             return "Lu"
 
-    def process(self, user_input):
+    def process(self, user_input, allow_actions=True):
         request_start = time.perf_counter()
 
-        # V1.9: matemática e ações locais têm prioridade e não precisam de LLM.
-        try:
-            from modules.computer_control import parse as parse_computer
-            action = parse_computer(user_input, allow_network=self.network_enabled)
-            if action:
-                return action
-        except Exception as exc:
-            print(f"⚠️ Ação local indisponível: {exc}")
+        # A interface local mantém as ações existentes. Endpoints remotos podem
+        # chamar process(..., allow_actions=False) enquanto o Permission Manager
+        # completo ainda não existe.
+        if allow_actions:
+            try:
+                from modules.computer_control import parse as parse_computer
+                action = parse_computer(user_input, allow_network=self.network_enabled)
+                if action:
+                    return action
+            except Exception as exc:
+                print(f"⚠️ Ação local indisponível: {exc}")
 
         try:
             from core.math_engine import solve_text
