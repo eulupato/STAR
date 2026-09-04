@@ -140,6 +140,10 @@ O cliente Android está em `clients/star_watch_android/` e suporta Android 8.1+
 A imagem é transportada corretamente, porém **não é analisada na V1.9**. O Vision
 Engine continua reservado para a V5.0 SENSES.
 
+O APK debug é compilado pelo workflow `STAR Watch Android` e também pode ser
+gerado localmente; `INSTALAR_STAR_WATCH.bat` faz a instalação via ADB/USB após o
+relógio estar autorizado para depuração.
+
 Veja `docs/STAR_WATCH_V0.md` e `clients/star_watch_android/README.md`.
 
 ## 💾 Knowledge Packs em pendrive
