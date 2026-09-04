@@ -12,7 +12,11 @@ from core.device_gateway import DeviceGateway
 
 
 class FakeStar:
-    def process(self, text):
+    def __init__(self):
+        self.last_allow_actions = None
+
+    def process(self, text, allow_actions=True):
+        self.last_allow_actions = allow_actions
         return f"STAR:{text}"
 
 
@@ -30,9 +34,10 @@ def _request(url, method="GET", payload=None, headers=None):
         return response.status, json.loads(response.read().decode("utf-8"))
 
 
-def test_gateway_pairs_and_routes_text_to_same_core(tmp_path):
+def test_gateway_pairs_and_routes_text_to_same_core_without_remote_actions(tmp_path):
+    star = FakeStar()
     gateway = DeviceGateway(
-        FakeStar(),
+        star,
         host="127.0.0.1",
         port=0,
         runtime_dir=tmp_path,
@@ -66,10 +71,13 @@ def test_gateway_pairs_and_routes_text_to_same_core(tmp_path):
             headers=headers,
         )
         assert result["response"] == "STAR:olá"
+        assert star.last_allow_actions is False
 
         registry = json.loads((tmp_path / "devices.json").read_text(encoding="utf-8"))
-        assert "token" not in json.dumps(registry)
-        assert len(registry["watch-test"]["token_sha256"]) == 64
+        record = registry["watch-test"]
+        assert "token_sha256" in record
+        assert len(record["token_sha256"]) == 64
+        assert "token" not in record
     finally:
         gateway.stop()
 

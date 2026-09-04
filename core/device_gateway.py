@@ -364,8 +364,10 @@ class DeviceGateway:
             self._thread.join(timeout=1.0)
 
     def process_text(self, text: str) -> str:
+        # Até o Permission Manager existir, dispositivos remotos não recebem
+        # permissão para acionar comandos locais do computador.
         with self._star_lock:
-            return str(self.star.process(text))
+            return str(self.star.process(text, allow_actions=False))
 
     def _get_voice_manager(self):
         with self._voice_lock:
