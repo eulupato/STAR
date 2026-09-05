@@ -26,10 +26,13 @@ class StarApp(MenuHubMixin, WorldSceneMixin, HomeGardenMixin, WorkspaceMixin, Wo
     """STAR V1.9 + STAR WORLD 2D funcional, preservando o mesmo StarCore."""
 
     REFERENCE_FILES = {
-        "menu": "menu_face.webp", "kitchen": "kitchen.webp", "laboratory": "laboratory.webp",
+        "menu": "menusembotao.jpeg", "kitchen": "kitchen.webp", "laboratory": "laboratory.webp",
         "library": "library.webp", "observatory": "observatory.webp", "cura": "cura.webp", "turnaround": "star_turnaround.webp",
     }
-    REFERENCE_FALLBACKS = {"menu": "star_menu_face.jpg", "kitchen": "kitchen_reference.jpg"}
+    REFERENCE_FALLBACKS = {
+        "menu": ("menu_face.webp", "star_menu_face.jpg"),
+        "kitchen": ("kitchen_reference.jpg",),
+    }
 
     SETTINGS_SECTIONS = (
         ("general", "⚙", "GERAL"), ("appearance", "◉", "APARÊNCIA"),
@@ -54,8 +57,10 @@ class StarApp(MenuHubMixin, WorldSceneMixin, HomeGardenMixin, WorkspaceMixin, Wo
         canonical = folder / self.REFERENCE_FILES.get(key, key)
         if canonical.exists():
             return canonical
-        fallback = self.REFERENCE_FALLBACKS.get(key)
-        if fallback:
+        fallbacks = self.REFERENCE_FALLBACKS.get(key, ())
+        if isinstance(fallbacks, str):
+            fallbacks = (fallbacks,)
+        for fallback in fallbacks:
             legacy = folder / fallback
             if legacy.exists():
                 return legacy
