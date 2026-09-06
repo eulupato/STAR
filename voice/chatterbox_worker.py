@@ -1,7 +1,8 @@
 """Worker persistente do Chatterbox para a STAR.
 
-A referência é recebida pelo ambiente STAR_VOICE_REFERENCE.
-Isso elimina dependência de um nome hardcoded dentro do worker.
+A referência oficial é resolvida pelo VoiceManager e entregue ao worker pela
+variável STAR_VOICE_REFERENCE. O worker não descobre uma segunda voz nem faz
+fallback silencioso: ele apenas valida o arquivo recebido e reporta a causa real.
 """
 from __future__ import annotations
 
@@ -20,7 +21,15 @@ LOG = OUT / "chatterbox_worker.log"
 
 
 def reference_path() -> Path:
-    raw = os.getenv("STAR_VOICE_REFERENCE", str(DEFAULT_REF)).strip()
+    """Retorna o caminho absoluto entregue pelo manager.
+
+    O default legado existe somente para permitir diagnóstico/execução manual do
+    worker. No fluxo normal da STAR o VoiceManager sempre exporta um caminho
+    absoluto já resolvido em STAR_VOICE_REFERENCE.
+    """
+    raw = os.getenv("STAR_VOICE_REFERENCE", "").strip()
+    if not raw:
+        return DEFAULT_REF.resolve()
     path = Path(raw).expanduser()
     if not path.is_absolute():
         path = ROOT / path
@@ -61,10 +70,14 @@ def main() -> int:
         })
         return 1
 
-    if not ref.exists():
+    if not ref.is_file():
         emit({
             "ok": False,
-            "error": f"Áudio de referência não encontrado: {ref}",
+            "error": (
+                f"Áudio de referência inválido ou não encontrado: {ref}. "
+                "Verifique STAR_VOICE_REFERENCE ou coloque uma gravação autorizada "
+                "em voice/reference/. Diretórios não são aceitos como referência."
+            ),
         })
         return 1
 
