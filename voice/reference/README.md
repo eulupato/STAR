@@ -2,9 +2,9 @@
 
 A referência oficial é **local, privada e não versionada**.
 
-A V1.9 resolve a referência na seguinte ordem:
+A V1.9 resolve a referência no `VoiceManager` na seguinte ordem:
 
-1. caminho definido por `STAR_VOICE_REFERENCE`, quando existir;
+1. caminho definido por `STAR_VOICE_REFERENCE`, quando apontar para a referência configurada;
 2. caminho padrão definido em `config.py`;
 3. qualquer arquivo de áudio compatível dentro de `voice/reference/`.
 
@@ -20,11 +20,20 @@ Formatos reconhecidos pelo gerenciador:
 Isso significa que um arquivo local como `audiostar35s.mp3` pode ser usado sem
 precisar ser renomeado para um nome fixo.
 
+No fluxo normal da aplicação, o `VoiceManager` resolve o caminho e entrega o
+caminho absoluto ao worker Chatterbox por `STAR_VOICE_REFERENCE`. O worker não
+procura uma segunda voz: ele valida o arquivo recebido com `is_file()` e rejeita
+diretórios ou caminhos inválidos com erro explícito.
+
 O áudio não é distribuído pelo repositório público e deve permanecer somente na
-máquina local.
+máquina local. `.gitignore` protege os formatos de referência reconhecidos.
 
 ## Importante
 
 Use apenas uma gravação própria ou uma voz para a qual exista autorização de uso.
 No modo `official`, a STAR não troca silenciosamente a voz oficial por uma voz
 genérica se o Chatterbox falhar.
+
+A presença do arquivo no computador não substitui a validação física: antes de
+considerar a voz oficial pronta, teste `DIAGNOSTICO_VOZ.bat`, microfone,
+reprodução e uma fala real da interface no Windows.
