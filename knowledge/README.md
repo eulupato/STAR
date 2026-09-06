@@ -27,6 +27,21 @@ Interfaces podem usar `list_entries(pack_id)` para listar entradas públicas e
 `search(query, pack_id=...)` / `answer(query, pack_id=...)` para restringir uma
 consulta a um pack sem criar parser ou banco paralelo na GUI.
 
+Catálogos muito grandes que servem como **inventário** podem ser declarados no
+mesmo manifest e instalados em `knowledge/local/<pack_id>/catalog.tsv`. Eles não
+entram em `entries`, não atrasam o boot e só são indexados quando a função de
+catálogo é usada. A API correspondente continua pertencendo ao mesmo
+`KnowledgePackManager`:
+
+```python
+manager.catalog_stats("heroes")
+manager.catalog_list("heroes", entity_type="character", limit=100)
+manager.catalog_search("Peter Parker", "heroes", entity_type="character")
+```
+
+Isso mantém uma única fonte de verdade para o pack sem obrigar a Foundation a
+transformar 100 mil nomes em fichas falsas.
+
 ## Schema de entrada
 
 Exemplo:
@@ -53,14 +68,72 @@ públicas. O índice interno usado pela busca permanece encapsulado pelo manager
 
 ## Ilha dos Heróis
 
-`knowledge/packs/heroes/` possui na Foundation um **seed local funcional** com 12
-entradas estruturadas do catálogo inicial já adotado no projeto: figuras históricas,
-mitologia grega, Marvel e DC.
+`knowledge/packs/heroes/` possui na Foundation **12 fichas locais enriquecidas e
+revisadas**: figuras históricas, mitologia grega, Marvel e DC. Essas fichas
+continuam respondíveis pela infraestrutura normal de Knowledge Packs.
 
-O pack é consultável offline pela mesma infraestrutura de Knowledge Packs do Core.
-Ele permanece **EM DESENVOLVIMENTO quanto à cobertura**: não representa um
-catálogo universal de todas as editoras/personagens. Variantes de identidade devem
-ter registros próprios quando a base for expandida.
+Além delas, a STAR agora suporta um **inventário Marvel local amplo** instalado
+fora do GitHub. O snapshot auditado em 06/09/2026 contém:
+
+- 104.173 personagens;
+- 6.851 equipes;
+- 111.024 registros tipados no total.
+
+A origem desse inventário é a **Marvel Database / Fandom**, uma fonte comunitária
+e não oficial da Marvel. O catálogo preserva variantes de continuidades diferentes
+como registros separados e mantém personagens/equipes tipados.
+
+O dataset massivo fica em:
+
+```text
+knowledge/
+└── local/
+    └── heroes/
+        ├── catalog.tsv
+        └── catalog.meta.json
+```
+
+Essa pasta já é ignorada pelo Git. Para gerar o índice local a partir dos TXT
+coletados:
+
+```powershell
+python .\tools\install_marvel_catalog.py
+```
+
+O instalador procura automaticamente por:
+
+```text
+MARVEL_DATABASE_PERSONAGENS.txt
+MARVEL_DATABASE_EQUIPES.txt
+```
+
+na pasta atual e em `Downloads`. Também é possível indicar a origem:
+
+```powershell
+python .\tools\install_marvel_catalog.py --source-dir "C:\caminho\dos\arquivos"
+```
+
+Depois da instalação, reinicie a STAR e abra `HUB → HERÓIS`. O catálogo só é
+carregado na primeira consulta da ilha, evitando colocar ~111 mil registros no
+startup.
+
+### O que um registro de inventário significa
+
+Um item presente no `catalog.tsv` confirma apenas que aquele título/tipo está no
+snapshot importado da Marvel Database. Ele **não** vira automaticamente uma
+biografia completa.
+
+Enquanto uma entidade não possuir ficha enriquecida, a STAR não inventa:
+
+- poderes;
+- história;
+- relações;
+- identidade civil;
+- equipes;
+- imagens.
+
+Esses campos só entram quando forem enriquecidos e validados. Assim, inventário e
+conhecimento detalhado permanecem claramente separados.
 
 Imagens de personagens não são copiadas em massa para o GitHub quando não há
 licença/autorização para redistribuição. Nesses casos, o metadata pode registrar
@@ -108,8 +181,13 @@ PDF
 → STAR
 ```
 
-A ingestão automática completa, embeddings locais, busca semântica e RAG
-continuam reservados para a **V3.0 — KNOWLEDGE**, conforme o roadmap.
+A ingestão automática completa, embeddings locais, busca semântica, relações
+semânticas e RAG continuam reservados para a **V3.0 — KNOWLEDGE**, conforme o
+roadmap.
+
+O inventário Marvel amplo integrado agora **não declara V3 concluída**. Ele é uma
+camada local de catálogo/indexação que prepara o caminho para o enriquecimento
+posterior sem duplicar arquitetura.
 
 PDFs brutos e textos integrais de obras protegidas não devem ser publicados no
 repositório público sem licença compatível. O GitHub deve conter apenas material

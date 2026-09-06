@@ -1,11 +1,11 @@
 {
   "id": "heroes",
   "name": "Ilha dos Heróis",
-  "version": "1.1",
+  "version": "1.2",
   "content_file": "knowledge.json",
   "status": "development",
-  "scope": "curated-local-seed",
-  "description": "Catálogo local inicial e consultável sobre figuras históricas, mitologia e super-heróis. Funciona offline e mantém a expansão de cobertura como trabalho em desenvolvimento.",
+  "scope": "curated-seed-plus-local-marvel-inventory",
+  "description": "Fichas locais revisadas + inventário Marvel amplo instalado localmente e consultado offline sem carregar 111 mil registros no startup.",
   "topics": [
     "conceito de herói",
     "heróis históricos",
@@ -17,15 +17,50 @@
     "universos e cronologias"
   ],
   "coverage": {
-    "historical": 3,
-    "mythology": 3,
-    "marvel": 3,
-    "dc": 3,
-    "total": 12
+    "rich_profiles": {
+      "historical": 3,
+      "mythology": 3,
+      "marvel": 3,
+      "dc": 3,
+      "total": 12
+    },
+    "catalog_snapshot": {
+      "source": "Marvel Database / Fandom",
+      "characters": 104173,
+      "teams": 6851,
+      "total": 111024,
+      "collected_at": "2026-09-06",
+      "variants_preserved": true,
+      "exact_duplicates_removed": true
+    }
+  },
+  "catalog": {
+    "file": "catalog.tsv",
+    "format": "tsv",
+    "schema": "star.heroes.catalog.v1",
+    "storage": "knowledge/local/heroes",
+    "load_policy": "lazy",
+    "max_results_per_query": 500,
+    "expected_counts": {
+      "characters": 104173,
+      "teams": 6851,
+      "total": 111024
+    },
+    "source": {
+      "type": "community_catalog",
+      "reference": "Marvel Database / Fandom — Category:Characters + Category:Teams",
+      "url": "https://marvel.fandom.com/wiki/Category:Characters",
+      "official": false,
+      "collected_at": "2026-09-06"
+    }
   },
   "notes": [
-    "Este pack é uma base local funcional da Foundation V1.9, não um catálogo universal completo.",
-    "Biografias longas e imagens protegidas não são versionadas em massa no GitHub.",
-    "Assets visuais só devem ser adicionados quando fornecidos pelo usuário ou licenciados para distribuição."
+    "As 12 fichas enriquecidas continuam sendo conhecimento revisado e respondível pela Foundation V1.9.",
+    "O inventário amplo de 111.024 registros é instalado em knowledge/local/heroes/ e não é versionado no GitHub.",
+    "O inventário preserva variantes de universos diferentes e separa personagens de equipes.",
+    "O catálogo Marvel Database/Fandom é comunitário e não deve ser apresentado como fonte oficial da Marvel.",
+    "Uma entrada de inventário sem ficha enriquecida não recebe biografia, poderes ou relações inventadas pela STAR.",
+    "Imagens protegidas não são copiadas em massa; sem asset autorizado, a interface permanece textual.",
+    "Enriquecimento semântico, relações, RAG e Knowledge Graph completos continuam pertencendo à V3 KNOWLEDGE."
   ]
 }
