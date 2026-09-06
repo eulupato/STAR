@@ -1,16 +1,31 @@
 {
   "id": "heroes",
   "name": "Ilha dos Heróis",
-  "version": "1.0",
-  "description": "Conhecimento inicial sobre heróis históricos, mitologia e super-heróis.",
+  "version": "1.1",
+  "content_file": "knowledge.json",
+  "status": "development",
+  "scope": "curated-local-seed",
+  "description": "Catálogo local inicial e consultável sobre figuras históricas, mitologia e super-heróis. Funciona offline e mantém a expansão de cobertura como trabalho em desenvolvimento.",
   "topics": [
     "conceito de herói",
     "heróis históricos",
-    "mitologia",
+    "mitologia grega",
     "Marvel",
     "DC",
     "equipes",
     "poderes e habilidades",
     "universos e cronologias"
+  ],
+  "coverage": {
+    "historical": 3,
+    "mythology": 3,
+    "marvel": 3,
+    "dc": 3,
+    "total": 12
+  },
+  "notes": [
+    "Este pack é uma base local funcional da Foundation V1.9, não um catálogo universal completo.",
+    "Biografias longas e imagens protegidas não são versionadas em massa no GitHub.",
+    "Assets visuais só devem ser adicionados quando fornecidos pelo usuário ou licenciados para distribuição."
   ]
 }

@@ -185,6 +185,23 @@ class KnowledgePackManager:
         self.refresh_removable()
         return self.packs
 
+    def list_entries(self, pack_id=None):
+        """Retorna entradas públicas sem os textos internos usados pelo índice.
+
+        ``pack_id`` é opcional para manter o mecanismo genérico. Isso permite que
+        interfaces como a Ilha dos Heróis consultem apenas o próprio pack sem
+        duplicar parsing de JSON na GUI.
+        """
+        self.refresh_removable()
+        selected = self.entries
+        if pack_id is not None:
+            wanted = str(pack_id)
+            selected = [entry for entry in selected if entry.get("pack_id") == wanted]
+        return [
+            {key: value for key, value in entry.items() if key != "_search_texts"}
+            for entry in selected
+        ]
+
     def stats(self):
         self.refresh_removable()
         return {
@@ -198,7 +215,8 @@ class KnowledgePackManager:
         removable = sum(1 for pack in self.packs.values() if pack.get("storage") == "removable")
         return {"local": local, "removable": removable, "conflicts": len(self.conflicts)}
 
-    def search(self, query, threshold=0.62):
+    def search(self, query, threshold=0.62, pack_id=None):
+        """Busca lexical opcionalmente restrita a um pack específico."""
         self.refresh_removable()
         normalized_query = _normalize(query)
         if not normalized_query:
@@ -206,8 +224,11 @@ class KnowledgePackManager:
 
         best = None
         best_score = 0.0
+        wanted_pack = None if pack_id is None else str(pack_id)
 
         for entry in self.entries:
+            if wanted_pack is not None and entry.get("pack_id") != wanted_pack:
+                continue
             for candidate in entry["_search_texts"]:
                 if normalized_query == candidate:
                     score = 1.0
@@ -231,8 +252,8 @@ class KnowledgePackManager:
         result["score"] = round(best_score, 4)
         return result
 
-    def answer(self, query):
-        result = self.search(query)
+    def answer(self, query, pack_id=None):
+        result = self.search(query, pack_id=pack_id)
         if not result:
             return None
         return result.get("answer") or result.get("content")
@@ -316,6 +337,8 @@ class KnowledgePackManager:
         if not answer:
             return None
 
+        aliases = [str(value).strip() for value in aliases if str(value).strip()]
+        keywords = [str(value).strip() for value in keywords if str(value).strip()]
         search_values = [title, *aliases, *keywords]
         normalized = []
         for value in search_values:
@@ -328,6 +351,9 @@ class KnowledgePackManager:
         source = raw.get("source") or {}
         if not isinstance(source, dict):
             source = {"reference": str(source)}
+        metadata = raw.get("metadata") or {}
+        if not isinstance(metadata, dict):
+            metadata = {"value": str(metadata)}
 
         return {
             "id": raw.get("id") or f"{pack_id}:{position}",
@@ -335,6 +361,9 @@ class KnowledgePackManager:
             "pack_name": manifest.get("name") or pack_id,
             "title": title,
             "answer": answer,
+            "aliases": aliases,
+            "keywords": keywords,
             "source": source,
+            "metadata": metadata,
             "_search_texts": normalized,
         }

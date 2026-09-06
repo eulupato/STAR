@@ -38,6 +38,7 @@ def _make_pack(root, pack_name="matematica_teste"):
             "keywords": ["fração", "numerador", "denominador"],
             "answer": "Uma fração representa partes de um todo e é escrita como numerador sobre denominador.",
             "source": {"document": "Livro teste", "pages": [12]},
+            "metadata": {"domain": "matemática"},
         },
         {
             "id": "pitagoras",
@@ -62,6 +63,27 @@ def test_manager_loads_and_searches_structured_pack(tmp_path):
     assert answer is not None
     assert "numerador" in answer
     assert manager.answer("qual é a capital da frança?") is None
+
+
+def test_manager_exposes_public_entries_without_index_internals(tmp_path):
+    _make_pack(tmp_path)
+    manager = KnowledgePackManager(tmp_path, auto_removable=False)
+
+    entries = manager.list_entries("matematica_teste")
+    assert len(entries) == 2
+    assert entries[0]["metadata"] == {"domain": "matemática"}
+    assert "_search_texts" not in entries[0]
+
+
+def test_search_can_be_scoped_to_a_single_pack(tmp_path):
+    _make_pack(tmp_path, "pack_a")
+    _make_pack(tmp_path, "pack_b")
+    manager = KnowledgePackManager(tmp_path, auto_removable=False)
+
+    result = manager.search("teorema de pitágoras", pack_id="pack_b")
+    assert result is not None
+    assert result["pack_id"] == "pack_b"
+    assert manager.search("teorema de pitágoras", pack_id="inexistente") is None
 
 
 def test_executive_uses_pack_before_unknown_fallback(tmp_path):
@@ -112,3 +134,17 @@ def test_pack_content_file_cannot_escape_pack_directory(tmp_path):
     manager = KnowledgePackManager(tmp_path, auto_removable=False)
     assert manager.list()["seguranca"]["entries"] == 0
     assert manager.answer("segredo") is None
+
+
+def test_builtin_heroes_pack_is_structured_searchable_and_offline():
+    manager = KnowledgePackManager(ROOT / "knowledge" / "packs", auto_removable=False)
+    heroes = manager.list().get("heroes")
+
+    assert heroes is not None
+    assert heroes["entries"] == 12
+    result = manager.search("Batman", pack_id="heroes")
+    assert result is not None
+    assert result["title"] == "Batman"
+    assert result["metadata"]["reality_class"] == "fictional"
+    assert result["metadata"]["image_status"] == "missing_authorized_asset"
+    assert manager.answer("Joana d'Arc", pack_id="heroes") is not None
