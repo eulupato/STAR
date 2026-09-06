@@ -56,3 +56,12 @@ def test_app_contains_all_functional_environment_entrypoints():
         assert f"def {method}" in sources
     assert "warmup_stt_async" not in sources
     assert "window.after(60, self._check_response_queue)" in sources
+
+
+def test_heroes_ui_uses_core_pack_manager_instead_of_file_presence():
+    source = (Path(__file__).parents[1] / "gui" / "world_systems.py").read_text(encoding="utf-8")
+
+    assert 'manager.list_entries("heroes")' in source
+    assert 'manager.search(text, pack_id="heroes")' in source
+    assert 'rglob("*.json*")' not in source
+    assert "Sem busca web em tempo de consulta" in source
