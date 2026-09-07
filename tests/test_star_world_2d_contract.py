@@ -63,5 +63,8 @@ def test_heroes_ui_uses_core_pack_manager_instead_of_file_presence():
 
     assert 'manager.list_entries("heroes")' in source
     assert 'manager.search(text, pack_id="heroes")' in source
+    assert "manager.catalog_search(" in source
+    assert "manager.catalog_list(" in source
     assert 'rglob("*.json*")' not in source
-    assert "Sem busca web em tempo de consulta" in source
+    assert "OFFLINE-FIRST" in source
+    assert "não usa a web para preencher lacunas" in source
