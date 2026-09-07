@@ -67,4 +67,9 @@ def test_heroes_ui_uses_core_pack_manager_instead_of_file_presence():
     assert "manager.catalog_list(" in source
     assert 'rglob("*.json*")' not in source
     assert "OFFLINE-FIRST" in source
-    assert "não usa a web para preencher lacunas" in source
+
+    # O contrato é comportamental: a GUI consulta apenas o KnowledgePackManager
+    # e não abre uma segunda rota de rede para completar fichas ausentes.
+    assert "requests." not in source
+    assert "urllib.request" not in source
+    assert "httpx." not in source
