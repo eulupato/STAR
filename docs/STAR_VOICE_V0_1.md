@@ -226,6 +226,31 @@ STATE: LISTENING
 
 O diagnóstico não salva áudio por padrão e não carrega STT/TTS/Core.
 
+## Primeira validação física — 07/09/2026
+
+No PC real da STAR foram confirmados:
+
+- `onnxruntime 1.29.0` instalado no ambiente principal;
+- Silero VAD v6.2.1 baixado e validado localmente;
+- referência oficial Chatterbox localizada em `voice/reference/`;
+- suíte local completa: **41 testes passaram**;
+- `diagnostico.py`: **sem falhas críticas**;
+- VAD carregado em aproximadamente **670 ms**;
+- execução contínua por aproximadamente **30 s**;
+- **0 chunks descartados**;
+- CPU aproximada observada: **3,8%**;
+- fila configurada: aproximadamente **126 KiB**;
+- resultado: **0 segmentos detectados**.
+
+Esse resultado prova que setup, importação, modelo e loop de captura chegaram ao fim
+da execução sem falha, mas **não prova ainda que o sinal do microfone correto chegou ao
+VAD**. O diagnóstico anterior não registrava RMS/pico/probabilidade máxima. Por isso a
+telemetria de entrada foi adicionada antes de qualquer alteração de threshold ou VAD.
+
+A causa raiz permanece **NÃO VERIFICADA** até a repetição com a nova telemetria. As
+hipóteses ainda abertas são: entrada padrão incorreta/virtual, sinal muito baixo ou
+probabilidade VAD abaixo do threshold com sinal real.
+
 ## Testes automatizados
 
 A suíte cobre sem microfone/modelo real:
