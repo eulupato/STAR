@@ -226,7 +226,9 @@ STATE: LISTENING
 
 O diagnóstico não salva áudio por padrão e não carrega STT/TTS/Core.
 
-## Primeira validação física — 07/09/2026
+## Validação física — 07/09/2026
+
+### Rodada 1 — diagnóstico inicial
 
 No PC real da STAR foram confirmados:
 
@@ -240,16 +242,64 @@ No PC real da STAR foram confirmados:
 - **0 chunks descartados**;
 - CPU aproximada observada: **3,8%**;
 - fila configurada: aproximadamente **126 KiB**;
-- resultado: **0 segmentos detectados**.
+- resultado inicial: **0 segmentos detectados**.
 
-Esse resultado prova que setup, importação, modelo e loop de captura chegaram ao fim
-da execução sem falha, mas **não prova ainda que o sinal do microfone correto chegou ao
-VAD**. O diagnóstico anterior não registrava RMS/pico/probabilidade máxima. Por isso a
-telemetria de entrada foi adicionada antes de qualquer alteração de threshold ou VAD.
+Esse primeiro diagnóstico não registrava RMS/pico/probabilidade máxima, então não foi
+feito ajuste arbitrário de threshold. A telemetria foi adicionada antes de alterar o
+comportamento do VAD.
 
-A causa raiz permanece **NÃO VERIFICADA** até a repetição com a nova telemetria. As
-hipóteses ainda abertas são: entrada padrão incorreta/virtual, sinal muito baixo ou
-probabilidade VAD abaixo do threshold com sinal real.
+### Rodada 2 — telemetria + dispositivo explícito
+
+O diagnóstico de dispositivos confirmou como entrada padrão:
+
+```text
+[1] Microfone (USB Audio Device)
+```
+
+Com `python -m voice.diagnostics vad 30 1`, o pipeline físico produziu:
+
+- **926 chunks processados**;
+- **4 segmentos válidos**;
+- `vad_max = 1.000`;
+- RMS global de aproximadamente **-44,7 dBFS**;
+- pico de entrada de aproximadamente **-16,6 dBFS**;
+- **0 amostras próximas de clipping**;
+- **0 chunks descartados**;
+- CPU aproximada de **4,0%**;
+- silêncio observado próximo de **-96 dBFS**;
+- fala detectada com probabilidades próximas de `1.000`.
+
+O `threshold = 0.50` foi mantido. Os dados não justificam reduzir o threshold.
+
+Também foi observado um `SEGMENT DROPPED` curto por duração abaixo de
+`min_speech_ms = 250`, comportamento esperado para rejeitar ruído/evento muito curto.
+
+### Rodada 3 — start/stop repetido
+
+Foram executadas três sessões independentes de 10 s no mesmo microfone, todas
+encerrando normalmente e produzindo fala detectável:
+
+| Execução | Chunks | Segmentos | VAD máx. | Pico | CPU | Drops |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 302 | 1 | 1.000 | -22,7 dBFS | 4,9% | 0 |
+| 2 | 304 | 2 | 1.000 | -18,0 dBFS | 5,4% | 0 |
+| 3 | 304 | 1 | 1.000 | -20,1 dBFS | 4,2% | 0 |
+
+A média aproximada de CPU das três execuções curtas foi **4,8%**. Uma execução de
+10 s mediu **5,4%**, ligeiramente acima do limite inicial de 5%; por ser uma amostra
+curta e sem perda de áudio, isso fica registrado para otimização futura, sem alterar
+a arquitetura funcional do V0.1 agora.
+
+A repetição confirma que o caminho experimental pode abrir, processar, encerrar e
+reiniciar a captura sem fila presa, overflow ou falha observada no dispositivo.
+
+### Inicialização da STAR após os testes
+
+`main.py` iniciou normalmente após as três execuções e processou duas rotas locais.
+Esse log confirma que a aplicação continua inicializando na branch de Voice V0.1.
+O log fornecido, porém, **não identifica de forma inequívoca se essas duas interações
+vieram do botão push-to-talk ou de entrada digitada**. Portanto a regressão específica
+do push-to-talk permanece como validação manual explícita antes do merge.
 
 ## Testes automatizados
 
@@ -288,22 +338,32 @@ Estes valores são **metas**, não medições atuais:
 A medição real deve ser feita no PC da STAR. O ambiente de CI não substitui teste de
 microfone, drivers, CPU/RAM e comportamento acústico real.
 
-## Critério de validação local
+## Estado da validação local
 
-Antes de considerar V0.1 pronto para merge:
+Confirmado:
 
-1. instalar o modelo pelo setup explícito;
-2. executar `python -m voice.diagnostics vad 30`;
-3. testar silêncio, fala curta, frase longa e pausa natural;
-4. verificar falsos positivos e cortes de início/fim;
-5. se houver `0` segmentos, usar `python -m voice.diagnostics devices` e repetir com índice explícito;
-6. comparar RMS/pico/probabilidade VAD antes de ajustar configuração;
-7. repetir start/stop;
-8. confirmar CPU/RAM aceitáveis;
-9. abrir a GUI estável e validar o push-to-talk existente;
-10. rodar `pytest -q tests` e `python diagnostico.py` no ambiente local.
+1. modelo instalado por setup explícito;
+2. captura contínua física funcional;
+3. Silero VAD físico funcional;
+4. segmentação física funcional;
+5. silêncio e fala distinguíveis;
+6. pre-roll/post-roll/hangover operando no fluxo real;
+7. start/stop repetido sem falha observada;
+8. `0` chunks descartados nos testes físicos;
+9. ausência de clipping nos testes fornecidos;
+10. suíte local com **41 passed** e `diagnostico.py` sem falhas críticas;
+11. aplicação inicia normalmente após os testes.
+
+Ainda pendente antes do merge:
+
+- confirmar manualmente o fluxo **push-to-talk antigo da GUI**;
+- RAM nativa adicional do ONNX continua sem medição direta;
+- onset/EOS não foram medidos com cronômetro de referência;
+- CPU ainda pode ser otimizada futuramente; uma amostra curta chegou a 5,4%.
 
 ## Próximo passo
 
-Somente após validação e revisão deste marco: **VOICE V0.2 — Streaming STT**.
+Depois da confirmação explícita do push-to-talk antigo e revisão final do PR:
+**VOICE V0.2 — Streaming STT**.
+
 O V0.1 não antecipa essa integração.
