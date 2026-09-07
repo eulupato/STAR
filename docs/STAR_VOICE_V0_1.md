@@ -172,7 +172,47 @@ ou uma execução limitada, por exemplo:
 .venv\Scripts\python.exe -m voice.diagnostics vad 30
 ```
 
-Saída esperada durante uma fala:
+A partir da validação física inicial, o diagnóstico também mostra aproximadamente
+a cada segundo:
+
+```text
+INPUT · rms=-31.4 dBFS · peak=-12.8 dBFS · vad_max=0.917
+```
+
+No resumo são mostrados:
+
+- dispositivo de entrada efetivamente usado;
+- quantidade de chunks recebidos;
+- maior probabilidade VAD;
+- RMS global e pico de entrada em dBFS;
+- amostras próximas de clipping;
+- segmentos produzidos;
+- chunks descartados;
+- CPU aproximada.
+
+Isso permite separar falha de microfone/driver de falha do VAD/segmentador antes de
+alterar thresholds.
+
+Para listar todas as entradas de áudio e descobrir o índice real do microfone:
+
+```bat
+.venv\Scripts\python.exe -m voice.diagnostics devices
+```
+
+Para testar explicitamente um dispositivo, por exemplo o índice 3:
+
+```bat
+.venv\Scripts\python.exe -m voice.diagnostics vad 30 3
+```
+
+Se o teste produzir `Segmentos: 0`, não se deve baixar o threshold automaticamente.
+Primeiro compare `rms`, `peak` e `vad_max`:
+
+- pico abaixo de aproximadamente `-55 dBFS` → entrada praticamente silenciosa;
+- sinal de áudio presente, mas `vad_max < threshold` → investigar microfone/nível e comportamento acústico;
+- `vad_max >= threshold` sem segmento → investigar `SpeechSegmenter`.
+
+Saída esperada durante uma fala detectada:
 
 ```text
 VAD: ONLINE
@@ -202,7 +242,9 @@ A suíte cobre sem microfone/modelo real:
 - fila de captura limitada;
 - start/stop determinísticos com dispositivo simulado;
 - versão/URL/SHA do instalador;
-- ausência de PyTorch/torchaudio no `requirements.txt`.
+- ausência de PyTorch/torchaudio no `requirements.txt`;
+- presença da telemetria de microfone no diagnóstico;
+- conversão dBFS finita inclusive para silêncio digital.
 
 A CI padrão não baixa `silero_vad.onnx` e não depende da presença do modelo.
 
@@ -229,10 +271,12 @@ Antes de considerar V0.1 pronto para merge:
 2. executar `python -m voice.diagnostics vad 30`;
 3. testar silêncio, fala curta, frase longa e pausa natural;
 4. verificar falsos positivos e cortes de início/fim;
-5. repetir start/stop;
-6. confirmar CPU/RAM aceitáveis;
-7. abrir a GUI estável e validar o push-to-talk existente;
-8. rodar `pytest -q tests` e `python diagnostico.py` no ambiente local.
+5. se houver `0` segmentos, usar `python -m voice.diagnostics devices` e repetir com índice explícito;
+6. comparar RMS/pico/probabilidade VAD antes de ajustar configuração;
+7. repetir start/stop;
+8. confirmar CPU/RAM aceitáveis;
+9. abrir a GUI estável e validar o push-to-talk existente;
+10. rodar `pytest -q tests` e `python diagnostico.py` no ambiente local.
 
 ## Próximo passo
 
