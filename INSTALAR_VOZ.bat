@@ -8,6 +8,7 @@ echo        STAR V1.9 FINAL - INSTALACAO DE VOZ
 echo =====================================================
 echo.
 echo ENTRADA : faster-whisper tiny (PT-BR, local)
+echo VAD     : Silero VAD ONNX (Voice V0.1 experimental)
 echo OFICIAL : Chatterbox + referencia local da STAR
 echo RAPIDA  : Piper PT-BR (somente se escolhido)
 echo.
@@ -28,10 +29,11 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/4] Preparando Piper PT-BR para o modo rapido...
+echo [2/4] Preparando modelos locais Piper + Silero VAD...
 ".venv\Scripts\python.exe" voice\install_models.py
 if errorlevel 1 (
-    echo AVISO: Piper nao ficou pronto. Isso nao impede a voz oficial.
+    echo AVISO: um modelo local nao ficou pronto.
+    echo Veja o erro acima e execute novamente voice\install_models.py.
 )
 
 echo.
@@ -60,6 +62,9 @@ echo coloque um MP3/WAV/FLAC/OGG/M4A/AAC autorizado em:
 echo voice\reference\
 echo e execute DIAGNOSTICO_VOZ.bat.
 echo O arquivo sera mantido apenas na sua maquina.
+echo.
+echo Para validar o Voice V0.1 experimental depois da instalacao:
+echo ".venv\Scripts\python.exe" -m voice.diagnostics vad 30
 echo.
 echo =====================================================
 echo        INSTALACAO V1.9 FINAL CONCLUIDA

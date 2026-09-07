@@ -38,5 +38,21 @@ STT_ENGINE = "faster-whisper"
 STT_MODEL = "tiny"
 PIPER_VOICE = "pt_BR-faber-medium"
 
+# STAR Voice V0.1 — captura contínua + VAD experimental, ainda fora da GUI/STT.
+# Fonte única de verdade dos parâmetros operacionais desta etapa.
+VAD_MODEL_PATH = "voice/models/vad/silero_vad.onnx"
+VAD_CONFIG = {
+    "sample_rate": 16000,
+    "chunk_samples": 512,
+    "threshold": 0.5,
+    "neg_threshold_offset": 0.15,
+    "min_speech_ms": 250,
+    "min_silence_ms": 500,
+    "pre_roll_ms": 300,
+    "post_roll_ms": 300,
+    "max_segment_duration_ms": 30000,
+    "input_queue_seconds": 2.0,
+}
+
 RELEASE_CHANNEL = "stable"
 RELEASE_STATUS = "final"
