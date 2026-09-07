@@ -37,3 +37,21 @@ def test_vad_runtime_has_no_network_or_downloader():
     assert "http://" not in source
     assert "https://" not in source
     assert "download_silero" not in source
+
+
+def test_vad_diagnostic_exposes_input_telemetry_and_device_selection():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "voice" / "diagnostics.py").read_text(encoding="utf-8")
+    assert "python -m voice.diagnostics devices" in source
+    assert "indice-do-microfone" in source
+    assert "Maior probabilidade VAD" in source
+    assert "Nível RMS global" in source
+    assert "Pico de entrada" in source
+    assert "DIAGNÓSTICO AUTOMÁTICO" in source
+
+
+def test_dbfs_helper_is_finite_for_silence_and_full_scale():
+    from voice.diagnostics import _dbfs
+
+    assert _dbfs(1.0) == 0.0
+    assert _dbfs(0.0) < -200.0
