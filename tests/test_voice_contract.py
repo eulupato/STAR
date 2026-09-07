@@ -48,6 +48,7 @@ def test_vad_diagnostic_exposes_input_telemetry_and_device_selection():
     assert "Nível RMS global" in source
     assert "Pico de entrada" in source
     assert "DIAGNÓSTICO AUTOMÁTICO" in source
+    assert "ContinuousAudioInput(device=device)" in source
 
 
 def test_dbfs_helper_is_finite_for_silence_and_full_scale():
