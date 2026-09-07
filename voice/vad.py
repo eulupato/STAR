@@ -102,7 +102,7 @@ class SileroVAD:
             raise VADLoadError(f"Falha ao carregar Silero VAD: {exc}") from exc
 
     def load(self) -> None:
-        """Carrega o modelo local uma única vez."""
+        """Carrega e valida o modelo local uma única vez."""
         with self._lock:
             if self._session is not None:
                 return
@@ -111,12 +111,16 @@ class SileroVAD:
                     f"Modelo Silero VAD não encontrado em {self.model_path}. "
                     "Execute: python -m voice.install_models"
                 )
-            self._session = self._create_session()
-            self._validate_model_contract()
+
+            # Só publica a sessão como pronta depois de validar o contrato.
+            session = self._create_session()
+            self._validate_model_contract(session)
+            self._session = session
             self._reset_state_unlocked()
 
-    def _validate_model_contract(self) -> None:
-        input_names = {item.name for item in self._session.get_inputs()}
+    @staticmethod
+    def _validate_model_contract(session: Any) -> None:
+        input_names = {item.name for item in session.get_inputs()}
         required = {"input", "state", "sr"}
         if not required.issubset(input_names):
             raise VADLoadError(
