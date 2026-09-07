@@ -61,6 +61,20 @@ def test_no_external_voice_service_is_required():
     manager.close()
 
 
+def test_v0_1_components_are_lazy_and_do_not_load_stt_or_tts():
+    from voice.audio_input import ContinuousAudioInput
+    from voice.segmenter import SpeechSegmenter
+    from voice.vad import SileroVAD
+
+    audio = ContinuousAudioInput()
+    vad = SileroVAD()
+    segmenter = SpeechSegmenter()
+
+    assert audio.stream is None
+    assert audio.running is False
+    assert vad.ready is False
+    assert segmenter.in_speech is False
+
 
 def test_tts_text_removes_emojis_without_changing_portuguese():
     text = "Perfeito! ✨⭐ Vamos continuar amanhã. 😊"
