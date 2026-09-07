@@ -1,203 +1,165 @@
-"""Catálogo modular do STAR WORLD.
+"""Registro central do STAR WORLD 2D.
 
-As ilhas representam ambientes/capacidades da STAR. Uma ilha pode existir
-visualmente no HUB mesmo quando o respectivo pacote de conhecimento ainda
-não foi instalado. O campo ``status`` indica o estado do pacote.
+Este módulo é a fonte única de verdade da topologia visual da V1.9. Ambientes
+internos permanecem aninhados para evitar duplicação: Sala/Cozinha/Quarto/Closet
+pertencem à Casa, Central de Criação pertence ao Laboratório e os quatro mundos
+do Jardim permanecem dentro do Jardim.
+
+O campo ``status`` descreve a capacidade real atual. ``enterable`` descreve se a
+interface 2D já pode ser aberta. Assim a STAR não precisa fingir que um motor
+científico ou um subsistema futuro está pronto só porque sua sala já existe.
 """
+from __future__ import annotations
+
+from copy import deepcopy
+
+STATUS_LABELS = {
+    "available": "DISPONÍVEL",
+    "development": "EM DESENVOLVIMENTO",
+    "planned": "PLANEJADO",
+    "experimental": "EXPERIMENTAL",
+    "restricted": "RESTRITO",
+    "unavailable": "INDISPONÍVEL",
+}
 
 ISLANDS = {
-    "herois": {
-        "name": "Heróis",
-        "icon": "🦸",
-        "status": "planned",
-        "type": "knowledge",
-        "description": "Catálogo aprofundado de heróis e personagens, com biografias e referências organizadas.",
-        "contents": [
-            "biografia, origem e história",
-            "evolução do personagem e principais arcos",
-            "HQs, edições e cronologias",
-            "filmes, séries e outras aparições",
-            "família, parentes e relações",
-            "poderes, habilidades e equipamentos",
-            "versões, universos e identidades",
-            "curiosidades e referências",
-        ],
-    },
-    "idiomas": {
-        "name": "Idiomas",
-        "icon": "🌐",
-        "status": "planned",
-        "type": "knowledge",
-        "description": "Aprendizado de línguas modernas, antigas e históricas, da escrita ao uso prático.",
-        "contents": [
-            "inglês, espanhol, francês e outras línguas modernas",
-            "latim e grego antigo",
-            "egípcio antigo e línguas históricas",
-            "línguas mesoamericanas e ameríndias",
-            "famílias linguísticas e evolução",
-            "gramática e vocabulário",
-            "pronúncia, escrita e leitura",
-            "história, contexto e cultura linguística",
-        ],
+    "casa": {
+        "name": "Casa",
+        "icon": "🏠",
+        "status": "available",
+        "enterable": True,
+        "type": "home",
+        "description": "A casa da STAR: Sala, Cozinha e Quarto. O Closet fica dentro do Quarto.",
+        "contents": ["Sala / STAR TV", "Cozinha / receitas", "Quarto", "Closet / skins"],
+        "subareas": {
+            "sala": {"name": "Sala", "icon": "📺", "status": "available", "enterable": True,
+                     "description": "Conversa, descanso e mídia. A TV abre conteúdo do YouTube com validação de URL."},
+            "cozinha": {"name": "Cozinha", "icon": "🍳", "status": "available", "enterable": True,
+                        "description": "Receitas, ingredientes, preparo guiado e favoritos culinários."},
+            "quarto": {"name": "Quarto", "icon": "🛏️", "status": "available", "enterable": True,
+                       "description": "Espaço pessoal da STAR e acesso ao Closet."},
+            "closet": {"name": "Closet", "icon": "👕", "status": "available", "enterable": True,
+                       "description": "Skins e aparência visual da STAR."},
+        },
     },
     "laboratorio": {
         "name": "Laboratório",
         "icon": "🧪",
-        "status": "planned",
+        "status": "experimental",
+        "enterable": True,
         "type": "workspace",
-        "description": "Ambiente de investigação, ciência, experimentação e análise.",
-        "contents": [
-            "química e biologia",
-            "materiais e propriedades",
-            "cálculos e análise científica",
-            "hipóteses e testes",
-            "experimentos e protocolos",
-            "simulações e modelagem",
-            "análise de resultados",
-        ],
-    },
-    "central_criacao": {
-        "name": "Central de Criação",
-        "icon": "🛠️",
-        "status": "planned",
-        "type": "workspace",
-        "description": "Ambiente para construir, desenvolver e testar projetos físicos e tecnológicos.",
-        "contents": [
-            "máquinas e equipamentos",
-            "protótipos e mecanismos",
-            "engenharia e mecânica",
-            "montagem e fabricação",
-            "desenvolvimento físico",
-            "testes de protótipos",
-        ],
+        "description": "Investigação, pesquisa, hipóteses, observações e simulações educacionais seguras.",
+        "contents": ["Projetos científicos", "Hipóteses", "Observações", "Central de Criação"],
+        "subareas": {
+            "central_criacao": {"name": "Central de Criação", "icon": "🛠️", "status": "experimental", "enterable": True,
+                                "description": "Transforma ideias e projetos em planejamento, versões e protótipos conceituais."},
+        },
     },
     "biblioteca": {
         "name": "Biblioteca",
         "icon": "📚",
-        "status": "planned",
+        "status": "available",
+        "enterable": True,
         "type": "knowledge",
-        "description": "Grande arquivo de conhecimento armazenado, organizado em livros, documentos e coleções.",
-        "contents": [
-            "livros e documentos",
-            "referências e fontes",
-            "coleções de conhecimento",
-            "materiais adquiridos",
-            "histórico e versões",
-            "organização por assunto",
-        ],
+        "description": "Conhecimento armazenado: PDFs locais, catálogo, progresso de leitura, notas e Knowledge Packs.",
+        "contents": ["PDFs locais", "Leitura", "Progresso", "Knowledge Packs"],
+        "concept_note": "Biblioteca = conhecimento armazenado; Pesquisa = aquisição de conhecimento novo.",
     },
     "estudio_musica": {
         "name": "Estúdio de Música",
         "icon": "🎵",
-        "status": "planned",
+        "status": "experimental",
+        "enterable": True,
         "type": "creative",
-        "description": "Espaço dedicado à composição, produção, experimentação e criação musical.",
-        "contents": [
-            "composição",
-            "letras e ideias musicais",
-            "beats e produção",
-            "experimentação sonora",
-            "testes e arranjos",
-            "projetos musicais",
-        ],
+        "description": "Projetos musicais, letras, BPM, tonalidade, referências de áudio e versões.",
+        "contents": ["Projetos", "Letras", "BPM / tonalidade", "Áudios locais"],
     },
-    "observatorio": {
-        "name": "Observatório",
-        "icon": "🔭",
-        "status": "planned",
-        "type": "knowledge",
-        "description": "Ambiente de astronomia, observação do céu e exploração de corpos celestes.",
-        "contents": [
-            "estrelas e planetas",
-            "corpos celestes",
-            "astronomia e astrofísica",
-            "exploração astronômica",
-            "passagem do tempo e céu noturno",
-            "objetos fictícios claramente identificados como ficção",
-        ],
+    "atelie": {
+        "name": "Ateliê",
+        "icon": "🎨",
+        "status": "experimental",
+        "enterable": True,
+        "type": "creative",
+        "description": "Arte e criação visual, com ideias, paletas e um canvas pixel-art simples.",
+        "contents": ["Pixel canvas", "Paletas", "Ideias visuais", "Galeria local"],
     },
     "jardim": {
         "name": "Jardim",
         "icon": "🌱",
-        "status": "planned",
+        "status": "available",
+        "enterable": True,
         "type": "living",
-        "description": "Ambiente vivo para natureza, fauna, flora, água, cultivo, contemplação e descanso.",
-        "contents": [
-            "plantas, árvores e flores",
-            "fauna e animais",
-            "água e ecossistemas",
-            "cultivo e botânica",
-            "natureza e observação",
-            "lazer, contemplação e descanso",
-            "espaço associado à OSHA, o pet da STAR",
-        ],
-    },
-    "casa": {
-        "name": "Casa",
-        "icon": "🏠",
-        "status": "planned",
-        "type": "home",
-        "description": "A casa da STAR dentro do STAR WORLD, com ambientes pessoais e de rotina.",
-        "contents": [
-            "🍳 Cozinha — receitas, pratos e preparo culinário",
-            "🛏️ Quarto — espaço pessoal da STAR",
-            "👕 Closet — roupas, skins, acessórios e aparência",
-        ],
+        "description": "Natureza, cultivo, fauna, flora, mar, contemplação e passagem para o Observatório.",
+        "contents": ["Jardim / Plantação", "Natureza", "Mar", "Observatório", "OSHA"],
         "subareas": {
-            "cozinha": {
-                "name": "Cozinha",
-                "icon": "🍳",
-                "description": "Culinária e gastronomia, com a STAR realmente preparando receitas.",
-                "contents": ["receitas", "preparo", "aprendizado culinário", "experimentação gastronômica"],
-            },
-            "quarto": {
-                "name": "Quarto",
-                "icon": "🛏️",
-                "description": "Espaço pessoal da STAR dentro da Casa.",
-                "contents": ["rotina", "descanso", "organização pessoal", "acesso ao Closet"],
-            },
-            "closet": {
-                "name": "Closet",
-                "icon": "👕",
-                "description": "Espaço de personalização visual da STAR.",
-                "contents": ["roupas", "skins", "acessórios", "aparências", "itens especiais"],
-            },
+            "plantacao": {"name": "Jardim / Plantação", "icon": "🌿", "status": "available", "enterable": True,
+                          "description": "Temperos, ervas, chás, frutas, legumes, verduras e cultivo educacional."},
+            "natureza": {"name": "Natureza", "icon": "🌳", "status": "available", "enterable": True,
+                         "description": "Fauna, flora, ecossistemas e representações educativas de locais reais."},
+            "mar": {"name": "Mar", "icon": "🌊", "status": "available", "enterable": True,
+                    "description": "Fauna aquática, flora marinha e exploração por zonas de profundidade."},
+            "observatorio": {"name": "Observatório", "icon": "🔭", "status": "available", "enterable": True,
+                             "description": "Cosmos, estrelas, planetas, galáxias e classificação de realidade.",
+                             "reality_classes": ["real", "histórico", "hipotético", "simulado", "fictício", "desconhecido"]},
         },
     },
     "correio": {
-        "name": "Correio",
+        "name": "Correios",
         "icon": "📬",
-        "status": "planned",
+        "status": "experimental",
+        "enterable": True,
         "type": "system",
-        "description": "Entrada de encomendas, objetos e acontecimentos narrativos no STAR WORLD.",
-        "contents": [
-            "recebimento de encomendas",
-            "objetos e itens",
-            "inventário",
-            "registro em memória",
-            "eventos e histórias",
-            "integração futura com narrativas como a origem da OSHA",
-        ],
+        "description": "Encomendas, objetos, mensagens de mundo e inventário persistente.",
+        "contents": ["Encomendas", "Abrir pacote", "Inventário", "Histórico"],
+        "flow": ["encomenda", "objeto", "inventário", "memória"],
     },
     "cura": {
         "name": "Cura",
         "icon": "❤️‍🩹",
-        "status": "planned",
+        "status": "experimental",
+        "enterable": True,
         "type": "system",
-        "description": "Sistema controlado de diagnóstico, manutenção e autocorreção da própria STAR.",
-        "contents": [
-            "diagnóstico",
-            "identificação do problema",
-            "proposta de correção",
-            "validação",
-            "aplicação controlada",
-            "teste após correção",
-        ],
-        "safety_note": "Não concede liberdade irrestrita para alterar o próprio código; toda alteração deve passar por validação e controle.",
+        "description": "Diagnóstico honesto da STAR e fluxo controlado de manutenção.",
+        "contents": ["Diagnóstico", "Identificação", "Proposta", "Validação", "Teste"],
+        "flow": ["diagnóstico", "identificação do problema", "proposta de correção", "validação", "aplicação autorizada", "teste"],
+        "safety_note": "Cura não possui liberdade irrestrita para alterar o sistema.",
+    },
+    "herois": {
+        "name": "Heróis",
+        "icon": "🦸",
+        "status": "development",
+        "enterable": True,
+        "type": "knowledge",
+        "description": "Catálogo especializado de personagens e universos. Usa Knowledge Packs quando disponíveis.",
+        "contents": ["Personagens", "Equipes", "Universos", "Knowledge Packs"],
+    },
+    "idiomas": {
+        "name": "Idiomas",
+        "icon": "🌐",
+        "status": "experimental",
+        "enterable": True,
+        "type": "knowledge",
+        "description": "Vocabulário, gramática, cartões de estudo e progresso local.",
+        "contents": ["Idiomas", "Cartões", "Notas", "Progresso"],
     },
 }
 
 
 def get_islands():
-    """Retorna uma cópia segura do catálogo para a interface."""
-    return {key: dict(value) for key, value in ISLANDS.items()}
+    """Retorna uma cópia profunda para impedir mutações acidentais pela GUI."""
+    return deepcopy(ISLANDS)
+
+
+def get_island(key: str):
+    item = ISLANDS.get(key)
+    return deepcopy(item) if item else None
+
+
+def get_subarea(island_key: str, subarea_key: str):
+    island = ISLANDS.get(island_key, {})
+    item = island.get("subareas", {}).get(subarea_key)
+    return deepcopy(item) if item else None
+
+
+def status_label(status: str) -> str:
+    return STATUS_LABELS.get(str(status).lower(), "EM DESENVOLVIMENTO")

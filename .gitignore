@@ -21,6 +21,11 @@ voice/models/
 .cache/
 .hf_cache/
 
+# Conhecimento local, caches e documentos privados/licenciados
+knowledge/local/
+knowledge/cache/
+*.pdf
+
 # Referências pessoais de voz (manter somente na máquina local)
 voice/reference/*.mp3
 voice/reference/*.wav
@@ -38,6 +43,10 @@ voice/cache/
 # Banco local e dados da máquina
 star.db
 runtime/
+
+# Bundles/importações locais que não pertencem ao repositório
+SKINS.zip
+assets/reference/menuCOMbotao.jpeg
 
 # Builds locais de clientes/dispositivos
 clients/**/build/

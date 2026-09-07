@@ -1,0 +1,112 @@
+{
+  "entries": [
+    {
+      "id": "historical:joan-of-arc",
+      "title": "Joana d'Arc",
+      "aliases": ["Joana d Arc", "Joan of Arc", "Jeanne d'Arc"],
+      "keywords": ["história", "França", "Guerra dos Cem Anos", "figura histórica"],
+      "answer": "Joana d'Arc foi uma jovem francesa do século XV que se tornou uma figura central da fase final da Guerra dos Cem Anos. Ela acompanhou forças francesas, tornou-se símbolo de resistência e unidade e foi posteriormente canonizada pela Igreja Católica. Na STAR, esta entrada é classificada como HISTÓRICA, não como personagem fictícia.",
+      "source": {"type": "curated_summary", "reference": "Catálogo inicial do Projeto STAR", "verification": "expansão bibliográfica específica pendente"},
+      "metadata": {"category": "historical", "universe": "História", "reality_class": "historical", "image_status": "missing_authorized_asset"}
+    },
+    {
+      "id": "historical:harriet-tubman",
+      "title": "Harriet Tubman",
+      "aliases": ["Araminta Ross"],
+      "keywords": ["história", "Estados Unidos", "abolicionismo", "Underground Railroad", "figura histórica"],
+      "answer": "Harriet Tubman foi uma abolicionista norte-americana que escapou da escravidão e depois ajudou outras pessoas escravizadas a buscar liberdade por redes associadas à Underground Railroad. Também atuou durante a Guerra Civil dos Estados Unidos. Na STAR, esta entrada é classificada como HISTÓRICA.",
+      "source": {"type": "curated_summary", "reference": "Catálogo inicial do Projeto STAR", "verification": "expansão bibliográfica específica pendente"},
+      "metadata": {"category": "historical", "universe": "História", "reality_class": "historical", "image_status": "missing_authorized_asset"}
+    },
+    {
+      "id": "historical:nelson-mandela",
+      "title": "Nelson Mandela",
+      "aliases": ["Nelson Rolihlahla Mandela", "Madiba"],
+      "keywords": ["história", "África do Sul", "apartheid", "direitos civis", "figura histórica"],
+      "answer": "Nelson Mandela foi um líder sul-africano da luta contra o apartheid, passou muitos anos preso por sua atuação política e, após sua libertação, participou da transição democrática do país. Em 1994 tornou-se presidente da África do Sul. Na STAR, esta entrada é classificada como HISTÓRICA.",
+      "source": {"type": "curated_summary", "reference": "Catálogo inicial do Projeto STAR", "verification": "expansão bibliográfica específica pendente"},
+      "metadata": {"category": "historical", "universe": "História", "reality_class": "historical", "image_status": "missing_authorized_asset"}
+    },
+    {
+      "id": "mythology:heracles",
+      "title": "Hércules",
+      "aliases": ["Heracles", "Héracles"],
+      "keywords": ["mitologia grega", "semideus", "doze trabalhos", "mitologia"],
+      "answer": "Hércules, chamado Heracles na tradição grega, é um herói da mitologia greco-romana conhecido por força extraordinária e pelos chamados Doze Trabalhos. Existem diferentes versões dos mitos associados a ele. Na STAR, esta entrada é classificada como MITOLÓGICA, não como registro histórico comprovado.",
+      "source": {"type": "curated_summary", "reference": "Mitologia greco-romana — resumo do catálogo inicial STAR", "verification": "fontes clássicas específicas serão adicionadas em expansão futura"},
+      "metadata": {"category": "mythology", "universe": "Mitologia grega", "reality_class": "mythological", "image_status": "missing_authorized_asset"}
+    },
+    {
+      "id": "mythology:achilles",
+      "title": "Aquiles",
+      "aliases": ["Achilles"],
+      "keywords": ["mitologia grega", "Ilíada", "Guerra de Troia", "mitologia"],
+      "answer": "Aquiles é um herói da mitologia grega e uma figura central da Ilíada, associado à Guerra de Troia e à excelência em combate. Tradições posteriores popularizaram histórias adicionais sobre sua vulnerabilidade. Na STAR, esta entrada é classificada como MITOLÓGICA.",
+      "source": {"type": "curated_summary", "reference": "Mitologia grega — resumo do catálogo inicial STAR", "verification": "fontes clássicas específicas serão adicionadas em expansão futura"},
+      "metadata": {"category": "mythology", "universe": "Mitologia grega", "reality_class": "mythological", "image_status": "missing_authorized_asset"}
+    },
+    {
+      "id": "mythology:odysseus",
+      "title": "Odisseu",
+      "aliases": ["Ulisses", "Odysseus", "Ulysses"],
+      "keywords": ["mitologia grega", "Odisseia", "Ítaca", "Guerra de Troia", "mitologia"],
+      "answer": "Odisseu, também conhecido como Ulisses na tradição latina, é um herói da mitologia grega associado à Guerra de Troia e protagonista da Odisseia. É frequentemente caracterizado por inteligência, estratégia e uma longa viagem de retorno a Ítaca. Na STAR, esta entrada é classificada como MITOLÓGICA.",
+      "source": {"type": "curated_summary", "reference": "Mitologia grega — resumo do catálogo inicial STAR", "verification": "fontes clássicas específicas serão adicionadas em expansão futura"},
+      "metadata": {"category": "mythology", "universe": "Mitologia grega", "reality_class": "mythological", "image_status": "missing_authorized_asset"}
+    },
+    {
+      "id": "marvel:spider-man-peter-parker",
+      "title": "Homem-Aranha",
+      "aliases": ["Spider-Man", "Peter Parker"],
+      "keywords": ["Marvel", "Peter Parker", "sentido-aranha", "teias", "super-herói"],
+      "answer": "Homem-Aranha é uma identidade heroica da Marvel associada, nesta entrada, a Peter Parker. O personagem é conhecido por agilidade, força e reflexos ampliados, capacidade de aderir a superfícies, percepção de perigo frequentemente chamada de sentido-aranha e uso de teias. Esta ficha é uma descrição local resumida; variantes como Miles Morales devem possuir registros próprios.",
+      "source": {"type": "curated_summary", "reference": "Catálogo inicial Marvel do Projeto STAR", "verification": "perfil oficial específico será vinculado na expansão do catálogo"},
+      "metadata": {"category": "superhero", "publisher": "Marvel Comics", "universe": "Marvel", "identity": "Peter Parker", "reality_class": "fictional", "image_status": "missing_authorized_asset"}
+    },
+    {
+      "id": "marvel:captain-america-steve-rogers",
+      "title": "Capitão América",
+      "aliases": ["Captain America", "Steve Rogers"],
+      "keywords": ["Marvel", "Steve Rogers", "super-soldado", "escudo", "Vingadores", "super-herói"],
+      "answer": "Capitão América é uma identidade heroica da Marvel associada, nesta entrada, a Steve Rogers. Ele é conhecido por capacidades físicas aprimoradas, treinamento de combate, liderança e uso de um escudo característico. A STAR preserva identidades alternativas como registros separados quando o catálogo for expandido.",
+      "source": {"type": "curated_summary", "reference": "Catálogo inicial Marvel do Projeto STAR", "verification": "perfil oficial específico será vinculado na expansão do catálogo"},
+      "metadata": {"category": "superhero", "publisher": "Marvel Comics", "universe": "Marvel", "identity": "Steve Rogers", "reality_class": "fictional", "image_status": "missing_authorized_asset"}
+    },
+    {
+      "id": "marvel:black-panther-tchalla",
+      "title": "Pantera Negra",
+      "aliases": ["Black Panther", "T'Challa", "TChalla"],
+      "keywords": ["Marvel", "T'Challa", "Wakanda", "vibranium", "super-herói"],
+      "answer": "Pantera Negra é uma identidade heroica da Marvel associada, nesta entrada, a T'Challa, ligado a Wakanda. O personagem combina treinamento avançado, capacidades físicas ampliadas em muitas versões e tecnologia de Wakanda, frequentemente relacionada ao vibranium. Diferentes continuidades podem alterar detalhes específicos.",
+      "source": {"type": "curated_summary", "reference": "Catálogo inicial Marvel do Projeto STAR", "verification": "perfil oficial específico será vinculado na expansão do catálogo"},
+      "metadata": {"category": "superhero", "publisher": "Marvel Comics", "universe": "Marvel", "identity": "T'Challa", "reality_class": "fictional", "image_status": "missing_authorized_asset"}
+    },
+    {
+      "id": "dc:superman-kal-el",
+      "title": "Superman",
+      "aliases": ["Super-Homem", "Kal-El", "Clark Kent"],
+      "keywords": ["DC", "Krypton", "Clark Kent", "Kal-El", "super-herói"],
+      "answer": "Superman é um super-herói da DC associado a Kal-El, também conhecido como Clark Kent. É um kryptoniano e, em representações amplamente conhecidas, possui capacidades extraordinárias na Terra, como força, velocidade, voo e sentidos ampliados. Continuidade e limites de poder variam entre versões.",
+      "source": {"type": "curated_summary", "reference": "Catálogo inicial DC do Projeto STAR", "verification": "perfil oficial específico será vinculado na expansão do catálogo"},
+      "metadata": {"category": "superhero", "publisher": "DC Comics", "universe": "DC", "identity": "Kal-El / Clark Kent", "reality_class": "fictional", "image_status": "missing_authorized_asset"}
+    },
+    {
+      "id": "dc:batman-bruce-wayne",
+      "title": "Batman",
+      "aliases": ["Bruce Wayne", "Cavaleiro das Trevas", "Dark Knight"],
+      "keywords": ["DC", "Bruce Wayne", "Gotham", "detetive", "tecnologia", "super-herói"],
+      "answer": "Batman é um herói da DC associado a Bruce Wayne e à cidade fictícia de Gotham. Ele normalmente não possui poderes sobre-humanos; depende de investigação, treinamento físico e estratégico, tecnologia e preparação. Há múltiplas continuidades e interpretações do personagem.",
+      "source": {"type": "curated_summary", "reference": "Catálogo inicial DC do Projeto STAR", "verification": "perfil oficial específico será vinculado na expansão do catálogo"},
+      "metadata": {"category": "superhero", "publisher": "DC Comics", "universe": "DC", "identity": "Bruce Wayne", "reality_class": "fictional", "image_status": "missing_authorized_asset"}
+    },
+    {
+      "id": "dc:wonder-woman-diana",
+      "title": "Mulher-Maravilha",
+      "aliases": ["Wonder Woman", "Diana", "Diana Prince"],
+      "keywords": ["DC", "Diana", "Amazona", "Themyscira", "super-herói"],
+      "answer": "Mulher-Maravilha é uma heroína da DC associada a Diana e às Amazonas. É conhecida por força e habilidades de combate extraordinárias e pelo uso de artefatos característicos em muitas versões. Origem, poderes e detalhes variam conforme a continuidade.",
+      "source": {"type": "curated_summary", "reference": "Catálogo inicial DC do Projeto STAR", "verification": "perfil oficial específico será vinculado na expansão do catálogo"},
+      "metadata": {"category": "superhero", "publisher": "DC Comics", "universe": "DC", "identity": "Diana", "reality_class": "fictional", "image_status": "missing_authorized_asset"}
+    }
+  ]
+}

@@ -25,3 +25,28 @@ def test_local_voice_test_uses_python_diagnostic_as_source_of_truth():
     root = Path(__file__).resolve().parents[1]
     launcher = (root / "TESTAR_VOZ_LOCAL.bat").read_text(encoding="utf-8")
     assert "-m voice.diagnostics" in launcher
+
+
+def test_chatterbox_worker_uses_manager_reference_env(monkeypatch, tmp_path):
+    from voice.chatterbox_worker import reference_path
+
+    reference = (tmp_path / "star-authorized-reference.wav").resolve()
+    monkeypatch.setenv("STAR_VOICE_REFERENCE", str(reference))
+    assert reference_path() == reference
+
+
+def test_chatterbox_worker_rejects_directories_as_reference_contract():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "voice" / "chatterbox_worker.py").read_text(encoding="utf-8")
+
+    assert "if not ref.is_file():" in source
+    assert "if not ref.exists():" not in source
+    assert "Diretórios não são aceitos como referência" in source
+
+
+def test_chatterbox_worker_has_no_generic_tts_fallback():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "voice" / "chatterbox_worker.py").read_text(encoding="utf-8").lower()
+
+    assert "piper" not in source
+    assert "pyttsx3" not in source
