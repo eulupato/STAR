@@ -1,91 +1,263 @@
-# ⌚ STAR Watch V0 — Experimental Device Bridge
+# ⌚ STAR Watch V0.3 — Functional Beta
 
 ## Estado
 
-**EXPERIMENTAL / opt-in.** Este trabalho não antecipa o ECOSYSTEM completo da
-V9.0. Ele valida somente a ponte mínima necessária para usar um relógio Android
-como endpoint da mesma STAR que roda no PC.
+**EXPERIMENTAL / opt-in / beta funcional.**
 
-## Princípio arquitetural
+A direção atual do projeto prioriza uma STAR útil no dia a dia antes da expansão de STAR WORLD. O Watch é uma extensão leve da mesma STAR que roda no PC; não existe um segundo cérebro, identidade ou memória no relógio.
 
 ```text
-STAR WATCH / CELULAR / FUTURO CORPO
-        sensores + interface
-                │
-                │ LAN
-                ▼
-            STAR CORE
-        processamento central
-                │
-                ▼
-        resposta / comando
+STAR WATCH / PC PREVIEW
+    interface + sensores
+            │
+            ▼
+      STAR CORE NO PC
+ identidade + conhecimento
+ memória + raciocínio + voz
+            │
+            ▼
+       resposta / estado
 ```
 
-O relógio **não contém uma segunda STAR**, não possui identidade separada e não
-executa o raciocínio principal. Ele captura entradas e apresenta/execute saídas.
+STAR WORLD, Ilhas e experiência 3D ficam fora do cliente Watch.
 
-## Gateway do PC
+## Beta visual no PC
 
-O gateway fica desligado por padrão. Para iniciar a STAR com a ponte do relógio:
+O arquivo `clients/star_watch_pc.py` permite testar a experiência do relógio imediatamente, sem possuir o hardware físico.
+
+Inicie por:
 
 ```powershell
-.\INICIAR_STAR_WATCH.bat
+.\INICIAR_STAR_WATCH_PC.bat
 ```
 
-O terminal mostrará:
+O preview reutiliza diretamente:
 
-- endereço LAN, por exemplo `http://192.168.1.20:8765`;
-- código temporário de pareamento com 6 dígitos.
+- `main.create_star()` como composição oficial da STAR;
+- identidade e conhecimento atuais;
+- STAR Core;
+- `AudioRecorder` existente;
+- `VoiceManager` existente;
+- STT local no PC;
+- resposta falada local;
+- `STAR_MANIFEST.json > device_ecosystem` como fonte do perfil visual.
 
-O cliente Android usa esse endereço e código uma vez. O servidor devolve um token
-aleatório; somente o hash SHA-256 é persistido em `runtime/oni/devices.json`.
-`runtime/` não deve ser versionado.
+Ele **não importa `gui.app`, não instancia `StarApp` e não carrega STAR WORLD**.
 
-## Protocolo V0
+Ações privilegiadas do computador permanecem bloqueadas neste cliente com `allow_actions=False`.
 
-- `GET /v1/health` — status do gateway;
-- `POST /v1/pair` — pareamento por código temporário;
-- `POST /v1/heartbeat` — presença do dispositivo;
-- `POST /v1/text` — texto → mesmo `StarCore.process()` → resposta;
-- `POST /v1/audio` — áudio → STT local do PC → StarCore → resposta;
-- `POST /v1/image` — entrega imagem ao Core e salva na inbox local.
+## Design System do Watch
 
-### Limite honesto da V0
+A interface foi desenhada para uma tela quadrada com cantos arredondados.
 
-O transporte de imagem é funcional, mas **STAR Vision ainda não existe na V1.9**.
-A imagem é recebida e armazenada para integrar ao Vision Engine no marco V5.0.
-O gateway informa explicitamente `vision_available: false` em vez de fingir que
-analisou a imagem.
+Base visual:
 
-## Segurança inicial
+- fundo quase preto;
+- conteúdo central simples;
+- moldura luminosa contínua ao redor da tela;
+- azul/ciano para escuta e presença;
+- lilás/violeta para processamento;
+- rosa/magenta para resposta e atividade;
+- dourado reservado para eventos especiais;
+- branco para informação principal.
 
-- gateway desligado por padrão;
-- ativação explícita pelo launcher do Watch;
-- pareamento por código temporário;
-- token por dispositivo;
-- somente hash do token persiste no PC;
+O `STAR_MANIFEST.json` é a fonte única da paleta e das feature flags compartilhadas.
+
+### Living Energy Frame
+
+A moldura muda de comportamento conforme o estado:
+
+```text
+idle       → respiração lenta
+listening  → energia ciano/azul mais ativa
+thinking   → violeta/rosa em circulação
+speaking   → azul → violeta → rosa
+error      → vermelho/rosa/dourado
+```
+
+### Símbolo STAR
+
+A identidade visual beta usa:
+
+```text
+círculo fino
+    +
+triângulo invertido
+```
+
+Ao interagir, o triângulo revela uma estrela por aproximadamente **720 ms** e retorna ao estado original. O símbolo é uma direção original da STAR e não replica um ativo da Marvel.
+
+## Telas do PC Preview
+
+### HOME
+
+- hora e data locais;
+- núcleo STAR;
+- estado atual;
+- acesso rápido à conversa.
+
+### VOZ
+
+- texto → mesmo STAR Core;
+- microfone → áudio local → STT → STAR Core;
+- resposta textual;
+- resposta falada;
+- estados `ouvindo`, `pensando` e `respondendo`.
+
+### SAÚDE
+
+A tela existe como estrutura, mas **não inventa batimentos, sono ou atividade**. Todos os valores ficam marcados como aguardando smartwatch até sensores reais e permissões serem integrados.
+
+### GPS
+
+O mapa atual é somente uma demonstração visual. Localização real e navegação não são declaradas como implementadas.
+
+### VISÃO
+
+O Android já possui transporte de câmera para o PC. O Vision Engine ainda não existe nesta versão, portanto imagens não são fingidas como analisadas.
+
+### CONFIGURAÇÕES
+
+A beta permite alternar:
+
+- resposta falada;
+- animações.
+
+Também mostra explicitamente:
+
+- ações remotas bloqueadas;
+- pareamento/token no cliente Android;
+- identidade STAR/creator;
+- biometria e Permission Manager como ainda não implementados.
+
+## Gestos do PC Preview
+
+Como o PC não possui a tela touch do relógio, os gestos são simulados:
+
+- clique no núcleo → iniciar/parar voz;
+- arrastar horizontalmente → próxima/anterior tela;
+- duplo clique → Home;
+- pressionar por ~0,75 s → Configurações;
+- roda do mouse ou setas ← → → navegar;
+- Espaço → iniciar/parar voz;
+- Esc → fechar.
+
+Esses gestos validam o conceito de interação; a implementação nativa final depende do hardware comprado.
+
+## Cliente Android V0.3
+
+O projeto real continua em:
+
+```text
+clients/star_watch_android/
+```
+
+Compatibilidade atual:
+
+```text
+Android 8.1+
+minSdk 27
+versionName 0.3.0
+```
+
+Recursos preservados do V0.2:
+
+- pareamento LAN por código temporário;
+- token privado por dispositivo;
+- texto → STAR Core;
+- microfone → AAC/M4A → STT no PC → Core;
+- resposta falada via TTS do endpoint;
+- câmera → JPEG → inbox local do Core;
+- heartbeat e Adaptive Runtime.
+
+V0.3 acrescenta a nova direção visual, `StarVisualView`, moldura animada, símbolo STAR e layout escuro adequado ao Watch.
+
+## Executar com o relógio Android
+
+### 1. Iniciar o Core + Gateway no PC
+
+```powershell
+.\INICIAR_STAR_DEVICES.bat
+```
+
+`INICIAR_STAR_WATCH.bat` continua como alias compatível.
+
+O terminal mostra:
+
+- endereço LAN, como `http://192.168.1.20:8765`;
+- código temporário de 6 dígitos.
+
+### 2. Gerar o APK
+
+O workflow `STAR Watch Android` compila o APK de debug. Também é possível abrir `clients/star_watch_android` no Android Studio ou executar:
+
+```powershell
+gradle -p clients\star_watch_android :app:assembleDebug
+```
+
+### 3. Instalar por ADB
+
+Com o relógio conectado por USB e depuração habilitada:
+
+```powershell
+.\INSTALAR_STAR_WATCH.bat
+```
+
+### 4. Parear
+
+No app:
+
+1. informar `http://IP_DO_PC:8765`;
+2. informar o código exibido pelo PC;
+3. tocar `PAREAR`;
+4. autorizar microfone/câmera somente quando usados.
+
+PC e relógio devem estar na mesma LAN privada. Não exponha a porta 8765 à Internet.
+
+## Segurança atual
+
+A beta mantém:
+
+- Gateway desligado por padrão;
+- ativação explícita;
+- código de pareamento temporário;
+- token aleatório por dispositivo;
+- somente hash SHA-256 persistido no PC;
+- rate limit;
 - limites de payload;
-- nenhum segredo é commitado;
-- usar apenas em uma LAN privada neste protótipo;
-- não encaminhar a porta 8765 para a Internet.
+- ações locais privilegiadas bloqueadas para endpoints remotos;
+- nenhum segredo versionado.
 
-O Permission Manager completo continua no roadmap posterior; portanto ações de
-alto risco não devem ser expostas por este gateway experimental.
+Não estão concluídos ainda:
 
-## Cliente Android
+- biometria facial;
+- autenticação por voz;
+- Permission Manager completo;
+- Secrets Vault completo;
+- TLS/endurecimento de rede para uso fora da LAN.
 
-O projeto está em `clients/star_watch_android/` e usa Android nativo com
-`minSdk 27`, compatível com Android 8.1. O objetivo da V0 é funcionar inclusive
-em hardware modesto como o HW Ultra2 2/64 GB.
+## Validação automatizada — 08/09/2026
 
-A primeira interface oferece:
+No primeiro commit do V0.3 passaram:
 
-1. endereço do STAR Core;
-2. código de pareamento;
-3. chat textual;
-4. gravação de áudio e envio para o STT do PC;
-5. captura de foto e envio ao Core.
+- ✅ STAR CI;
+- ✅ STAR quality;
+- ✅ STAR security;
+- ✅ STAR Windows smoke;
+- ✅ STAR Watch Android build;
+- ✅ STAR Mobile iOS build.
 
-A câmera V0 usa o app de câmera do Android e recebe um bitmap de preview. Isso é
-proposital: primeiro validamos o protocolo e o fluxo; câmera de resolução total e
-módulo STAR Vision físico entram depois da prova de conceito.
+A validação visual/interativa do PC Preview ainda precisa ser feita no PC real. A validação do APK em smartwatch físico depende da compra do hardware.
+
+## Próximos passos do Watch
+
+1. validar o PC Preview localmente;
+2. ajustar ergonomia e animações com base no uso real;
+3. testar APK em emulador/hardware;
+4. mapear gestos touch conforme o relógio comprado;
+5. integrar localização real somente com permissão explícita;
+6. integrar sensores de saúde suportados pelo hardware, sem inventar dados;
+7. integrar o Voice Engine mais avançado conforme o STAR Voice evoluir;
+8. adicionar autenticação/Permission Manager no marco de segurança adequado.
+
+O Watch continua sendo **uma interface da STAR**, nunca uma STAR paralela.

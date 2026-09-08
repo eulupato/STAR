@@ -1,9 +1,8 @@
-# ⭐ STAR Device Ecosystem V0.2 — ponte experimental
+# ⭐ STAR Device Ecosystem V0.3 — ponte experimental
 
 ## Estado
 
-**EXPERIMENTAL / opt-in.** Esta infraestrutura valida PC + iPhone + Watch sem
-antecipar o ECOSYSTEM completo da V9.0.
+**EXPERIMENTAL / opt-in.** Esta infraestrutura valida PC + iPhone + Watch sem antecipar o ECOSYSTEM completo da V9.0.
 
 ## Regra permanente
 
@@ -23,8 +22,7 @@ STAR CORE NO PC
 ENDPOINT ADEQUADO
 ```
 
-Não existe uma STAR separada no celular ou relógio. Identidade, memória,
-conhecimento, raciocínio e decisões continuam na fonte central.
+Não existe uma STAR separada no celular ou relógio. Identidade, memória, conhecimento, raciocínio e decisões continuam na fonte central.
 
 ## Adaptive Runtime
 
@@ -35,57 +33,29 @@ STAR_MANIFEST.json
 └── device_ecosystem
 ```
 
-O Gateway transforma esse bloco em `/v1/runtime` e escolhe um perfil conforme os
-metadados do dispositivo:
+O Gateway transforma esse bloco em `/v1/runtime` e escolhe perfil pelo form factor:
 
-- `phone` — interface confortável para celular;
-- `watch` — interface compacta para relógio.
+- `phone` — interface confortável;
+- `watch` — interface compacta de cantos arredondados.
 
-O runtime inclui:
+O runtime inclui revisão por hash, schema/protocolo, tema, rótulos, feature flags e perfil.
 
-- `revision` por hash;
-- schema/protocolo;
-- tema;
-- rótulos;
-- feature flags;
-- perfil de layout;
-- intervalo de sincronização.
+No V0.3 o perfil Watch também declara a direção visual do living energy frame, o símbolo círculo + triângulo invertido/estrela e as telas Home, Voz, Saúde, GPS, Visão e Configurações.
 
-Os endpoints enviam heartbeat com a revisão que possuem. Se o Core informa que
-a revisão mudou, o cliente baixa o runtime novamente.
+## Endpoints
 
-### O que muda sem recompilar os apps
-
-- rótulos e textos controlados pelo runtime;
-- paleta/tema nos clientes que aplicam essas propriedades;
-- feature flags;
-- comportamento central da STAR;
-- disponibilidade de recursos expostos pelo Core.
-
-### O que ainda exige atualização do app
-
-- novo código Swift/Java;
-- nova permissão do sistema operacional;
-- mudança estrutural de tela não representada pelo runtime;
-- novos sensores/APIs nativas.
-
-Isso evita prometer atualização impossível: iOS e Android continuam exigindo
-rebuild quando o binário nativo muda.
-
-## Endpoints V0.2
-
-- `GET /v1/health` — saúde, protocolo e revisão do runtime;
-- `POST /v1/pair` — pareamento + metadados/capacidades + runtime inicial;
+- `GET /v1/health` — saúde do gateway;
+- `POST /v1/pair` — pareamento + runtime inicial;
 - `GET /v1/device` — registro público do endpoint;
 - `GET /v1/runtime` — experiência adaptativa;
-- `POST /v1/heartbeat` — presença + detecção de runtime alterado;
+- `POST /v1/heartbeat` — presença + revisão;
 - `POST /v1/text` — texto → mesmo STAR Core;
 - `POST /v1/audio` — áudio → STT no PC → STAR Core;
 - `POST /v1/image` — imagem → inbox do Core.
 
 ## Voz
 
-Entrada:
+Entrada atual:
 
 ```text
 microfone endpoint
@@ -95,63 +65,62 @@ microfone endpoint
 → STAR Core
 ```
 
-Saída V0:
+Saída atual no Android:
 
 ```text
 resposta textual do Core
 → endpoint
-→ TTS nativo iOS/Android
+→ TTS nativo Android
 ```
 
-O TTS do endpoint apenas vocaliza texto; ele não pensa nem substitui a voz
-oficial da STAR no PC. Streaming de voz e voz unificada entre dispositivos
-continuam pertencendo a V5 SENSES.
+O PC Preview usa o `VoiceManager` local da STAR. Streaming/full duplex e unificação final da voz entre dispositivos continuam vinculados à evolução do STAR Voice/SENSES.
 
 ## Imagem
 
-A câmera já transporta imagens para o Core. **Análise visual continua desligada**
-na V1.9 e só entra corretamente com V5 SENSES. O sistema retorna
-`vision_available=false` em vez de fingir percepção.
+A câmera transporta imagens para o Core, porém `vision_analysis=false`. A V1.9 não finge percepção visual.
 
-## Segurança V0
+## Saúde e localização
+
+`health_transport=false` e `location_transport=false` nesta beta. As telas existem para validar a experiência, mas não inventam sensores nem coordenadas.
+
+## Segurança
 
 - Gateway desligado por padrão;
-- ativação explícita por `INICIAR_STAR_DEVICES.bat`;
-- usar apenas em LAN privada;
+- ativação explícita;
+- LAN privada;
 - pareamento por código temporário;
 - token aleatório por dispositivo;
 - somente SHA-256 do token persiste no PC;
 - payloads limitados;
-- tentativas de pareamento possuem rate limit por IP;
-- dispositivos autenticados possuem rate limit por `device_id`;
-- respostas HTTP 500 não expõem detalhes internos do Core ao endpoint remoto;
-- detalhes de falhas internas ficam somente no diagnóstico local (`last_error`);
-- respostas incluem `X-Content-Type-Options: nosniff`;
-- ações locais do PC continuam bloqueadas para origem remota (`allow_actions=False`);
-- nenhum Device/Permission Manager completo é declarado como pronto.
+- rate limit de pareamento e dispositivo;
+- erros internos não são expostos ao endpoint;
+- ações locais do PC bloqueadas para origem remota com `allow_actions=False`;
+- `privileged_actions=false` no runtime.
 
-Os limites de requisição da V0.2 são proteções básicas contra brute force/flood em
-LAN, não substituem firewall, TLS, Permission Manager ou a segurança completa da
-V7/V9. A porta do Gateway não deve ser encaminhada para a Internet.
+Isso ainda não substitui firewall, TLS, biometria, Permission Manager ou a segurança completa de GUARDIAN/ECOSYSTEM.
 
 ## Clientes
 
 ### STAR Mobile iOS V0
 
 - iOS 15+;
-- iPhone XR no iOS 18 como alvo de compatibilidade;
 - chat, voz, câmera, resposta falada e runtime adaptativo;
-- build verificado por Xcode em GitHub Actions;
-- instalação física requer assinatura Apple.
+- instalação física exige assinatura Apple.
 
-### STAR Watch Android V0.2
+### STAR Watch Android V0.3
 
 - Android 8.1+;
-- chat, voz, câmera, TTS e runtime adaptativo;
+- texto, voz, câmera, TTS e runtime adaptativo;
+- nova direção visual do Watch;
 - APK via Android build/ADB.
+
+### STAR Watch PC Preview V0.3
+
+- Windows/Tkinter;
+- reutiliza a mesma STAR local;
+- não carrega STAR WORLD;
+- permite testar interface, logo, estados, gestos simulados, texto e voz antes do hardware físico.
 
 ## Relação com o roadmap
 
-Esta ponte prova conceitos de V9, mas **V9 continua não implementada**. Device
-Manager completo, descoberta, Offline-first Sync, permissões avançadas e Network
-Awareness permanecem no marco oficial.
+Esta ponte continua sendo uma validação transversal na Foundation. Ela **não declara V5 SENSES ou V9 ECOSYSTEM concluídas**. Device Manager completo, sync offline-first, permissões avançadas, sensores e visão permanecem nos marcos apropriados.
