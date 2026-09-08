@@ -20,6 +20,22 @@ A STAR é organizada em oito domínios:
 - **TRUST** — permissões, criptografia, auditoria, sandbox e segredos.
 - **WORLD** — STAR WORLD, ilhas, 3D, interfaces e presença física.
 
+## Foco funcional atual — setembro/2026
+
+A expansão visual de STAR WORLD fica **temporariamente congelada** enquanto a prioridade é tornar a STAR útil no cotidiano. Isso não remove WORLD do roadmap e não descarta o trabalho já feito.
+
+Ordem prática atual:
+
+1. conversa/voz estáveis e naturais;
+2. MIND + contexto + memória;
+3. conhecimento offline útil e progressivo;
+4. funções reais do dia a dia;
+5. Watch como endpoint simples do PC;
+6. segurança/permissões progressivas;
+7. retomar STAR WORLD quando a base funcional estiver madura.
+
+Princípio: primeiro uma STAR funcional; depois uma experiência de mundo mais rica.
+
 ## V1.9 — FOUNDATION
 **Objetivo:** congelar a fundação estável.
 
@@ -39,24 +55,19 @@ Pós-release: bugs entram como V1.9.x.
 
 ### Infraestrutura experimental pós-release
 
-A Foundation pode receber **pontes pequenas, opt-in e sem mudança de geração**
-quando forem necessárias para validar hardware real, desde que não antecipem os
-sistemas completos de versões futuras.
+A Foundation pode receber **pontes pequenas, opt-in e sem mudança de geração** quando forem necessárias para validar hardware real, desde que não antecipem os sistemas completos de versões futuras.
 
 Atualmente:
 
 - **STAR Device Gateway V0.2** — ponte LAN + Adaptive Runtime;
 - **STAR Mobile iOS V0** — iPhone como sensor/interface, sem MIND próprio;
-- **STAR Watch Android V0.2** — Watch como sensor/interface, sem MIND próprio;
+- **STAR Watch Android V0.3** — Watch como sensor/interface, sem MIND próprio;
+- **STAR Watch PC Preview V0.3** — beta funcional para testar a experiência do Watch no PC sem carregar STAR WORLD;
 - **Knowledge Packs removíveis** — packs JSON/JSONL em `STAR_KNOWLEDGE/packs`.
 
-O runtime compartilhado centraliza tema, rótulos, feature flags e perfis
-`phone/watch` em `STAR_MANIFEST.json`. Isso valida adaptação entre endpoints sem
-criar Core, identidade ou memória paralelos.
+O runtime compartilhado centraliza tema, rótulos, feature flags e perfis `phone/watch` em `STAR_MANIFEST.json`. Isso valida adaptação entre endpoints sem criar Core, identidade ou memória paralelos.
 
-Esses itens não significam que V5 SENSES ou V9 ECOSYSTEM estão concluídos. O
-Gateway apenas entrega entradas ao Core atual; visão, Device Manager completo,
-Offline-first Sync e permissões avançadas continuam em seus marcos originais.
+Esses itens não significam que V5 SENSES ou V9 ECOSYSTEM estão concluídos. O Gateway apenas entrega entradas ao Core atual; visão, Device Manager completo, Offline-first Sync e permissões avançadas continuam em seus marcos originais.
 
 ---
 
@@ -171,6 +182,8 @@ Inclui:
 - Idiomas;
 - Digital Twin.
 
+O trabalho visual 2D atual é preservado como histórico/protótipo funcional, mas novas expansões de STAR WORLD ficam pausadas durante o foco funcional atual. A retomada deve reutilizar Core/APIs, não reescrever o cérebro da STAR.
+
 ---
 
 ## V7.0 — GUARDIAN
@@ -228,9 +241,7 @@ Inclui:
 - Mobile STAR;
 - Network Awareness.
 
-Princípio permanente: endpoints percebem, transmitem e executam; a fonte central
-processa. Os protótipos Device Gateway/Mobile/Watch da Foundation validam esse
-princípio, mas não substituem o Device Manager/Sync desta versão.
+Princípio permanente: endpoints percebem, transmitem e executam; a fonte central processa. Os protótipos Device Gateway/Mobile/Watch da Foundation validam esse princípio, mas não substituem o Device Manager/Sync desta versão.
 
 LOCAL continua funcional sem LAN ou Internet.
 
@@ -337,4 +348,4 @@ Cada geração segue:
 7. freeze.
 
 # Próximo marco
-**V1.9 FINAL → abrir V2.0 MIND.**
+**V1.9 FINAL → abrir V2.0 MIND**, mantendo STAR Watch V0.3 como ponte experimental transversal durante o foco funcional.
