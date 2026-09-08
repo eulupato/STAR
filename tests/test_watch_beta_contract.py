@@ -17,6 +17,21 @@ def test_watch_pc_reuses_core_without_star_world():
     assert "StarApp" not in source
 
 
+def test_watch_plasma_home_reuses_existing_client_and_stays_visual_only():
+    source = (ROOT / "clients" / "star_watch_visual.py").read_text(encoding="utf-8")
+
+    assert "class PlasmaStarWatchPC(StarWatchPC)" in source
+    assert "from star_watch_pc import StarWatchPC" in source
+    assert "ImageFilter" in source
+    assert "_draw_plasma_border" in source
+    assert "_draw_plasma_core" in source
+    assert "minimal plasma core" in source
+    assert "from main import create_star" not in source
+    assert "VoiceManager" not in source
+    assert "AudioRecorder" not in source
+    assert "STAR World" in source
+
+
 def test_main_can_build_core_without_importing_gui_at_module_load():
     source = (ROOT / "main.py").read_text(encoding="utf-8")
     before_main = source.split("def main():", 1)[0]
@@ -35,7 +50,13 @@ def test_watch_runtime_declares_visual_identity_and_honest_features():
 
     assert watch["shape"] == "rounded_square"
     assert watch["energy_frame"] is True
-    assert watch["logo_style"] == "circle_inverted_triangle_star"
+    assert watch["plasma_border"] is True
+    assert watch["plasma_core"] is True
+    assert watch["home_style"] == "minimal_plasma_core"
+    assert watch["home_shows_clock"] is False
+    assert watch["home_shows_navigation"] is False
+    assert watch["home_status_label"] is True
+    assert watch["logo_style"] == "plasma_core_inverted_triangle_star"
     assert watch["logo_animation_ms"] == 720
     assert watch["screens"] == ["home", "talk", "health", "gps", "vision", "settings"]
 
@@ -103,7 +124,7 @@ def test_android_watch_keeps_transport_ids_and_connects_visual_state():
     assert "LinearGradient" in visual
 
 
-def test_watch_pc_launcher_uses_project_virtualenv():
+def test_watch_pc_launcher_uses_project_virtualenv_and_plasma_renderer():
     launcher = (ROOT / "INICIAR_STAR_WATCH_PC.bat").read_text(encoding="utf-8")
     assert r".venv\Scripts\python.exe" in launcher
-    assert r"clients\star_watch_pc.py" in launcher
+    assert r"clients\star_watch_visual.py" in launcher
