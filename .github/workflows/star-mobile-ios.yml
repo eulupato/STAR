@@ -15,6 +15,9 @@ on:
     paths:
       - "clients/star_mobile_ios/**"
       - ".github/workflows/star-mobile-ios.yml"
+      - "core/device_gateway.py"
+      - "core/device_runtime.py"
+      - "STAR_MANIFEST.json"
 
 jobs:
   build-ios:
