@@ -51,8 +51,8 @@ def test_watch_runtime_declares_visual_identity_and_honest_features():
         assert theme[key].startswith("#") and len(theme[key]) == 7
 
 
-def test_android_watch_keeps_existing_transport_ids_and_adds_visual_core():
-    layout = (
+def test_android_watch_keeps_transport_ids_and_connects_visual_state():
+    layout_path = (
         ROOT
         / "clients"
         / "star_watch_android"
@@ -62,8 +62,8 @@ def test_android_watch_keeps_existing_transport_ids_and_adds_visual_core():
         / "res"
         / "layout"
         / "activity_main.xml"
-    ).read_text(encoding="utf-8")
-    visual = (
+    )
+    visual_path = (
         ROOT
         / "clients"
         / "star_watch_android"
@@ -75,7 +75,9 @@ def test_android_watch_keeps_existing_transport_ids_and_adds_visual_core():
         / "star"
         / "watch"
         / "StarVisualView.java"
-    ).read_text(encoding="utf-8")
+    )
+    layout = layout_path.read_text(encoding="utf-8")
+    visual = visual_path.read_text(encoding="utf-8")
 
     for view_id in (
         "serverInput",
@@ -91,7 +93,12 @@ def test_android_watch_keeps_existing_transport_ids_and_adds_visual_core():
         assert f"@+id/{view_id}" in layout
 
     assert "com.star.watch.StarVisualView" in layout
+    assert "TOQUE NO NÚCLEO PARA FALAR" in layout
+    assert "@android:color/transparent" in layout
     assert "LOGO_ANIMATION_MS = 720L" in visual
+    assert "syncStateFromUi" in visual
+    assert "R.id.statusText" in visual
+    assert "R.id.responseText" in visual
     assert "starPath" in visual
     assert "LinearGradient" in visual
 

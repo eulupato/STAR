@@ -11,6 +11,20 @@
         android:importantForAccessibility="no"
         android:contentDescription="@null" />
 
+    <!-- O botão de voz existente vira a área touch invisível sobre o núcleo.
+         MainActivity continua usando o mesmo ID e a mesma lógica de gravação. -->
+    <Button
+        android:id="@+id/voiceButton"
+        android:layout_width="150dp"
+        android:layout_height="140dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="30dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="Falar com a STAR"
+        android:text=""
+        android:textColor="@android:color/transparent"
+        android:textSize="0sp" />
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -65,7 +79,17 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="TOQUE NO NÚCLEO PARA FALAR"
+                android:textColor="#7AD7FF"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
                 android:gravity="center"
                 android:text="SAÚDE • GPS • VISÃO  ·  sensores dependem do hardware"
                 android:textColor="#8E9AAF"
@@ -122,20 +146,10 @@
                 android:backgroundTint="#334155"
                 android:textSize="13sp" />
 
-            <Button
-                android:id="@+id/voiceButton"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="10dp"
-                android:backgroundTint="#7AD7FF"
-                android:text="🎙 FALAR"
-                android:textColor="#06111A"
-                android:textStyle="bold" />
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="10dp"
                 android:orientation="horizontal"
                 android:weightSum="2">
 
@@ -167,7 +181,7 @@
                 android:layout_height="wrap_content"
                 android:paddingTop="9dp"
                 android:gravity="center"
-                android:text="Arraste/gestos avançados, Health Link e GPS entram após validação no hardware real."
+                android:text="Gestos avançados, Health Link e GPS entram após validação no hardware real."
                 android:textColor="#64748B"
                 android:textSize="8sp" />
 

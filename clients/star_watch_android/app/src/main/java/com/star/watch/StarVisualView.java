@@ -10,17 +10,19 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.util.AttributeSet;
-import android.view.MotionEvent;
 import android.view.View;
+import android.widget.TextView;
 
 import org.json.JSONObject;
 
+import java.util.Locale;
+
 /**
- * Lightweight visual core for STAR Watch.
+ * Camada visual leve do STAR Watch.
  *
- * It renders the rounded-square living frame and the original STAR symbol:
- * circle + inverted triangle, with a short star reveal animation. It is visual
- * only; cognition and device permissions remain in the PC/Core and Activity.
+ * Renderiza a moldura viva e o símbolo da STAR sem duplicar lógica cognitiva.
+ * O estado visual acompanha os TextViews já controlados pela MainActivity, então
+ * o transporte existente continua sendo a única fonte do fluxo do aplicativo.
  */
 public class StarVisualView extends View {
     private static final long LOGO_ANIMATION_MS = 720L;
@@ -32,7 +34,6 @@ public class StarVisualView extends View {
     private final RectF frameRect = new RectF();
     private final Matrix shaderMatrix = new Matrix();
 
-    private int background = Color.parseColor("#05070D");
     private int cyan = Color.parseColor("#6FE7FF");
     private int blue = Color.parseColor("#4F7BFF");
     private int violet = Color.parseColor("#9B72FF");
@@ -41,8 +42,11 @@ public class StarVisualView extends View {
     private int danger = Color.parseColor("#FF6B8A");
 
     private String state = "idle";
+    private String lastObservedStatus = "";
+    private String lastObservedResponse = "";
     private long startedAt = System.currentTimeMillis();
     private long logoAnimationStarted = 0L;
+    private long speakingUntil = 0L;
 
     public StarVisualView(Context context) {
         super(context);
@@ -61,7 +65,7 @@ public class StarVisualView extends View {
 
     private void init() {
         setWillNotDraw(false);
-        setClickable(true);
+        setClickable(false);
 
         glowPaint.setStyle(Paint.Style.STROKE);
         glowPaint.setStrokeWidth(dp(9));
@@ -81,7 +85,7 @@ public class StarVisualView extends View {
     }
 
     public void setState(String value) {
-        state = value == null ? "idle" : value.trim().toLowerCase();
+        state = value == null ? "idle" : value.trim().toLowerCase(Locale.ROOT);
         invalidate();
     }
 
@@ -94,7 +98,6 @@ public class StarVisualView extends View {
         if (theme == null) {
             return;
         }
-        background = color(theme, "background", background);
         cyan = color(theme, "energy_cyan", color(theme, "primary", cyan));
         blue = color(theme, "energy_blue", blue);
         violet = color(theme, "energy_violet", color(theme, "secondary", violet));
@@ -118,6 +121,56 @@ public class StarVisualView extends View {
 
     private float dp(float value) {
         return value * getResources().getDisplayMetrics().density;
+    }
+
+    /**
+     * Converte o estado textual já existente da MainActivity em estado visual.
+     * Isso evita criar um segundo state machine para o Watch.
+     */
+    private void syncStateFromUi(long now) {
+        View root = getRootView();
+        TextView statusView = root.findViewById(R.id.statusText);
+        TextView responseView = root.findViewById(R.id.responseText);
+
+        String status = statusView == null || statusView.getText() == null
+                ? ""
+                : statusView.getText().toString().trim();
+        String normalized = status.toUpperCase(Locale.ROOT);
+
+        if (!status.equals(lastObservedStatus)) {
+            if (normalized.contains("OUVINDO")) {
+                logoAnimationStarted = now;
+            }
+            lastObservedStatus = status;
+        }
+
+        String response = responseView == null || responseView.getText() == null
+                ? ""
+                : responseView.getText().toString().trim();
+        if (!response.equals(lastObservedResponse)) {
+            if (!response.isEmpty()
+                    && normalized.contains("ONLINE")
+                    && !response.startsWith("Resposta da STAR")) {
+                long estimate = Math.max(1200L, Math.min(8000L, response.length() * 45L));
+                speakingUntil = now + estimate;
+            }
+            lastObservedResponse = response;
+        }
+
+        if (normalized.contains("ERRO") || normalized.contains("SEM CONEX")) {
+            state = "error";
+        } else if (normalized.contains("OUVINDO")) {
+            state = "listening";
+        } else if (normalized.contains("PENSANDO")
+                || normalized.contains("TRANSCRIBINDO")
+                || normalized.contains("PAREANDO")
+                || normalized.contains("ENVIANDO")) {
+            state = "thinking";
+        } else if (now < speakingUntil) {
+            state = "speaking";
+        } else {
+            state = "idle";
+        }
     }
 
     private int[] colorsForState() {
@@ -174,11 +227,12 @@ public class StarVisualView extends View {
         }
 
         long now = System.currentTimeMillis();
+        syncStateFromUi(now);
+
         float elapsed = (now - startedAt) / 1000f;
         float phase = elapsed * speedForState();
         float margin = dp(7);
         float radius = dp(28);
-
         frameRect.set(margin, margin, width - margin, height - margin);
 
         int[] colors = colorsForState();
@@ -251,7 +305,6 @@ public class StarVisualView extends View {
         if (morph > 0.01f) {
             canvas.drawPath(star, symbolPaint);
         }
-
         symbolPaint.setAlpha(255);
     }
 
@@ -270,21 +323,5 @@ public class StarVisualView extends View {
         }
         path.close();
         return path;
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        if (event.getAction() == MotionEvent.ACTION_UP) {
-            performClick();
-            return true;
-        }
-        return true;
-    }
-
-    @Override
-    public boolean performClick() {
-        super.performClick();
-        triggerLogoAnimation();
-        return true;
     }
 }
