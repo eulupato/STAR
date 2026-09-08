@@ -1,3 +1,5 @@
+from sqlalchemy.exc import SQLAlchemyError
+
 from database.database import Base, SessionLocal, engine
 from database.models import Message
 
@@ -12,7 +14,11 @@ class Memory:
     def save(self, sender, content):
         message = Message(sender=sender, content=str(content))
         self.session.add(message)
-        self.session.commit()
+        try:
+            self.session.commit()
+        except SQLAlchemyError:
+            self.session.rollback()
+            raise
         return message
 
     def load(self):
@@ -23,7 +29,4 @@ class Memory:
         )
 
     def close(self):
-        try:
-            self.session.close()
-        except Exception:
-            pass
+        self.session.close()
