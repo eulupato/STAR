@@ -23,7 +23,7 @@ STAR WORLD, Ilhas e experiência 3D ficam fora do cliente Watch.
 
 ## Beta visual no PC
 
-O arquivo `clients/star_watch_pc.py` permite testar a experiência do relógio imediatamente, sem possuir o hardware físico.
+O arquivo `clients/star_watch_pc.py` continua concentrando a lógica funcional do preview. A camada visual oficial do HOME fica em `clients/star_watch_visual.py`, que **reutiliza** `StarWatchPC` em vez de duplicar identidade, voz, memória ou lógica de interação.
 
 Inicie por:
 
@@ -31,9 +31,9 @@ Inicie por:
 .\INICIAR_STAR_WATCH_PC.bat
 ```
 
-O preview reutiliza diretamente:
+O launcher abre o renderer plasma oficial, que reutiliza diretamente:
 
-- `main.create_star()` como composição oficial da STAR;
+- `main.create_star()` por meio do cliente funcional existente;
 - identidade e conhecimento atuais;
 - STAR Core;
 - `AudioRecorder` existente;
@@ -50,51 +50,80 @@ Ações privilegiadas do computador permanecem bloqueadas neste cliente com `all
 
 A interface foi desenhada para uma tela quadrada com cantos arredondados.
 
-Base visual:
+A direção visual oficial aprovada para o HOME é **Minimal Plasma Core**:
 
 - fundo quase preto;
-- conteúdo central simples;
-- moldura luminosa contínua ao redor da tela;
-- azul/ciano para escuta e presença;
-- lilás/violeta para processamento;
-- rosa/magenta para resposta e atividade;
-- dourado reservado para eventos especiais;
-- branco para informação principal.
+- grande área de respiro sem painéis desnecessários;
+- moldura de plasma vivo acompanhando os cantos arredondados;
+- um único núcleo central em plasma translúcido;
+- símbolo STAR integrado ao núcleo: triângulo invertido com revelação breve de estrela;
+- status mínimo abaixo do núcleo;
+- sem relógio, data, cards, CTA grande ou barra de navegação no HOME;
+- azul/ciano, lilás/violeta e rosa/magenta como energia principal;
+- dourado reservado para eventos especiais/erro contextual quando necessário.
 
-O `STAR_MANIFEST.json` é a fonte única da paleta e das feature flags compartilhadas.
+O `STAR_MANIFEST.json` é a fonte única da paleta, das feature flags e da declaração do estilo `minimal_plasma_core`.
 
-### Living Energy Frame
+### Plasma Frame
 
-A moldura muda de comportamento conforme o estado:
+A moldura deixa de parecer uma linha rígida. Ela é formada por vários filamentos luminosos deslocados por ondas suaves, criando aparência de plasma/luz líquida contida na borda.
 
-```text
-idle       → respiração lenta
-listening  → energia ciano/azul mais ativa
-thinking   → violeta/rosa em circulação
-speaking   → azul → violeta → rosa
-error      → vermelho/rosa/dourado
-```
-
-### Símbolo STAR
-
-A identidade visual beta usa:
+O comportamento muda conforme o estado:
 
 ```text
-círculo fino
-    +
-triângulo invertido
+idle       → plasma lento e discreto
+listening  → ciano/azul mais vivo
+thinking   → violeta/rosa em circulação mais rápida
+speaking   → azul → violeta → rosa com maior intensidade
+error      → alerta visual sem substituir a linguagem principal da STAR
 ```
 
-Ao interagir, o triângulo revela uma estrela por aproximadamente **720 ms** e retorna ao estado original. O símbolo é uma direção original da STAR e não replica um ativo da Marvel.
+O PC Preview gera esse efeito proceduralmente com Pillow; não depende de GIF, vídeo externo ou asset de terceiros.
 
-## Telas do PC Preview
+### Plasma Core
 
-### HOME
+O núcleo central é a principal interface do HOME.
 
-- hora e data locais;
-- núcleo STAR;
-- estado atual;
-- acesso rápido à conversa.
+Ele combina:
+
+- corpo translúcido azul/violeta/rosa;
+- manchas suaves internas para sensação de fluido/plasma;
+- múltiplos halos luminosos;
+- órbitas finas em movimento;
+- triângulo invertido da STAR;
+- revelação de estrela por aproximadamente **720 ms** quando há interação.
+
+A identidade visual continua sendo original da STAR e não replica um ativo da Marvel.
+
+## HOME minimalista
+
+O HOME oficial não exibe informação que não seja necessária.
+
+Visualmente:
+
+```text
+fundo escuro
++
+moldura plasma
++
+núcleo central
++
+status mínimo
+```
+
+O status acompanha o fluxo real:
+
+- `PRONTA`;
+- `OUVINDO`;
+- `PENSANDO`;
+- `RESPONDENDO`;
+- `ATENÇÃO` em erro.
+
+Ao iniciar voz a partir do HOME, o preview permanece nessa superfície minimalista durante `ouvindo → pensando → respondendo`, em vez de trocar de tela imediatamente. Depois da resposta falada, retorna a `PRONTA`.
+
+## Telas funcionais preservadas
+
+A simplificação do HOME **não removeu** as demais funções.
 
 ### VOZ
 
@@ -132,7 +161,7 @@ Também mostra explicitamente:
 
 ## Gestos do PC Preview
 
-Como o PC não possui a tela touch do relógio, os gestos são simulados:
+Como o HOME não possui barra de navegação visível, a navegação fica prioritariamente gestual:
 
 - clique no núcleo → iniciar/parar voz;
 - arrastar horizontalmente → próxima/anterior tela;
@@ -141,6 +170,8 @@ Como o PC não possui a tela touch do relógio, os gestos são simulados:
 - roda do mouse ou setas ← → → navegar;
 - Espaço → iniciar/parar voz;
 - Esc → fechar.
+
+Nas telas funcionais secundárias, a navegação visual existente continua disponível.
 
 Esses gestos validam o conceito de interação; a implementação nativa final depende do hardware comprado.
 
@@ -170,7 +201,7 @@ Recursos preservados do V0.2:
 - câmera → JPEG → inbox local do Core;
 - heartbeat e Adaptive Runtime.
 
-V0.3 acrescenta a nova direção visual, `StarVisualView`, moldura animada, símbolo STAR e layout escuro adequado ao Watch.
+O Android continua com `StarVisualView` e o perfil compartilhado. O acabamento final do layout físico continuará condicionado à validação do smartwatch real para não sacrificar pareamento, legibilidade ou ergonomia antes de conhecer a tela/hardware exatos.
 
 ## Executar com o relógio Android
 
@@ -236,9 +267,9 @@ Não estão concluídos ainda:
 - Secrets Vault completo;
 - TLS/endurecimento de rede para uso fora da LAN.
 
-## Validação automatizada — 08/09/2026
+## Validação
 
-No primeiro commit do V0.3 passaram:
+A beta funcional anterior já havia passado:
 
 - ✅ STAR CI;
 - ✅ STAR quality;
@@ -247,17 +278,20 @@ No primeiro commit do V0.3 passaram:
 - ✅ STAR Watch Android build;
 - ✅ STAR Mobile iOS build.
 
-A validação visual/interativa do PC Preview ainda precisa ser feita no PC real. A validação do APK em smartwatch físico depende da compra do hardware.
+Em 08/09/2026 o PC Preview original também foi validado visualmente no PC real, e o redesenho **Minimal Plasma Core** substituiu o HOME informativo anterior sem alterar o STAR Core nem remover as telas funcionais.
+
+A validação física do APK em smartwatch continua dependente da compra do hardware.
 
 ## Próximos passos do Watch
 
-1. validar o PC Preview localmente;
-2. ajustar ergonomia e animações com base no uso real;
+1. validar o novo HOME plasma no PC real;
+2. medir fluidez/CPU do renderer procedural e otimizar se necessário;
 3. testar APK em emulador/hardware;
-4. mapear gestos touch conforme o relógio comprado;
-5. integrar localização real somente com permissão explícita;
-6. integrar sensores de saúde suportados pelo hardware, sem inventar dados;
-7. integrar o Voice Engine mais avançado conforme o STAR Voice evoluir;
-8. adicionar autenticação/Permission Manager no marco de segurança adequado.
+4. adaptar o mesmo minimalismo ao layout Android depois de conhecer ergonomia e resolução reais;
+5. mapear gestos touch conforme o relógio comprado;
+6. integrar localização real somente com permissão explícita;
+7. integrar sensores de saúde suportados pelo hardware, sem inventar dados;
+8. integrar o Voice Engine mais avançado conforme o STAR Voice evoluir;
+9. adicionar autenticação/Permission Manager no marco de segurança adequado.
 
 O Watch continua sendo **uma interface da STAR**, nunca uma STAR paralela.
