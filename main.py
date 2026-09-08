@@ -22,10 +22,11 @@ from core.star_core import StarCore
 from core.star_identity import StarIdentity
 from core.state import StarState
 from core.tools import ToolRegistry, safe_math
-from gui.app import StarApp
 
 
 def create_star():
+    """Monta a única instância lógica da STAR sem carregar uma interface."""
+
     identity = StarIdentity()
     knowledge = StarInternalKnowledge(identity)
     packs = KnowledgePackManager(ROOT / "knowledge" / "packs", auto_removable=True)
@@ -94,6 +95,11 @@ def main():
     print(f"📄 Entradas de conhecimento carregadas: {pack_stats['entries']}")
     print("🤖 IA externa:", "ATIVA" if EXTERNAL_AI_ENABLED else "DESATIVADA")
     print("🖥️ Interface: ATIVA")
+
+    # A GUI é carregada somente para o cliente desktop tradicional. Isso permite
+    # que endpoints leves (como STAR Watch PC Preview) reutilizem create_star()
+    # sem carregar STAR WORLD ou a interface 2D.
+    from gui.app import StarApp
 
     gateway = _start_device_gateway(star)
     try:
