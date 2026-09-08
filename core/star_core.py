@@ -45,7 +45,7 @@ class StarCore:
                 action = parse_computer(user_input, allow_network=self.network_enabled)
                 if action:
                     return action
-            except Exception as exc:
+            except (ImportError, OSError, ValueError) as exc:
                 print(f"⚠️ Ação local indisponível: {exc}")
 
         try:
@@ -54,8 +54,11 @@ class StarCore:
             if solved:
                 expr, value = solved
                 return f"🧠✨ {expr} = {value}"
-        except Exception:
-            pass
+        except (ValueError, SyntaxError, ZeroDivisionError, OverflowError) as exc:
+            # Entradas matemáticas inválidas podem seguir para o roteador, mas
+            # defeitos inesperados do Math Engine não são mais silenciados.
+            print(f"⚠️ Expressão matemática não resolvida: {exc}")
+
         request = {
             "input": str(user_input or "").strip(),
             "identity": self._get_identity(),

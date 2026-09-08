@@ -1,5 +1,5 @@
-APP_NAME = "STAR"
-VERSION = "1.9"
+from core.release import APP_NAME, RELEASE_CHANNEL, RELEASE_STATUS, VERSION
+
 AUTHOR = "Lu"
 THEME = "dark"
 WINDOW_WIDTH = 1100
@@ -37,6 +37,3 @@ VOICE_REFERENCE = "voice/reference/star_reference.mp3"
 STT_ENGINE = "faster-whisper"
 STT_MODEL = "tiny"
 PIPER_VOICE = "pt_BR-faber-medium"
-
-RELEASE_CHANNEL = "stable"
-RELEASE_STATUS = "final"

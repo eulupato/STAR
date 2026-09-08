@@ -9,6 +9,7 @@ sendo a única fonte de processamento e resposta.
 """
 from __future__ import annotations
 
+from collections import deque
 from hashlib import sha256
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -24,6 +25,10 @@ from core.device_runtime import DeviceRuntime
 MAX_JSON_BYTES = 64 * 1024
 MAX_MEDIA_BYTES = 16 * 1024 * 1024
 PROTOCOL_VERSION = 1
+PAIRING_RATE_LIMIT = 8
+PAIRING_RATE_WINDOW_SECONDS = 60.0
+DEVICE_RATE_LIMIT = 120
+DEVICE_RATE_WINDOW_SECONDS = 60.0
 
 _CONTENT_EXTENSIONS = {
     "audio/mp4": ".m4a",
@@ -64,6 +69,29 @@ def _safe_metadata(value):
 
 def _now_ms() -> int:
     return int(time.time() * 1000)
+
+
+class _RateLimiter:
+    """Limitador em memória, por chave, para proteger o protótipo LAN."""
+
+    def __init__(self, limit: int, window_seconds: float):
+        self.limit = max(1, int(limit))
+        self.window_seconds = max(1.0, float(window_seconds))
+        self._events = {}
+        self._lock = threading.Lock()
+
+    def allow(self, key: str) -> bool:
+        now = time.monotonic()
+        normalized = str(key or "unknown")[:160]
+        with self._lock:
+            events = self._events.setdefault(normalized, deque())
+            cutoff = now - self.window_seconds
+            while events and events[0] <= cutoff:
+                events.popleft()
+            if len(events) >= self.limit:
+                return False
+            events.append(now)
+            return True
 
 
 class DeviceRegistry:
@@ -149,6 +177,7 @@ class _GatewayHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
         self.wfile.write(body)
 
@@ -185,6 +214,12 @@ class _GatewayHandler(BaseHTTPRequestHandler):
             return None
         return _safe_device_id(device_id)
 
+    def _rate_limited(self, device_id: str) -> bool:
+        if self.gateway.allow_device_request(device_id):
+            return False
+        self._json(429, {"error": "rate_limited"})
+        return True
+
     def do_GET(self):
         path = urlparse(self.path).path
         if path == "/v1/health":
@@ -205,6 +240,8 @@ class _GatewayHandler(BaseHTTPRequestHandler):
             if not device_id:
                 self._json(401, {"error": "unauthorized"})
                 return
+            if self._rate_limited(device_id):
+                return
             record = self.gateway.registry.public_record(device_id)
             if path == "/v1/device":
                 self._json(200, {"device_id": device_id, "device": record})
@@ -218,12 +255,18 @@ class _GatewayHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         try:
             if path == "/v1/pair":
+                client_ip = self.client_address[0] if self.client_address else "unknown"
+                if not self.gateway.allow_pair_attempt(client_ip):
+                    self._json(429, {"error": "rate_limited"})
+                    return
                 self._pair()
                 return
 
             device_id = self._auth()
             if not device_id:
                 self._json(401, {"error": "unauthorized"})
+                return
+            if self._rate_limited(device_id):
                 return
 
             if path == "/v1/heartbeat":
@@ -252,8 +295,10 @@ class _GatewayHandler(BaseHTTPRequestHandler):
         except ValueError as exc:
             self._json(400, {"error": "bad_request", "detail": str(exc)})
         except Exception as exc:
+            # O detalhe permanece somente no Core/diagnóstico local. Endpoints
+            # remotos não recebem mensagens internas, paths ou stack context.
             self.gateway.last_error = f"{type(exc).__name__}: {exc}"
-            self._json(500, {"error": "internal_error", "detail": str(exc)})
+            self._json(500, {"error": "internal_error"})
 
     def _pair(self):
         payload = self._read_json()
@@ -340,6 +385,10 @@ class DeviceGateway:
         manifest_path: Path | None = None,
         pairing_code: str | None = None,
         verbose: bool = False,
+        pairing_rate_limit: int = PAIRING_RATE_LIMIT,
+        pairing_rate_window_seconds: float = PAIRING_RATE_WINDOW_SECONDS,
+        device_rate_limit: int = DEVICE_RATE_LIMIT,
+        device_rate_window_seconds: float = DEVICE_RATE_WINDOW_SECONDS,
     ):
         self.star = star
         self.host = host
@@ -351,6 +400,8 @@ class DeviceGateway:
         self.pairing_code = pairing_code or f"{secrets.randbelow(1_000_000):06d}"
         self.verbose = verbose
         self.last_error = None
+        self._pair_limiter = _RateLimiter(pairing_rate_limit, pairing_rate_window_seconds)
+        self._device_limiter = _RateLimiter(device_rate_limit, device_rate_window_seconds)
         self._star_lock = threading.Lock()
         self._voice_lock = threading.Lock()
         self._voice_manager = None
@@ -380,6 +431,12 @@ class DeviceGateway:
     @property
     def url(self) -> str:
         return f"http://{self.lan_host}:{self.port}"
+
+    def allow_pair_attempt(self, client_ip: str) -> bool:
+        return self._pair_limiter.allow(client_ip)
+
+    def allow_device_request(self, device_id: str) -> bool:
+        return self._device_limiter.allow(_safe_device_id(device_id))
 
     def start(self, background: bool = True):
         if background:

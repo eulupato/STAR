@@ -7,11 +7,17 @@ on:
     paths:
       - "clients/star_watch_android/**"
       - ".github/workflows/star-watch-android.yml"
+      - "core/device_gateway.py"
+      - "core/device_runtime.py"
+      - "STAR_MANIFEST.json"
   push:
     branches: [main, feature/star-watch-v0]
     paths:
       - "clients/star_watch_android/**"
       - ".github/workflows/star-watch-android.yml"
+      - "core/device_gateway.py"
+      - "core/device_runtime.py"
+      - "STAR_MANIFEST.json"
 
 jobs:
   build-apk:

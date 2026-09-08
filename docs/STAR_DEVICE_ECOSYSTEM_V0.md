@@ -122,8 +122,17 @@ na V1.9 e só entra corretamente com V5 SENSES. O sistema retorna
 - token aleatório por dispositivo;
 - somente SHA-256 do token persiste no PC;
 - payloads limitados;
+- tentativas de pareamento possuem rate limit por IP;
+- dispositivos autenticados possuem rate limit por `device_id`;
+- respostas HTTP 500 não expõem detalhes internos do Core ao endpoint remoto;
+- detalhes de falhas internas ficam somente no diagnóstico local (`last_error`);
+- respostas incluem `X-Content-Type-Options: nosniff`;
 - ações locais do PC continuam bloqueadas para origem remota (`allow_actions=False`);
 - nenhum Device/Permission Manager completo é declarado como pronto.
+
+Os limites de requisição da V0.2 são proteções básicas contra brute force/flood em
+LAN, não substituem firewall, TLS, Permission Manager ou a segurança completa da
+V7/V9. A porta do Gateway não deve ser encaminhada para a Internet.
 
 ## Clientes
 

@@ -1,6 +1,7 @@
-"""Engine de IA externa mantido para integração futura.
+"""Engine opcional de IA externa mantido para integração futura.
 
-A V1.5 não permite que este componente seja usado acidentalmente.
+Na STAR V1.9 Foundation este componente permanece desativado por padrão. A
+identidade e as capacidades fundamentais da STAR não dependem dele.
 """
 
 from config import EXTERNAL_AI_ENABLED
@@ -15,7 +16,7 @@ class AIEngine:
 
     def _ensure_enabled(self):
         if not self.enabled:
-            raise RuntimeError("AIEngine está desativado na V1.5 offline.")
+            raise RuntimeError("AIEngine externo está desativado na STAR V1.9 Foundation.")
 
     def is_available(self):
         self._ensure_enabled()

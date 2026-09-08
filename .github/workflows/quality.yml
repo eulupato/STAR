@@ -2,7 +2,7 @@ name: STAR quality
 
 on:
   push:
-    branches: [main, v1.9-development, v2.0-development, v1.9-stability-audit-20260831]
+    branches: [main, v1.9-development, v2.0-development, v1.9-stability-audit-20260831, "maintenance/**"]
   pull_request:
     branches: [main]
 
@@ -12,13 +12,64 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: "pip"
+
       - name: Install project dependencies
         run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt pytest
+
+      - name: Verify dependency consistency
+        run: python -m pip check
+
       - name: Compile project
         run: python -m compileall -q core gui voice modules database tests main.py config.py diagnostico.py
+
+      - name: Repository hygiene
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path('.')
+          errors = []
+
+          forbidden = [
+              root / 'star.db',
+              root / '.env',
+              root / 'key.txt',
+              root / 'AUDITORIA_STAR_CODIGO.txt',
+              root / 'HUB_E_ILHAS_V1_4.md',
+              root / 'HUB_E_ILHAS_V1_5.md',
+          ]
+          errors.extend(f'arquivo local/legado versionado: {path}' for path in forbidden if path.exists())
+
+          root_tests = sorted(root.glob('test_*.py'))
+          errors.extend(f'teste fora de tests/: {path}' for path in root_tests)
+
+          private_voice = []
+          for pattern in ('*.mp3', '*.wav', '*.flac', '*.ogg', '*.m4a', '*.aac'):
+              private_voice.extend((root / 'voice' / 'reference').glob(pattern))
+          errors.extend(f'referência de voz privada versionada: {path}' for path in private_voice)
+
+          zero_assets = [
+              path for path in (root / 'assets').rglob('*')
+              if path.is_file() and path.stat().st_size == 0
+          ]
+          errors.extend(f'asset vazio: {path}' for path in zero_assets)
+
+          icon = root / 'assets' / 'icons' / 'star.ico'
+          if not icon.is_file() or icon.stat().st_size == 0:
+              errors.append('assets/icons/star.ico ausente ou vazio')
+          if (root / 'assets' / 'icons' / 'star.ico.ico').exists():
+              errors.append('ícone duplicado assets/icons/star.ico.ico')
+
+          if errors:
+              raise SystemExit('\n'.join(f'- {item}' for item in errors))
+          print('Repository hygiene OK')
+          PY
+
       - name: Run full test suite
         run: pytest -q tests
