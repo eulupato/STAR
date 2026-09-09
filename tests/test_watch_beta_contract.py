@@ -23,13 +23,28 @@ def test_watch_plasma_home_reuses_existing_client_and_stays_visual_only():
     assert "class PlasmaStarWatchPC(StarWatchPC)" in source
     assert "from star_watch_pc import StarWatchPC" in source
     assert "ImageFilter" in source
-    assert "_draw_plasma_border" in source
-    assert "_draw_plasma_core" in source
-    assert "minimal plasma core" in source
+    assert "_render_plasma_frame" in source
+    assert "PLASMA_CACHE_FRAMES" in source
+    assert "FRAME_TICK_MS = 16" in source
+    assert "_build_plasma_cache_async" in source
+    assert "persistent minimal plasma core" in source
     assert "from main import create_star" not in source
     assert "VoiceManager" not in source
     assert "AudioRecorder" not in source
     assert "STAR World" in source
+
+
+def test_watch_plasma_home_keeps_voice_flow_on_home_and_reveals_star():
+    source = (ROOT / "clients" / "star_watch_visual.py").read_text(encoding="utf-8")
+
+    assert "self._voice_from_home = self.screen == \"home\"" in source
+    assert "if self._voice_from_home:" in source
+    assert "self.screen = \"home\"" in source
+    assert "def _interaction_error" in source
+    assert "def _voice_output_error" in source
+    assert "if self.state in {\"thinking\", \"speaking\"}:" in source
+    assert "return 1.0" in source
+    assert "logo_animation_started" in source
 
 
 def test_main_can_build_core_without_importing_gui_at_module_load():
