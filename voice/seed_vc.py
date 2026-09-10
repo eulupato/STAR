@@ -1,15 +1,15 @@
 """Integração opcional do Seed-VC com o subsistema de voz da STAR.
 
-O código do Seed-VC NÃO é copiado para a STAR. Ele permanece como runtime local
+O código do Seed-VC não é copiado para a STAR. Ele permanece como runtime local
 externo (GPLv3), instalado em ``voice/external/seed-vc`` e ignorado pelo Git.
-Esta ponte usa apenas a interface de linha de comando pública do projeto.
+Esta ponte usa as interfaces de linha de comando públicas do projeto.
 
 Capacidades expostas:
 - voice conversion zero-shot V1;
 - singing voice conversion V1;
 - voice/accent/style conversion V2;
 - anonymization V2;
-- GUI de conversão em tempo real;
+- conversão em tempo real;
 - fine-tuning explícito V1/V2.
 
 Nada é carregado no startup da STAR e nenhum modelo é obrigatório para o Core.
@@ -25,11 +25,29 @@ import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_HOME = ROOT / "voice" / "external" / "seed-vc"
 OUTPUT_ROOT = ROOT / "voice" / "output" / "seed-vc"
 UPSTREAM_URL = "https://github.com/Plachtaa/seed-vc.git"
-# O repositório foi arquivado; fixar a revisão torna a instalação reproduzível.
 UPSTREAM_REVISION = "51383efd921027683c89e5348211d93ff12ac2a8"
+
+
+def _config() -> tuple[bool, Path]:
+    try:
+        from config import VOICE_CONVERSION_ENABLED, VOICE_CONVERSION_HOME
+    except Exception:
+        VOICE_CONVERSION_ENABLED = True
+        VOICE_CONVERSION_HOME = "voice/external/seed-vc"
+
+    env_enabled = os.getenv("STAR_SEED_VC_ENABLED")
+    if env_enabled is None:
+        enabled = bool(VOICE_CONVERSION_ENABLED)
+    else:
+        enabled = env_enabled.strip().lower() in {"1", "true", "yes", "on"}
+
+    raw_home = os.getenv("STAR_SEED_VC_HOME", str(VOICE_CONVERSION_HOME)).strip()
+    home = Path(raw_home).expanduser()
+    if not home.is_absolute():
+        home = ROOT / home
+    return enabled, home.resolve()
 
 
 class SeedVCError(RuntimeError):
@@ -44,8 +62,9 @@ class SeedVCBackend:
     """
 
     def __init__(self, home: Path | str | None = None):
-        configured_home = os.getenv("STAR_SEED_VC_HOME", "").strip()
-        self.home = Path(home or configured_home or DEFAULT_HOME).expanduser().resolve()
+        enabled, configured_home = _config()
+        self.enabled = enabled
+        self.home = Path(home).expanduser().resolve() if home else configured_home
         self.python_path = self._resolve_runtime_python()
         self.last_error: str | None = None
         self.last_output: Path | None = None
@@ -79,10 +98,12 @@ class SeedVCBackend:
 
     @property
     def configured(self) -> bool:
-        return not self.missing_components
+        return self.enabled and not self.missing_components
 
     @property
     def status_message(self) -> str:
+        if not self.enabled:
+            return "desativado pela configuração"
         if self.configured:
             return "configurado"
         return "; ".join(self.missing_components)
@@ -112,7 +133,9 @@ class SeedVCBackend:
         return resolved
 
     def _require_ready(self) -> None:
-        if not self.configured:
+        if not self.enabled:
+            raise SeedVCError("Seed-VC está desativado pela configuração da STAR.")
+        if self.missing_components:
             raise SeedVCError("Seed-VC não configurado: " + self.status_message)
 
     def _new_output_dir(self, purpose: str) -> Path:
@@ -122,10 +145,9 @@ class SeedVCBackend:
 
     def _run(self, args: list[str], timeout: float | None = None) -> subprocess.CompletedProcess:
         self._require_ready()
-        command = [str(self.python_path), *args]
         try:
             result = subprocess.run(
-                command,
+                [str(self.python_path), *args],
                 cwd=str(self.home),
                 text=True,
                 encoding="utf-8",
@@ -140,7 +162,9 @@ class SeedVCBackend:
 
         if result.returncode != 0:
             detail = (result.stderr or result.stdout or "erro desconhecido").strip()
-            self.last_error = f"Seed-VC encerrou com código {result.returncode}: {detail[-3000:]}"
+            self.last_error = (
+                f"Seed-VC encerrou com código {result.returncode}: {detail[-3000:]}"
+            )
             raise SeedVCError(self.last_error)
 
         self.last_error = None
@@ -148,7 +172,11 @@ class SeedVCBackend:
 
     @staticmethod
     def _find_wav(output_dir: Path) -> Path:
-        files = sorted(output_dir.glob("*.wav"), key=lambda item: item.stat().st_mtime, reverse=True)
+        files = sorted(
+            output_dir.glob("*.wav"),
+            key=lambda item: item.stat().st_mtime,
+            reverse=True,
+        )
         if not files:
             raise SeedVCError(f"Seed-VC terminou sem gerar WAV em {output_dir}")
         return files[0]
@@ -172,7 +200,6 @@ class SeedVCBackend:
         source_path = self._require_file(source, "Áudio de origem")
         target_path = self._require_file(target, "Referência de voz")
         output = self._new_output_dir("svc" if singing else "vc-v1")
-
         args = [
             "inference.py",
             "--source", str(source_path),
@@ -187,10 +214,13 @@ class SeedVCBackend:
             "--fp16", self._bool(fp16),
         ]
         if checkpoint:
-            args.extend(["--checkpoint", str(self._require_file(checkpoint, "Checkpoint V1"))])
+            args.extend(
+                ["--checkpoint", str(self._require_file(checkpoint, "Checkpoint V1"))]
+            )
         if config:
-            args.extend(["--config", str(self._require_file(config, "Configuração V1"))])
-
+            args.extend(
+                ["--config", str(self._require_file(config, "Configuração V1"))]
+            )
         self._run(args, timeout=timeout)
         self.last_output = self._find_wav(output)
         return self.last_output
@@ -217,7 +247,6 @@ class SeedVCBackend:
         source_path = self._require_file(source, "Áudio de origem")
         target_path = self._require_file(target, "Referência de voz")
         output = self._new_output_dir("vc-v2")
-
         args = [
             "inference_v2.py",
             "--source", str(source_path),
@@ -232,13 +261,24 @@ class SeedVCBackend:
             "--repetition-penalty", str(float(repetition_penalty)),
             "--convert-style", self._bool(convert_style),
             "--anonymization-only", self._bool(anonymization_only),
-            "--compile", self._bool(compile_model),
         ]
+        # O upstream usa argparse(type=bool): passar "false" resultaria em True.
+        if compile_model:
+            args.extend(["--compile", "True"])
         if ar_checkpoint:
-            args.extend(["--ar-checkpoint-path", str(self._require_file(ar_checkpoint, "Checkpoint AR V2"))])
+            args.extend(
+                [
+                    "--ar-checkpoint-path",
+                    str(self._require_file(ar_checkpoint, "Checkpoint AR V2")),
+                ]
+            )
         if cfm_checkpoint:
-            args.extend(["--cfm-checkpoint-path", str(self._require_file(cfm_checkpoint, "Checkpoint CFM V2"))])
-
+            args.extend(
+                [
+                    "--cfm-checkpoint-path",
+                    str(self._require_file(cfm_checkpoint, "Checkpoint CFM V2")),
+                ]
+            )
         self._run(args, timeout=timeout)
         self.last_output = self._find_wav(output)
         return self.last_output
@@ -262,10 +302,19 @@ class SeedVCBackend:
             "--gpu", str(max(0, int(gpu))),
         ]
         if checkpoint:
-            args.extend(["--checkpoint-path", str(self._require_file(checkpoint, "Checkpoint realtime"))])
+            args.extend(
+                [
+                    "--checkpoint-path",
+                    str(self._require_file(checkpoint, "Checkpoint realtime")),
+                ]
+            )
         if config:
-            args.extend(["--config-path", str(self._require_file(config, "Configuração realtime"))])
-
+            args.extend(
+                [
+                    "--config-path",
+                    str(self._require_file(config, "Configuração realtime")),
+                ]
+            )
         self._realtime_process = subprocess.Popen(args, cwd=str(self.home))
         return self._realtime_process
 
@@ -311,7 +360,12 @@ class SeedVCBackend:
             "--gpu", str(max(0, int(gpu))),
         ]
         if pretrained_checkpoint:
-            args.extend(["--pretrained-ckpt", str(self._require_file(pretrained_checkpoint, "Checkpoint pré-treinado"))])
+            args.extend(
+                [
+                    "--pretrained-ckpt",
+                    str(self._require_file(pretrained_checkpoint, "Checkpoint pré-treinado")),
+                ]
+            )
         return subprocess.Popen(args, cwd=str(self.home))
 
     def start_finetune_v2(
@@ -331,6 +385,8 @@ class SeedVCBackend:
         num_workers: int = 0,
     ) -> subprocess.Popen:
         self._require_ready()
+        if not train_cfm and not train_ar:
+            raise SeedVCError("Fine-tuning V2 precisa treinar CFM, AR ou ambos.")
         dataset = Path(dataset_dir).expanduser().resolve()
         if not dataset.is_dir():
             raise SeedVCError(f"Dataset não encontrado: {dataset}")
@@ -350,9 +406,19 @@ class SeedVCBackend:
         if train_ar:
             args.append("--train-ar")
         if pretrained_cfm:
-            args.extend(["--pretrained-cfm-ckpt", str(self._require_file(pretrained_cfm, "Checkpoint CFM pré-treinado"))])
+            args.extend(
+                [
+                    "--pretrained-cfm-ckpt",
+                    str(self._require_file(pretrained_cfm, "Checkpoint CFM pré-treinado")),
+                ]
+            )
         if pretrained_ar:
-            args.extend(["--pretrained-ar-ckpt", str(self._require_file(pretrained_ar, "Checkpoint AR pré-treinado"))])
+            args.extend(
+                [
+                    "--pretrained-ar-ckpt",
+                    str(self._require_file(pretrained_ar, "Checkpoint AR pré-treinado")),
+                ]
+            )
         return subprocess.Popen(args, cwd=str(self.home))
 
     @staticmethod
@@ -368,7 +434,11 @@ class SeedVCBackend:
         candidates.append([sys.executable])
         for command in candidates:
             try:
-                probe = subprocess.run([*command, "--version"], capture_output=True, timeout=5)
+                probe = subprocess.run(
+                    [*command, "--version"],
+                    capture_output=True,
+                    timeout=5,
+                )
                 if probe.returncode == 0:
                     return command
             except Exception:
@@ -377,6 +447,9 @@ class SeedVCBackend:
 
     def install(self, *, upgrade_pip: bool = True) -> None:
         """Instala o runtime externo local sem adicionar seus arquivos ao Git."""
+        if not shutil.which("git"):
+            raise SeedVCError("Git não foi encontrado no sistema.")
+
         self.home.parent.mkdir(parents=True, exist_ok=True)
         if not self.home.exists():
             subprocess.run(
@@ -384,7 +457,9 @@ class SeedVCBackend:
                 check=True,
             )
         elif not (self.home / ".git").exists():
-            raise SeedVCError(f"Diretório existe, mas não é um clone Seed-VC: {self.home}")
+            raise SeedVCError(
+                f"Diretório existe, mas não é um clone Seed-VC: {self.home}"
+            )
 
         revision = os.getenv("STAR_SEED_VC_REVISION", UPSTREAM_REVISION).strip()
         checkout = subprocess.run(
@@ -394,20 +469,37 @@ class SeedVCBackend:
         )
         if checkout.returncode != 0:
             subprocess.run(
-                ["git", "-C", str(self.home), "fetch", "origin", revision, "--depth", "1"],
+                [
+                    "git", "-C", str(self.home), "fetch", "origin", revision,
+                    "--depth", "1",
+                ],
                 check=True,
             )
-            subprocess.run(["git", "-C", str(self.home), "checkout", revision], check=True)
+            subprocess.run(
+                ["git", "-C", str(self.home), "checkout", revision],
+                check=True,
+            )
 
-        runtime_python = self.home / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+        runtime_python = self.home / ".venv" / (
+            "Scripts/python.exe" if os.name == "nt" else "bin/python"
+        )
         if not runtime_python.exists():
-            subprocess.run([*self._bootstrap_command(), "-m", "venv", str(self.home / ".venv")], check=True)
+            subprocess.run(
+                [*self._bootstrap_command(), "-m", "venv", str(self.home / ".venv")],
+                check=True,
+            )
 
         self.python_path = runtime_python.resolve()
         if upgrade_pip:
-            subprocess.run([str(self.python_path), "-m", "pip", "install", "--upgrade", "pip"], check=True)
+            subprocess.run(
+                [str(self.python_path), "-m", "pip", "install", "--upgrade", "pip"],
+                check=True,
+            )
         subprocess.run(
-            [str(self.python_path), "-m", "pip", "install", "-r", str(self.home / "requirements.txt")],
+            [
+                str(self.python_path), "-m", "pip", "install", "-r",
+                str(self.home / "requirements.txt"),
+            ],
             cwd=str(self.home),
             check=True,
         )
