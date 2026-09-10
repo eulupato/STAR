@@ -1,89 +1,191 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:background="#05070D">
 
-    <LinearLayout
+    <com.star.watch.StarVisualView
+        android:id="@+id/starVisual"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp">
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:contentDescription="@null" />
 
-        <TextView
+    <!-- O botão de voz existente vira a área touch invisível sobre o núcleo.
+         MainActivity continua usando o mesmo ID e a mesma lógica de gravação. -->
+    <Button
+        android:id="@+id/voiceButton"
+        android:layout_width="150dp"
+        android:layout_height="140dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="30dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="Falar com a STAR"
+        android:text=""
+        android:textColor="@android:color/transparent"
+        android:textSize="0sp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingLeft="18dp"
+        android:paddingTop="178dp"
+        android:paddingRight="18dp"
+        android:paddingBottom="18dp">
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="⭐ STAR"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
-        <TextView
-            android:id="@+id/statusText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="6dp"
-            android:text="DESCONECTADO" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="STAR"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.18" />
 
-        <EditText
-            android:id="@+id/serverInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="http://192.168.1.10:8765"
-            android:inputType="textUri"
-            android:singleLine="true" />
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:paddingTop="5dp"
+                android:paddingBottom="10dp"
+                android:text="● DESCONECTADO"
+                android:textColor="#7AD7FF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
 
-        <EditText
-            android:id="@+id/pairCodeInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Código de pareamento"
-            android:inputType="number"
-            android:maxLength="6"
-            android:singleLine="true" />
+            <TextView
+                android:id="@+id/responseText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="72dp"
+                android:padding="12dp"
+                android:gravity="center"
+                android:background="#B30C1220"
+                android:text="Resposta da STAR aparecerá aqui."
+                android:textColor="#FFFFFF"
+                android:textIsSelectable="true"
+                android:textSize="14sp" />
 
-        <Button
-            android:id="@+id/pairButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="PAREAR" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="TOQUE NO NÚCLEO PARA FALAR"
+                android:textColor="#7AD7FF"
+                android:textSize="9sp"
+                android:textStyle="bold" />
 
-        <EditText
-            android:id="@+id/messageInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Mensagem para STAR"
-            android:inputType="textCapSentences|textMultiLine"
-            android:minLines="2" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:text="SAÚDE • GPS • VISÃO  ·  sensores dependem do hardware"
+                android:textColor="#8E9AAF"
+                android:textSize="9sp" />
 
-        <Button
-            android:id="@+id/sendButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="💬 ENVIAR" />
+            <EditText
+                android:id="@+id/serverInput"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="14dp"
+                android:hint="http://IP_DO_PC:8765"
+                android:inputType="textUri"
+                android:singleLine="true"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#64748B"
+                android:backgroundTint="#334155"
+                android:textSize="12sp" />
 
-        <Button
-            android:id="@+id/voiceButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="🎙 FALAR" />
+            <EditText
+                android:id="@+id/pairCodeInput"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:hint="Código de pareamento"
+                android:inputType="number"
+                android:maxLength="6"
+                android:singleLine="true"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#64748B"
+                android:backgroundTint="#334155"
+                android:textSize="12sp" />
 
-        <Button
-            android:id="@+id/cameraButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="📷 MOSTRAR À STAR" />
+            <Button
+                android:id="@+id/pairButton"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="4dp"
+                android:backgroundTint="#B58CFF"
+                android:text="PAREAR"
+                android:textColor="#080B12"
+                android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/responseText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="100dp"
-            android:padding="10dp"
-            android:text="Resposta da STAR aparecerá aqui."
-            android:textIsSelectable="true"
-            android:textSize="16sp" />
+            <EditText
+                android:id="@+id/messageInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="Mensagem para STAR"
+                android:inputType="textCapSentences|textMultiLine"
+                android:minLines="2"
+                android:maxLines="4"
+                android:padding="10dp"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#64748B"
+                android:backgroundTint="#334155"
+                android:textSize="13sp" />
 
-    </LinearLayout>
-</ScrollView>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+
+                <Button
+                    android:id="@+id/sendButton"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="3dp"
+                    android:backgroundTint="#9B72FF"
+                    android:text="💬 ENVIAR"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/cameraButton"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="3dp"
+                    android:backgroundTint="#F28BD8"
+                    android:text="📷 VISÃO"
+                    android:textColor="#071018"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="9dp"
+                android:gravity="center"
+                android:text="Gestos avançados, Health Link e GPS entram após validação no hardware real."
+                android:textColor="#64748B"
+                android:textSize="8sp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</FrameLayout>

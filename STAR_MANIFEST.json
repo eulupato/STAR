@@ -36,7 +36,8 @@
   ],
   "experimental_features": [
     "star_device_gateway_v0_2",
-    "star_watch_android_v0",
+    "star_watch_android_v0_3",
+    "star_watch_pc_preview_v0_3",
     "star_mobile_ios_v0",
     "adaptive_device_runtime_v0"
   ],
@@ -66,13 +67,19 @@
     "schema": 1,
     "sync_interval_seconds": 30,
     "theme": {
-      "background": "#080B12",
-      "surface": "#111827",
-      "primary": "#F6D35F",
-      "secondary": "#F18ACB",
-      "accent": "#6CC8FF",
+      "background": "#05070D",
+      "surface": "#0C1220",
+      "primary": "#7AD7FF",
+      "secondary": "#B58CFF",
+      "accent": "#F28BD8",
       "text": "#FFFFFF",
-      "muted": "#A8B0C0"
+      "muted": "#8E9AAF",
+      "gold": "#F6D35F",
+      "danger": "#FF6B8A",
+      "energy_blue": "#4F7BFF",
+      "energy_cyan": "#6FE7FF",
+      "energy_violet": "#9B72FF",
+      "energy_pink": "#FF79C8"
     },
     "labels": {
       "title": "STAR",
@@ -80,7 +87,15 @@
       "send": "ENVIAR",
       "speak": "FALAR",
       "stop_and_send": "ENVIAR ÁUDIO",
-      "camera": "MOSTRAR À STAR"
+      "camera": "VISÃO",
+      "home": "HOME",
+      "health": "SAÚDE",
+      "gps": "GPS",
+      "vision": "VISÃO",
+      "settings": "CONFIG",
+      "listening": "ESTOU OUVINDO",
+      "thinking": "PENSANDO NO PC",
+      "speaking": "RESPONDENDO"
     },
     "features": {
       "text": true,
@@ -88,7 +103,11 @@
       "spoken_reply": true,
       "camera_transport": true,
       "vision_analysis": false,
-      "remote_pc_actions": false
+      "health_transport": false,
+      "location_transport": false,
+      "gesture_navigation": true,
+      "remote_pc_actions": false,
+      "privileged_actions": false
     },
     "profiles": {
       "phone": {
@@ -99,9 +118,27 @@
       },
       "watch": {
         "layout": "compact",
+        "shape": "rounded_square",
         "show_connection_fields": true,
         "show_response_transcript": true,
-        "preferred_columns": 1
+        "preferred_columns": 1,
+        "energy_frame": true,
+        "plasma_border": true,
+        "plasma_core": true,
+        "home_style": "minimal_plasma_core",
+        "home_shows_clock": false,
+        "home_shows_navigation": false,
+        "home_status_label": true,
+        "logo_style": "plasma_core_inverted_triangle_star",
+        "logo_animation_ms": 720,
+        "screens": [
+          "home",
+          "talk",
+          "health",
+          "gps",
+          "vision",
+          "settings"
+        ]
       }
     }
   }
