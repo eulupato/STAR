@@ -29,6 +29,12 @@ VOICE_FAST_ENGINE = "Windows SAPI / Piper"
 VOICE_FAST_PREFERENCE = "sapi"
 VOICE_FALLBACK_ON_ERROR = False
 
+# Conversão de voz é uma capacidade separada do TTS. Seed-VC permanece opcional,
+# local e lazy; sua ausência nunca impede a STAR de iniciar, ouvir ou falar.
+VOICE_CONVERSION_ENGINE = "Seed-VC"
+VOICE_CONVERSION_ENABLED = True
+VOICE_CONVERSION_HOME = "voice/external/seed-vc"
+
 # O caminho padrão é privado/local. O gerenciador também detecta
 # star_reference.* e, se necessário, escolhe uma referência de áudio
 # existente em voice/reference sem enviá-la ao GitHub.

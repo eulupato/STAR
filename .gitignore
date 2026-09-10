@@ -18,6 +18,7 @@ key.txt
 # Modelos e caches locais de IA
 models/
 voice/models/
+voice/external/
 .cache/
 .hf_cache/
 

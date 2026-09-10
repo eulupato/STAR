@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from voice.manager import VoiceManager
+from voice.seed_vc import SeedVCBackend
 
 
 def flag(value: bool) -> str:
@@ -22,6 +23,7 @@ def main() -> int:
     print("=" * 64)
 
     manager = VoiceManager()
+    seed_vc = SeedVCBackend()
 
     print(f"Modo de voz: {manager.mode.upper()}")
     print(f"Fallback automático: {'ATIVO' if manager.fallback_on_error else 'DESATIVADO'}")
@@ -45,6 +47,17 @@ def main() -> int:
     print("-" * 64)
     print(f"Piper: {flag(manager.piper_configured)}")
     print(f"SAPI: {flag(manager.fallback.configured)}")
+    print()
+
+    print("CONVERSÃO / CLONE OPCIONAL")
+    print("-" * 64)
+    print(f"Seed-VC: {'PRONTO' if seed_vc.configured else 'NÃO INSTALADO'}")
+    print(f"Runtime: {seed_vc.home}")
+    print(f"Estado: {seed_vc.status_message}")
+    if seed_vc.home.exists():
+        for capability, available in seed_vc.capabilities.items():
+            print(f"  {capability}: {'✅' if available else '❌'}")
+    print("Observação: Seed-VC é opcional e sua ausência não bloqueia STT/TTS.")
     print()
 
     print(f"TTS selecionado: {manager.tts_description}")
