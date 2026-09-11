@@ -1,5 +1,7 @@
 import time
 
+from core.agents import AgentManager
+
 
 class StarCore:
     """Núcleo central da STAR: identidade, estado, roteamento e execução."""
@@ -13,6 +15,7 @@ class StarCore:
         self.tools = None
         self.skills = None
         self.packs = None
+        self.agents = AgentManager()
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -36,17 +39,19 @@ class StarCore:
     def process(self, user_input, allow_actions=True):
         request_start = time.perf_counter()
 
-        # A interface local mantém as ações existentes. Endpoints remotos podem
-        # chamar process(..., allow_actions=False) enquanto o Permission Manager
-        # completo ainda não existe.
-        if allow_actions:
-            try:
-                from modules.computer_control import parse as parse_computer
-                action = parse_computer(user_input, allow_network=self.network_enabled)
-                if action:
-                    return action
-            except (ImportError, OSError, ValueError) as exc:
-                print(f"⚠️ Ação local indisponível: {exc}")
+        # Camada única de comandos. Endpoints remotos (Watch/Mobile) podem usar
+        # somente o subconjunto marcado como remote_safe. Ações sensíveis seguem
+        # bloqueadas até existir Permission Manager.
+        try:
+            action = self.agents.dispatch(
+                user_input,
+                network_enabled=self.network_enabled,
+                remote=not allow_actions,
+            )
+            if action:
+                return action
+        except (ImportError, OSError, RuntimeError, ValueError) as exc:
+            print(f"⚠️ Comando indisponível: {exc}")
 
         try:
             from core.math_engine import solve_text
@@ -55,8 +60,6 @@ class StarCore:
                 expr, value = solved
                 return f"🧠✨ {expr} = {value}"
         except (ValueError, SyntaxError, ZeroDivisionError, OverflowError) as exc:
-            # Entradas matemáticas inválidas podem seguir para o roteador, mas
-            # defeitos inesperados do Math Engine não são mais silenciados.
             print(f"⚠️ Expressão matemática não resolvida: {exc}")
 
         request = {
@@ -65,27 +68,29 @@ class StarCore:
             "state": self._get_state(),
         }
 
-        # Pequena memória de sessão para fatos simples e continuidade imediata.
         import re
-        name_match = re.search(r"\bmeu nome (?:e|é)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]{0,40})", request["input"], re.I)
+        name_match = re.search(
+            r"\bmeu nome (?:e|é)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]{0,40})",
+            request["input"],
+            re.I,
+        )
         if name_match:
             self.user_name = name_match.group(1).strip().split()[0]
             return f"Prazer, {self.user_name}! ⭐ Agora vou me lembrar do seu nome durante esta sessão."
+
         normalized = request["input"].strip().lower()
         if normalized in {"qual e o significado", "qual é o significado", "e o significado", "o significado"} and self.last_intent in {"meaning", "full_name", "name"}:
             return self.internal_knowledge.answer("o que significa star")
         if normalized in {"qual meu nome", "qual e meu nome", "qual é meu nome"} and self.user_name:
             return f"Você me disse que seu nome é {self.user_name}. ⭐"
+
         route_start = time.perf_counter()
         route = self.router.route(request)
         self.last_intent = route.get("response_type")
         route_time = time.perf_counter() - route_start
-        # A matemática já foi tratada pelo math_engine no início do pipeline.
-        # Evitamos manter dois interpretadores matemáticos concorrentes.
         response = self.executive.execute(request=request, route=route)
         total_time = time.perf_counter() - request_start
 
-        # Diagnóstico curto para o terminal, sem poluir a GUI.
         print(f"🧭 Rota: {route['response_type'] or 'local'} | {total_time:.3f}s (router {route_time:.3f}s)")
         return response
 
