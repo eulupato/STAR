@@ -33,11 +33,7 @@ final class WatchAudioRecorder {
     }
 
     static WatchAudioRecorder create(File cacheDir) throws IOException {
-        int[] sources = new int[]{
-                MediaRecorder.AudioSource.VOICE_RECOGNITION,
-                MediaRecorder.AudioSource.MIC
-        };
-
+        int[] sources = new int[]{MediaRecorder.AudioSource.VOICE_RECOGNITION, MediaRecorder.AudioSource.MIC};
         for (int source : sources) {
             for (int rate : SAMPLE_RATES) {
                 int minimum = AudioRecord.getMinBufferSize(rate, CHANNEL_CONFIG, AUDIO_FORMAT);
@@ -61,12 +57,8 @@ final class WatchAudioRecorder {
     void start() throws IOException {
         if (recording) return;
         captureError = null;
-        if (pcmFile.exists() && !pcmFile.delete()) {
-            throw new IOException("Não consegui limpar a gravação PCM anterior.");
-        }
-        if (wavFile.exists() && !wavFile.delete()) {
-            throw new IOException("Não consegui limpar a gravação WAV anterior.");
-        }
+        if (pcmFile.exists() && !pcmFile.delete()) throw new IOException("Não consegui limpar a gravação PCM anterior.");
+        if (wavFile.exists() && !wavFile.delete()) throw new IOException("Não consegui limpar a gravação WAV anterior.");
 
         audioRecord.startRecording();
         if (audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
@@ -86,6 +78,8 @@ final class WatchAudioRecorder {
                 int count = audioRecord.read(buffer, 0, buffer.length);
                 if (count > 0) {
                     output.write(buffer, 0, count);
+                } else if (!recording) {
+                    break;
                 } else if (count == AudioRecord.ERROR_INVALID_OPERATION
                         || count == AudioRecord.ERROR_BAD_VALUE
                         || count == AudioRecord.ERROR_DEAD_OBJECT) {
@@ -132,17 +126,14 @@ final class WatchAudioRecorder {
         }
     }
 
-    int getSampleRate() {
-        return sampleRate;
-    }
+    int getSampleRate() { return sampleRate; }
 
     private static void writeWav(File pcm, File wav, int sampleRate, int channels, int bitsPerSample) throws IOException {
         long pcmSize = pcm.length();
         long dataSize = pcmSize + 36;
         long byteRate = (long) sampleRate * channels * bitsPerSample / 8;
 
-        try (FileOutputStream output = new FileOutputStream(wav);
-             FileInputStream input = new FileInputStream(pcm)) {
+        try (FileOutputStream output = new FileOutputStream(wav); FileInputStream input = new FileInputStream(pcm)) {
             output.write(new byte[]{'R', 'I', 'F', 'F'});
             writeLittleEndian(output, dataSize, 4);
             output.write(new byte[]{'W', 'A', 'V', 'E'});
@@ -156,7 +147,6 @@ final class WatchAudioRecorder {
             writeLittleEndian(output, bitsPerSample, 2);
             output.write(new byte[]{'d', 'a', 't', 'a'});
             writeLittleEndian(output, pcmSize, 4);
-
             byte[] buffer = new byte[8192];
             int count;
             while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
@@ -164,8 +154,6 @@ final class WatchAudioRecorder {
     }
 
     private static void writeLittleEndian(FileOutputStream output, long value, int byteCount) throws IOException {
-        for (int index = 0; index < byteCount; index++) {
-            output.write((int) (value >> (8 * index)) & 0xff);
-        }
+        for (int index = 0; index < byteCount; index++) output.write((int) (value >> (8 * index)) & 0xff);
     }
 }
