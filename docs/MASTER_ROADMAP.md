@@ -47,16 +47,23 @@ Atualmente:
 
 - **STAR Device Gateway V0.2** — ponte LAN + Adaptive Runtime;
 - **STAR Mobile iOS V0** — iPhone como sensor/interface, sem MIND próprio;
-- **STAR Watch Android V0.2** — Watch como sensor/interface, sem MIND próprio;
+- **STAR Watch Android V0.3** — Watch como sensor/interface, áudio PCM/WAV orientado a fala e comandos remotos seguros, sem MIND próprio;
+- **Command/Agent Foundation V0** — registro central de intents + catálogo de capacidades/agentes com estados `available/partial/planned`, sem Goal Engine ou autonomia V8;
 - **Knowledge Packs removíveis** — packs JSON/JSONL em `STAR_KNOWLEDGE/packs`.
 
 O runtime compartilhado centraliza tema, rótulos, feature flags e perfis
 `phone/watch` em `STAR_MANIFEST.json`. Isso valida adaptação entre endpoints sem
 criar Core, identidade ou memória paralelos.
 
-Esses itens não significam que V5 SENSES ou V9 ECOSYSTEM estão concluídos. O
-Gateway apenas entrega entradas ao Core atual; visão, Device Manager completo,
-Offline-first Sync e permissões avançadas continuam em seus marcos originais.
+O catálogo de comandos pertence ao Core e é reutilizado por PC/Watch. Ações
+remotas sensíveis permanecem bloqueadas até o Permission Manager. O registro de
+agentes não antecipa autonomia: agentes são capacidades especializadas da mesma
+STAR e recursos futuros permanecem explicitamente marcados como planejados.
+
+Esses itens não significam que V5 SENSES, V8 AGENT ou V9 ECOSYSTEM estão
+concluídos. O Gateway apenas entrega entradas ao Core atual; visão, Goal Engine,
+Device Manager completo, Offline-first Sync e permissões avançadas continuam em
+seus marcos originais.
 
 ---
 
