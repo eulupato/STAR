@@ -36,10 +36,42 @@
   ],
   "experimental_features": [
     "star_device_gateway_v0_2",
-    "star_watch_android_v0",
+    "star_watch_android_v0_3",
+    "star_watch_app_v0_4",
+    "star_watch_pc_simulator_v0_4",
     "star_mobile_ios_v0",
     "adaptive_device_runtime_v0"
   ],
+  "star_watch_app": {
+    "version": "0.4.0",
+    "status": "functional-simulator",
+    "product_direction": "watch-first",
+    "primary_shell": true,
+    "pc_simulator": "clients/star_watch_app.py",
+    "launcher": "INICIAR_STAR_WATCH_APP.bat",
+    "android_transport_client_version": "0.3.0",
+    "hardware_real_required": false,
+    "interaction": {
+      "ring_rotate": true,
+      "ring_press": true,
+      "touch": true,
+      "voice": true,
+      "pc_mouse_wheel_simulates_ring": true,
+      "pc_enter_simulates_ring_press": true
+    },
+    "modes": [
+      "voice",
+      "search",
+      "health",
+      "gps",
+      "vision",
+      "people",
+      "measure",
+      "media",
+      "weather",
+      "settings"
+    ]
+  },
   "voice": {
     "stt": "faster-whisper tiny local PT-BR",
     "tts_default": "Chatterbox Multilingual local com referência autorizada da STAR",
@@ -66,13 +98,13 @@
     "schema": 1,
     "sync_interval_seconds": 30,
     "theme": {
-      "background": "#080B12",
-      "surface": "#111827",
-      "primary": "#F6D35F",
-      "secondary": "#F18ACB",
-      "accent": "#6CC8FF",
+      "background": "#03050A",
+      "surface": "#0B1220",
+      "primary": "#72E8FF",
+      "secondary": "#A276FF",
+      "accent": "#FF79C8",
       "text": "#FFFFFF",
-      "muted": "#A8B0C0"
+      "muted": "#8B96A8"
     },
     "labels": {
       "title": "STAR",
@@ -80,7 +112,15 @@
       "send": "ENVIAR",
       "speak": "FALAR",
       "stop_and_send": "ENVIAR ÁUDIO",
-      "camera": "MOSTRAR À STAR"
+      "camera": "VISÃO",
+      "search": "BUSCA",
+      "health": "SAÚDE",
+      "gps": "GPS",
+      "people": "PEOPLE",
+      "measure": "MEDIR",
+      "media": "MÍDIA",
+      "weather": "CLIMA",
+      "settings": "CONFIG"
     },
     "features": {
       "text": true,
@@ -88,6 +128,12 @@
       "spoken_reply": true,
       "camera_transport": true,
       "vision_analysis": false,
+      "health_transport": false,
+      "location_transport": false,
+      "ring_navigation": true,
+      "ring_press": true,
+      "people_local_store": true,
+      "measure_provider": "simulated-until-hardware",
       "remote_pc_actions": false
     },
     "profiles": {
@@ -98,10 +144,25 @@
         "preferred_columns": 1
       },
       "watch": {
-        "layout": "compact",
-        "show_connection_fields": true,
+        "layout": "circular-shell",
+        "shape": "circle",
+        "show_connection_fields": false,
         "show_response_transcript": true,
-        "preferred_columns": 1
+        "preferred_columns": 1,
+        "home_style": "plasma-core-ring",
+        "screens": [
+          "home",
+          "voice",
+          "search",
+          "health",
+          "gps",
+          "vision",
+          "people",
+          "measure",
+          "media",
+          "weather",
+          "settings"
+        ]
       }
     }
   }

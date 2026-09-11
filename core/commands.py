@@ -97,12 +97,12 @@ def match_command(text: str) -> CommandMatch | None:
     if s in MEDIA_TOGGLE: return CommandMatch("media_toggle", "music", {}, risk="write")
     if s in MEDIA_NEXT: return CommandMatch("media_next", "music", {}, risk="write")
     if s in MEDIA_PREVIOUS: return CommandMatch("media_previous", "music", {}, risk="write")
-    if s in SCREENSHOT: return CommandMatch("screenshot", "computer", {}, risk="write")
+    if s in SCREENSHOT: return CommandMatch("screenshot", "computer", {}, risk="write", remote_safe=False)
     if s in LOCK_PC: return CommandMatch("lock_pc", "security", {}, risk="confirm", remote_safe=False)
     for prefix in FILE_PREFIXES:
         if s.startswith(prefix):
             query = s[len(prefix):].strip()
-            if query: return CommandMatch("find_file", "file", {"query": query})
+            if query: return CommandMatch("find_file", "file", {"query": query}, remote_safe=False)
     for prefix in SPOTIFY_PREFIXES:
         if s.startswith(prefix):
             query = s[len(prefix):].strip()
@@ -116,7 +116,14 @@ def match_command(text: str) -> CommandMatch | None:
             target, agent = _target_from_tail(s[len(prefix):].strip())
             if target:
                 network = target in {"spotify", "browser", "discord"}
-                return CommandMatch("open_app", agent, {"target": target}, risk="network" if network else "write")
+                remote_safe = target not in {"terminal", "powershell"}
+                return CommandMatch(
+                    "open_app",
+                    agent,
+                    {"target": target},
+                    risk="network" if network else "write",
+                    remote_safe=remote_safe,
+                )
     for prefix in CLOSE_PREFIXES:
         if s.startswith(prefix):
             target, agent = _target_from_tail(s[len(prefix):].strip())
