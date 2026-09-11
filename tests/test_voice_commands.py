@@ -33,9 +33,22 @@ def test_queries_keep_useful_slots():
 
 def test_sensitive_remote_commands_are_blocked():
     manager = AgentManager()
-    response = manager.dispatch("STAR, feche o VS Code", remote=True)
-    assert response is not None
-    assert "confirmação local" in response
+    for command in (
+        "STAR, feche o VS Code",
+        "STAR, tire um print",
+        "STAR, encontre o arquivo roadmap",
+        "STAR, abra o terminal",
+        "STAR, abra o PowerShell",
+    ):
+        response = manager.dispatch(command, remote=True)
+        assert response is not None
+        assert "confirmação local" in response
+
+
+def test_low_risk_remote_commands_remain_available():
+    assert match_command("STAR, aumente o volume").remote_safe is True
+    assert match_command("STAR, próxima música").remote_safe is True
+    assert match_command("STAR, que horas são").remote_safe is True
 
 
 def test_agent_catalog_registers_all_specialized_agents_without_claiming_availability():
