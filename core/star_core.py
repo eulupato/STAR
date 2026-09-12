@@ -1,6 +1,7 @@
 import time
 
 from core.agents import AgentManager
+from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
 from core.language_manager import LanguageManager
 from core.weather import WeatherService
@@ -56,11 +57,12 @@ class StarCore:
         localiza a resposta ao final. Termos ausentes são preservados em vez de
         receber tradução inventada.
         """
-        language_action = self.language.handle_command(str(user_input or ""))
+        raw_input = str(user_input or "")
+        language_action = self.language.handle_command(strip_wake_word(raw_input))
         if language_action:
             return language_action
 
-        canonical_input = self.language.translate_to_portuguese(str(user_input or ""))
+        canonical_input = self.language.translate_to_portuguese(raw_input)
         response = self._process_portuguese(canonical_input, allow_actions=allow_actions)
         return self.language.translate_response(str(response))
 
