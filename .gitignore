@@ -40,6 +40,12 @@ voice/cache/
 star.db
 runtime/
 
+# Histórico privado do projeto (nunca publicar)
+docs/project_history/
+docs/DIARIO_DE_BORDO.*
+DIARIO DE BORDO.txt
+DIARIO_DE_BORDO*.txt
+
 # Builds locais de clientes/dispositivos
 clients/**/build/
 clients/**/.gradle/
