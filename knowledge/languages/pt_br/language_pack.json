@@ -1,0 +1,10 @@
+{
+  "id": "star-language-pt-br",
+  "family": "pt",
+  "locales": ["pt-BR"],
+  "default": true,
+  "expression_contents": 100000,
+  "dictionary_sources": ["kaikki-pt", "kaikki-en-pt", "freedict-por", "omw-por", "apertium-por"],
+  "offline_translation": true,
+  "notes": "Português do Brasil permanece como idioma canônico interno da STAR."
+}
