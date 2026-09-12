@@ -33,6 +33,19 @@ def resolve_locale(value: str) -> str | None:
     return fallback.get(compact)
 
 
+def _strip_wake_prefix(raw: str) -> str:
+    """Tolera wake words mesmo quando o manager é usado fora do StarCore."""
+    value = str(raw or "").strip()
+    normalized = normalize_term(value)
+    prefixes = ("ei star ", "ok star ", "ola star ", "hey star ", "star ")
+    for prefix in prefixes:
+        if normalized.startswith(prefix):
+            # normalize_term remove vírgulas/acentos; usar o texto normalizado aqui é
+            # aceitável para comandos, pois o conteúdo a traduzir é tratado abaixo.
+            return normalized[len(prefix):].strip()
+    return value
+
+
 class LanguageManager:
     def __init__(self, settings_path: Path | str = SETTINGS_FILE, dictionary: OfflineDictionaryStore | None = None):
         self.settings_path = Path(settings_path)
@@ -134,7 +147,7 @@ class LanguageManager:
         return self.translate(text, self.locale, "pt-BR") or str(text)
 
     def handle_command(self, text: str) -> str | None:
-        raw = str(text or "").strip()
+        raw = _strip_wake_prefix(str(text or "").strip())
         norm = normalize_term(raw)
         if not norm:
             return None
