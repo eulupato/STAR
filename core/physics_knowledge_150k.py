@@ -27,6 +27,12 @@ ADDED_TOPICS = 100
 ADDED_VARIANTS = 100000
 TOTAL_VARIANTS = TOTAL_TOPICS * VARIANTS_PER_TOPIC
 
+_SEARCH_STOPWORDS = {
+    "a", "o", "as", "os", "um", "uma", "de", "da", "do", "das", "dos", "e",
+    "qual", "quais", "me", "diga", "explique", "explica", "sobre", "formula",
+    "equacao", "expressao", "conceito", "como", "funciona", "na", "no", "para",
+}
+
 
 def _extended_topics() -> tuple[PhysicsTopic, ...]:
     result = []
@@ -120,6 +126,53 @@ class PhysicsKnowledgeEngine(BasePhysicsKnowledgeEngine):
             "answer": self._render(topic, family, style, context),
             "source": SOURCES[topic.source],
         }
+
+    def match(self, query: str):
+        """Prioriza títulos/aliases específicos sobre coincidências genéricas.
+
+        A base de 150 tópicos torna sobreposição lexical inevitável (ex.: "ondas"
+        versus "ondas gravitacionais"). Stopwords e cobertura do candidato evitam
+        que um tópico curto/genérico vença uma frase científica mais específica.
+        """
+        q = _normalize(query).replace("_", " ")
+        if not q:
+            return None
+        query_tokens = {t for t in q.split() if t not in _SEARCH_STOPWORDS}
+        if not query_tokens:
+            query_tokens = set(q.split())
+
+        best = None
+        best_score = 0.0
+        best_specificity = -1
+
+        for topic, candidates in zip(self.topics, self._search):
+            for raw_candidate in candidates:
+                candidate = raw_candidate.replace("_", " ")
+                candidate_tokens = {t for t in candidate.split() if t not in _SEARCH_STOPWORDS}
+                if not candidate_tokens:
+                    candidate_tokens = set(candidate.split())
+
+                if candidate == q:
+                    score = 3.0
+                elif len(candidate.split()) >= 2 and candidate in q:
+                    score = 2.0 + min(len(candidate_tokens), 10) / 100.0
+                else:
+                    intersection = len(query_tokens & candidate_tokens)
+                    if not intersection:
+                        continue
+                    coverage = intersection / max(1, len(candidate_tokens))
+                    precision = intersection / max(1, len(query_tokens))
+                    score = 0.72 * coverage + 0.28 * precision
+                    if candidate_tokens <= query_tokens:
+                        score += 0.12
+
+                specificity = len(candidate_tokens)
+                if score > best_score or (score == best_score and specificity > best_specificity):
+                    best = topic
+                    best_score = score
+                    best_specificity = specificity
+
+        return best if best_score >= 0.58 else None
 
     @staticmethod
     def _render(topic, family, style, context):
