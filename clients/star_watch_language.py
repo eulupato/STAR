@@ -10,7 +10,13 @@ from clients import star_watch_visual as visual
 
 LANGUAGE_MODE = watch_base.WatchMode("language", "IDIOMA", "LANG")
 if not any(mode.key == "language" for mode in watch_base.WATCH_MODES):
-    watch_base.WATCH_MODES = watch_base.WATCH_MODES + (LANGUAGE_MODE,)
+    modes = list(watch_base.WATCH_MODES)
+    settings_index = next(
+        (index for index, mode in enumerate(modes) if mode.key == "settings"),
+        len(modes),
+    )
+    modes.insert(settings_index, LANGUAGE_MODE)
+    watch_base.WATCH_MODES = tuple(modes)
 visual.WATCH_MODES = watch_base.WATCH_MODES
 
 
