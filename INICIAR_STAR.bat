@@ -16,10 +16,13 @@ if not exist "%PY%" (
     exit /b 1
 )
 
-"%PY%" -c "import PIL, sounddevice, soundfile, faster_whisper" >nul 2>&1
+rem Valida dependencias que fazem parte do caminho real de inicializacao.
+rem SQLAlchemy e necessario pela persistencia; sem este check a falha aparecia
+rem somente depois, durante os imports da interface/memoria.
+"%PY%" -c "import PIL, sqlalchemy, sounddevice, soundfile, faster_whisper" >nul 2>&1
 if errorlevel 1 (
     echo ERRO: dependencias principais incompletas.
-    echo Execute INSTALAR_VOZ.bat uma vez e tente novamente.
+    echo Execute CRIAR_AMBIENTE.bat e INSTALAR_VOZ.bat conforme necessario.
     pause
     exit /b 1
 )
