@@ -48,7 +48,11 @@ Atualmente:
 - **STAR Device Gateway V0.2** — ponte LAN + Adaptive Runtime;
 - **STAR Mobile iOS V0** — iPhone como sensor/interface, sem MIND próprio;
 - **STAR Watch Android V0.3** — Watch como sensor/interface, áudio PCM/WAV orientado a fala e comandos remotos seguros, sem MIND próprio;
+- **STAR Watch App V0.4 + Plasma Orbit** — shell Watch-first validado primeiro no PC, preservando o Core compartilhado;
 - **Command/Agent Foundation V0** — registro central de intents + catálogo de capacidades/agentes com estados `available/partial/planned`, sem Goal Engine ou autonomia V8;
+- **Voice Command Catalog V1.9** — catálogo gerado por intents/slots com contrato mínimo de 4.000 variações, sem milhares de `if/else`;
+- **Conversation Foundation V1.9** — small talk composicional com contrato mínimo de 5.000 respostas auditáveis, sem substituir o futuro Context Engine V2;
+- **Contextual Weather Provider V1.9** — clima online sob demanda e de domínio estreito, usado para aterrar respostas meteorológicas sem liberar o modo web geral;
 - **Knowledge Packs removíveis** — packs JSON/JSONL em `STAR_KNOWLEDGE/packs`.
 
 O runtime compartilhado centraliza tema, rótulos, feature flags e perfis
@@ -59,6 +63,11 @@ O catálogo de comandos pertence ao Core e é reutilizado por PC/Watch. Ações
 remotas sensíveis permanecem bloqueadas até o Permission Manager. O registro de
 agentes não antecipa autonomia: agentes são capacidades especializadas da mesma
 STAR e recursos futuros permanecem explicitamente marcados como planejados.
+
+A etapa **Watch-first** é uma ponte de validação de interface/dispositivos dentro da
+Foundation: primeiro estabiliza shell, voz, comandos, providers e integração no PC;
+depois porta a experiência validada para o Watch real. Ela não substitui nem pula
+o V2.0 MIND.
 
 Esses itens não significam que V5 SENSES, V8 AGENT ou V9 ECOSYSTEM estão
 concluídos. O Gateway apenas entrega entradas ao Core atual; visão, Goal Engine,
@@ -344,4 +353,4 @@ Cada geração segue:
 7. freeze.
 
 # Próximo marco
-**V1.9 FINAL → abrir V2.0 MIND.**
+**V1.9 FINAL → estabilizar a ponte Watch-first → abrir V2.0 MIND.**
