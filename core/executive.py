@@ -1,16 +1,28 @@
 class Executive:
     """Executivo V1.9: conhecimento local primeiro; IA externa permanece opcional."""
 
-    def __init__(self, model_manager=None, internal_knowledge=None, knowledge_packs=None):
+    def __init__(
+        self,
+        model_manager=None,
+        internal_knowledge=None,
+        knowledge_packs=None,
+        physics_knowledge=None,
+    ):
         self.model_manager = model_manager
         self.internal_knowledge = internal_knowledge
         self.knowledge_packs = knowledge_packs
+        self.physics_knowledge = physics_knowledge
 
     def execute(self, request, route):
         text = request.get("input", "")
 
         if self.internal_knowledge:
             answer = self.internal_knowledge.answer(text)
+            if answer:
+                return answer
+
+        if self.physics_knowledge:
+            answer = self.physics_knowledge.answer(text)
             if answer:
                 return answer
 
