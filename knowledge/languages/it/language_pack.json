@@ -1,0 +1,10 @@
+{
+  "id": "star-language-it",
+  "family": "it",
+  "locales": ["it-IT"],
+  "default": false,
+  "expression_contents": 100000,
+  "dictionary_sources": ["kaikki-it", "kaikki-en-it", "freedict-ita", "omw-ita", "apertium-ita"],
+  "offline_translation": true,
+  "notes": "Pack italiano com equivalência pragmática, gírias e tradução lexical offline."
+}

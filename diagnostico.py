@@ -27,6 +27,9 @@ MODULES = [
     "core.physics_knowledge",
     "core.physics_topics_extended",
     "core.physics_knowledge_150k",
+    "core.language_catalog",
+    "core.offline_dictionary",
+    "core.language_manager",
     "core.router",
     "core.executive",
     "core.star_core",
@@ -75,6 +78,7 @@ def main():
     star = create_star()
     pack_stats = star.packs.stats()
     physics_stats = star.physics.stats()
+    language_stats = star.language.stats()
 
     checks = [
         ("identidade", star.get_name() == "STAR"),
@@ -85,6 +89,11 @@ def main():
         ("física local = 150000", physics_stats.get("content_variations") == 150000),
         ("física canônica = 150 tópicos", physics_stats.get("canonical_topics") == 150),
         ("física adicionada = 100000", physics_stats.get("added_content_variations") == 100000),
+        ("idiomas = 5 famílias", language_stats.get("language_families") == 5),
+        ("perfis de idioma = 6", language_stats.get("locale_profiles") == 6),
+        ("expressões = 500000", language_stats.get("total_semantic_contents") == 500000),
+        ("100k expressões por idioma", language_stats.get("contents_per_language") == 100000),
+        (">=5 dicionários/fontes por idioma", min(language_stats.get("dictionary_sources", {}).values(), default=0) >= 5),
         ("catálogo de voz >= 4000", command_count() >= 4000),
         ("catálogo conversacional >= 5000", conversation_response_count() >= 5000),
     ]
@@ -99,6 +108,16 @@ def main():
         f"(+{physics_stats.get('added_content_variations', 0)} nesta expansão)"
     )
     print(
+        f"🌐 Idiomas: {language_stats.get('language_families', 0)} famílias / "
+        f"{language_stats.get('locale_profiles', 0)} perfis | "
+        f"{language_stats.get('total_semantic_contents', 0)} conteúdos de expressão"
+    )
+    print(
+        "📚 Dicionários configurados: "
+        + ", ".join(f"{k}={v}" for k, v in sorted(language_stats.get("dictionary_sources", {}).items()))
+        + f" | índice completo={'SIM' if language_stats.get('full_dictionary_index_ready') else 'NÃO (seed ativo)'}"
+    )
+    print(
         f"📦 Knowledge Packs: {pack_stats.get('packs', 0)} pack(s), "
         f"{pack_stats.get('entries', 0)} entrada(s) carregada(s)"
     )
@@ -106,6 +125,11 @@ def main():
         warnings.append(
             "Knowledge Packs foram descobertos, mas nenhuma entrada de conhecimento "
             "foi carregada; descoberta de manifesto não equivale a conteúdo utilizável."
+        )
+    if not language_stats.get("full_dictionary_index_ready"):
+        warnings.append(
+            "Dicionários completos ainda não foram materializados em SQLite; "
+            "tradução contextual e léxico seed funcionam, mas vocabulário arbitrário pode não ser encontrado."
         )
 
     print(

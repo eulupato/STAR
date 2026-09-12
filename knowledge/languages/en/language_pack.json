@@ -1,0 +1,11 @@
+{
+  "id": "star-language-en",
+  "family": "en",
+  "locales": ["en-US", "en-GB"],
+  "default": false,
+  "expression_contents": 100000,
+  "surface_variants": 2,
+  "dictionary_sources": ["oewn-2025", "kaikki-en", "freedict-eng", "omw-eng", "apertium-eng"],
+  "offline_translation": true,
+  "notes": "Os mesmos conceitos semânticos possuem superfícies próprias EUA e Reino Unido."
+}

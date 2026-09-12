@@ -1,7 +1,9 @@
 import time
 
 from core.agents import AgentManager
+from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
+from core.language_manager import LanguageManager
 from core.weather import WeatherService
 
 
@@ -24,6 +26,7 @@ class StarCore:
         self.weather = WeatherService()
         self.conversation = ConversationEngine(self.weather)
         self.agents = AgentManager(weather_provider=self.weather)
+        self.language = LanguageManager()
 
         self.last_intent = None
         self.user_name = None
@@ -46,6 +49,24 @@ class StarCore:
             return "Lu"
 
     def process(self, user_input, allow_actions=True):
+        """Processa entrada no idioma ativo e mantém o Core interno em pt-BR.
+
+        A troca de idioma/tradução explícita é resolvida primeiro e funciona tanto
+        para texto quanto para transcrições de voz. Para demais pedidos, a camada
+        linguística traduz a entrada para o idioma canônico quando possível e
+        localiza a resposta ao final. Termos ausentes são preservados em vez de
+        receber tradução inventada.
+        """
+        raw_input = str(user_input or "")
+        language_action = self.language.handle_command(strip_wake_word(raw_input))
+        if language_action:
+            return language_action
+
+        canonical_input = self.language.translate_to_portuguese(raw_input)
+        response = self._process_portuguese(canonical_input, allow_actions=allow_actions)
+        return self.language.translate_response(str(response))
+
+    def _process_portuguese(self, user_input, allow_actions=True):
         request_start = time.perf_counter()
 
         # Camada única de comandos. Endpoints remotos (Watch/Mobile) podem usar

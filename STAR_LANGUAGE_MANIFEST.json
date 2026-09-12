@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "status": "active-local",
+  "default_locale": "pt-BR",
+  "language_families": 5,
+  "locale_profiles": ["pt-BR", "en-US", "en-GB", "es-ES", "it-IT", "fr-FR"],
+  "expression_contents_per_family": 100000,
+  "total_semantic_expression_contents": 500000,
+  "english_surface_variants": 2,
+  "translation_policy": "contextual-equivalence-before-literal",
+  "dictionary_runtime": "SQLite local + compact seed fallback",
+  "dictionary_sources_minimum_per_family": 5,
+  "full_dictionary_materialization": "one-time build from open source snapshots; runtime lookup is offline",
+  "watch": {
+    "mode": "language",
+    "renderer": "clients/star_watch_language.py",
+    "selection": "STAR Ring left/right",
+    "flags": true,
+    "voice_commands": true,
+    "plasma_orbit_preserved": true
+  },
+  "packs": [
+    "knowledge/languages/pt_br/language_pack.json",
+    "knowledge/languages/en/language_pack.json",
+    "knowledge/languages/es/language_pack.json",
+    "knowledge/languages/it/language_pack.json",
+    "knowledge/languages/fr/language_pack.json"
+  ]
+}
