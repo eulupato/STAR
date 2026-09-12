@@ -39,6 +39,7 @@
     "star_watch_android_v0_3",
     "star_watch_app_v0_4",
     "star_watch_pc_simulator_v0_4",
+    "star_watch_plasma_orbit_ui",
     "star_mobile_ios_v0",
     "adaptive_device_runtime_v0"
   ],
@@ -51,6 +52,22 @@
     "launcher": "INICIAR_STAR_WATCH_APP.bat",
     "android_transport_client_version": "0.3.0",
     "hardware_real_required": false,
+    "visual_system": {
+      "version": "1.0.0",
+      "renderer": "clients/star_watch_visual.py",
+      "functional_base": "clients/star_watch_app.py",
+      "style": "plasma-orbit",
+      "procedural": true,
+      "asset_dependency": false,
+      "target_fps": 30,
+      "states": [
+        "PRONTA",
+        "OUVINDO",
+        "PENSANDO",
+        "RESPONDENDO",
+        "ATENÇÃO"
+      ]
+    },
     "interaction": {
       "ring_rotate": true,
       "ring_press": true,
@@ -150,6 +167,7 @@
         "show_response_transcript": true,
         "preferred_columns": 1,
         "home_style": "plasma-core-ring",
+        "visual_style": "plasma-orbit",
         "screens": [
           "home",
           "voice",
