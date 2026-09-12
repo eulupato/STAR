@@ -1,6 +1,8 @@
 import time
 
 from core.agents import AgentManager
+from core.conversation import ConversationEngine
+from core.weather import WeatherService
 
 
 class StarCore:
@@ -15,7 +17,14 @@ class StarCore:
         self.tools = None
         self.skills = None
         self.packs = None
-        self.agents = AgentManager()
+
+        # Clima é uma capacidade online estreita e sob demanda. Ela não libera
+        # navegador/pesquisa web em geral. O provider usa somente endpoints fixos,
+        # cache em memória e pode ser desligado por STAR_WEATHER_ENABLED=0.
+        self.weather = WeatherService()
+        self.conversation = ConversationEngine(self.weather)
+        self.agents = AgentManager(weather_provider=self.weather)
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -55,6 +64,7 @@ class StarCore:
 
         try:
             from core.math_engine import solve_text
+
             solved = solve_text(user_input)
             if solved:
                 expr, value = solved
@@ -69,6 +79,7 @@ class StarCore:
         }
 
         import re
+
         name_match = re.search(
             r"\bmeu nome (?:e|é)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]{0,40})",
             request["input"],
@@ -79,10 +90,25 @@ class StarCore:
             return f"Prazer, {self.user_name}! ⭐ Agora vou me lembrar do seu nome durante esta sessão."
 
         normalized = request["input"].strip().lower()
-        if normalized in {"qual e o significado", "qual é o significado", "e o significado", "o significado"} and self.last_intent in {"meaning", "full_name", "name"}:
+        if (
+            normalized
+            in {"qual e o significado", "qual é o significado", "e o significado", "o significado"}
+            and self.last_intent in {"meaning", "full_name", "name"}
+        ):
             return self.internal_knowledge.answer("o que significa star")
         if normalized in {"qual meu nome", "qual e meu nome", "qual é meu nome"} and self.user_name:
             return f"Você me disse que seu nome é {self.user_name}. ⭐"
+
+        # Small talk vem antes do fallback genérico. A camada responde apenas
+        # quando reconhece uma família segura; fatos meteorológicos são
+        # confirmados pelo provider em vez de serem inventados.
+        conversation_response = self.conversation.respond(
+            request["input"],
+            user_name=self.user_name,
+        )
+        if conversation_response:
+            self.last_intent = "conversation"
+            return conversation_response
 
         route_start = time.perf_counter()
         route = self.router.route(request)
@@ -91,7 +117,10 @@ class StarCore:
         response = self.executive.execute(request=request, route=route)
         total_time = time.perf_counter() - request_start
 
-        print(f"🧭 Rota: {route['response_type'] or 'local'} | {total_time:.3f}s (router {route_time:.3f}s)")
+        print(
+            f"🧭 Rota: {route['response_type'] or 'local'} | "
+            f"{total_time:.3f}s (router {route_time:.3f}s)"
+        )
         return response
 
     def _get_identity(self):

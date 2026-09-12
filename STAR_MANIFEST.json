@@ -14,6 +14,9 @@
     "persistent_memory",
     "visual_menu",
     "chat",
+    "natural_conversation_catalog",
+    "contextual_weather_provider",
+    "voice_command_catalog_4k_plus",
     "avatar",
     "hub",
     "islands",
@@ -48,7 +51,7 @@
     "status": "functional-simulator",
     "product_direction": "watch-first",
     "primary_shell": true,
-    "pc_simulator": "clients/star_watch_app.py",
+    "pc_simulator": "clients/star_watch_visual.py",
     "launcher": "INICIAR_STAR_WATCH_APP.bat",
     "android_transport_client_version": "0.3.0",
     "hardware_real_required": false,
@@ -101,7 +104,47 @@
     "startup_dependency": false,
     "interface_can_start_without_tts": true,
     "automatic_reply_from_gui": true,
-    "fast_mode": "Windows SAPI preferencial + Piper PT-BR fallback"
+    "fast_mode": "Windows SAPI preferencial + Piper PT-BR fallback",
+    "command_variations_minimum": 4000,
+    "command_variations_generated": 27804,
+    "command_model": "intents + slots + wake words + aliases",
+    "free_text_slots": [
+      "web_search.query",
+      "find_file.query",
+      "spotify_search.query",
+      "weather_current.location"
+    ]
+  },
+  "conversation": {
+    "status": "active",
+    "response_variations_minimum": 5000,
+    "response_variations_generated": 6000,
+    "families": [
+      "greeting",
+      "wellbeing",
+      "thanks",
+      "casual",
+      "support",
+      "farewell"
+    ],
+    "selection": "deterministic-compositional",
+    "weather_grounded_smalltalk": true
+  },
+  "weather": {
+    "status": "active-on-demand",
+    "provider": "Open-Meteo",
+    "geocoding": "Open-Meteo Geocoding API",
+    "automatic_location_fallback": "ipwho.is when enabled and no configured location exists",
+    "background_polling": false,
+    "persistent_coordinates": false,
+    "cache_seconds_default": 600,
+    "general_web_mode_required": false,
+    "environment": [
+      "STAR_WEATHER_ENABLED",
+      "STAR_WEATHER_LOCATION",
+      "STAR_WEATHER_AUTOLOCATE",
+      "STAR_WEATHER_CACHE_SECONDS"
+    ]
   },
   "device_gateway": {
     "status": "experimental",
@@ -151,6 +194,7 @@
       "ring_press": true,
       "people_local_store": true,
       "measure_provider": "simulated-until-hardware",
+      "core_weather_context": true,
       "remote_pc_actions": false
     },
     "profiles": {
