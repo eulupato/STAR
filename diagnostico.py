@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parent
 def _configure_console_utf8():
     """Evita falhas de Unicode em consoles Windows com code page antiga."""
     import sys
+
     for stream in (sys.stdout, sys.stderr):
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")
@@ -26,6 +27,9 @@ MODULES = [
     "core.router",
     "core.executive",
     "core.star_core",
+    "core.commands",
+    "core.conversation",
+    "core.weather",
     "core.islands",
     "core.memory",
     "core.emotion",
@@ -45,6 +49,8 @@ MODULES = [
 def main():
     _configure_console_utf8()
     from config import VERSION
+    from core.commands import command_count
+    from core.conversation import conversation_response_count
 
     print("=" * 64)
     print(f"⭐ DIAGNÓSTICO GERAL STAR V{VERSION}")
@@ -62,21 +68,41 @@ def main():
             print(f"🔴 import {name}: {error}")
 
     from main import create_star
+
     star = create_star()
+    pack_stats = star.packs.stats()
 
     checks = [
         ("identidade", star.get_name() == "STAR"),
         ("saudação", bool(star.process("olá"))),
         ("criador", bool(star.process("quem criou você?"))),
         ("matemática", "4" in str(star.process("quanto é 2+2"))),
-        ("knowledge packs", bool(star.packs.list())),
+        ("knowledge pack manager", hasattr(star.packs, "stats")),
+        ("catálogo de voz >= 4000", command_count() >= 4000),
+        ("catálogo conversacional >= 5000", conversation_response_count() >= 5000),
     ]
     for name, ok in checks:
         print(("🟢 " if ok else "🔴 ") + name)
         if not ok:
             failures.append((name, "check failed"))
 
+    print(
+        f"📦 Knowledge Packs: {pack_stats.get('packs', 0)} pack(s), "
+        f"{pack_stats.get('entries', 0)} entrada(s) carregada(s)"
+    )
+    if pack_stats.get("packs", 0) and not pack_stats.get("entries", 0):
+        warnings.append(
+            "Knowledge Packs foram descobertos, mas nenhuma entrada de conhecimento "
+            "foi carregada; descoberta de manifesto não equivale a conteúdo utilizável."
+        )
+
+    print(
+        f"🗣️ Catálogo de voz: {command_count()} variações | "
+        f"💬 respostas conversacionais: {conversation_response_count()}"
+    )
+
     from voice.manager import VoiceManager
+
     voice = VoiceManager()
     print("-" * 64)
     print("VOZ (sem carregar modelos)")

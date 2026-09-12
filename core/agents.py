@@ -9,7 +9,8 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
-from core.commands import CommandMatch, command_count, match_command
+from core.commands import CommandMatch, command_count, command_variables, match_command
+from core.weather import WeatherService, format_weather
 
 
 @dataclass(frozen=True)
@@ -34,7 +35,13 @@ AGENT_SPECS = (
     AgentSpec("device", "Gateway LAN experimental e runtime adaptativo; Device Manager completo é futuro.", "partial", "V1.9 experimental → V9", "read"),
     AgentSpec("cure", "Diagnóstico básico existente; Guardian/Cura inteligente fica para V7.", "partial", "V1.9 → V7 Guardian", "read"),
     AgentSpec("security", "Ações sensíveis aguardam Permission Manager, Audit Log e autenticação forte.", "planned", "V7 Guardian", "block-sensitive"),
-    AgentSpec("personal_assistant", "Hora/data e comandos simples; agenda/scheduler persistente são futuros.", "partial", "V1.9 → V8 Agent", "read"),
+    AgentSpec(
+        "personal_assistant",
+        "Hora/data, conversa contextual e clima atual sob demanda; agenda persistente fica para V8.",
+        "partial",
+        "V1.9 → V8 Agent",
+        "read/network-weather",
+    ),
     AgentSpec("web", "Camada operacional mínima de navegador/pesquisa web.", "partial", "V1.9 → V4/V12+", "network"),
     AgentSpec("coding", "Abertura de ferramentas de desenvolvimento; coding agent autônomo não existe ainda.", "partial", "V1.9 → V12+", "safe-subset"),
     AgentSpec("home", "Automação residencial.", "planned", "V9 Ecosystem", "none"),
@@ -47,8 +54,9 @@ AGENT_SPECS = (
 class AgentManager:
     """Despacha somente capacidades já suportadas e mantém limites do roadmap."""
 
-    def __init__(self):
+    def __init__(self, weather_provider: WeatherService | None = None):
         self._specs = {spec.name: spec for spec in AGENT_SPECS}
+        self.weather = weather_provider or WeatherService()
 
     def list(self) -> dict:
         return {name: asdict(spec) for name, spec in self._specs.items()}
@@ -80,21 +88,50 @@ class AgentManager:
     def _execute(self, match: CommandMatch, *, network_enabled: bool) -> str:
         from modules import computer_control as computer
 
-        if match.intent == "agents_status": return self.summary()
+        if match.intent == "agents_status":
+            return self.summary()
         if match.intent == "commands_status":
-            return f"Tenho {command_count()} variações de comandos de voz registradas na Foundation, organizadas por intents em vez de milhares de if/else."
-        if match.intent == "time": return computer.local_time()
-        if match.intent == "date": return computer.local_date()
-        if match.intent == "volume_up": return computer.volume_up()
-        if match.intent == "volume_down": return computer.volume_down()
-        if match.intent == "volume_mute": return computer.volume_mute()
-        if match.intent == "media_toggle": return computer.media_play_pause()
-        if match.intent == "media_next": return computer.media_next()
-        if match.intent == "media_previous": return computer.media_previous()
-        if match.intent == "screenshot": return computer.take_screenshot()
+            return (
+                f"Tenho {command_count()} variações auditáveis de comandos de voz na Foundation, "
+                "organizadas por intents e slots em vez de milhares de if/else."
+            )
+        if match.intent == "command_variables":
+            variables = command_variables()
+            names = ", ".join(sorted(variables))
+            return (
+                f"Os comandos aceitam {len(variables)} famílias de variáveis/slots: {names}. "
+                "Consultas de web, arquivos, Spotify e localização climática aceitam texto livre."
+            )
+        if match.intent == "time":
+            return computer.local_time()
+        if match.intent == "date":
+            return computer.local_date()
+        if match.intent == "weather_current":
+            snapshot = self.weather.current(match.slots.get("location"))
+            if snapshot is None:
+                return (
+                    "Não consegui obter o clima atual agora. "
+                    "Posso tentar novamente quando houver conexão e localização disponível."
+                )
+            return format_weather(snapshot)
+        if match.intent == "volume_up":
+            return computer.volume_up()
+        if match.intent == "volume_down":
+            return computer.volume_down()
+        if match.intent == "volume_mute":
+            return computer.volume_mute()
+        if match.intent == "media_toggle":
+            return computer.media_play_pause()
+        if match.intent == "media_next":
+            return computer.media_next()
+        if match.intent == "media_previous":
+            return computer.media_previous()
+        if match.intent == "screenshot":
+            return computer.take_screenshot()
         if match.intent == "find_file":
             hits = computer.find_files(match.slots["query"])
-            if not hits: return "Não encontrei arquivos com esse nome."
+            if not hits:
+                return "Não encontrei arquivos com esse nome."
             return "Encontrei: " + "; ".join(str(path) for path in hits)
         if match.intent == "open_app":
             target = match.slots["target"]
@@ -102,11 +139,16 @@ class AgentManager:
                 return computer.network_required_message()
             return computer.open_app(target)
         if match.intent == "spotify_search":
-            if not network_enabled: return computer.network_required_message()
+            if not network_enabled:
+                return computer.network_required_message()
             return computer.spotify_search(match.slots["query"])
         if match.intent == "web_search":
-            if not network_enabled: return computer.network_required_message()
+            if not network_enabled:
+                return computer.network_required_message()
             return computer.web_search(match.slots["query"])
         if match.intent in {"close_app", "lock_pc"}:
-            return "Eu reconheço esse comando, mas ele exige confirmação. A execução ficará bloqueada até o Permission Manager da STAR."
+            return (
+                "Eu reconheço esse comando, mas ele exige confirmação. "
+                "A execução ficará bloqueada até o Permission Manager da STAR."
+            )
         return "Comando reconhecido, mas esta capacidade ainda não está disponível."
