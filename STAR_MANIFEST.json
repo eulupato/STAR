@@ -9,7 +9,7 @@
   "features_active": [
     "identity",
     "internal_knowledge",
-    "physics_knowledge_50k",
+    "physics_knowledge_150k",
     "router",
     "executive",
     "persistent_memory",
@@ -49,10 +49,16 @@
   ],
   "physics": {
     "status": "active-local",
-    "engine": "core/physics_knowledge.py",
-    "canonical_topics": 50,
+    "engine": "core/physics_knowledge_150k.py",
+    "base_engine": "core/physics_knowledge.py",
+    "base_canonical_topics": 50,
+    "added_canonical_topics": 100,
+    "canonical_topics": 150,
     "variants_per_topic": 1000,
-    "content_variations": 50000,
+    "base_content_variations": 50000,
+    "added_content_variations": 100000,
+    "content_variations": 150000,
+    "id_range": "PHYS-00001..PHYS-150000",
     "levels": [1, 2, 3, 4, 5],
     "variation_model": "10 families x 10 styles x 10 contexts per canonical topic",
     "families": [
@@ -76,7 +82,9 @@
       "NIST/CODATA",
       "Particle Data Group 2026",
       "CERN",
-      "NASA Physics of the Cosmos"
+      "NASA Physics of the Cosmos",
+      "LIGO Scientific Collaboration",
+      "IAEA"
     ]
   },
   "star_watch_app": {
