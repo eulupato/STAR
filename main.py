@@ -16,6 +16,7 @@ from config import (
 from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
+from core.physics_knowledge import PhysicsKnowledgeEngine
 from core.router import Router
 from core.skills import SkillRegistry
 from core.star_core import StarCore
@@ -28,6 +29,7 @@ from gui.app import StarApp
 def create_star():
     identity = StarIdentity()
     knowledge = StarInternalKnowledge(identity)
+    physics = PhysicsKnowledgeEngine()
     packs = KnowledgePackManager(ROOT / "knowledge" / "packs", auto_removable=True)
     state = StarState()
     router = Router(internal_knowledge=knowledge)
@@ -35,6 +37,7 @@ def create_star():
         model_manager=None,
         internal_knowledge=knowledge,
         knowledge_packs=packs,
+        physics_knowledge=physics,
     )
     star = StarCore(
         router=router,
@@ -47,6 +50,7 @@ def create_star():
     star.tools = ToolRegistry()
     star.tools.register("math", safe_math, True, "Cálculo matemático offline")
     star.packs = packs
+    star.physics = physics
     return star
 
 
@@ -84,9 +88,15 @@ def main():
     star = create_star()
     pack_stats = star.packs.stats()
     storage_stats = star.packs.storage_stats()
+    physics_stats = star.physics.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
+    print(
+        "⚛️ Física local: "
+        f"{physics_stats['canonical_topics']} tópicos | "
+        f"{physics_stats['content_variations']} conteúdos variáveis"
+    )
     print("🧩 Skills: PREPARADAS")
     print("🛠️ Ferramentas: ATIVAS (matemática offline)")
     print(f"📦 Knowledge Packs detectados: {pack_stats['packs']}")
