@@ -10,6 +10,9 @@
     "identity",
     "internal_knowledge",
     "physics_knowledge_150k",
+    "multilingual_language_layer_500k",
+    "offline_dictionary_runtime",
+    "contextual_translation",
     "router",
     "executive",
     "persistent_memory",
@@ -87,12 +90,41 @@
       "IAEA"
     ]
   },
+  "languages": {
+    "status": "active-local",
+    "manager": "core/language_manager.py",
+    "expression_catalog": "core/language_catalog.py",
+    "dictionary_runtime": "core/offline_dictionary.py",
+    "dictionary_builder": "scripts/build_offline_dictionaries.py",
+    "manifest": "STAR_LANGUAGE_MANIFEST.json",
+    "default_locale": "pt-BR",
+    "language_families": 5,
+    "locale_profiles": [
+      "pt-BR",
+      "en-US",
+      "en-GB",
+      "es-ES",
+      "it-IT",
+      "fr-FR"
+    ],
+    "expression_contents_per_family": 100000,
+    "total_semantic_expression_contents": 500000,
+    "english_surface_variants": 2,
+    "translation_policy": "contextual-equivalence-before-literal",
+    "dictionary_sources_minimum_per_family": 5,
+    "full_dictionary_index": "runtime/language/dictionaries.sqlite3",
+    "full_dictionary_index_optional_at_startup": true,
+    "seed_fallback": true,
+    "internet_required_at_runtime_after_materialization": false,
+    "unknown_translation_policy": "preserve-or-report-missing-never-invent",
+    "watch_language_selector": true
+  },
   "star_watch_app": {
     "version": "0.4.0",
     "status": "functional-simulator",
     "product_direction": "watch-first",
     "primary_shell": true,
-    "pc_simulator": "clients/star_watch_visual.py",
+    "pc_simulator": "clients/star_watch_language.py",
     "launcher": "INICIAR_STAR_WATCH_APP.bat",
     "android_transport_client_version": "0.3.0",
     "hardware_real_required": false,
@@ -100,6 +132,7 @@
       "version": "1.0.0",
       "renderer": "clients/star_watch_visual.py",
       "functional_base": "clients/star_watch_app.py",
+      "language_layer": "clients/star_watch_language.py",
       "style": "plasma-orbit",
       "procedural": true,
       "asset_dependency": false,
@@ -130,11 +163,12 @@
       "measure",
       "media",
       "weather",
+      "language",
       "settings"
     ]
   },
   "voice": {
-    "stt": "faster-whisper tiny local PT-BR",
+    "stt": "faster-whisper tiny local",
     "tts_default": "Chatterbox Multilingual local com referência autorizada da STAR",
     "tts_fallback": "Piper pt_BR-faber-medium local; Windows SAPI como último fallback",
     "voice_mode": "official",
@@ -146,6 +180,7 @@
     "interface_can_start_without_tts": true,
     "automatic_reply_from_gui": true,
     "fast_mode": "Windows SAPI preferencial + Piper PT-BR fallback",
+    "language_switch_commands": true,
     "command_variations_minimum": 4000,
     "command_variations_generated": 27804,
     "command_model": "intents + slots + wake words + aliases",
@@ -221,6 +256,7 @@
       "measure": "MEDIR",
       "media": "MÍDIA",
       "weather": "CLIMA",
+      "language": "IDIOMA",
       "settings": "CONFIG"
     },
     "features": {
@@ -236,6 +272,9 @@
       "people_local_store": true,
       "measure_provider": "simulated-until-hardware",
       "core_weather_context": true,
+      "language_selection": true,
+      "offline_dictionary_lookup": true,
+      "contextual_translation": true,
       "remote_pc_actions": false
     },
     "profiles": {
@@ -264,6 +303,7 @@
           "measure",
           "media",
           "weather",
+          "language",
           "settings"
         ]
       }
