@@ -7,8 +7,10 @@ from core.weather import WeatherSnapshot
 class FakeWeather:
     def __init__(self, snapshot):
         self.snapshot = snapshot
+        self.calls = 0
 
     def current(self, location=None):
+        self.calls += 1
         return self.snapshot
 
 
@@ -84,6 +86,22 @@ def test_weather_failure_does_not_hallucinate_conditions():
     assert response is not None
     assert "não consegui confirmar" in response
     assert "Prefiro não inventar" in response
+
+
+def test_non_weather_use_of_tempo_does_not_call_weather_provider():
+    weather = FakeWeather(snapshot())
+    engine = ConversationEngine(weather)
+    assert engine.respond("Não tenho tempo para isso") is None
+    assert weather.calls == 0
+
+
+def test_difficult_day_is_support_not_meteorology():
+    weather = FakeWeather(snapshot())
+    engine = ConversationEngine(weather)
+    response = engine.respond("Meu dia está difícil")
+    assert response is not None
+    assert weather.calls == 0
+    assert "organizar" in response or "passo" in response or "simplificar" in response
 
 
 def test_agent_weather_command_uses_dedicated_provider_without_enabling_general_web():
