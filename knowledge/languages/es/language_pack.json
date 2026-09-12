@@ -1,0 +1,10 @@
+{
+  "id": "star-language-es",
+  "family": "es",
+  "locales": ["es-ES"],
+  "default": false,
+  "expression_contents": 100000,
+  "dictionary_sources": ["kaikki-es", "kaikki-en-es", "freedict-spa", "omw-spa", "apertium-spa"],
+  "offline_translation": true,
+  "notes": "Pack espanhol com equivalência pragmática, gírias e tradução lexical offline."
+}
