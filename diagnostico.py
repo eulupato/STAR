@@ -25,6 +25,8 @@ MODULES = [
     "core.star_identity",
     "core.internal_knowledge",
     "core.physics_knowledge",
+    "core.physics_topics_extended",
+    "core.physics_knowledge_150k",
     "core.router",
     "core.executive",
     "core.star_core",
@@ -80,8 +82,9 @@ def main():
         ("criador", bool(star.process("quem criou você?"))),
         ("matemática", "4" in str(star.process("quanto é 2+2"))),
         ("knowledge pack manager", hasattr(star.packs, "stats")),
-        ("física local = 50000", physics_stats.get("content_variations") == 50000),
-        ("física canônica = 50 tópicos", physics_stats.get("canonical_topics") == 50),
+        ("física local = 150000", physics_stats.get("content_variations") == 150000),
+        ("física canônica = 150 tópicos", physics_stats.get("canonical_topics") == 150),
+        ("física adicionada = 100000", physics_stats.get("added_content_variations") == 100000),
         ("catálogo de voz >= 4000", command_count() >= 4000),
         ("catálogo conversacional >= 5000", conversation_response_count() >= 5000),
     ]
@@ -92,7 +95,8 @@ def main():
 
     print(
         f"⚛️ Física local: {physics_stats.get('canonical_topics', 0)} tópico(s), "
-        f"{physics_stats.get('content_variations', 0)} conteúdo(s) variável(is)"
+        f"{physics_stats.get('content_variations', 0)} conteúdo(s) variável(is) "
+        f"(+{physics_stats.get('added_content_variations', 0)} nesta expansão)"
     )
     print(
         f"📦 Knowledge Packs: {pack_stats.get('packs', 0)} pack(s), "
