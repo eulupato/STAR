@@ -16,7 +16,7 @@ from config import (
 from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
-from core.physics_knowledge import PhysicsKnowledgeEngine
+from core.physics_knowledge_150k import PhysicsKnowledgeEngine
 from core.router import Router
 from core.skills import SkillRegistry
 from core.star_core import StarCore
