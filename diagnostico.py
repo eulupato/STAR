@@ -24,6 +24,7 @@ MODULES = [
     "config",
     "core.star_identity",
     "core.internal_knowledge",
+    "core.physics_knowledge",
     "core.router",
     "core.executive",
     "core.star_core",
@@ -71,6 +72,7 @@ def main():
 
     star = create_star()
     pack_stats = star.packs.stats()
+    physics_stats = star.physics.stats()
 
     checks = [
         ("identidade", star.get_name() == "STAR"),
@@ -78,6 +80,8 @@ def main():
         ("criador", bool(star.process("quem criou você?"))),
         ("matemática", "4" in str(star.process("quanto é 2+2"))),
         ("knowledge pack manager", hasattr(star.packs, "stats")),
+        ("física local = 50000", physics_stats.get("content_variations") == 50000),
+        ("física canônica = 50 tópicos", physics_stats.get("canonical_topics") == 50),
         ("catálogo de voz >= 4000", command_count() >= 4000),
         ("catálogo conversacional >= 5000", conversation_response_count() >= 5000),
     ]
@@ -86,6 +90,10 @@ def main():
         if not ok:
             failures.append((name, "check failed"))
 
+    print(
+        f"⚛️ Física local: {physics_stats.get('canonical_topics', 0)} tópico(s), "
+        f"{physics_stats.get('content_variations', 0)} conteúdo(s) variável(is)"
+    )
     print(
         f"📦 Knowledge Packs: {pack_stats.get('packs', 0)} pack(s), "
         f"{pack_stats.get('entries', 0)} entrada(s) carregada(s)"
