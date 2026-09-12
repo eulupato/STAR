@@ -3,13 +3,13 @@ setlocal
 cd /d "%~dp0"
 
 echo ============================================================
-echo   STAR WATCH APP V0.4 - SIMULADOR PC
+echo   STAR WATCH APP - PLASMA ORBIT UI
 echo ============================================================
 
 if exist ".venv\Scripts\python.exe" (
-    ".venv\Scripts\python.exe" clients\star_watch_app.py
+    ".venv\Scripts\python.exe" clients\star_watch_visual.py
 ) else (
-    python clients\star_watch_app.py
+    python clients\star_watch_visual.py
 )
 
 if errorlevel 1 (
