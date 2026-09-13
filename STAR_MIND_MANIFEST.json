@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 2,
+  "schema": 3,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": ["V2.0 MIND", "V2.1 Memory", "V2.2 Knowledge Graph", "partial V3 Knowledge", "partial V3.3 Scientific Engine", "partial V7 Guardian", "partial V8 Agent"],
@@ -64,6 +64,7 @@
       "cognitive_goals",
       "cognitive_goal_tasks",
       "cognitive_goal_checkpoints",
+      "cognitive_goal_schedule",
       "cognitive_chunk_embeddings",
       "guardian_permissions",
       "guardian_audit_log",
@@ -124,12 +125,16 @@
   },
   "knowledge_graph": {
     "store": "existing knowledge_nodes + knowledge_edges",
-    "curriculum_indexer": "core/scientific_graph.py",
-    "canonical_themes": 56,
-    "canonical_concepts": 885,
+    "indexer": "core/scientific_graph.py",
+    "canonical_scientific_themes": 56,
+    "canonical_scientific_concepts": 885,
+    "canonical_cultural_subjects": 125,
+    "cultural_aspects": 40,
+    "cultural_variants_lazy": 5000000,
     "taxonomy_derived_relations": true,
     "invented_causal_relations": false,
-    "materialization": "explicit/on-demand"
+    "theological_truth_inference": false,
+    "materialization": "explicit/on-demand canonical graph"
   },
   "research": {
     "engine": "core/research_hub.py",
@@ -145,6 +150,10 @@
     "persistent_goals": true,
     "task_dependencies": true,
     "durable_checkpoints": true,
+    "persistent_scheduler": true,
+    "schedule_fields": ["not_before", "deadline", "priority"],
+    "priority_ordering": true,
+    "background_autonomy": false,
     "idempotent_handler_execution": true,
     "autonomous_sensitive_actions": false
   },
@@ -170,6 +179,15 @@
     "fusion_buffer": true,
     "semantic_scene_understanding": false,
     "multimodal_semantic_fusion": false
+  },
+  "cultural_knowledge": {
+    "engine": "core/religion_magic_knowledge.py",
+    "manifest": "STAR_RELIGION_MAGIC_MANIFEST.json",
+    "status": "active-local-cultural",
+    "canonical_nodes": 5000,
+    "addressable_study_views": 5000000,
+    "supernatural_claims_as_physics": false,
+    "restricted_community_knowledge_reconstruction": false
   },
   "user_model": {
     "policy": "explicit and auditable",
