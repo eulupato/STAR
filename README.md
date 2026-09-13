@@ -14,7 +14,7 @@ cloud é somente um recurso utilizado pela STAR; nenhum modelo isolado é a STAR
 - **direção de produto:** Watch-first;
 - **internet:** opcional e por capacidades/providers declarados;
 - **banco cognitivo:** um único `star.db`;
-- **branch `main`:** fonte oficial do estado versionado.
+- **branch `main`:** fonte oficial do estado versionado após merge e validação.
 
 ## 🧠 Conhecimento
 
@@ -31,6 +31,40 @@ A expansão curricular adiciona:
 
 Os 941M são um espaço determinístico de estudo/pesquisa sobre os conceitos canônicos,
 e não 941M afirmações factuais independentes.
+
+## 🌍 Religiões, tradições e história da magia — 5M
+
+A STAR possui uma base cultural separada da contagem factual/científica:
+
+- **100 tradições/relações religiosas** de várias regiões e épocas;
+- **25 campos de magia, esoterismo e história da magia**;
+- **40 eixos canônicos** por assunto;
+- **5.000 nós canônicos**;
+- **1.000 perspectivas** por nó;
+- **5.000.000 de conteúdos/visões culturais endereçáveis** sob demanda.
+
+Os 5M **não são cinco milhões de fatos pesquisados individualmente**. São perspectivas
+determinísticas para organizar estudo, comparação e pesquisa sobre os 5.000 nós. O
+aprofundamento pode usar Research Hub/RAG/M.drives com proveniência.
+
+A política epistemológica separa:
+
+1. autodescrição de praticantes/comunidades;
+2. registro histórico ou etnográfico;
+3. interpretação acadêmica;
+4. evidência física/experimental.
+
+Assim, uma crença ou alegação sobrenatural pode ser descrita fielmente como parte de
+uma tradição sem ser apresentada como mecanismo físico demonstrado. Tradições vivas
+marcadas como sensíveis priorizam fontes da própria comunidade; conhecimento fechado,
+iniciático ou restrito não é reconstruído a partir de fragmentos públicos.
+
+Fontes-base incluem Database of Religious History (UBC), Harvard Pluralism Project,
+Pew Research Center para demografia, Library of Congress/American Folklife Center,
+Smithsonian Anthropology, UNESCO Intangible Cultural Heritage, Sefaria, SuttaCentral
+e descoberta acadêmica via OpenAlex/Crossref.
+
+Veja `STAR_RELIGION_MAGIC_MANIFEST.json` e `docs/STAR_RELIGION_MAGIC_5M.md`.
 
 ## 💾 M.drives
 
@@ -49,8 +83,12 @@ STAR_KNOWLEDGE/m_drives/
 ```
 
 Para não quebrar dados existentes, `knowledge/packs` e `STAR_KNOWLEDGE/packs`
-continuam legíveis como caminhos **legados**. A migração é explícita e não destrutiva;
-nenhum M.drive executa código automaticamente por ser descoberto.
+continuam legíveis como caminhos **legados**. O repositório não mantém cópias atuais
+em ambos os caminhos. A migração é explícita e não destrutiva; nenhum M.drive executa
+código automaticamente por ser descoberto.
+
+O antigo módulo `heroes` foi convertido para um M.drive estruturado e carregável. O
+manifesto vazio de matemática básica foi removido em vez de duplicar o Math Engine.
 
 ## 🧠 STAR MIND + Integrated Evolution
 
@@ -67,14 +105,20 @@ A camada Integrated Evolution acrescenta, sobre os mesmos sistemas:
 - Model Router para engines explicitamente registrados;
 - sem criar memória persistente paralela.
 
-### Goal Engine
+### Goal Engine + Scheduler alpha
 
 - objetivos e tarefas persistentes;
 - dependências;
 - checkpoints;
 - retomada;
-- execução por handlers registrados;
-- idempotência em conjunto com Guardian.
+- `not_before`, prazo e prioridade persistentes;
+- ordenação de tarefas prontas por prioridade;
+- execução por handlers explicitamente registrados;
+- idempotência em conjunto com Guardian;
+- **sem autonomia em background**.
+
+O Scheduler é uma fundação temporal do V8 Agent, não uma autorização para a STAR
+executar ações sensíveis sozinha.
 
 ### Guardian alpha
 
@@ -85,7 +129,7 @@ A camada Integrated Evolution acrescenta, sobre os mesmos sistemas:
 - claims idempotentes;
 - redaction básica de segredos.
 
-Ainda **não** existe sandbox de SO ou Secrets Vault criptográfico completo.
+Ainda **não** existe sandbox de SO, autenticação forte ou Secrets Vault criptográfico completo.
 
 ### RAG híbrido + OCR
 
@@ -116,17 +160,24 @@ python -m pip install -r requirements-intelligence.txt
 
 Tesseract precisa ser instalado separadamente no sistema quando OCR real for usado.
 
-### Knowledge Graph científico
+### Knowledge Graph científico + cultural
 
-`core/scientific_graph.py` pode materializar no grafo já existente:
+`core/scientific_graph.py` preserva o nome por compatibilidade e pode materializar no
+mesmo grafo oficial:
 
-- 56 temas;
+- 56 temas científicos/curriculares;
 - 885 conceitos canônicos;
-- domínios;
-- relações de pertencimento e co-tema derivadas da taxonomia.
+- 125 assuntos culturais;
+- 40 aspectos culturais;
+- regiões e famílias de fontes;
+- relações derivadas das taxonomias.
 
-Ele deliberadamente **não inventa relações causais** que não estejam sustentadas pela
-fonte/taxonomia.
+As 5M perspectivas culturais **não** são materializadas no grafo. Só a estrutura
+canônica é indexada. O sistema não inventa causalidade científica nem “verdade
+teológica” a partir de conexões do grafo.
+
+A arquitetura aproveita princípios de GraphRAG — entidades/relações + recuperação —
+sem transformar Microsoft GraphRAG em dependência obrigatória do Core.
 
 ### Simulation Engine
 
@@ -155,6 +206,9 @@ Resultados são deduplicados por DOI → URL → título. Encontrar um paper nã
 que sua conclusão foi automaticamente validada; avaliação de evidência continua uma
 etapa separada.
 
+Para cultura/religião/magia, `pesquisa cultural ...` usa a taxonomia local para gerar
+uma consulta e prioriza OpenAlex/Crossref quando o modo ONLINE é autorizado.
+
 ### Operator e Senses
 
 - File Index persistente **somente leitura**, iniciado apenas por ação explícita;
@@ -175,10 +229,12 @@ m.drives
 criar objetivo Estudo: revisar relatividade geral
 listar objetivos
 pesquisar profundamente gravitational waves
+pesquisa cultural história do candomblé
 rag semântico decoerência quântica
 ocr C:\documentos\paper.pdf
 indexar arquivos C:\Development\Projects
 indexar grafo científico
+indexar grafo cultural
 simular órbita
 simular pêndulo
 ```
@@ -234,15 +290,8 @@ STAR_WEATHER_CACHE_SECONDS=600
 
 ## 👁️ STAR Vision
 
-O Vision Portal local possui:
-
-- webcam local;
-- MediaPipe HandLandmarker;
-- duas mãos;
-- tracking/suavização;
-- portal AR;
-- HUD/captura/fullscreen;
-- 12 filtros.
+O Vision Portal local possui webcam, MediaPipe HandLandmarker, tracking de duas mãos,
+suavização, portal AR, HUD/captura/fullscreen e 12 filtros.
 
 Isso **não é ainda compreensão semântica de cena**. Abertura/fechamento remoto da
 câmera do PC permanece bloqueado.
@@ -317,13 +366,14 @@ STAR/
 ├── gui/                        # interface PC
 ├── knowledge/
 │   ├── m_drives/               # nome oficial
-│   └── packs/                  # compatibilidade legada temporária
+│   └── packs/                  # somente compatibilidade legada
 ├── modules/                    # ferramentas
 ├── voice/                      # STT/TTS
 ├── tests/
 ├── docs/
 ├── STAR_MANIFEST.json
 ├── STAR_MIND_MANIFEST.json
+├── STAR_RELIGION_MAGIC_MANIFEST.json
 ├── requirements.txt
 ├── requirements-intelligence.txt
 └── main.py
@@ -348,20 +398,21 @@ caches, fotos pessoais ou arquivos temporários.
 
 Mesmo com as fundações novas, continuam futuros/parciais:
 
-- V2 MIND completo e seus critérios de release;
+- V2 MIND completo: consolidação/esquecimento de memória e contexto longo;
 - Model Registry completo e roteamento de modelos reais;
 - embeddings neurais/materialização no PC do usuário;
 - OCR até Tesseract/PyMuPDF serem instalados e testados localmente;
-- Knowledge Graph de todos os fatos/proveniências;
+- Knowledge Graph de todos os fatos, claims, contradições e proveniências;
 - solvers CFD/FEA/SPICE e simulação científica de alta fidelidade;
-- Research Engine full-text/avaliação metodológica automatizada;
+- Research Engine full-text/avaliação metodológica/retrações;
+- materialização local de corpora culturais somente quando licença permitir;
 - Operator geral e seguro;
 - scene/screen/spatial awareness semântico;
 - Guardian com sandbox, vault, autenticação, backup e rollback;
-- Scheduler/Attention/Agent autonomy ponta-a-ponta;
+- Agent com workers duráveis e approval gates ponta-a-ponta;
 - sync completo do ecossistema;
 - STAR WORLD 3D;
 - robótica física.
 
-Consulte `docs/MASTER_ROADMAP.md` e `docs/STAR_INTEGRATED_EVOLUTION_ALPHA.md` para a
-separação entre **estável, alpha, parcial e planejado**.
+Consulte `docs/MASTER_ROADMAP.md`, `docs/STAR_INTEGRATED_EVOLUTION_ALPHA.md` e
+`docs/STAR_RELIGION_MAGIC_5M.md` para a separação entre **estável, alpha, parcial e planejado**.
