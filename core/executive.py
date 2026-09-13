@@ -8,12 +8,14 @@ class Executive:
         knowledge_packs=None,
         physics_knowledge=None,
         chemistry_knowledge=None,
+        multidisciplinary_knowledge=None,
     ):
         self.model_manager = model_manager
         self.internal_knowledge = internal_knowledge
         self.knowledge_packs = knowledge_packs
         self.physics_knowledge = physics_knowledge
         self.chemistry_knowledge = chemistry_knowledge
+        self.multidisciplinary_knowledge = multidisciplinary_knowledge
 
     def execute(self, request, route):
         text = request.get("input", "")
@@ -23,6 +25,9 @@ class Executive:
             if answer:
                 return answer
 
+        # Física e Química permanecem antes do catálogo amplo. Isso preserva os
+        # engines científicos mais específicos quando a consulta pertence
+        # claramente aos domínios legados e evita que "Ciências" os engula.
         if self.physics_knowledge:
             answer = self.physics_knowledge.answer(text)
             if answer:
@@ -30,6 +35,11 @@ class Executive:
 
         if self.chemistry_knowledge:
             answer = self.chemistry_knowledge.answer(text)
+            if answer:
+                return answer
+
+        if self.multidisciplinary_knowledge:
+            answer = self.multidisciplinary_knowledge.answer(text)
             if answer:
                 return answer
 
