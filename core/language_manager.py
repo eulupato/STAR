@@ -1,10 +1,11 @@
-"""Gerenciador de idioma, tradução contextual e comandos de voz offline da STAR."""
+"""Gerenciador de idioma, tradução contextual e localização global da STAR."""
 from __future__ import annotations
 
 import json
 from pathlib import Path
 import re
 
+from core.global_localization import GlobalLocalizationEngine, TranslationOutcome
 from core.language_catalog import DEFAULT_LOCALE, LOCALES, ExpressionCatalog
 from core.offline_dictionary import OfflineDictionaryStore, normalize_term
 
@@ -40,17 +41,30 @@ def _strip_wake_prefix(raw: str) -> str:
     prefixes = ("ei star ", "ok star ", "ola star ", "hey star ", "star ")
     for prefix in prefixes:
         if normalized.startswith(prefix):
-            # normalize_term remove vírgulas/acentos; usar o texto normalizado aqui é
-            # aceitável para comandos, pois o conteúdo a traduzir é tratado abaixo.
             return normalized[len(prefix):].strip()
     return value
 
 
 class LanguageManager:
-    def __init__(self, settings_path: Path | str = SETTINGS_FILE, dictionary: OfflineDictionaryStore | None = None):
+    """Fonte única de verdade para idioma ativo e tradução da superfície.
+
+    A STAR processa internamente em pt-BR e localiza a entrada/saída nas bordas.
+    Nenhum engine de conhecimento precisa duplicar fatos por idioma.
+    """
+
+    def __init__(
+        self,
+        settings_path: Path | str = SETTINGS_FILE,
+        dictionary: OfflineDictionaryStore | None = None,
+        localization: GlobalLocalizationEngine | None = None,
+    ):
         self.settings_path = Path(settings_path)
         self.dictionary = dictionary or OfflineDictionaryStore()
         self.expressions = ExpressionCatalog()
+        self.localization = localization or GlobalLocalizationEngine(
+            dictionary=self.dictionary,
+            expressions=self.expressions,
+        )
         self.locale = self._load_locale()
 
     def _load_locale(self) -> str:
@@ -63,7 +77,10 @@ class LanguageManager:
 
     def _save(self) -> None:
         self.settings_path.parent.mkdir(parents=True, exist_ok=True)
-        self.settings_path.write_text(json.dumps({"locale": self.locale}, ensure_ascii=False, indent=2), encoding="utf-8")
+        self.settings_path.write_text(
+            json.dumps({"locale": self.locale}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
 
     def set_locale(self, locale: str) -> str:
         resolved = resolve_locale(locale) or (locale if locale in LOCALES else None)
@@ -87,14 +104,23 @@ class LanguageManager:
         profile = self.profile(locale)
         return f"{profile['flag']} {profile['name']}"
 
+    def message(self, key: str, locale: str | None = None, **values) -> str:
+        return self.localization.message(key, locale or self.locale, **values)
+
+    def localize_static(self, text: str, locale: str | None = None) -> str:
+        target = locale or self.locale
+        return self.localization.static(text, target) or str(text)
+
     def stats(self) -> dict:
         expression = self.expressions.stats()
+        localization = self.localization.status()
         return {
             **expression,
             "selected_locale": self.locale,
             "dictionary_sources": self.dictionary.source_stats(),
             "dictionary_seed_entries": self.dictionary.seed_size(),
             "full_dictionary_index_ready": self.dictionary.full_index_ready,
+            "global_localization": localization,
         }
 
     def detect_locale(self, text: str) -> str:
@@ -107,44 +133,36 @@ class LanguageManager:
                 return locale
         return self.locale if self.locale in LOCALES else DEFAULT_LOCALE
 
-    def translate(self, text: str, target_locale: str, source_locale: str | None = None) -> str | None:
+    def translate_with_report(
+        self,
+        text: str,
+        target_locale: str,
+        source_locale: str | None = None,
+    ) -> TranslationOutcome:
         target = resolve_locale(target_locale) or (target_locale if target_locale in LOCALES else None)
-        if target is None:
-            return None
-        contextual = self.expressions.contextual_equivalent(text, target)
-        if contextual:
-            return contextual
         source = source_locale if source_locale in LOCALES else self.detect_locale(text)
-        exact = self.dictionary.lookup(text, source, target)
-        if exact:
-            return exact
-        # Fallback conservador: traduz somente tokens conhecidos; preserva o resto.
-        pieces = re.findall(r"\w+(?:['’-]\w+)*|[^\w\s]+|\s+", str(text), flags=re.UNICODE)
-        translated_any = False
-        out = []
-        for piece in pieces:
-            if not piece or piece.isspace() or not any(ch.isalnum() for ch in piece):
-                out.append(piece)
-                continue
-            value = self.dictionary.lookup(piece, source, target)
-            if value is None:
-                out.append(piece)
-            else:
-                translated_any = True
-                if piece[:1].isupper():
-                    value = value[:1].upper() + value[1:]
-                out.append(value)
-        return "".join(out) if translated_any else None
+        if target is None:
+            return TranslationOutcome(
+                str(text), source, str(target_locale), "identity", False, reason="unsupported-locale"
+            )
+        return self.localization.translate(str(text), target, source)
+
+    def translate(self, text: str, target_locale: str, source_locale: str | None = None) -> str | None:
+        outcome = self.translate_with_report(text, target_locale, source_locale)
+        return outcome.text if outcome.complete else None
 
     def translate_to_portuguese(self, text: str) -> str:
         if self.locale == "pt-BR":
             return str(text)
-        return self.translate(text, "pt-BR", self.locale) or str(text)
+        outcome = self.translate_with_report(text, "pt-BR", self.locale)
+        return outcome.text if outcome.complete else str(text)
 
     def translate_response(self, text: str) -> str:
+        """Localiza uma resposta canônica sem nunca apresentar tradução parcial."""
         if self.locale == "pt-BR":
             return str(text)
-        return self.translate(text, self.locale, "pt-BR") or str(text)
+        outcome = self.translate_with_report(text, self.locale, "pt-BR")
+        return outcome.text
 
     def handle_command(self, text: str) -> str | None:
         raw = _strip_wake_prefix(str(text or "").strip())
@@ -167,10 +185,13 @@ class LanguageManager:
                 locale = resolve_locale(tail)
                 if locale:
                     self.set_locale(locale)
-                    return f"Idioma da STAR alterado para {self.display(locale)}. O modo permanece offline-first."
+                    return self.message("language_changed", locale, display=self.display(locale))
 
-        if norm in {"qual idioma", "qual idioma esta ativo", "idioma atual", "current language", "que idioma", "lingua atual"}:
-            return f"Idioma atual: {self.display()}."
+        if norm in {
+            "qual idioma", "qual idioma esta ativo", "idioma atual", "current language",
+            "que idioma", "lingua atual", "idioma actual", "langue actuelle", "lingua corrente",
+        }:
+            return self.message("current_language", display=self.display())
 
         # Tradução explícita. Mantém o texto original antes do marcador alvo.
         markers = (" para ", " to ", " al ", " a ", " en ", " in ")
@@ -189,11 +210,12 @@ class LanguageManager:
                     if not target:
                         continue
                     source = self.detect_locale(source_text)
-                    result = self.translate(source_text, target, source)
-                    if result:
-                        return f"{result}  [{self.display(target)} • equivalente contextual/offline]"
-                    return (
-                        f"Não encontrei '{source_text}' no índice offline atual. "
-                        "Não vou inventar uma tradução; atualize/materialize os dicionários locais."
+                    outcome = self.translate_with_report(source_text, target, source)
+                    if outcome.complete:
+                        return f"{outcome.text}  [{self.display(target)} • {outcome.backend}]"
+                    return self.message(
+                        "translation_missing",
+                        locale=self.locale,
+                        text=source_text,
                     )
         return None

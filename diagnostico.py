@@ -26,10 +26,11 @@ MODULES = [
     "core.chemistry_topics_20", "core.chemistry_knowledge_500k", "core.multidisciplinary_taxonomy",
     "core.multidisciplinary_knowledge", "core.knowledge_expansion_15m", "core.cognitive_catalog",
     "database.cognitive_store", "core.labs", "core.mind", "core.thematic_voice", "core.language_catalog",
-    "core.offline_dictionary", "core.language_manager", "core.router", "core.executive", "core.star_core",
-    "core.commands", "core.conversation", "core.weather", "core.islands", "core.memory", "core.emotion",
-    "core.avatar", "core.knowledge_registry", "core.cure", "core.math_engine", "modules.computer_control",
-    "database.database", "database.memory", "voice.manager", "voice.audio_input", "gui.app",
+    "core.offline_dictionary", "core.global_localization", "core.language_manager", "core.router", "core.executive",
+    "core.star_core", "core.commands", "core.conversation", "core.weather", "core.islands", "core.memory",
+    "core.emotion", "core.avatar", "core.knowledge_registry", "core.cure", "core.math_engine",
+    "modules.computer_control", "database.database", "database.memory", "voice.manager", "voice.audio_input",
+    "gui.app",
 ]
 
 
@@ -65,6 +66,7 @@ def main():
     plus_stats = star.knowledge_plus.stats()
     mind_stats = star.mind.stats()
     language_stats = star.language.stats()
+    localization_stats = language_stats.get("global_localization", {})
     voice_theme_stats = thematic_voice_stats()
 
     plus_boundaries_ok = True
@@ -78,6 +80,13 @@ def main():
         first = star.mind.catalog.content_id(theme, 0, 0)
         last = star.mind.catalog.content_id(theme, 999, 999)
         cognitive_boundaries_ok = cognitive_boundaries_ok and first.endswith("-0000001") and last.endswith("-1000000")
+
+    invariant_sample = "CHEMX-0000042 9.81 m/s https://example.org `x = 2 + 2`"
+    localized_sample = star.language.translate_with_report(invariant_sample, "en-US", "pt-BR")
+    invariants_preserved = all(
+        token in localized_sample.text
+        for token in ("CHEMX-0000042", "9.81 m/s", "https://example.org", "`x = 2 + 2`")
+    )
 
     checks = [
         ("identidade", star.get_name() == "STAR"),
@@ -118,6 +127,11 @@ def main():
         ("expressões = 500000", language_stats.get("total_semantic_contents") == 500000),
         ("100k expressões por idioma", language_stats.get("contents_per_language") == 100000),
         (">=5 dicionários/fontes por idioma", min(language_stats.get("dictionary_sources", {}).values(), default=0) >= 5),
+        ("localização global = 6 locales", len(localization_stats.get("supported_locales", [])) == 6),
+        ("localização canônica = pt-BR", localization_stats.get("canonical_locale") == "pt-BR"),
+        ("tradução parcial bloqueada", localization_stats.get("strict_no_partial_translation") is True),
+        ("invariantes preservados na tradução", invariants_preserved),
+        ("catálogo UI traduz INICIAR", star.language.localization.static("INICIAR", "fr-FR") == "DÉMARRER"),
         ("catálogo operacional de voz >= 4000", command_count() >= 4000),
         ("catálogo total de voz > 1000000", command_count() + THEMATIC_VOICE_VARIATIONS > 1000000),
         ("catálogo conversacional >= 5000", conversation_response_count() >= 5000),
@@ -133,12 +147,22 @@ def main():
     print(f"🚀 Knowledge PLUS: {plus_stats.get('domains', 0)} domínio(s), +{plus_stats.get('added_content_variations_per_domain', 0)} por domínio, +{plus_stats.get('added_content_variations', 0)} novos | combinado={plus_stats.get('combined_content_variations', 0)}")
     print(f"🧠 MIND alpha: {mind_stats.get('capabilities', 0)} capacidades, {mind_stats.get('canonical_nodes_total', 0)} nós canônicos, {mind_stats.get('support_contents_total', 0)} conteúdos operacionais | FTS5={'SIM' if mind_stats.get('store', {}).get('fts5_available') else 'fallback textual'}")
     print(f"🌐 Idiomas: {language_stats.get('language_families', 0)} famílias / {language_stats.get('locale_profiles', 0)} perfis | {language_stats.get('total_semantic_contents', 0)} conteúdos de expressão")
+    neural_stats = localization_stats.get("neural", {})
+    print(
+        "🌍 Localização global: "
+        f"{len(localization_stats.get('supported_locales', []))} locales | "
+        f"canônico={localization_stats.get('canonical_locale', '?')} | "
+        f"UI fixa={localization_stats.get('static_strings', 0)} superfícies | "
+        f"neural={'SIM' if neural_stats.get('installed') else 'opcional/não instalado'}"
+    )
     print("📚 Dicionários configurados: " + ", ".join(f"{k}={v}" for k, v in sorted(language_stats.get("dictionary_sources", {}).items())) + f" | índice completo={'SIM' if language_stats.get('full_dictionary_index_ready') else 'NÃO (seed ativo)'}")
     print(f"📦 Knowledge Packs: {pack_stats.get('packs', 0)} pack(s), {pack_stats.get('entries', 0)} entrada(s) carregada(s)")
     if pack_stats.get("packs", 0) and not pack_stats.get("entries", 0):
         warnings.append("Knowledge Packs foram descobertos, mas nenhuma entrada de conhecimento foi carregada; descoberta de manifesto não equivale a conteúdo utilizável.")
     if not language_stats.get("full_dictionary_index_ready"):
         warnings.append("Dicionários completos ainda não foram materializados em SQLite; tradução contextual e léxico seed funcionam, mas vocabulário arbitrário pode não ser encontrado.")
+    if not neural_stats.get("installed"):
+        warnings.append("Argos Translate/modelos não estão instalados; textos livres sem cobertura integral são preservados no original, sem tradução parcial.")
     if not mind_stats.get("store", {}).get("fts5_available"):
         warnings.append("SQLite FTS5 indisponível neste build; o RAG usa busca textual fallback, com menor qualidade de ranking.")
 

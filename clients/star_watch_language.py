@@ -1,9 +1,11 @@
-"""STAR Watch Plasma Orbit com seleção lateral de idioma.
+"""STAR Watch Plasma Orbit com seleção e localização global de idioma.
 
-A camada reaproveita integralmente o renderer V0.4 e adiciona somente o modo IDIOMA.
-Girar o STAR Ring dentro da tela percorre bandeiras/perfis; pressionar confirma e volta.
+A camada reaproveita integralmente o renderer V0.4. O idioma ativo vem do mesmo
+LanguageManager usado pelo Core; não existe catálogo paralelo do Watch.
 """
 from __future__ import annotations
+
+import tkinter as tk
 
 from clients import star_watch_app as watch_base
 from clients import star_watch_visual as visual
@@ -21,6 +23,24 @@ visual.WATCH_MODES = watch_base.WATCH_MODES
 
 
 class StarWatchLanguageVisualApp(visual.StarWatchVisualApp):
+    def render(self):
+        super().render()
+        self._localize_static_canvas_text()
+
+    def _localize_static_canvas_text(self):
+        """Localiza somente textos fixos conhecidos; dados dinâmicos ficam intactos."""
+        manager = self._core().language
+        for item in self.canvas.find_all():
+            try:
+                text = self.canvas.itemcget(item, "text")
+            except tk.TclError:
+                continue
+            if not text:
+                continue
+            localized = manager.localization.static(text, manager.locale)
+            if localized is not None and localized != text:
+                self.canvas.itemconfigure(item, text=localized)
+
     def rotate(self, steps: int):
         if self.model.active_mode == "language":
             locale = self._core().language.cycle(steps)
@@ -31,7 +51,11 @@ class StarWatchLanguageVisualApp(visual.StarWatchVisualApp):
 
     def press(self):
         if self.model.active_mode == "language":
-            self.message = f"Idioma confirmado: {self._core().language.display()}"
+            manager = self._core().language
+            self.message = manager.message(
+                "language_confirmed",
+                display=manager.display(),
+            )
             self.model.back()
             self.render()
             return
@@ -60,7 +84,7 @@ class StarWatchLanguageVisualApp(visual.StarWatchVisualApp):
         c.create_text(
             self.CX,
             112,
-            text="IDIOMA",
+            text=manager.localize_static("IDIOMA"),
             fill=self._theme().primary,
             font=("Segoe UI Semibold", 11),
             tags=("hud",),
@@ -102,7 +126,7 @@ class StarWatchLanguageVisualApp(visual.StarWatchVisualApp):
         c.create_text(
             self.CX,
             410,
-            text="GIRE PARA TROCAR • PRESSIONE PARA CONFIRMAR",
+            text=manager.localize_static("GIRE PARA TROCAR • PRESSIONE PARA CONFIRMAR"),
             fill=self.COLORS["muted"],
             font=("Segoe UI", 9),
             tags=("hud",),
@@ -110,7 +134,9 @@ class StarWatchLanguageVisualApp(visual.StarWatchVisualApp):
         c.create_text(
             self.CX,
             474,
-            text="A seleção vale para texto, voz, traduções e respostas do Core.",
+            text=manager.localize_static(
+                "A seleção vale para texto, voz, traduções e respostas do Core."
+            ),
             fill=self.COLORS["muted_2"],
             width=350,
             justify="center",

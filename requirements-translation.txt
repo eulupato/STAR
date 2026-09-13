@@ -1,0 +1,3 @@
+# Opcional: tradução neural offline de textos livres.
+# Não faz parte do startup/base da STAR e não é exigido pelo requirements.txt principal.
+argostranslate>=1.11.1,<2
