@@ -54,8 +54,9 @@ _STOP = {"a","o","as","os","um","uma","de","da","do","das","dos","e","qual","qua
 
 
 def _norm(text):
-    text = unicodedata.normalize("NFKD", str(text or "")).encode("ascii", "ignore").decode("ascii").lower().replace("_", " ")
-    return " ".join(re.sub(r"[^a-z0-9+\- ]+", " ", text).split())
+    text = str(text or "").replace("-", " ").replace("–", " ").replace("—", " ")
+    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii").lower().replace("_", " ")
+    return " ".join(re.sub(r"[^a-z0-9+ ]+", " ", text).split())
 
 
 @dataclass(frozen=True)
