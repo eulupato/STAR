@@ -50,7 +50,13 @@ Essa proteção existe para impedir que tradução altere informação técnica.
 
 ## UI
 
-Mensagens e rótulos essenciais possuem superfícies determinísticas nos seis locales. O STAR Watch usa o mesmo `LanguageManager` do Core; não possui sistema linguístico independente.
+Mensagens, estados e rótulos essenciais possuem superfícies determinísticas nos seis locales.
+
+O STAR Watch usa `clients/star_watch_language.py` sobre o mesmo `LanguageManager` do Core; não possui um sistema linguístico independente.
+
+A interface principal usa `gui/localized_app.py`, uma subclasse fina de `gui.app.StarApp`. Essa camada localiza widgets e estados sem reimplementar chat, voz, memória, navegação, ilhas ou closet. `main.py` e `gui/main.py` usam essa versão localizada como entrypoint visual.
+
+Dados dinâmicos, texto digitado pelo usuário, valores técnicos e conteúdo estruturado não são alterados pela localização de UI.
 
 O locale selecionado continua persistido em `runtime/language/settings.json`.
 
@@ -111,5 +117,6 @@ Quando não houver tradução local completa e segura, a STAR preserva o origina
 - Os modelos Argos não são versionados no GitHub.
 - A instalação de modelos exige uma ação explícita e conexão somente durante o download.
 - Depois de instalados, a tradução neural pode funcionar offline.
+- Sem Argos e sem o dicionário SQLite completo, textos livres fora dos catálogos podem permanecer no idioma canônico em vez de receber uma tradução parcial insegura.
 - Tradução automática não transforma o conteúdo em uma nova fonte factual; o conteúdo canônico continua sendo a referência.
 - Nomes próprios e terminologia científica podem exigir expansão futura de glossários especializados para melhorar estilo sem mudar significado.
