@@ -1,8 +1,8 @@
 """Fundação de agentes/capacidades da STAR.
 
 Os agentes não são personalidades, cérebros independentes ou instâncias da STAR.
-Eles são executores especializados acionados pelo STAR Core. Capacidades MIND V2
-podem estar disponíveis em alpha sem promover automaticamente toda a release V2.
+Eles são executores especializados acionados pelo STAR Core. Capacidades futuras
+podem existir em alpha sem promover automaticamente toda a release do roadmap.
 """
 from __future__ import annotations
 
@@ -24,29 +24,29 @@ class AgentSpec:
 
 AGENT_SPECS = (
     AgentSpec("voice_command", "Interpreta comandos de voz/texto em intents estruturadas e catálogo temático de estudo.", "available", "V1.9 Foundation", "safe"),
-    AgentSpec("computer", "Ações locais simples de computador já suportadas pela Foundation.", "partial", "V1.9 → V4 Operator", "safe-subset"),
-    AgentSpec("file", "Busca nominal de arquivos; RAG documental local já existe, índice semântico vetorial continua evolução futura.", "partial", "V1.9 → V4 Operator", "read"),
-    AgentSpec("research", "Pesquisa acadêmica por metadados Crossref e planejamento de pesquisa; web geral continua dependente de modo ONLINE autorizado.", "partial", "V2 alpha → V12+ Research", "network"),
-    AgentSpec("knowledge", "Consulta conhecimento interno, Física, Química, biblioteca multidisciplinar, Knowledge PLUS, RAG e Knowledge Packs.", "available", "V1.9 + V2/V3 alpha", "read"),
+    AgentSpec("computer", "Ações locais simples de computador; Operator geral continua parcial e protegido.", "partial", "V1.9 → V4 Operator", "safe-subset"),
+    AgentSpec("file", "Busca nominal e File Index persistente somente leitura; busca semântica de conteúdo usa o RAG híbrido quando indexado.", "partial", "V1.9 → V4 Operator", "read"),
+    AgentSpec("research", "Research Hub opt-in com Crossref, OpenAlex, arXiv e PubMed/NCBI; descoberta não equivale a evidência validada.", "partial", "V2/V3 alpha → V12+ Research", "network"),
+    AgentSpec("knowledge", "Consulta Física, Química, multidisciplinar, currículo, 5M culturais de religiões/magia, RAG, Knowledge Graph e M.drives.", "available", "V1.9 + V2/V3 alpha", "read"),
     AgentSpec("memory", "Memória cognitiva tipada persistente: working, episódica, semântica, conversa, projetos, decisões, erros, pessoas, objetos e preferências.", "available", "V2.1 alpha", "read/write-local"),
-    AgentSpec("project", "Entidades persistentes de projeto, objetivo, status e histórico de eventos.", "available", "V2/V8 alpha", "read/write-local"),
+    AgentSpec("project", "Projetos persistentes e Goal Engine com tarefas, dependências, checkpoints, agenda e prioridades duráveis; sem autonomia em background.", "available", "V2/V8 alpha", "read/write-local"),
     AgentSpec("reasoning", "Raciocínio estruturado auditável, metacognição e planejamento hierárquico.", "available", "V2.0 alpha", "local"),
     AgentSpec("scientific", "Raciocínio científico, hipóteses, variáveis, controles, falsificação, incerteza e replicação.", "available", "V2/V3 alpha", "local"),
     AgentSpec("verification", "Verificação baseada em evidências e confiança; sem evidência retorna insuficiente em vez de inventar certeza.", "available", "V2 alpha", "local"),
-    AgentSpec("simulation", "Simulação local determinística: projétil, dinâmica exponencial, Monte Carlo e integração RK4 escalar.", "available", "V3.3 alpha", "local"),
-    AgentSpec("rag", "Ingestão local TXT/MD/CSV/JSON/Python/PDF e recuperação FTS5/BM25 com citações de origem.", "available", "V3 alpha", "read-local"),
+    AgentSpec("simulation", "Simulação local: modelos Foundation + RK4 vetorial, órbita de dois corpos, pêndulo não linear, calor 1D, onda 1D e circuito RC; não substitui CFD/FEA/SPICE de alta fidelidade.", "available", "V3.3 alpha", "local"),
+    AgentSpec("rag", "RAG local FTS5/BM25 com camada semântica derivada; embeddings neurais e OCR são opcionais.", "available", "V3 alpha", "read-local"),
     AgentSpec("music", "Spotify e controles multimídia locais disponíveis em escopo limitado.", "partial", "V1.9 → V4 Operator", "safe-subset"),
     AgentSpec("vision", "STAR Vision Portal local com webcam, tracking de mãos, portal AR e filtros; análise semântica de cena permanece futura.", "partial", "V1.9 experimental → V5 Senses", "read/local-camera"),
     AgentSpec("device", "Gateway LAN experimental e runtime adaptativo; Device Manager completo é futuro.", "partial", "V1.9 experimental → V9", "read"),
-    AgentSpec("cure", "Diagnóstico básico existente; avaliação cognitiva registra métricas, mas Guardian/Cura inteligente completa fica para V7.", "partial", "V1.9 → V7 Guardian", "read"),
-    AgentSpec("security", "Ações sensíveis aguardam Permission Manager, Audit Log e autenticação forte.", "planned", "V7 Guardian", "block-sensitive"),
-    AgentSpec("personal_assistant", "Hora/data, conversa contextual e clima atual sob demanda; agenda persistente fica para V8.", "partial", "V1.9 → V8 Agent", "read/network-weather"),
-    AgentSpec("web", "Camada operacional mínima de navegador/pesquisa web.", "partial", "V1.9 → V4/V12+", "network"),
+    AgentSpec("cure", "Cura local monitora integridade, cria snapshot known-good e pode restaurar corrupção verificável com rollback; não gera código autonomamente.", "partial", "V7 Guardian alpha", "local-guarded"),
+    AgentSpec("security", "Guardian alpha implementa default-deny, confirmação, audit log e idempotência; sandbox de SO, vault criptográfico e autenticação forte continuam futuros.", "partial", "V7 Guardian alpha", "block-sensitive"),
+    AgentSpec("personal_assistant", "Hora/data, People local, conversa contextual, clima sob autorização de rede e agenda de tarefas do Goal Engine.", "partial", "V1.9 → V8 Agent", "read/network-weather"),
+    AgentSpec("web", "Fallback web determinístico sem IA generativa; SearXNG preferido/DuckDuckGo fallback, extração, ranking e cache com proveniência quando ONLINE.", "partial", "V3/V12+", "network-opt-in"),
     AgentSpec("coding", "Code Lab local restrito para pequenos testes Python; não é sandbox de SO nem agente autônomo de edição do repositório.", "partial", "V2/V12+", "local-restricted"),
     AgentSpec("home", "Automação residencial.", "planned", "V9 Ecosystem", "none"),
     AgentSpec("body", "Controle abstrato de corpo/robótica.", "planned", "V10 Embodied", "none"),
     AgentSpec("creation", "Orquestração de projetos criativos na Central de Criação.", "planned", "V6/V12+", "none"),
-    AgentSpec("orchestrator", "Coordenação paralela de agentes registrados com contratos simples de entrada/saída.", "available", "V2/V8 alpha", "local"),
+    AgentSpec("orchestrator", "Coordenação de capacidades registradas; Goal Engine fornece estado durável, dependências, agenda e checkpoints.", "available", "V2/V8 alpha", "local"),
 )
 
 
@@ -78,8 +78,8 @@ class AgentManager:
         if remote and not match.remote_safe:
             return (
                 "Esse comando é reconhecido, mas exige confirmação local. "
-                "A STAR não executa ações sensíveis pelo Watch enquanto o "
-                "Permission Manager ainda não estiver implementado."
+                "A STAR mantém ações sensíveis bloqueadas remotamente; o Guardian alpha "
+                "já audita novas capacidades, mas a integração completa de permissões do Operator continua em evolução."
             )
         return self._execute(match, network_enabled=network_enabled)
 
@@ -96,6 +96,8 @@ class AgentManager:
         if match.intent == "time": return computer.local_time()
         if match.intent == "date": return computer.local_date()
         if match.intent == "weather_current":
+            if not network_enabled:
+                return computer.network_required_message()
             snapshot = self.weather.current(match.slots.get("location"))
             if snapshot is None: return "Não consegui obter o clima atual agora. Posso tentar novamente quando houver conexão e localização disponível."
             return format_weather(snapshot)
@@ -121,5 +123,5 @@ class AgentManager:
             if not network_enabled: return computer.network_required_message()
             return computer.web_search(match.slots["query"])
         if match.intent in {"close_app", "lock_pc"}:
-            return "Eu reconheço esse comando, mas ele exige confirmação. A execução ficará bloqueada até o Permission Manager da STAR."
+            return "Eu reconheço esse comando, mas ele exige confirmação local. A integração completa dessas ações com o Guardian/Permission Manager ainda está bloqueada por segurança."
         return "Comando reconhecido, mas esta capacidade ainda não está disponível."

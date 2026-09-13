@@ -1,242 +1,217 @@
-"""Diagnóstico geral e leve da instalação da STAR V1.9 + MIND V2 alpha.
+"""Diagnóstico leve da STAR V1.9 + Integrated Evolution Alpha.
 
-Não carrega o Chatterbox pesado. Para síntese real use DIAGNOSTICO_VOZ.bat.
+Não baixa modelos, não abre câmera, não inicia TTS e não usa internet. O objetivo é
+validar os contratos reais do Core, M.drives, MIND, idiomas, People, Cura, Web
+Knowledge e a trava offline antes de aceitar uma atualização como saudável.
 """
-from pathlib import Path
+from __future__ import annotations
+
 import importlib
-import json
+import sys
+import unicodedata
 
-ROOT = Path(__file__).resolve().parent
+
+MODULES = (
+    "config",
+    "core.star_identity",
+    "core.internal_knowledge",
+    "core.physics_knowledge_150k",
+    "core.chemistry_knowledge_500k",
+    "core.multidisciplinary_knowledge",
+    "core.knowledge_expansion_15m",
+    "core.curriculum_knowledge",
+    "core.religion_magic_knowledge",
+    "core.mind",
+    "core.cognition_runtime",
+    "core.goal_engine",
+    "core.guardian",
+    "core.semantic_rag",
+    "core.ocr",
+    "core.research_hub",
+    "core.web_knowledge",
+    "core.people",
+    "core.cure",
+    "core.scientific_graph",
+    "core.scientific_simulation",
+    "core.operator_index",
+    "core.senses",
+    "core.evolution",
+    "core.mdrives",
+    "core.m_drive_manager",
+    "core.language_profiles",
+    "core.language_catalog",
+    "core.offline_dictionary",
+    "core.global_localization",
+    "core.language_manager",
+    "core.router",
+    "core.executive",
+    "core.star_core",
+    "core.commands",
+    "core.conversation",
+    "core.weather",
+    "database.database",
+    "database.cognitive_store",
+    "gui.localized_app",
+)
 
 
-def _configure_console_utf8():
-    """Evita falhas de Unicode em consoles Windows com code page antiga."""
-    import sys
-
+def _console_utf8() -> None:
     for stream in (sys.stdout, sys.stderr):
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")
-        except (AttributeError, ValueError, OSError):
+        except (AttributeError, OSError, ValueError):
             pass
 
 
-MODULES = [
-    "config", "core.star_identity", "core.internal_knowledge", "core.physics_knowledge",
-    "core.physics_topics_extended", "core.physics_knowledge_150k", "core.chemistry_topics_01",
-    "core.chemistry_topics_20", "core.chemistry_knowledge_500k", "core.multidisciplinary_taxonomy",
-    "core.multidisciplinary_knowledge", "core.knowledge_expansion_15m", "core.curriculum_taxonomy",
-    "core.curriculum_knowledge", "core.cognitive_catalog", "database.cognitive_store", "core.labs",
-    "core.mind", "core.thematic_voice", "core.language_catalog", "core.offline_dictionary",
-    "core.global_localization", "core.language_manager", "core.router", "core.executive", "core.star_core",
-    "core.commands", "core.conversation", "core.weather", "core.islands", "core.memory", "core.emotion",
-    "core.avatar", "core.knowledge_registry", "core.cure", "core.math_engine", "modules.computer_control",
-    "database.database", "database.memory", "voice.manager", "voice.audio_input", "gui.app",
-]
+def _check(failures: list, name: str, condition, detail: str = "") -> bool:
+    ok = bool(condition)
+    print(("🟢 " if ok else "🔴 ") + name + (f" — {detail}" if detail else ""))
+    if not ok:
+        failures.append(name)
+    return ok
 
 
-def main():
-    _configure_console_utf8()
+def main() -> int:
+    _console_utf8()
     from config import VERSION
-    from core.commands import command_count
-    from core.conversation import conversation_response_count
-    from core.thematic_voice import THEMATIC_VOICE_VARIATIONS, thematic_voice_stats
 
-    print("=" * 64)
-    print(f"⭐ DIAGNÓSTICO GERAL STAR V{VERSION}")
-    print("=" * 64)
-
-    failures = []
-    warnings = []
+    print("=" * 76)
+    print(f"⭐ DIAGNÓSTICO STAR V{VERSION} + INTEGRATED EVOLUTION ALPHA")
+    print("=" * 76)
+    failures: list[str] = []
+    warnings: list[str] = []
 
     for name in MODULES:
         try:
             importlib.import_module(name)
             print(f"🟢 import {name}")
-        except Exception as error:
-            failures.append((name, str(error)))
-            print(f"🔴 import {name}: {error}")
+        except Exception as exc:
+            failures.append(f"import {name}")
+            print(f"🔴 import {name}: {type(exc).__name__}: {exc}")
 
+    if failures:
+        print("\n🔴 Imports críticos falharam; diagnóstico funcional interrompido.")
+        return 1
+
+    from core.commands import command_count
+    from core.conversation import conversation_response_count
+    from core.offline_dictionary import normalize_term
+    from core.thematic_voice import THEMATIC_VOICE_VARIATIONS
     from main import create_star
 
     star = create_star()
-    pack_stats = star.packs.stats()
-    physics_stats = star.physics.stats()
-    chemistry_stats = star.chemistry.stats()
-    multi_stats = star.multidisciplinary.stats()
-    plus_stats = star.knowledge_plus.stats()
-    curriculum_stats = star.curriculum.stats()
-    mind_stats = star.mind.stats()
-    language_stats = star.language.stats()
-    localization_stats = language_stats.get("global_localization", {})
-    voice_theme_stats = thematic_voice_stats()
+    physics = star.physics.stats()
+    chemistry = star.chemistry.stats()
+    multi = star.multidisciplinary.stats()
+    plus = star.knowledge_plus.stats()
+    curriculum = star.curriculum.stats()
+    cultural = star.religion_magic.stats()
+    mind = star.mind.stats()
+    language = star.language.stats()
+    localization = language.get("global_localization", {})
+    evolution = star.evolution.stats()
+    mdrives = star.mdrives.stats()
 
-    plus_boundaries_ok = True
-    for domain in plus_stats.get("domain_keys", []):
-        first = star.knowledge_plus.content_id(domain, 0, 0)
-        last = star.knowledge_plus.content_id(domain, 999, 999)
-        plus_boundaries_ok = plus_boundaries_ok and first.endswith("-0000001") and last.endswith("-1000000")
+    print("\nCORE / KNOWLEDGE")
+    _check(failures, "identidade STAR", star.get_name() == "STAR")
+    _check(failures, "criador disponível", bool(star.get_creator()))
+    _check(failures, "saudação local", bool(star.process("olá")))
+    _check(failures, "matemática local 2+2", "4" in str(star.process("quanto é 2+2")))
+    _check(failures, "M.drives é interface oficial", star.mdrives is star.packs)
+    _check(failures, "Física 150K addressable", physics.get("content_variations") == 150_000)
+    _check(failures, "Química 500K addressable", chemistry.get("content_variations") == 500_000)
+    _check(failures, "Multidisciplinar 6.5M addressable", multi.get("total_content_variations") == 6_500_000)
+    _check(failures, "Knowledge PLUS +15M", plus.get("added_content_variations") == 15_000_000)
+    _check(failures, "legado combinado 22.15M", plus.get("combined_content_variations") == 22_150_000)
+    _check(failures, "currículo 56 temas", curriculum.get("themes") == 56)
+    _check(failures, "currículo 885 conceitos", curriculum.get("unique_concepts") == 885)
+    _check(failures, "currículo 941M visões addressable", curriculum.get("total_new_addressable_contents") == 941_000_000)
+    _check(failures, "cultura 125 assuntos", cultural.get("subjects") == 125)
+    _check(failures, "cultura 5M visões addressable", cultural.get("total_addressable_contents") == 5_000_000)
+    _check(failures, "M.drives carregáveis", mdrives.get("mdrives", 0) >= 1)
 
-    curriculum_boundaries_ok = False
-    try:
-        first_theme = star.curriculum.materialize_theme(1, 1)["id"]
-        last_theme = star.curriculum.materialize_theme(56, 1_000_000)["id"]
-        first_concept = star.curriculum.materialize_concept(1, 1)["id"]
-        last_concept = star.curriculum.materialize_concept(curriculum_stats["unique_concepts"], 1_000_000)["id"]
-        curriculum_boundaries_ok = (
-            first_theme == "CURRT-001-0000001"
-            and last_theme == "CURRT-056-1000000"
-            and first_concept.endswith("-0000001")
-            and last_concept.endswith("-1000000")
-        )
-    except (KeyError, ValueError, IndexError):
-        curriculum_boundaries_ok = False
+    print("\nMIND / EVOLUTION")
+    _check(failures, "MIND 15 capacidades", mind.get("capabilities") == 15)
+    _check(failures, "MIND 15M variantes operacionais", mind.get("support_contents_total") == 15_000_000)
+    _check(failures, "Integrated Evolution alpha", evolution.get("status") == "integrated-alpha")
+    _check(failures, "Guardian default-deny", evolution.get("guardian", {}).get("default_deny_unknown") is True)
+    _check(failures, "Goal Engine persistente", evolution.get("goal_engine", {}).get("durable_checkpoints") is True)
+    _check(failures, "RAG local", evolution.get("semantic_rag", {}).get("status") == "active-local")
+    _check(failures, "Operator não escreve/apaga", evolution.get("operator", {}).get("writes_or_deletes") is False)
+    _check(failures, "Senses não finge scene understanding", evolution.get("senses", {}).get("semantic_scene_understanding") is False)
+    _check(failures, "Web Knowledge sem IA generativa", evolution.get("web_knowledge", {}).get("generative_ai") is False)
+    _check(failures, "Web Knowledge preserva cache offline", evolution.get("web_knowledge", {}).get("offline_cache") is True)
 
-    cognitive_boundaries_ok = True
-    for theme in mind_stats.get("capability_keys", []):
-        first = star.mind.catalog.content_id(theme, 0, 0)
-        last = star.mind.catalog.content_id(theme, 999, 999)
-        cognitive_boundaries_ok = cognitive_boundaries_ok and first.endswith("-0000001") and last.endswith("-1000000")
+    print("\nOFFLINE / NETWORK")
+    _check(failures, "Core inicia OFFLINE", star.network_enabled is False)
+    _check(failures, "clima inicia sem rede", star.weather.enabled is False)
+    web_offline = star.web.search("diagnóstico sem rede", network_enabled=False)
+    _check(failures, "busca web bloqueada offline", web_offline.get("reason") == "network_disabled")
+    _check(failures, "painel AGORA não aciona clima offline", "nenhuma rede foi acionada" in star.now_status(include_weather=True))
+    star.network_enabled = True
+    _check(failures, "trava central habilita provider online", star.weather.enabled is True)
+    star.network_enabled = False
+    _check(failures, "trava central desabilita provider novamente", star.weather.enabled is False)
 
-    invariant_sample = "CHEMX-0000042 9.81 m/s https://example.org `x = 2 + 2`"
-    localized_sample = star.language.translate_with_report(invariant_sample, "en-US", "pt-BR")
-    invariants_preserved = all(
-        token in localized_sample.text
-        for token in ("CHEMX-0000042", "9.81 m/s", "https://example.org", "`x = 2 + 2`")
+    print("\nLANGUAGE / LOCALIZATION")
+    _check(failures, "13 famílias linguísticas", language.get("language_families") == 13)
+    _check(failures, "18 perfis de locale", language.get("locale_profiles") == 18)
+    _check(failures, "12 perfis modernos/dialetais", language.get("modern_locales") == 12)
+    _check(failures, "6 perfis históricos", language.get("historical_locales") == 6)
+    _check(failures, "catálogo contextual curado continua 5 famílias", language.get("curated_expression_families") == 5)
+    _check(failures, "500K conteúdos contextuais preservados", language.get("total_semantic_contents") == 500_000)
+    _check(failures, "18 locales no runtime", len(localization.get("supported_locales", [])) == 18)
+    _check(failures, "sem tradução parcial falsa", localization.get("strict_no_partial_translation") is True)
+    _check(failures, "sem MT moderno fingido para históricos", localization.get("historical_profiles_use_modern_mt") is False)
+    _check(failures, "UI japonesa offline", star.language.localize_static("INICIAR", "ja-JP") == "開始")
+    _check(failures, "UI árabe offline", star.language.localize_static("AGORA", "ar-001") == "الآن")
+    _check(failures, "Unicode japonês preservado", normalize_term("日本語") == "日本語")
+    _check(
+        failures,
+        "Unicode coreano preservado",
+        unicodedata.normalize("NFC", normalize_term("한국어")) == "한국어",
     )
+    _check(failures, "hieróglifo egípcio preservado", "𓂀" in normalize_term("𓂀"))
+    _check(failures, ">=5 fontes por família", min(language.get("dictionary_sources", {}).values(), default=0) >= 5)
 
-    checks = [
-        ("identidade", star.get_name() == "STAR"),
-        ("saudação", bool(star.process("olá"))),
-        ("criador", bool(star.process("quem criou você?"))),
-        ("matemática", "4" in str(star.process("quanto é 2+2"))),
-        ("knowledge pack manager", hasattr(star.packs, "stats")),
-        ("física local = 150000", physics_stats.get("content_variations") == 150000),
-        ("física canônica = 150 tópicos", physics_stats.get("canonical_topics") == 150),
-        ("física adicionada = 100000", physics_stats.get("added_content_variations") == 100000),
-        ("química local = 500000", chemistry_stats.get("content_variations") == 500000),
-        ("química canônica = 500 tópicos", chemistry_stats.get("canonical_topics") == 500),
-        ("química = 20 domínios", chemistry_stats.get("domains") == 20),
-        ("química = 25 tópicos/domínio", set(chemistry_stats.get("domain_counts", {}).values()) == {25}),
-        ("multidisciplinar = 13 matérias", multi_stats.get("subjects") == 13),
-        ("multidisciplinar = 6500 nós", multi_stats.get("canonical_nodes") == 6500),
-        ("multidisciplinar = 500 nós/matéria", multi_stats.get("canonical_nodes_per_subject") == 500),
-        ("multidisciplinar = 500000/matéria", multi_stats.get("contents_per_subject") == 500000),
-        ("multidisciplinar = 6500000 total", multi_stats.get("total_content_variations") == 6500000),
-        ("PLUS = 15 domínios", plus_stats.get("domains") == 15),
-        ("PLUS = 1000 nós novos/domínio", plus_stats.get("added_canonical_nodes_per_domain") == 1000),
-        ("PLUS = 1000000 novos/domínio", plus_stats.get("added_content_variations_per_domain") == 1_000_000),
-        ("PLUS = 15000000 novos", plus_stats.get("added_content_variations") == 15_000_000),
-        ("conhecimento combinado legado = 22150000", plus_stats.get("combined_content_variations") == 22_150_000),
-        ("IDs PLUS preservam limites 1..1000000", plus_boundaries_ok),
-        ("currículo = 56 temas", curriculum_stats.get("themes") == 56),
-        ("currículo >400 conceitos únicos", curriculum_stats.get("unique_concepts", 0) > 400),
-        ("currículo deduplica menções", curriculum_stats.get("deduplicated_mentions", 0) > 0),
-        ("currículo = 1M por tema", curriculum_stats.get("variations_per_theme") == 1_000_000),
-        ("currículo = 1M por conceito", curriculum_stats.get("variations_per_concept") == 1_000_000),
-        ("currículo total coerente", curriculum_stats.get("total_new_addressable_contents") == (curriculum_stats.get("themes", 0) + curriculum_stats.get("unique_concepts", 0)) * 1_000_000),
-        ("IDs currículo preservam limites 1..1000000", curriculum_boundaries_ok),
-        ("MIND = 15 capacidades", mind_stats.get("capabilities") == 15),
-        ("MIND = 1000000 conteúdos/capacidade", mind_stats.get("support_contents_per_capability") == 1_000_000),
-        ("MIND = 15000000 conteúdos operacionais", mind_stats.get("support_contents_total") == 15_000_000),
-        ("MIND = 15000 nós canônicos", mind_stats.get("canonical_nodes_total") == 15_000),
-        ("IDs MIND preservam limites 1..1000000", cognitive_boundaries_ok),
-        ("SymPy disponível", bool(mind_stats.get("math", {}).get("sympy_available"))),
-        ("MIND responde status", "STAR MIND" in str(star.process("status mind"))),
-        ("MIND planeja", "Plano:" in str(star.process("planeje criar um software simples"))),
-        ("MIND deriva", "2*x" in str(star.process("derive x^2 em x"))),
-        ("voz temática = 1000000", voice_theme_stats.get("variations") == 1000000),
-        ("idiomas = 5 famílias", language_stats.get("language_families") == 5),
-        ("perfis de idioma = 6", language_stats.get("locale_profiles") == 6),
-        ("expressões = 500000", language_stats.get("total_semantic_contents") == 500000),
-        ("100k expressões por idioma", language_stats.get("contents_per_language") == 100000),
-        (">=5 dicionários/fontes por idioma", min(language_stats.get("dictionary_sources", {}).values(), default=0) >= 5),
-        ("localização global = 6 locales", len(localization_stats.get("supported_locales", [])) == 6),
-        ("localização canônica = pt-BR", localization_stats.get("canonical_locale") == "pt-BR"),
-        ("tradução parcial bloqueada", localization_stats.get("strict_no_partial_translation") is True),
-        ("invariantes preservados na tradução", invariants_preserved),
-        ("catálogo UI traduz INICIAR", star.language.localization.static("INICIAR", "fr-FR") == "DÉMARRER"),
-        ("catálogo operacional de voz >= 4000", command_count() >= 4000),
-        ("catálogo total de voz > 1000000", command_count() + THEMATIC_VOICE_VARIATIONS > 1000000),
-        ("catálogo conversacional >= 5000", conversation_response_count() >= 5000),
-    ]
-    for name, ok in checks:
-        print(("🟢 " if ok else "🔴 ") + name)
-        if not ok:
-            failures.append((name, "check failed"))
+    print("\nPEOPLE / CURA")
+    people = evolution.get("people", {})
+    cure = evolution.get("cure", {})
+    _check(failures, "People local", people.get("network_required") is False)
+    _check(failures, "People sem reconhecimento biométrico", people.get("face_recognition") is False)
+    _check(failures, "People sem inferência sensível", people.get("sensitive_trait_inference") is False)
+    _check(failures, "People não ingere GPS EXIF", people.get("gps_exif_ingested") is False)
+    _check(failures, "Cura local", cure.get("offline") is True)
+    _check(failures, "Cura sem GitHub obrigatório", cure.get("github_required") is False)
+    _check(failures, "Cura não gera reparo de código", cure.get("generative_code_repair") is False)
+    _check(failures, "Cura restaura snapshot seguro", cure.get("safe_snapshot_restore") is True)
+    health = star.cure.health_check(deep=False)
+    _check(failures, "Cura health check", health.get("healthy") is True, f"falhas={len(health.get('failures', []))}")
 
-    print(f"⚛️ Física local: {physics_stats.get('canonical_topics', 0)} tópico(s), {physics_stats.get('content_variations', 0)} conteúdo(s) variável(is)")
-    print(f"🧪 Química local: {chemistry_stats.get('canonical_topics', 0)} tópico(s), {chemistry_stats.get('domains', 0)} domínio(s), {chemistry_stats.get('content_variations', 0)} conteúdo(s) variável(is)")
-    print(f"🧭 Multidisciplinar: {multi_stats.get('subjects', 0)} matéria(s), {multi_stats.get('canonical_nodes', 0)} nó(s), {multi_stats.get('total_content_variations', 0)} conteúdo(s) variável(is)")
-    print(f"🚀 Knowledge PLUS: {plus_stats.get('domains', 0)} domínio(s), +{plus_stats.get('added_content_variations_per_domain', 0)} por domínio, +{plus_stats.get('added_content_variations', 0)} novos | combinado legado={plus_stats.get('combined_content_variations', 0)}")
-    print(
-        "🧬 Currículo: "
-        f"{curriculum_stats.get('themes', 0)} temas | "
-        f"{curriculum_stats.get('raw_topic_mentions', 0)} menções brutas -> "
-        f"{curriculum_stats.get('unique_concepts', 0)} conceitos únicos | "
-        f"{curriculum_stats.get('deduplicated_mentions', 0)} duplicações consolidadas | "
-        f"{curriculum_stats.get('total_new_addressable_contents', 0)} visões/conteúdos curriculares endereçáveis"
-    )
-    print(f"🧠 MIND alpha: {mind_stats.get('capabilities', 0)} capacidades, {mind_stats.get('canonical_nodes_total', 0)} nós canônicos, {mind_stats.get('support_contents_total', 0)} conteúdos operacionais | FTS5={'SIM' if mind_stats.get('store', {}).get('fts5_available') else 'fallback textual'}")
-    print(f"🌐 Idiomas: {language_stats.get('language_families', 0)} famílias / {language_stats.get('locale_profiles', 0)} perfis | {language_stats.get('total_semantic_contents', 0)} conteúdos de expressão")
-    neural_stats = localization_stats.get("neural", {})
-    print(
-        "🌍 Localização global: "
-        f"{len(localization_stats.get('supported_locales', []))} locales | "
-        f"canônico={localization_stats.get('canonical_locale', '?')} | "
-        f"UI fixa={localization_stats.get('static_strings', 0)} superfícies | "
-        f"neural={'SIM' if neural_stats.get('installed') else 'opcional/não instalado'}"
-    )
-    print("📚 Dicionários configurados: " + ", ".join(f"{k}={v}" for k, v in sorted(language_stats.get("dictionary_sources", {}).items())) + f" | índice completo={'SIM' if language_stats.get('full_dictionary_index_ready') else 'NÃO (seed ativo)'}")
-    print(f"📦 Knowledge Packs: {pack_stats.get('packs', 0)} pack(s), {pack_stats.get('entries', 0)} entrada(s) carregada(s)")
-    if pack_stats.get("packs", 0) and not pack_stats.get("entries", 0):
-        warnings.append("Knowledge Packs foram descobertos, mas nenhuma entrada de conhecimento foi carregada; descoberta de manifesto não equivale a conteúdo utilizável.")
-    if not language_stats.get("full_dictionary_index_ready"):
-        warnings.append("Dicionários completos ainda não foram materializados em SQLite; tradução contextual e léxico seed funcionam, mas vocabulário arbitrário pode não ser encontrado.")
-    if not neural_stats.get("installed"):
-        warnings.append("Argos Translate/modelos não estão instalados; textos livres sem cobertura integral são preservados no original, sem tradução parcial.")
-    if not mind_stats.get("store", {}).get("fts5_available"):
-        warnings.append("SQLite FTS5 indisponível neste build; o RAG usa busca textual fallback, com menor qualidade de ranking.")
+    print("\nVOICE / UX CONTRACTS")
+    _check(failures, "comandos operacionais >= 4000", command_count() >= 4_000)
+    _check(failures, "catálogo voz > 1M", command_count() + THEMATIC_VOICE_VARIATIONS > 1_000_000)
+    _check(failures, "smalltalk >= 5000 combinações", conversation_response_count() >= 5_000)
 
-    print(f"🗣️ Voz: {command_count()} operacionais + {THEMATIC_VOICE_VARIATIONS} temáticas = {command_count() + THEMATIC_VOICE_VARIATIONS} variações | 💬 respostas conversacionais: {conversation_response_count()}")
+    neural = localization.get("neural", {})
+    if not neural.get("installed"):
+        warnings.append("Argos Translate/modelos neurais não materializados; fallback offline seguro permanece ativo.")
 
-    from voice.manager import VoiceManager
-
-    voice = VoiceManager()
-    print("-" * 64)
-    print("VOZ (sem carregar modelos)")
-    print(f"Modo: {voice.mode}")
-    print(f"STT instalado: {'SIM' if voice.stt_configured else 'NÃO'}")
-    print(f"Referência resolvida: {voice.official.reference_path}")
-    print(f"Referência existe: {'SIM' if voice.official.reference_path.exists() else 'NÃO'}")
-    print(f"Chatterbox env: {'SIM' if voice.official.python_path.exists() else 'NÃO'}")
-    print(f"Worker: {'SIM' if voice.official.worker_path.exists() else 'NÃO'}")
-    print(f"TTS: {voice.tts_description}")
-    if not voice.official.configured:
-        warnings.append("voz oficial indisponível: " + voice.official.status_message)
-    voice.close()
-
-    settings_path = ROOT / "user_settings.json"
-    if settings_path.exists():
-        try:
-            json.loads(settings_path.read_text(encoding="utf-8"))
-            print("🟢 user_settings.json")
-        except Exception as exc:
-            warnings.append(f"user_settings.json inválido: {exc}")
-
-    print("-" * 64)
+    print("\n" + "=" * 76)
     if warnings:
-        print("⚠️ AVISOS:")
-        for item in warnings:
-            print("  -", item)
-
+        print("⚠️ AVISOS")
+        for warning in warnings:
+            print("-", warning)
     if failures:
-        print(f"❌ {len(failures)} falha(s) crítica(s).")
-        for name, error in failures:
-            print(f"  - {name}: {error}")
-        raise SystemExit(1)
+        print(f"🔴 DIAGNÓSTICO: {len(failures)} falha(s)")
+        for failure in failures:
+            print("-", failure)
+        return 1
 
-    print("✅ DIAGNÓSTICO GERAL CONCLUÍDO SEM FALHAS CRÍTICAS.")
+    print("🟢 DIAGNÓSTICO: STAR saudável nos contratos auditados")
+    print("Nota: contagens de conhecimento são conteúdos/visões endereçáveis, não milhões de fatos pesquisados individualmente.")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

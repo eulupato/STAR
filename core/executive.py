@@ -11,6 +11,7 @@ class Executive:
         multidisciplinary_knowledge=None,
         knowledge_expansion=None,
         curriculum_knowledge=None,
+        religion_magic_knowledge=None,
     ):
         self.model_manager = model_manager
         self.internal_knowledge = internal_knowledge
@@ -20,6 +21,7 @@ class Executive:
         self.multidisciplinary_knowledge = multidisciplinary_knowledge
         self.knowledge_expansion = knowledge_expansion
         self.curriculum_knowledge = curriculum_knowledge
+        self.religion_magic_knowledge = religion_magic_knowledge
 
     def execute(self, request, route):
         text = request.get("input", "")
@@ -47,6 +49,15 @@ class Executive:
 
         if self.chemistry_knowledge:
             answer = self.chemistry_knowledge.answer(text)
+            if answer:
+                return answer
+
+        # A base cultural vem antes do multidisciplinar SOMENTE porque seu próprio
+        # resolver exige uma tradição/campo reconhecido. Assim "história do
+        # xintoísmo" não é sequestrado pelo catálogo genérico de História, enquanto
+        # "história do Brasil" continua seguindo para o engine multidisciplinar.
+        if self.religion_magic_knowledge:
+            answer = self.religion_magic_knowledge.answer(text)
             if answer:
                 return answer
 
@@ -84,5 +95,5 @@ class Executive:
         return (
             "Ainda não tenho uma resposta confiável para isso na minha base local. "
             "Prefiro ser sincera a inventar algo. 😊 Se você quiser, esse conhecimento "
-            "pode entrar em um Knowledge Pack quando ampliarmos minha biblioteca."
+            "pode entrar em um M.drive quando ampliarmos minha biblioteca."
         )

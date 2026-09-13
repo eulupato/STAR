@@ -1,11 +1,12 @@
 """Localização global e tradução segura da STAR.
 
 Princípios:
-- o conteúdo canônico continua sendo a fonte de verdade;
-- idioma altera somente a superfície apresentada;
-- IDs, números, fórmulas, caminhos, URLs e código nunca são traduzidos;
-- tradução parcial não é apresentada como se fosse completa;
-- Argos Translate é opcional/lazy e nunca é baixado no startup.
+- conteúdo canônico continua em uma única fonte de verdade;
+- idioma altera somente superfícies de entrada/saída;
+- IDs, números, fórmulas, caminhos, URLs e código não são traduzidos;
+- tradução parcial nunca é apresentada como completa;
+- Argos é opcional/lazy, usa somente pacotes já instalados e nunca baixa no boot;
+- línguas históricas usam léxico/corpus próprio, sem serem mascaradas por MT moderno.
 """
 from __future__ import annotations
 
@@ -13,33 +14,21 @@ from dataclasses import dataclass
 import re
 from typing import Protocol
 
-from core.language_catalog import LOCALES, ExpressionCatalog
+from core.language_catalog import ExpressionCatalog
+from core.language_profiles import LOCALES, ui_term, presentation_fallback
 from core.offline_dictionary import OfflineDictionaryStore, normalize_term
 
 SUPPORTED_LOCALES = tuple(LOCALES)
-ARGOS_CODES = {
-    "pt-BR": "pt",
-    "en-US": "en",
-    "en-GB": "en",
-    "es-ES": "es",
-    "it-IT": "it",
-    "fr-FR": "fr",
-}
+ARGOS_CODES = {code: meta.get("argos") for code, meta in LOCALES.items() if meta.get("argos")}
+LEGACY_LOCALES = ("pt-BR", "en-US", "en-GB", "es-ES", "it-IT", "fr-FR")
 
 
 def _row(pt: str, en_us: str, en_gb: str, es: str, it: str, fr: str) -> dict[str, str]:
-    return {
-        "pt-BR": pt,
-        "en-US": en_us,
-        "en-GB": en_gb,
-        "es-ES": es,
-        "it-IT": it,
-        "fr-FR": fr,
-    }
+    return {"pt-BR": pt, "en-US": en_us, "en-GB": en_gb, "es-ES": es, "it-IT": it, "fr-FR": fr}
 
 
-# Textos fixos de UI/estado são traduzidos deterministicamente, mesmo quando
-# nenhum modelo neural estiver instalado. Textos livres continuam pelo pipeline.
+# Catálogo fixo legado preservado. Novos idiomas usam overrides em language_profiles
+# e, para strings não embutidas, o pipeline local de dicionário/Argos.
 STATIC_TEXTS = (
     _row("System for Thought, Analysis and Response", "System for Thought, Analysis and Response", "System for Thought, Analysis and Response", "System for Thought, Analysis and Response", "System for Thought, Analysis and Response", "System for Thought, Analysis and Response"),
     _row("INICIAR", "START", "START", "INICIAR", "AVVIA", "DÉMARRER"),
@@ -72,6 +61,7 @@ STATIC_TEXTS = (
     _row("CLIMA", "WEATHER", "WEATHER", "CLIMA", "METEO", "MÉTÉO"),
     _row("CONFIG", "SETTINGS", "SETTINGS", "AJUSTES", "IMPOSTAZIONI", "PARAMÈTRES"),
     _row("IDIOMA", "LANGUAGE", "LANGUAGE", "IDIOMA", "LINGUA", "LANGUE"),
+    _row("AGORA", "NOW", "NOW", "AHORA", "ORA", "MAINTENANT"),
     _row("MODO DE FUNCIONAMENTO", "OPERATING MODE", "OPERATING MODE", "MODO DE FUNCIONAMIENTO", "MODALITÀ DI FUNZIONAMENTO", "MODE DE FONCTIONNEMENT"),
     _row("🎙️ VOZ DA STAR", "🎙️ STAR VOICE", "🎙️ STAR VOICE", "🎙️ VOZ DE STAR", "🎙️ VOCE DI STAR", "🎙️ VOIX DE STAR"),
     _row("⚡ CONVERSA RÁPIDA", "⚡ FAST CONVERSATION", "⚡ FAST CONVERSATION", "⚡ CONVERSACIÓN RÁPIDA", "⚡ CONVERSAZIONE RAPIDA", "⚡ CONVERSATION RAPIDE"),
@@ -111,7 +101,6 @@ for surfaces in STATIC_TEXTS:
         if key:
             STATIC_INDEX[key] = surfaces
 
-
 MESSAGES = {
     "language_changed": _row(
         "Idioma da STAR alterado para {display}. O modo permanece offline-first.",
@@ -121,14 +110,7 @@ MESSAGES = {
         "Lingua di STAR cambiata in {display}. La modalità offline-first resta attiva.",
         "Langue de STAR changée vers {display}. Le mode offline-first reste actif.",
     ),
-    "current_language": _row(
-        "Idioma atual: {display}.",
-        "Current language: {display}.",
-        "Current language: {display}.",
-        "Idioma actual: {display}.",
-        "Lingua attuale: {display}.",
-        "Langue actuelle : {display}.",
-    ),
+    "current_language": _row("Idioma atual: {display}.", "Current language: {display}.", "Current language: {display}.", "Idioma actual: {display}.", "Lingua attuale: {display}.", "Langue actuelle : {display}."),
     "translation_missing": _row(
         "Não encontrei uma tradução completa e confiável para '{text}' no runtime local. Preservei o original para não alterar a informação.",
         "I did not find a complete, reliable translation for '{text}' in the local runtime. I preserved the original so the information is not changed.",
@@ -137,33 +119,58 @@ MESSAGES = {
         "Non ho trovato una traduzione completa e affidabile per '{text}' nel runtime locale. Ho mantenuto l'originale per non alterare l'informazione.",
         "Je n'ai pas trouvé de traduction complète et fiable pour « {text} » dans le runtime local. J'ai conservé l'original afin de ne pas modifier l'information.",
     ),
-    "language_confirmed": _row(
-        "Idioma confirmado: {display}",
-        "Language confirmed: {display}",
-        "Language confirmed: {display}",
-        "Idioma confirmado: {display}",
-        "Lingua confermata: {display}",
-        "Langue confirmée : {display}",
-    ),
+    "language_confirmed": _row("Idioma confirmado: {display}", "Language confirmed: {display}", "Language confirmed: {display}", "Idioma confirmado: {display}", "Lingua confermata: {display}", "Langue confirmée : {display}"),
+}
+
+MESSAGE_EXTENSIONS = {
+    "ja-JP": {
+        "language_changed": "STARの言語を{display}に変更しました。オフライン優先モードは有効です。",
+        "current_language": "現在の言語: {display}。",
+        "translation_missing": "ローカル環境で「{text}」の完全で信頼できる翻訳が見つかりませんでした。情報を変えないよう原文を保持しました。",
+        "language_confirmed": "言語を確認しました: {display}",
+    },
+    "pl-PL": {
+        "language_changed": "Język STAR zmieniono na {display}. Tryb offline-first pozostaje aktywny.",
+        "current_language": "Aktualny język: {display}.",
+        "translation_missing": "Nie znaleziono kompletnego i wiarygodnego tłumaczenia „{text}” w lokalnym środowisku. Zachowano oryginał.",
+        "language_confirmed": "Potwierdzony język: {display}",
+    },
+    "ko-KR": {
+        "language_changed": "STAR 언어가 {display}(으)로 변경되었습니다. 오프라인 우선 모드는 계속 활성화됩니다.",
+        "current_language": "현재 언어: {display}.",
+        "translation_missing": "로컬 환경에서 '{text}'의 완전하고 신뢰할 수 있는 번역을 찾지 못했습니다. 정보 보존을 위해 원문을 유지했습니다.",
+        "language_confirmed": "확인된 언어: {display}",
+    },
+    "el-GR": {
+        "language_changed": "Η γλώσσα της STAR άλλαξε σε {display}. Η λειτουργία offline-first παραμένει ενεργή.",
+        "current_language": "Τρέχουσα γλώσσα: {display}.",
+        "translation_missing": "Δεν βρέθηκε πλήρης και αξιόπιστη τοπική μετάφραση για «{text}». Διατηρήθηκε το πρωτότυπο.",
+        "language_confirmed": "Επιβεβαιωμένη γλώσσα: {display}",
+    },
+    "ar-001": {
+        "language_changed": "تم تغيير لغة STAR إلى {display}. يظل وضع العمل دون اتصال هو الأساس.",
+        "current_language": "اللغة الحالية: {display}.",
+        "translation_missing": "لم أجد ترجمة محلية كاملة وموثوقة لـ «{text}». تم الاحتفاظ بالنص الأصلي حتى لا تتغير المعلومة.",
+        "language_confirmed": "اللغة المؤكدة: {display}",
+    },
+    "ar-EG": {
+        "language_changed": "تم تغيير لغة STAR إلى {display}. وضع العمل أوفلاين ما زال هو الأساس.",
+        "current_language": "اللغة الحالية: {display}.",
+        "translation_missing": "ما لقيتش ترجمة محلية كاملة وموثوقة لـ «{text}». احتفظت بالنص الأصلي عشان المعلومة ما تتغيرش.",
+        "language_confirmed": "اللغة المؤكدة: {display}",
+    },
 }
 
 
 class NeuralTranslationBackend(Protocol):
     name: str
-
     def translate(self, text: str, source_locale: str, target_locale: str) -> str | None: ...
-
     def status(self) -> dict: ...
 
 
 class ArgosTranslationBackend:
-    """Backend neural offline opcional.
-
-    O import é lazy. A classe nunca baixa modelos; instalação é responsabilidade
-    explícita do script scripts/setup_offline_translation.py.
-    """
-
-    name = "argos"
+    """Backend neural offline opcional, sem downloads automáticos."""
+    name = "argos-local"
 
     @staticmethod
     def _modules():
@@ -228,28 +235,18 @@ _PROTECTED_PATTERNS = (
 
 
 def _alpha_id(index: int) -> str:
-    """Gera identificador somente com letras para não colidir com regex numérica."""
-    value = int(index)
-    chars: list[str] = []
+    value = int(index); chars = []
     while True:
-        value, remainder = divmod(value, 26)
-        chars.append(chr(ord("A") + remainder))
-        if value == 0:
-            break
+        value, remainder = divmod(value, 26); chars.append(chr(ord("A") + remainder))
+        if value == 0: break
         value -= 1
     return "".join(reversed(chars))
 
 
 def protect_invariants(text: str) -> tuple[str, dict[str, str]]:
-    """Substitui trechos que não podem mudar por placeholders estáveis."""
-    value = str(text)
-    mapping: dict[str, str] = {}
-
+    value = str(text); mapping = {}
     def replace(match: re.Match) -> str:
-        token = f"__STARPROTECTED{_alpha_id(len(mapping))}__"
-        mapping[token] = match.group(0)
-        return token
-
+        token = f"__STARPROTECTED{_alpha_id(len(mapping))}__"; mapping[token] = match.group(0); return token
     for pattern in _PROTECTED_PATTERNS:
         value = pattern.sub(replace, value)
     return value, mapping
@@ -258,16 +255,14 @@ def protect_invariants(text: str) -> tuple[str, dict[str, str]]:
 def restore_invariants(text: str, mapping: dict[str, str]) -> str | None:
     value = str(text)
     for token, original in mapping.items():
-        if token not in value:
-            return None
+        if token not in value: return None
         value = value.replace(token, original)
-    if any(token in value for token in mapping):
-        return None
+    if any(token in value for token in mapping): return None
     return value
 
 
 def invariant_values(text: str) -> tuple[str, ...]:
-    found: list[str] = []
+    found = []
     for pattern in _PROTECTED_PATTERNS:
         found.extend(match.group(0) for match in pattern.finditer(str(text)))
     return tuple(sorted(found))
@@ -276,50 +271,69 @@ def invariant_values(text: str) -> tuple[str, ...]:
 class GlobalLocalizationEngine:
     """Traduz a superfície sem alterar o conteúdo canônico."""
 
-    def __init__(
-        self,
-        dictionary: OfflineDictionaryStore | None = None,
-        expressions: ExpressionCatalog | None = None,
-        neural_backend: NeuralTranslationBackend | None = None,
-    ):
+    def __init__(self, dictionary=None, expressions=None, neural_backend=None):
         self.dictionary = dictionary or OfflineDictionaryStore()
         self.expressions = expressions or ExpressionCatalog()
         self.neural = neural_backend or ArgosTranslationBackend()
 
-    @staticmethod
-    def message(key: str, locale: str, **values) -> str:
+    @classmethod
+    def _fallback_locale(cls, locale: str) -> str | None:
+        seen = set()
+        current = locale
+        while current and current not in seen:
+            seen.add(current)
+            fallback = presentation_fallback(current)
+            if not fallback or fallback == current:
+                return None
+            return fallback
+        return None
+
+    @classmethod
+    def message(cls, key: str, locale: str, **values) -> str:
         if locale not in SUPPORTED_LOCALES:
             locale = "pt-BR"
+        extension = MESSAGE_EXTENSIONS.get(locale, {}).get(key)
+        if extension is not None:
+            return extension.format(**values)
         row = MESSAGES.get(key)
         if row is None:
             raise KeyError(f"Mensagem de localização desconhecida: {key}")
-        return row[locale].format(**values)
+        if locale in row:
+            return row[locale].format(**values)
+        fallback = cls._fallback_locale(locale)
+        if fallback:
+            return cls.message(key, fallback, **values)
+        return row["pt-BR"].format(**values)
 
-    @staticmethod
-    def static(text: str, locale: str) -> str | None:
+    @classmethod
+    def static(cls, text: str, locale: str) -> str | None:
         if locale not in SUPPORTED_LOCALES:
             return None
+        override = ui_term(str(text), locale)
+        if override is not None:
+            return override
         surfaces = STATIC_INDEX.get(normalize_term(text))
-        return surfaces.get(locale) if surfaces else None
+        if surfaces and locale in surfaces:
+            return surfaces[locale]
+        fallback = cls._fallback_locale(locale)
+        if fallback:
+            return cls.static(text, fallback)
+        return None
 
     def status(self) -> dict:
-        neural = self.neural.status()
         return {
             "supported_locales": list(SUPPORTED_LOCALES),
             "canonical_locale": "pt-BR",
             "policy": "canonical-content + localized-surface + invariant-protection",
             "strict_no_partial_translation": True,
             "static_strings": len(STATIC_TEXTS),
-            "neural": neural,
+            "neural": self.neural.status(),
             "dictionary_index_ready": self.dictionary.full_index_ready,
+            "historical_profiles_use_modern_mt": False,
+            "historical_profiles": [code for code, meta in LOCALES.items() if meta.get("kind") == "historical"],
         }
 
-    def translate(
-        self,
-        text: str,
-        target_locale: str,
-        source_locale: str,
-    ) -> TranslationOutcome:
+    def translate(self, text: str, target_locale: str, source_locale: str) -> TranslationOutcome:
         original = str(text)
         if target_locale not in SUPPORTED_LOCALES or source_locale not in SUPPORTED_LOCALES:
             return TranslationOutcome(original, source_locale, target_locale, "identity", False, reason="unsupported-locale")
@@ -330,7 +344,12 @@ class GlobalLocalizationEngine:
         if static is not None:
             return TranslationOutcome(static, source_locale, target_locale, "static-catalog", True)
 
-        contextual = self.expressions.contextual_equivalent(original, target_locale)
+        # O catálogo pragmático legado é usado apenas onde possui superfície humana
+        # revisada; para novos idiomas o pipeline segue para léxico/MT local.
+        try:
+            contextual = self.expressions.contextual_equivalent(original, target_locale)
+        except (KeyError, ValueError):
+            contextual = None
         if contextual:
             return TranslationOutcome(contextual, source_locale, target_locale, "contextual-catalog", True)
 
@@ -343,57 +362,27 @@ class GlobalLocalizationEngine:
         if neural:
             restored = restore_invariants(neural, mapping)
             if restored is not None and invariant_values(restored) == invariant_values(original):
-                return TranslationOutcome(
-                    restored,
-                    source_locale,
-                    target_locale,
-                    self.neural.name,
-                    True,
-                    protected_segments=len(mapping),
-                )
+                return TranslationOutcome(restored, source_locale, target_locale, self.neural.name, True, protected_segments=len(mapping))
 
         dictionary_value = self._strict_dictionary_sentence(original, source_locale, target_locale)
         if dictionary_value is not None:
-            return TranslationOutcome(
-                dictionary_value,
-                source_locale,
-                target_locale,
-                "dictionary-complete",
-                True,
-                protected_segments=len(mapping),
-            )
+            return TranslationOutcome(dictionary_value, source_locale, target_locale, "dictionary-complete", True, protected_segments=len(mapping))
 
-        return TranslationOutcome(
-            original,
-            source_locale,
-            target_locale,
-            "preserved-original",
-            False,
-            protected_segments=len(mapping),
-            reason="no-complete-local-translation",
-        )
+        return TranslationOutcome(original, source_locale, target_locale, "preserved-original", False, protected_segments=len(mapping), reason="no-complete-local-translation")
 
     def _strict_dictionary_sentence(self, text: str, source_locale: str, target_locale: str) -> str | None:
         pieces = re.findall(r"\w+(?:['’-]\w+)*|[^\w\s]+|\s+", str(text), flags=re.UNICODE)
-        out: list[str] = []
-        translated_words = 0
-        missing_words = 0
+        out = []; translated_words = 0; missing_words = 0
         for piece in pieces:
             if not piece or piece.isspace() or not any(ch.isalnum() for ch in piece):
-                out.append(piece)
-                continue
-            if piece.upper() == "STAR" or piece.isupper() or piece[:1].isdigit():
-                out.append(piece)
-                continue
+                out.append(piece); continue
+            if piece.upper() == "STAR" or (piece.isupper() and len(piece) > 1) or piece[:1].isdigit():
+                out.append(piece); continue
             translated = self.dictionary.lookup(piece, source_locale, target_locale)
             if translated is None:
-                missing_words += 1
-                out.append(piece)
-                continue
+                missing_words += 1; out.append(piece); continue
             translated_words += 1
-            if piece[:1].isupper():
+            if piece[:1].isupper() and translated[:1].isalpha():
                 translated = translated[:1].upper() + translated[1:]
             out.append(translated)
-        if translated_words and missing_words == 0:
-            return "".join(out)
-        return None
+        return "".join(out) if translated_words and missing_words == 0 else None

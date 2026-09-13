@@ -1,35 +1,37 @@
-# Knowledge System da STAR
+# M.drives — Knowledge System da STAR
 
-O conhecimento próprio é organizado em **Knowledge Packs** modulares e locais.
+O conhecimento removível/modular da STAR agora usa o nome oficial **M.drives**:
+**Memory + Drives/Pendrives**.
 
-## Estado na V1.9
+O antigo nome **Knowledge Packs** fica apenas como compatibilidade de legado. Novas
+extensões devem usar `knowledge/m_drives`; instalações antigas em `knowledge/packs`
+continuam legíveis durante a migração.
 
-A V1.9 suporta packs estruturados e consulta lexical determinística, sem modelo
-externo. O objetivo é permitir bases pequenas e revisadas agora, preservando a
-arquitetura simples da Foundation.
+## Estrutura
 
 Fluxo atual:
 
 ```text
 fonte revisada
-→ conteúdo estruturado
-→ Knowledge Pack
-→ scan
-→ busca local
+→ conteúdo estruturado / documento
+→ M.drive
+→ descoberta e validação de manifesto
+→ busca local / RAG
 → resposta da STAR
 ```
 
-Cada pack usa um `manifest.json` e pode opcionalmente declarar `content_file`.
-Os formatos aceitos são `knowledge.jsonl` e `knowledge.json`.
+Cada M.drive usa um `manifest.json`. O conteúdo pode ser estruturado em JSON/JSONL
+ou disponibilizado em formatos aceitos pelo pipeline documental local, sempre com
+proveniência e sem executar código automaticamente.
 
-## Knowledge Packs em pendrive
+## M.drives em pendrive
 
-A STAR V1.9 também reconhece packs externos **sem copiá-los para o repositório**.
-Na raiz do pendrive, use exatamente:
+A ideia permanece removível e local. Para novos dispositivos/mídias, a estrutura
+preferida é:
 
 ```text
 STAR_KNOWLEDGE/
-└── packs/
+└── m_drives/
     ├── matematica/
     │   ├── manifest.json
     │   └── knowledge.jsonl
@@ -38,18 +40,13 @@ STAR_KNOWLEDGE/
         └── knowledge.jsonl
 ```
 
-No Windows, a STAR procura `STAR_KNOWLEDGE/packs` nas unidades montadas. Em
-Linux, procura a mesma estrutura em pontos comuns de montagem. Também é possível
-informar caminhos explicitamente pela variável `STAR_KNOWLEDGE_DRIVES`, usando o
-separador de caminhos do sistema operacional.
+O caminho legado `STAR_KNOWLEDGE/packs` pode continuar sendo lido por adaptadores de
+compatibilidade enquanto a migração acontece. A migração nunca deve apagar a origem
+automaticamente.
 
-A mídia não executa código. O loader aceita somente manifests JSON e conteúdo
-JSON/JSONL dentro da pasta do próprio pack, aplica limites de tamanho e ignora
-`content_file` que tente sair do diretório do pack.
-
-Quando um pendrive é conectado ou removido, a próxima consulta da STAR verifica
-periodicamente se a lista de raízes mudou e atualiza os packs. IDs duplicados não
-sobrescrevem silenciosamente o primeiro pack carregado; o conflito é registrado.
+A mídia não executa código. O loader/registry trabalha com manifests e conteúdo de
+dados dentro do próprio M.drive. IDs duplicados devem ser resolvidos por identidade,
+versão e proveniência, nunca sobrescritos silenciosamente.
 
 Exemplo de entrada:
 
@@ -67,23 +64,26 @@ Exemplo de entrada:
 }
 ```
 
-## PDFs e livros
+## PDFs, livros, OCR e RAG
 
-O pipeline oficial continua:
+O pipeline atual evoluiu para:
 
 ```text
-PDF
-→ extração/OCR quando necessário
-→ revisão
-→ estruturação
-→ Knowledge Pack
-→ STAR
+PDF/texto
+→ extração textual
+→ OCR local quando necessário e disponível
+→ chunking
+→ SQLite/FTS5
+→ índice semântico derivado opcional
+→ recuperação híbrida
+→ contexto com origem
 ```
 
-A ingestão automática completa, embeddings locais, busca semântica e RAG
-continuam reservados para a **V3.0 — KNOWLEDGE**, conforme o roadmap.
+O RAG textual existente continua como fonte de verdade. Embeddings são índices
+derivados e reconstruíveis; Sentence Transformers e `sqlite-vec` são opcionais e não
+fazem parte do boot mínimo. OCR de PDFs escaneados pode usar PyMuPDF + Tesseract
+quando o stack opcional estiver instalado.
 
 PDFs brutos e textos integrais de obras protegidas não devem ser publicados no
-repositório público sem licença compatível. O GitHub deve conter apenas material
-que possa ser redistribuído e/ou conhecimento derivado e revisado com
-proveniência.
+repositório público sem licença compatível. O GitHub deve conter somente material
+redistribuível ou conhecimento derivado/revisado com proveniência apropriada.

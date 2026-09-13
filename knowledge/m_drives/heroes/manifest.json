@@ -1,0 +1,9 @@
+{
+  "id": "heroes",
+  "name": "Ilha dos Heróis",
+  "version": "1.1",
+  "description": "M.drive inicial sobre conceito de herói, figuras históricas, mitologia e super-heróis.",
+  "content_file": "knowledge.json",
+  "legacy_origin": "knowledge/packs/heroes",
+  "migration": "structured-non-destructive"
+}

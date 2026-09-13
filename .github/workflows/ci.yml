@@ -21,15 +21,25 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          files = [
-              Path('config_skin.json'),
-              Path('STAR_MANIFEST.json'),
-              Path('knowledge/packs/matematica_basica/manifest.json'),
-          ]
-          heroes = Path('knowledge/packs/heroes/manifest.json')
-          if heroes.exists():
-              files.append(heroes)
+
+          files = [Path('config_skin.json'), *sorted(Path('.').glob('STAR_*MANIFEST.json'))]
+          for root in (Path('knowledge/m_drives'), Path('knowledge/packs')):
+              if root.is_dir():
+                  files.extend(sorted(root.glob('*/manifest.json')))
+
+          unique = []
+          seen = set()
           for path in files:
+              key = path.as_posix()
+              if key not in seen:
+                  seen.add(key)
+                  unique.append(path)
+
+          if not unique:
+              raise SystemExit('nenhum manifesto JSON encontrado')
+
+          for path in unique:
               json.loads(path.read_text(encoding='utf-8'))
-          print('JSON manifests OK')
+              print(f'OK {path}')
+          print(f'JSON manifests OK: {len(unique)} arquivo(s)')
           PY

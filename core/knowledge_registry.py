@@ -1,26 +1,14 @@
-"""Registro local de Knowledge Packs.
+"""Compatibilidade do antigo KnowledgeRegistry.
 
-Prepara a arquitetura para futuros pendrives: um pacote pode declarar a ilha,
-versão e conteúdo. A instalação real não é feita automaticamente nesta versão.
+O nome público oficial agora é M.drives (Memory + Drives/Pendrives). Este módulo é
+mantido temporariamente para extensões antigas não quebrarem; código novo deve
+importar ``MDriveRegistry`` de ``core.mdrives``.
 """
-
-import json
-from pathlib import Path
+from core.mdrives import MDriveRegistry
 
 
-class KnowledgeRegistry:
-    def __init__(self, root=None):
-        project_root = Path(__file__).resolve().parent.parent
-        self.root = Path(root) if root else project_root / "knowledge" / "packs"
-        self.root.mkdir(parents=True, exist_ok=True)
+class KnowledgeRegistry(MDriveRegistry):
+    """Alias compatível; use MDriveRegistry em código novo."""
 
-    def scan(self):
-        packs = []
-        for manifest in sorted(self.root.glob("*/manifest.json")):
-            try:
-                data = json.loads(manifest.read_text(encoding="utf-8"))
-                data["path"] = str(manifest.parent)
-                packs.append(data)
-            except (OSError, json.JSONDecodeError):
-                continue
-        return packs
+
+__all__ = ["KnowledgeRegistry", "MDriveRegistry"]

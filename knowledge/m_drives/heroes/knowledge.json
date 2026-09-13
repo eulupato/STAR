@@ -1,0 +1,36 @@
+{
+  "entries": [
+    {
+      "id": "heroes.conceito",
+      "title": "Conceito de herói",
+      "aliases": ["o que é um herói", "conceito de herói", "herói na história e cultura"],
+      "keywords": ["herói", "heroísmo", "cultura", "narrativa"],
+      "answer": "A ideia de herói varia entre épocas e culturas e pode designar figuras históricas admiradas, personagens de tradições míticas ou protagonistas ficcionais. A STAR diferencia essas categorias e evita tratar narrativa mítica ou ficcional como registro histórico.",
+      "source": {"type": "derived-project-knowledge", "note": "síntese organizacional da STAR"}
+    },
+    {
+      "id": "heroes.historicos",
+      "title": "Exemplos de heróis históricos no catálogo inicial",
+      "aliases": ["heróis históricos", "exemplos de heróis históricos"],
+      "keywords": ["Joana d'Arc", "Harriet Tubman", "Nelson Mandela"],
+      "answer": "O catálogo inicial preserva Joana d'Arc, Harriet Tubman e Nelson Mandela como exemplos de figuras históricas frequentemente tratadas como heroicas em diferentes contextos. Perfis biográficos detalhados devem usar fontes históricas próprias e registrar controvérsias quando existirem.",
+      "source": {"type": "legacy-migration", "origin": "knowledge/packs/heroes/heroes.json"}
+    },
+    {
+      "id": "heroes.mitologia",
+      "title": "Heróis da mitologia grega no catálogo inicial",
+      "aliases": ["heróis mitológicos", "heróis gregos", "Hércules Aquiles Odisseu"],
+      "keywords": ["Hércules", "Aquiles", "Odisseu", "mitologia grega"],
+      "answer": "O catálogo inicial inclui Hércules, Aquiles e Odisseu como personagens heroicos da tradição mítica grega. A STAR os trata no contexto de mitologia, literatura e recepção cultural, não como equivalentes a biografias históricas modernas.",
+      "source": {"type": "legacy-migration", "origin": "knowledge/packs/heroes/heroes.json"}
+    },
+    {
+      "id": "heroes.superheroes",
+      "title": "Super-heróis no catálogo inicial",
+      "aliases": ["super-heróis Marvel e DC", "heróis da Marvel e DC"],
+      "keywords": ["Homem-Aranha", "Capitão América", "Pantera Negra", "Superman", "Batman", "Mulher-Maravilha", "Marvel", "DC"],
+      "answer": "O catálogo inicial reconhece Homem-Aranha, Capitão América e Pantera Negra como exemplos da Marvel, e Superman, Batman e Mulher-Maravilha como exemplos da DC. Informações de continuidade, publicação e personagens devem ser enriquecidas com fontes licenciadas ou referências públicas apropriadas sem copiar obras protegidas integralmente.",
+      "source": {"type": "legacy-migration", "origin": "knowledge/packs/heroes/heroes.json"}
+    }
+  ]
+}

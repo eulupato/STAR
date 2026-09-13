@@ -1,8 +1,8 @@
-"""Dicionário offline da STAR e registro auditável de fontes lexicais abertas.
+"""Dicionário offline multilíngue da STAR.
 
-Os dumps grandes não são versionados no Git. O índice SQLite local pode ser gerado
-por scripts/build_offline_dictionaries.py e depois funciona sem internet. Um léxico
-compacto embutido garante traduções comuns imediatamente.
+Dumps grandes permanecem fora do Git; o índice SQLite é materializado localmente e
+funciona sem rede. O registro de fontes diferencia dados ingeríveis de referências
+históricas que exigem respeito à licença/termos de cada corpus.
 """
 from __future__ import annotations
 
@@ -11,109 +11,144 @@ import re
 import sqlite3
 import unicodedata
 
+from core.language_profiles import LOCALES
+
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DB = ROOT / "runtime" / "language" / "dictionaries.sqlite3"
 
+
+def _source(id_, name, url, license_, kind, *, ingest="compatible-local-dataset"):
+    return {"id": id_, "name": name, "url": url, "license": license_, "kind": kind, "ingest": ingest}
+
+
 DICTIONARY_SOURCES = {
     "pt": (
-        {"id": "kaikki-pt", "name": "Kaikki/Wiktionary Português", "url": "https://kaikki.org/ptwiktionary/", "license": "CC-BY-SA/GFDL", "kind": "dictionary"},
-        {"id": "kaikki-en-pt", "name": "Kaikki English Wiktionary — Portuguese", "url": "https://kaikki.org/dictionary/Portuguese/", "license": "CC-BY-SA/GFDL", "kind": "dictionary"},
-        {"id": "freedict-por", "name": "FreeDict Portuguese dictionaries", "url": "https://freedict.org/downloads/", "license": "open-per-dataset", "kind": "bilingual"},
-        {"id": "omw-por", "name": "Open Multilingual Wordnet — Portuguese", "url": "https://github.com/globalwordnet/OMW", "license": "open-per-wordnet", "kind": "wordnet"},
-        {"id": "apertium-por", "name": "Apertium Portuguese lexical data", "url": "https://github.com/apertium/apertium-por", "license": "GPL", "kind": "lexicon"},
+        _source("kaikki-pt", "Kaikki/Wiktionary Português", "https://kaikki.org/ptwiktionary/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("kaikki-en-pt", "Kaikki English Wiktionary — Portuguese", "https://kaikki.org/dictionary/Portuguese/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("freedict-por", "FreeDict Portuguese dictionaries", "https://freedict.org/downloads/", "open-per-dataset", "bilingual"),
+        _source("omw-por", "Open Multilingual Wordnet — Portuguese", "https://github.com/globalwordnet/OMW", "open-per-wordnet", "wordnet"),
+        _source("apertium-por", "Apertium Portuguese lexical data", "https://github.com/apertium/apertium-por", "GPL", "lexicon"),
     ),
     "en": (
-        {"id": "oewn-2025", "name": "Open English WordNet 2025", "url": "https://en-word.net/downloads", "license": "CC-BY-4.0", "kind": "wordnet"},
-        {"id": "kaikki-en", "name": "Kaikki/Wiktionary English", "url": "https://kaikki.org/dictionary/English/", "license": "CC-BY-SA/GFDL", "kind": "dictionary"},
-        {"id": "freedict-eng", "name": "FreeDict English dictionaries", "url": "https://freedict.org/downloads/", "license": "open-per-dataset", "kind": "bilingual"},
-        {"id": "omw-eng", "name": "Open Multilingual Wordnet — English", "url": "https://github.com/globalwordnet/OMW", "license": "open-per-wordnet", "kind": "wordnet"},
-        {"id": "apertium-eng", "name": "Apertium English lexical data", "url": "https://github.com/apertium/apertium-eng", "license": "GPL", "kind": "lexicon"},
+        _source("oewn", "Open English WordNet", "https://en-word.net/", "CC-BY-4.0", "wordnet"),
+        _source("kaikki-en", "Kaikki/Wiktionary English", "https://kaikki.org/dictionary/English/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("freedict-eng", "FreeDict English dictionaries", "https://freedict.org/downloads/", "open-per-dataset", "bilingual"),
+        _source("omw-eng", "Open Multilingual Wordnet — English", "https://github.com/globalwordnet/OMW", "open-per-wordnet", "wordnet"),
+        _source("wordfreq-en", "Wiktionary/Wiktextract English lexical data", "https://github.com/tatuylonen/wiktextract", "Wiktionary CC-BY-SA/GFDL", "lexicon"),
     ),
     "es": (
-        {"id": "kaikki-es", "name": "Kaikki/Wiktionary Español", "url": "https://kaikki.org/eswiktionary/", "license": "CC-BY-SA/GFDL", "kind": "dictionary"},
-        {"id": "kaikki-en-es", "name": "Kaikki English Wiktionary — Spanish", "url": "https://kaikki.org/dictionary/Spanish/", "license": "CC-BY-SA/GFDL", "kind": "dictionary"},
-        {"id": "freedict-spa", "name": "FreeDict Spanish dictionaries", "url": "https://freedict.org/downloads/", "license": "open-per-dataset", "kind": "bilingual"},
-        {"id": "omw-spa", "name": "Open Multilingual Wordnet — Spanish", "url": "https://github.com/globalwordnet/OMW", "license": "open-per-wordnet", "kind": "wordnet"},
-        {"id": "apertium-spa", "name": "Apertium Spanish lexical data", "url": "https://github.com/apertium/apertium-spa", "license": "GPL", "kind": "lexicon"},
+        _source("kaikki-es", "Kaikki/Wiktionary Español", "https://kaikki.org/eswiktionary/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("kaikki-en-es", "Kaikki English Wiktionary — Spanish", "https://kaikki.org/dictionary/Spanish/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("freedict-spa", "FreeDict Spanish dictionaries", "https://freedict.org/downloads/", "open-per-dataset", "bilingual"),
+        _source("omw-spa", "Open Multilingual Wordnet — Spanish", "https://github.com/globalwordnet/OMW", "open-per-wordnet", "wordnet"),
+        _source("apertium-spa", "Apertium Spanish lexical data", "https://github.com/apertium/apertium-spa", "GPL", "lexicon"),
     ),
     "it": (
-        {"id": "kaikki-it", "name": "Kaikki/Wiktionary Italiano", "url": "https://kaikki.org/itwiktionary/", "license": "CC-BY-SA/GFDL", "kind": "dictionary"},
-        {"id": "kaikki-en-it", "name": "Kaikki English Wiktionary — Italian", "url": "https://kaikki.org/dictionary/Italian/", "license": "CC-BY-SA/GFDL", "kind": "dictionary"},
-        {"id": "freedict-ita", "name": "FreeDict Italian dictionaries", "url": "https://freedict.org/downloads/", "license": "open-per-dataset", "kind": "bilingual"},
-        {"id": "omw-ita", "name": "Open Multilingual Wordnet — Italian", "url": "https://github.com/globalwordnet/OMW", "license": "open-per-wordnet", "kind": "wordnet"},
-        {"id": "apertium-ita", "name": "Apertium Italian lexical data", "url": "https://github.com/apertium/apertium-ita", "license": "GPL", "kind": "lexicon"},
+        _source("kaikki-it", "Kaikki/Wiktionary Italiano", "https://kaikki.org/itwiktionary/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("kaikki-en-it", "Kaikki English Wiktionary — Italian", "https://kaikki.org/dictionary/Italian/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("freedict-ita", "FreeDict Italian dictionaries", "https://freedict.org/downloads/", "open-per-dataset", "bilingual"),
+        _source("omw-ita", "Open Multilingual Wordnet — Italian", "https://github.com/globalwordnet/OMW", "open-per-wordnet", "wordnet"),
+        _source("apertium-ita", "Apertium Italian lexical data", "https://github.com/apertium/apertium-ita", "GPL", "lexicon"),
     ),
     "fr": (
-        {"id": "kaikki-fr", "name": "Kaikki/Wiktionary Français", "url": "https://kaikki.org/frwiktionary/", "license": "CC-BY-SA/GFDL", "kind": "dictionary"},
-        {"id": "kaikki-en-fr", "name": "Kaikki English Wiktionary — French", "url": "https://kaikki.org/dictionary/French/", "license": "CC-BY-SA/GFDL", "kind": "dictionary"},
-        {"id": "freedict-fra", "name": "FreeDict French dictionaries", "url": "https://freedict.org/downloads/", "license": "open-per-dataset", "kind": "bilingual"},
-        {"id": "omw-fra", "name": "Open Multilingual Wordnet — French", "url": "https://github.com/globalwordnet/OMW", "license": "open-per-wordnet", "kind": "wordnet"},
-        {"id": "apertium-fra", "name": "Apertium French lexical data", "url": "https://github.com/apertium/apertium-fra", "license": "GPL", "kind": "lexicon"},
+        _source("kaikki-fr", "Kaikki/Wiktionary Français", "https://kaikki.org/frwiktionary/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("kaikki-en-fr", "Kaikki English Wiktionary — French", "https://kaikki.org/dictionary/French/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("freedict-fra", "FreeDict French dictionaries", "https://freedict.org/downloads/", "open-per-dataset", "bilingual"),
+        _source("omw-fra", "Open Multilingual Wordnet — French", "https://github.com/globalwordnet/OMW", "open-per-wordnet", "wordnet"),
+        _source("apertium-fra", "Apertium French lexical data", "https://github.com/apertium/apertium-fra", "GPL", "lexicon"),
+    ),
+    "ja": (
+        _source("kaikki-ja", "Kaikki/Wiktionary 日本語", "https://kaikki.org/jawiktionary/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("kaikki-en-ja", "Kaikki English Wiktionary — Japanese", "https://kaikki.org/dictionary/Japanese/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("jmdict", "JMdict/EDICT", "https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project", "EDRDG licence", "dictionary"),
+        _source("ud-ja-gsd", "Universal Dependencies Japanese GSD", "https://github.com/UniversalDependencies/UD_Japanese-GSD", "CC-BY-SA", "corpus"),
+        _source("tatoeba-ja", "Tatoeba Japanese", "https://tatoeba.org/", "CC-BY-2.0", "parallel-corpus"),
+    ),
+    "pl": (
+        _source("kaikki-pl", "Kaikki/Wiktionary Polski", "https://kaikki.org/plwiktionary/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("kaikki-en-pl", "Kaikki English Wiktionary — Polish", "https://kaikki.org/dictionary/Polish/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("freedict-pol", "FreeDict Polish dictionaries", "https://freedict.org/downloads/", "open-per-dataset", "bilingual"),
+        _source("omw-pol", "Open Multilingual Wordnet — Polish", "https://github.com/globalwordnet/OMW", "open-per-wordnet", "wordnet"),
+        _source("tatoeba-pl", "Tatoeba Polish", "https://tatoeba.org/", "CC-BY-2.0", "parallel-corpus"),
+    ),
+    "ko": (
+        _source("kaikki-ko", "Kaikki/Wiktionary 한국어", "https://kaikki.org/kowiktionary/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("kaikki-en-ko", "Kaikki English Wiktionary — Korean", "https://kaikki.org/dictionary/Korean/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("ud-ko-gsd", "Universal Dependencies Korean GSD", "https://github.com/UniversalDependencies/UD_Korean-GSD", "CC-BY-SA", "corpus"),
+        _source("ud-ko-ksl", "Universal Dependencies Korean KSL", "https://github.com/UniversalDependencies/UD_Korean-KSL", "CC-BY-SA", "corpus"),
+        _source("tatoeba-ko", "Tatoeba Korean", "https://tatoeba.org/", "CC-BY-2.0", "parallel-corpus"),
+    ),
+    "el": (
+        _source("kaikki-el", "Kaikki/Wiktionary Ελληνικά", "https://kaikki.org/elwiktionary/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("kaikki-en-el", "Kaikki English Wiktionary — Greek", "https://kaikki.org/dictionary/Greek/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("freedict-ell", "FreeDict Modern Greek dictionaries", "https://freedict.org/downloads/", "open-per-dataset", "bilingual"),
+        _source("ud-el-gdt", "Universal Dependencies Greek GDT", "https://github.com/UniversalDependencies/UD_Greek-GDT", "CC-BY-SA", "corpus"),
+        _source("tatoeba-el", "Tatoeba Greek", "https://tatoeba.org/", "CC-BY-2.0", "parallel-corpus"),
+    ),
+    "grc": (
+        _source("kaikki-grc", "Kaikki/Wiktionary Ancient Greek", "https://kaikki.org/dictionary/Ancient%20Greek/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("perseus-grc", "Perseus Digital Library Greek resources", "https://www.perseus.tufts.edu/", "per-resource", "historical-corpus"),
+        _source("ud-grc-perseus", "UD Ancient Greek Perseus", "https://github.com/UniversalDependencies/UD_Ancient_Greek-Perseus", "CC-BY-SA", "corpus"),
+        _source("ud-grc-proiel", "UD Ancient Greek PROIEL", "https://github.com/UniversalDependencies/UD_Ancient_Greek-PROIEL", "CC-BY-SA", "corpus"),
+        _source("ud-grc-ptnk", "UD Ancient Greek PTNK", "https://github.com/UniversalDependencies/UD_Ancient_Greek-PTNK", "CC-BY-SA", "corpus"),
+    ),
+    "la": (
+        _source("kaikki-la", "Kaikki/Wiktionary Latin", "https://kaikki.org/lawiktionary/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("kaikki-en-la", "Kaikki English Wiktionary — Latin", "https://kaikki.org/dictionary/Latin/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("freedict-lat", "FreeDict Latin dictionaries", "https://freedict.org/downloads/", "open-per-dataset", "bilingual"),
+        _source("ud-la-perseus", "UD Latin Perseus", "https://github.com/UniversalDependencies/UD_Latin-Perseus", "CC-BY-SA", "corpus"),
+        _source("ud-la-proiel", "UD Latin PROIEL", "https://github.com/UniversalDependencies/UD_Latin-PROIEL", "CC-BY-SA", "corpus"),
+        _source("ud-la-ittb", "UD Latin ITTB", "https://github.com/UniversalDependencies/UD_Latin-ITTB", "CC-BY-SA", "corpus"),
+    ),
+    "ar": (
+        _source("kaikki-ar", "Kaikki/Wiktionary العربية", "https://kaikki.org/arwiktionary/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("kaikki-en-ar", "Kaikki English Wiktionary — Arabic", "https://kaikki.org/dictionary/Arabic/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("freedict-ara", "FreeDict Arabic dictionaries", "https://freedict.org/downloads/", "open-per-dataset", "bilingual"),
+        _source("ud-ar-padt", "Universal Dependencies Arabic PADT", "https://github.com/UniversalDependencies/UD_Arabic-PADT", "CC-BY-SA", "corpus"),
+        _source("tatoeba-ar", "Tatoeba Arabic", "https://tatoeba.org/", "CC-BY-2.0", "parallel-corpus"),
+    ),
+    "egy": (
+        _source("kaikki-egy", "Kaikki/Wiktionary Ancient Egyptian entries", "https://kaikki.org/", "CC-BY-SA/GFDL", "dictionary"),
+        _source("wiktextract-egy", "Wiktionary/Wiktextract Ancient Egyptian", "https://github.com/tatuylonen/wiktextract", "Wiktionary CC-BY-SA/GFDL", "lexicon"),
+        _source("unicode-egy", "Unicode Egyptian Hieroglyphs repertoire", "https://www.unicode.org/charts/", "Unicode terms", "script-reference"),
+        _source("tla-egy", "Thesaurus Linguae Aegyptiae", "https://thesaurus-linguae-aegyptiae.de/", "reference terms apply", "historical-reference", ingest="reference-only"),
+        _source("ramses-egy", "Ramses Online", "https://ramses.ulg.ac.be/", "reference terms apply", "historical-reference", ingest="reference-only"),
     ),
 }
 
-# Conceitos pequenos e inequívocos para fallback imediato. O banco completo, quando
-# materializado, tem prioridade e pode conter múltiplos sentidos/fontes.
-_SEED_ROWS = (
-    ("hello", "olá", "hello", "hello", "hola", "ciao", "bonjour"),
-    ("friend", "amigo", "friend", "friend", "amigo", "amico", "ami"),
-    ("man", "cara", "guy", "bloke", "tío", "tipo", "mec"),
-    ("good", "bom", "good", "good", "bueno", "buono", "bon"),
-    ("bad", "ruim", "bad", "bad", "malo", "cattivo", "mauvais"),
-    ("yes", "sim", "yes", "yes", "sí", "sì", "oui"),
-    ("no", "não", "no", "no", "no", "no", "non"),
-    ("thanks", "obrigado", "thanks", "thanks", "gracias", "grazie", "merci"),
-    ("please", "por favor", "please", "please", "por favor", "per favore", "s'il vous plaît"),
-    ("sorry", "desculpa", "sorry", "sorry", "perdón", "scusa", "désolé"),
-    ("today", "hoje", "today", "today", "hoy", "oggi", "aujourd'hui"),
-    ("tomorrow", "amanhã", "tomorrow", "tomorrow", "mañana", "domani", "demain"),
-    ("yesterday", "ontem", "yesterday", "yesterday", "ayer", "ieri", "hier"),
-    ("home", "casa", "home", "home", "casa", "casa", "maison"),
-    ("work", "trabalho", "work", "work", "trabajo", "lavoro", "travail"),
-    ("music", "música", "music", "music", "música", "musica", "musique"),
-    ("water", "água", "water", "water", "agua", "acqua", "eau"),
-    ("food", "comida", "food", "food", "comida", "cibo", "nourriture"),
-    ("time", "tempo", "time", "time", "tiempo", "tempo", "temps"),
-    ("love", "amor", "love", "love", "amor", "amore", "amour"),
-    ("peace", "paz", "peace", "peace", "paz", "pace", "paix"),
-    ("calm", "calma", "calm", "calm", "calma", "calma", "calme"),
-    ("money", "dinheiro", "money", "money", "dinero", "soldi", "argent"),
-    ("tired", "cansado", "tired", "tired", "cansado", "stanco", "fatigué"),
-    ("hungry", "faminto", "hungry", "hungry", "hambriento", "affamato", "affamé"),
-    ("beautiful", "bonito", "beautiful", "beautiful", "bonito", "bello", "beau"),
-    ("cold", "frio", "cold", "cold", "frío", "freddo", "froid"),
-    ("hot", "quente", "hot", "hot", "caliente", "caldo", "chaud"),
-    ("rain", "chuva", "rain", "rain", "lluvia", "pioggia", "pluie"),
-    ("sun", "sol", "sun", "sun", "sol", "sole", "soleil"),
-    ("physics", "física", "physics", "physics", "física", "fisica", "physique"),
-    ("energy", "energia", "energy", "energy", "energía", "energia", "énergie"),
-    ("force", "força", "force", "force", "fuerza", "forza", "force"),
-    ("velocity", "velocidade", "velocity", "velocity", "velocidad", "velocità", "vitesse"),
-    ("mass", "massa", "mass", "mass", "masa", "massa", "masse"),
-    ("gravity", "gravidade", "gravity", "gravity", "gravedad", "gravità", "gravité"),
-    ("light", "luz", "light", "light", "luz", "luce", "lumière"),
-    ("wave", "onda", "wave", "wave", "onda", "onda", "onde"),
-    ("particle", "partícula", "particle", "particle", "partícula", "particella", "particule"),
-    ("space", "espaço", "space", "space", "espacio", "spazio", "espace"),
+# Pequeno fallback imediato. Cobertura ampla vem do SQLite local materializado.
+_SEED_CONCEPTS = (
+    {"pt-BR":"olá","en-US":"hello","en-GB":"hello","es-ES":"hola","it-IT":"ciao","fr-FR":"bonjour","ja-JP":"こんにちは","pl-PL":"cześć","ko-KR":"안녕하세요","el-GR":"γεια","ar-001":"مرحبا","ar-EG":"أهلاً","grc-GR":"χαῖρε","la-x-classical":"salve","la-x-late":"salve","la-x-medieval":"salve","la-x-neo":"salve"},
+    {"pt-BR":"sim","en-US":"yes","en-GB":"yes","es-ES":"sí","it-IT":"sì","fr-FR":"oui","ja-JP":"はい","pl-PL":"tak","ko-KR":"네","el-GR":"ναι","ar-001":"نعم","ar-EG":"أيوه","grc-GR":"ναί","la-x-classical":"ita","la-x-late":"ita","la-x-medieval":"ita","la-x-neo":"ita"},
+    {"pt-BR":"não","en-US":"no","en-GB":"no","es-ES":"no","it-IT":"no","fr-FR":"non","ja-JP":"いいえ","pl-PL":"nie","ko-KR":"아니요","el-GR":"όχι","ar-001":"لا","ar-EG":"لأ","grc-GR":"οὔ","la-x-classical":"non","la-x-late":"non","la-x-medieval":"non","la-x-neo":"non"},
+    {"pt-BR":"obrigado","en-US":"thanks","en-GB":"thanks","es-ES":"gracias","it-IT":"grazie","fr-FR":"merci","ja-JP":"ありがとう","pl-PL":"dziękuję","ko-KR":"감사합니다","el-GR":"ευχαριστώ","ar-001":"شكرا","ar-EG":"شكراً","grc-GR":"χάριν σοι ἔχω","la-x-classical":"gratias tibi ago","la-x-late":"gratias","la-x-medieval":"gratias","la-x-neo":"gratias"},
+    {"pt-BR":"hoje","en-US":"today","en-GB":"today","es-ES":"hoy","it-IT":"oggi","fr-FR":"aujourd'hui","ja-JP":"今日","pl-PL":"dzisiaj","ko-KR":"오늘","el-GR":"σήμερα","ar-001":"اليوم","ar-EG":"النهارده"},
+    {"pt-BR":"tempo","en-US":"time","en-GB":"time","es-ES":"tiempo","it-IT":"tempo","fr-FR":"temps","ja-JP":"時間","pl-PL":"czas","ko-KR":"시간","el-GR":"χρόνος","ar-001":"وقت","ar-EG":"وقت","grc-GR":"χρόνος","la-x-classical":"tempus","la-x-late":"tempus","la-x-medieval":"tempus","la-x-neo":"tempus"},
+    {"pt-BR":"clima","en-US":"weather","en-GB":"weather","es-ES":"clima","it-IT":"meteo","fr-FR":"météo","ja-JP":"天気","pl-PL":"pogoda","ko-KR":"날씨","el-GR":"καιρός","ar-001":"الطقس","ar-EG":"الجو"},
+    {"pt-BR":"física","en-US":"physics","en-GB":"physics","es-ES":"física","it-IT":"fisica","fr-FR":"physique","ja-JP":"物理学","pl-PL":"fizyka","ko-KR":"물리학","el-GR":"φυσική","ar-001":"الفيزياء","ar-EG":"الفيزياء"},
+    {"pt-BR":"gravidade","en-US":"gravity","en-GB":"gravity","es-ES":"gravedad","it-IT":"gravità","fr-FR":"gravité","ja-JP":"重力","pl-PL":"grawitacja","ko-KR":"중력","el-GR":"βαρύτητα","ar-001":"الجاذبية","ar-EG":"الجاذبية"},
+    {"pt-BR":"amor","en-US":"love","en-GB":"love","es-ES":"amor","it-IT":"amore","fr-FR":"amour","ja-JP":"愛","pl-PL":"miłość","ko-KR":"사랑","el-GR":"αγάπη","ar-001":"حب","ar-EG":"حب","grc-GR":"ἀγάπη","la-x-classical":"amor","la-x-late":"amor","la-x-medieval":"amor","la-x-neo":"amor"},
+    # Mantém seeds legados exigidos por versões anteriores.
+    {"pt-BR":"dinheiro","en-US":"money","en-GB":"money","es-ES":"dinero","it-IT":"soldi","fr-FR":"argent"},
 )
-
-_LOCALE_COLUMNS = {"pt-BR": 1, "en-US": 2, "en-GB": 3, "es-ES": 4, "it-IT": 5, "fr-FR": 6}
 
 
 def normalize_term(text: str) -> str:
-    value = unicodedata.normalize("NFKD", str(text or "").lower())
-    value = "".join(c for c in value if not unicodedata.combining(c))
-    return " ".join(re.sub(r"[^a-z0-9\s'-]", " ", value).split())
+    """Normalização Unicode sem apagar alfabetos não latinos."""
+    value = unicodedata.normalize("NFKC", str(text or "")).casefold()
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(char for char in value if not unicodedata.combining(char))
+    value = re.sub(r"[^\w\s'’\-\u200c\u200d]", " ", value, flags=re.UNICODE)
+    return " ".join(value.replace("_", " ").split())
 
 
 class OfflineDictionaryStore:
     def __init__(self, db_path: Path | str = DEFAULT_DB):
         self.db_path = Path(db_path)
         self._seed = {}
-        for row in _SEED_ROWS:
-            for locale, col in _LOCALE_COLUMNS.items():
-                key = (locale, normalize_term(row[col]))
-                self._seed[key] = row
+        for concept in _SEED_CONCEPTS:
+            for locale, surface in concept.items():
+                self._seed[(locale, normalize_term(surface))] = concept
 
     @staticmethod
     def source_stats() -> dict:
@@ -125,8 +160,10 @@ class OfflineDictionaryStore:
 
     def lookup(self, term: str, source_locale: str, target_locale: str) -> str | None:
         norm = normalize_term(term)
-        if not norm or source_locale not in _LOCALE_COLUMNS or target_locale not in _LOCALE_COLUMNS:
+        if not norm or source_locale not in LOCALES or target_locale not in LOCALES:
             return None
+        if source_locale == target_locale:
+            return str(term)
         if self.full_index_ready:
             try:
                 with sqlite3.connect(self.db_path) as db:
@@ -138,10 +175,10 @@ class OfflineDictionaryStore:
                     return str(row[0])
             except (sqlite3.Error, OSError):
                 pass
-        seed = self._seed.get((source_locale, norm))
-        if seed is None:
+        concept = self._seed.get((source_locale, norm))
+        if concept is None:
             return None
-        return seed[_LOCALE_COLUMNS[target_locale]]
+        return concept.get(target_locale)
 
     def seed_size(self) -> int:
-        return len(_SEED_ROWS)
+        return len(_SEED_CONCEPTS)

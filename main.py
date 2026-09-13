@@ -15,12 +15,13 @@ from config import (
 )
 from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
-from core.knowledge_packs import KnowledgePackManager
+from core.m_drive_manager import MDriveManager
 from core.physics_knowledge_150k import PhysicsKnowledgeEngine
 from core.chemistry_knowledge_500k import ChemistryKnowledgeEngine
 from core.multidisciplinary_knowledge import MultidisciplinaryKnowledgeEngine
 from core.knowledge_expansion_15m import KnowledgeExpansion15MEngine
 from core.curriculum_knowledge import CurriculumKnowledgeEngine
+from core.religion_magic_knowledge import ReligionMagicKnowledgeEngine
 from core.router import Router
 from core.skills import SkillRegistry
 from core.star_core import StarCore
@@ -38,18 +39,24 @@ def create_star():
     multidisciplinary = MultidisciplinaryKnowledgeEngine()
     knowledge_plus = KnowledgeExpansion15MEngine()
     curriculum = CurriculumKnowledgeEngine()
-    packs = KnowledgePackManager(ROOT / "knowledge" / "packs", auto_removable=True)
+    religion_magic = ReligionMagicKnowledgeEngine()
+    mdrives = MDriveManager(
+        ROOT / "knowledge" / "m_drives",
+        legacy_root=ROOT / "knowledge" / "packs",
+        auto_removable=True,
+    )
     state = StarState()
     router = Router(internal_knowledge=knowledge)
     executive = Executive(
         model_manager=None,
         internal_knowledge=knowledge,
-        knowledge_packs=packs,
+        knowledge_packs=mdrives,
         physics_knowledge=physics,
         chemistry_knowledge=chemistry,
         multidisciplinary_knowledge=multidisciplinary,
         knowledge_expansion=knowledge_plus,
         curriculum_knowledge=curriculum,
+        religion_magic_knowledge=religion_magic,
     )
     star = StarCore(
         router=router,
@@ -61,12 +68,14 @@ def create_star():
     star.skills = SkillRegistry()
     star.tools = ToolRegistry()
     star.tools.register("math", safe_math, True, "Cálculo matemático offline")
-    star.packs = packs
+    star.mdrives = mdrives
+    star.packs = mdrives  # alias temporário para compatibilidade interna/externa V1.9
     star.physics = physics
     star.chemistry = chemistry
     star.multidisciplinary = multidisciplinary
     star.knowledge_plus = knowledge_plus
     star.curriculum = curriculum
+    star.religion_magic = religion_magic
     return star
 
 
@@ -97,19 +106,42 @@ def _start_device_gateway(star):
     return gateway
 
 
+def _start_cure(star):
+    """Inicializa baseline/watchdog sem impedir o boot em caso de diagnóstico parcial."""
+    try:
+        baseline = star.cure.ensure_known_good()
+        if baseline.get("created"):
+            print(f"🩹 Cura: baseline known-good criado ({baseline.get('snapshot_id')}).")
+        elif baseline.get("snapshot_id"):
+            print(f"🩹 Cura: baseline known-good ativo ({baseline.get('snapshot_id')}).")
+        else:
+            print("⚠️ Cura: baseline não criado; estado atual requer revisão antes de aceitar known-good.")
+        started = star.cure.start(
+            interval_seconds=float(os.getenv("STAR_CURE_INTERVAL_SECONDS", "60")),
+            auto_repair=os.getenv("STAR_CURE_AUTO_REPAIR", "1").strip().lower() not in {"0", "false", "no", "off"},
+        )
+        if started:
+            print("🛡️ Cura watchdog local: ATIVO")
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"⚠️ Cura indisponível no boot: {exc}")
+
+
 def main():
     print("=" * 60)
     print(f"⭐ INICIALIZANDO STAR V{VERSION} — MODO OFFLINE-FIRST")
     print("=" * 60)
     star = create_star()
-    pack_stats = star.packs.stats()
-    storage_stats = star.packs.storage_stats()
+    mdrive_stats = star.mdrives.stats()
+    storage_stats = star.mdrives.storage_stats()
     physics_stats = star.physics.stats()
     chemistry_stats = star.chemistry.stats()
     multi_stats = star.multidisciplinary.stats()
     plus_stats = star.knowledge_plus.stats()
     curriculum_stats = star.curriculum.stats()
+    cultural_stats = star.religion_magic.stats()
     mind_stats = star.mind.stats()
+    evolution_stats = star.evolution.stats()
+    language_stats = star.language.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -143,23 +175,59 @@ def main():
         f"{curriculum_stats['total_new_addressable_contents']} conteúdos endereçáveis"
     )
     print(
+        "🌍 Religiões/magia: "
+        f"{cultural_stats['religion_subjects']} tradições religiosas + "
+        f"{cultural_stats['magic_esotericism_subjects']} campos de magia/esoterismo | "
+        f"{cultural_stats['canonical_nodes']} nós | "
+        f"{cultural_stats['total_addressable_contents']} visões culturais endereçáveis"
+    )
+    print(
+        "🌐 Idiomas offline: "
+        f"{language_stats['language_families']} famílias | "
+        f"{language_stats['locale_profiles']} perfis | "
+        f"{language_stats['modern_locales']} modernos | "
+        f"{language_stats['historical_locales']} históricos"
+    )
+    print(
         "🧠 STAR MIND alpha: "
         f"{mind_stats['capabilities']} capacidades | "
         f"{mind_stats['canonical_nodes_total']} nós cognitivos | "
         f"{mind_stats['support_contents_total']} conteúdos operacionais endereçáveis"
     )
     print("🧩 Skills: PREPARADAS")
-    print("🛠️ Ferramentas: ATIVAS (matemática offline + MIND experimental)")
-    print(f"📦 Knowledge Packs detectados: {pack_stats['packs']}")
-    print(f"💾 Packs locais: {storage_stats['local']} | removíveis: {storage_stats['removable']}")
-    print(f"📄 Entradas de conhecimento carregadas: {pack_stats['entries']}")
+    print("🛠️ Ferramentas: ATIVAS (matemática offline + MIND/Evolution alpha)")
+    print(f"💾 M.drives detectados: {mdrive_stats['mdrives']}")
+    print(
+        "💽 M.drives locais: "
+        f"{storage_stats['local']} | legados: {storage_stats['legacy']} | "
+        f"removíveis: {storage_stats['removable']}"
+    )
+    print(f"📄 Entradas M.drive carregadas: {mdrive_stats['entries']}")
+    print(
+        "🛡️ Guardian/Agent: "
+        f"Guardian={evolution_stats['guardian']['status']} | "
+        f"Goal Engine={evolution_stats['goal_engine']['status']} | "
+        f"RAG híbrido={evolution_stats['semantic_rag']['status']}"
+    )
+    print(
+        "👥 People/Cura/Web: "
+        f"People={evolution_stats['people']['status']} | "
+        f"Cura={evolution_stats['cure']['status']} | "
+        f"Web={evolution_stats['web_knowledge']['status']}"
+    )
+    print("🌐 Rede geral: DESATIVADA por padrão; somente capacidades online autorizadas podem usar internet.")
     print("🤖 IA externa:", "ATIVA" if EXTERNAL_AI_ENABLED else "DESATIVADA")
     print("🖥️ Interface: ATIVA")
 
+    _start_cure(star)
     gateway = _start_device_gateway(star)
     try:
         LocalizedStarApp(brain=star).run()
     finally:
+        try:
+            star.cure.stop()
+        except Exception:
+            pass
         if gateway is not None:
             gateway.stop()
 

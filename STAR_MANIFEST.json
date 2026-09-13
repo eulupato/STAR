@@ -14,9 +14,10 @@
     "multidisciplinary_knowledge_6m5",
     "knowledge_plus_15m",
     "canonical_curriculum_expansion_941m",
+    "religion_magic_cultural_5m",
     "thematic_voice_catalog_1m",
     "multilingual_language_layer_500k",
-    "global_localization_6_locales",
+    "global_localization_18_profiles",
     "offline_dictionary_runtime",
     "contextual_translation",
     "router",
@@ -25,7 +26,7 @@
     "visual_menu",
     "chat",
     "natural_conversation_catalog",
-    "contextual_weather_provider",
+    "contextual_weather_provider_online_gated",
     "voice_command_catalog_4k_plus",
     "avatar",
     "hub",
@@ -38,16 +39,36 @@
     "fast_local_tts_fallback",
     "voice_degraded_startup",
     "automatic_spoken_replies",
-    "removable_knowledge_packs"
+    "removable_mdrives"
   ],
   "features_prepared": [
     "expanded_automation",
     "messaging_integrations",
-    "web_tools",
-    "star_mind_v2_full"
+    "star_mind_v2_full",
+    "guardian_full",
+    "operator_full",
+    "semantic_scene_understanding",
+    "encrypted_secrets_vault",
+    "offline_device_sync_full"
   ],
   "experimental_features": [
     "star_mind_v2_alpha",
+    "integrated_evolution_alpha",
+    "cognitive_runtime_alpha",
+    "goal_engine_durable_alpha",
+    "goal_scheduler_persistent_alpha",
+    "guardian_permissions_audit_alpha",
+    "cure_local_repair_alpha",
+    "people_local_profiles_alpha",
+    "web_knowledge_deterministic_alpha",
+    "hybrid_semantic_rag_alpha",
+    "optional_pdf_ocr_alpha",
+    "research_hub_multi_provider_alpha",
+    "scientific_cultural_knowledge_graph_alpha",
+    "scientific_simulation_alpha",
+    "operator_file_index_alpha",
+    "senses_observation_contract_alpha",
+    "now_surface_multiplatform_alpha",
     "star_device_gateway_v0_2",
     "star_watch_android_v0_3",
     "star_watch_app_v0_4",
@@ -56,6 +77,15 @@
     "star_mobile_ios_v0",
     "adaptive_device_runtime_v0"
   ],
+  "network_contract": {
+    "default": "OFFLINE",
+    "central_gate": "StarCore.network_enabled",
+    "internet_is_required_for_star_existence": false,
+    "weather_uses_same_gate": true,
+    "web_knowledge_requires_online": true,
+    "research_hub_requires_online": true,
+    "cached_web_evidence_can_be_reused_offline": true
+  },
   "physics": {
     "status": "active-local",
     "engine": "core/physics_knowledge_150k.py",
@@ -70,18 +100,11 @@
     "id_range": "PHYS-00001..PHYS-150000",
     "levels": [1, 2, 3, 4, 5],
     "variation_model": "10 families x 10 styles x 10 contexts per canonical topic",
-    "families": [
-      "conceito", "formula", "variaveis_unidades", "hipoteses_validade", "derivacao",
-      "calculo", "aplicacao", "erros_comuns", "limites", "conexoes"
-    ],
+    "families": ["conceito", "formula", "variaveis_unidades", "hipoteses_validade", "derivacao", "calculo", "aplicacao", "erros_comuns", "limites", "conexoes"],
     "materialization": "on-demand",
     "internet_required": false,
     "watch_available_via_core": true,
-    "source_families": [
-      "MIT OpenCourseWare", "OpenStax University Physics", "NIST/CODATA",
-      "Particle Data Group 2026", "CERN", "NASA Physics of the Cosmos",
-      "LIGO Scientific Collaboration", "IAEA"
-    ]
+    "source_families": ["MIT OpenCourseWare", "OpenStax University Physics", "NIST/CODATA", "Particle Data Group 2026", "CERN", "NASA Physics of the Cosmos", "LIGO Scientific Collaboration", "IAEA"]
   },
   "chemistry": {
     "status": "active-local",
@@ -96,10 +119,7 @@
     "variation_model": "10 families x 10 styles x 10 contexts per canonical topic",
     "materialization": "on-demand",
     "internet_required": false,
-    "source_families": [
-      "IUPAC Gold Book 2025", "OpenStax Chemistry 2e", "NIST Chemistry WebBook",
-      "NIST CCCBDB", "NIH/NLM PubChem", "MIT OpenCourseWare", "Chemistry LibreTexts", "IAEA"
-    ]
+    "source_families": ["IUPAC Gold Book 2025", "OpenStax Chemistry 2e", "NIST Chemistry WebBook", "NIST CCCBDB", "NIH/NLM PubChem", "MIT OpenCourseWare", "Chemistry LibreTexts", "IAEA"]
   },
   "multidisciplinary": {
     "status": "active-local",
@@ -168,10 +188,7 @@
     "total_curriculum_addressable_contents": 941000000,
     "legacy_factual_addressable_contents_kept_separate": 22150000,
     "materialization": "on-demand",
-    "id_ranges": {
-      "themes": "CURRT-001-0000001..CURRT-056-1000000",
-      "concepts": "CURRC-0001-0000001..CURRC-0885-1000000"
-    },
+    "id_ranges": {"themes": "CURRT-001-0000001..CURRT-056-1000000", "concepts": "CURRC-0001-0000001..CURRC-0885-1000000"},
     "deduplication_policy": "one canonical concept + aliases + multiple theme/owner memberships",
     "routing_policy": "legacy scientific engines before curriculum fallback",
     "priority_list_is_view": true,
@@ -180,6 +197,42 @@
     "frontier_evidence_classification": true,
     "truthfulness_note": "941M is a deterministic addressable study/research space over 56 themes and 885 canonical concepts; it is not 941M independently researched facts and must not be reported as unique factual claims"
   },
+  "cultural_knowledge": {
+    "status": "active-local-cultural",
+    "engine": "core/religion_magic_knowledge.py",
+    "taxonomy": "core/religion_magic_taxonomy.py",
+    "manifest": "STAR_RELIGION_MAGIC_MANIFEST.json",
+    "documentation": "docs/STAR_RELIGION_MAGIC_5M.md",
+    "subjects": 125,
+    "religion_subjects": 100,
+    "magic_esotericism_subjects": 25,
+    "aspects_per_subject": 40,
+    "canonical_nodes": 5000,
+    "variations_per_node": 1000,
+    "total_addressable_contents": 5000000,
+    "id_range": "RCM-0001-0001..RCM-5000-1000",
+    "materialization": "on-demand",
+    "knowledge_graph_indexer": "core/scientific_graph.py",
+    "research_expansion": "OpenAlex/Crossref through Research Hub when ONLINE is authorized",
+    "supernatural_claims_as_established_physics": false,
+    "restricted_community_knowledge_reconstruction": false,
+    "source_families": ["Database of Religious History (UBC)", "Harvard Pluralism Project", "Pew Research Center Religion", "Library of Congress / American Folklife Center", "Smithsonian Anthropology", "UNESCO Intangible Cultural Heritage", "Sefaria", "SuttaCentral", "OpenAlex/Crossref"],
+    "truthfulness_note": "5M are deterministic addressable study/research views over 5,000 canonical cultural nodes, not 5M independently researched facts"
+  },
+  "mdrives": {
+    "status": "active-local-removable",
+    "meaning": "Memory + Drives/Pendrives",
+    "manager": "core/m_drive_manager.py",
+    "registry": "core/mdrives.py",
+    "primary_root": "knowledge/m_drives",
+    "legacy_root": "knowledge/packs",
+    "legacy_public_name": "Knowledge Packs",
+    "legacy_read_compatibility": true,
+    "migration_destructive": false,
+    "removable_roots": ["STAR_KNOWLEDGE/m_drives", "STAR_KNOWLEDGE/packs"],
+    "code_execution_from_drive": false,
+    "duplicate_policy": "modern M.drive/first loaded identity wins; conflicts are reported"
+  },
   "mind": {
     "status": "experimental-alpha",
     "manifest": "STAR_MIND_MANIFEST.json",
@@ -187,7 +240,7 @@
     "catalog": "core/cognitive_catalog.py",
     "store": "database/cognitive_store.py",
     "labs": "core/labs.py",
-    "roadmap_alignment": ["V2.0", "V2.1", "V2.2", "partial V3.0", "partial V3.3"],
+    "roadmap_alignment": ["V2.0", "V2.1", "V2.2", "partial V3.0", "partial V3.3", "foundation V8.0"],
     "capabilities": 15,
     "canonical_nodes_per_capability": 1000,
     "operational_contents_per_capability": 1000000,
@@ -197,15 +250,38 @@
     "fts5_with_fallback": true,
     "sympy_math": true,
     "pdf_text_rag": true,
-    "pdf_ocr": false,
-    "crossref_research": true,
+    "pdf_ocr_base": false,
+    "pdf_ocr_optional_evolution": true,
+    "research_providers_base": ["Crossref"],
+    "research_providers_evolution": ["Crossref", "OpenAlex", "arXiv", "PubMed/NCBI"],
     "network_default": false,
     "code_lab_os_grade_sandbox": false,
     "autonomous_repository_modification": false,
     "truthfulness_note": "15M MIND items are operational/cognitive support variations, not 15M independently researched facts"
   },
+  "integrated_evolution": {
+    "status": "experimental-alpha",
+    "facade": "core/evolution.py",
+    "documentation": ["docs/STAR_INTEGRATED_EVOLUTION_ALPHA.md", "docs/STAR_OFFLINE_EVOLUTION_ALPHA.md"],
+    "database": "star.db",
+    "cognition_runtime": {"engine": "core/cognition_runtime.py", "working_context": true, "salience": true, "explicit_model_router": true, "automatic_external_model_discovery": false, "parallel_memory_system": false},
+    "goal_engine": {"engine": "core/goal_engine.py", "persistent_goals": true, "task_dependencies": true, "durable_checkpoints": true, "persistent_scheduler_foundation": true, "not_before_deadline_priority": true, "background_autonomy": false, "idempotent_execution_with_guardian": true, "autonomous_sensitive_actions": false},
+    "guardian": {"engine": "core/guardian.py", "default_deny_unknown": true, "permission_policy": true, "audit_log": true, "idempotent_action_claims": true, "secret_redaction_basic": true, "os_grade_sandbox": false, "encrypted_secrets_vault": false},
+    "cure": {"engine": "core/cure.py", "offline": true, "github_required": false, "known_good_snapshots": true, "watchdog": true, "targeted_restore": true, "rollback_failed_repair": true, "generative_code_repair": false, "system_wide_backup_restore_complete": false},
+    "people": {"engine": "core/people.py", "storage": "star.db + runtime/people", "network_required": false, "face_recognition": false, "sensitive_trait_inference": false, "gps_exif_ingested": false},
+    "web_knowledge": {"engine": "core/web_knowledge.py", "generative_ai": false, "network_default": false, "providers": ["SearXNG", "DuckDuckGo HTML"], "provenance_cache": true, "offline_cache_reuse": true, "private_network_ssrf_block": true},
+    "rag": {"engine": "core/semantic_rag.py", "source_of_truth": "existing cognitive documents + SQLite FTS5/BM25", "hybrid_retrieval": true, "deterministic_hashing_fallback": true, "sentence_transformers_optional": true, "sqlite_vec_optional_not_active_storage": true, "bulk_model_load_at_startup": false},
+    "ocr": {"engine": "core/ocr.py", "plain_pdf_first": "pypdf", "optional_backend": "PyMuPDF + external Tesseract", "selective_ocr": true, "startup_dependency": false},
+    "research": {"engine": "core/research_hub.py", "providers": ["Crossref", "OpenAlex", "arXiv", "PubMed/NCBI"], "network_default": false, "deduplication": "DOI > URL > normalized title", "full_text_download": false, "metadata_is_not_automatically_validated_evidence": true},
+    "knowledge_graph": {"engine": "core/scientific_graph.py", "canonical_curriculum_index": true, "canonical_cultural_index": true, "causal_relation_inference": false, "theological_truth_inference": false, "five_million_cultural_variants_materialized_in_graph": false},
+    "simulation": {"engine": "core/scientific_simulation.py", "vector_rk4": true, "two_body_orbit": true, "nonlinear_pendulum": true, "heat_1d": true, "wave_1d": true, "rc_circuit": true, "high_fidelity_cfd_fea_spice": false},
+    "operator": {"engine": "core/operator_index.py", "file_index": true, "explicit_scan_only": true, "background_scan": false, "writes_or_deletes": false},
+    "senses": {"engine": "core/senses.py", "observation_contract": true, "fusion_buffer": true, "semantic_scene_understanding": false, "multimodal_semantic_fusion": false},
+    "optional_requirements": ["requirements-intelligence.txt", "requirements-translation.txt"]
+  },
   "languages": {
-    "status": "active-local",
+    "status": "active-local-expanded",
+    "profile_source_of_truth": "core/language_profiles.py",
     "manager": "core/language_manager.py",
     "global_localization_engine": "core/global_localization.py",
     "expression_catalog": "core/language_catalog.py",
@@ -214,22 +290,29 @@
     "manifest": "STAR_LANGUAGE_MANIFEST.json",
     "default_locale": "pt-BR",
     "canonical_content_locale": "pt-BR",
-    "language_families": 5,
-    "locale_profiles": ["pt-BR", "en-US", "en-GB", "es-ES", "it-IT", "fr-FR"],
-    "expression_contents_per_family": 100000,
+    "profile_language_families": 13,
+    "locale_profile_count": 18,
+    "locale_profiles": ["pt-BR", "en-US", "en-GB", "es-ES", "it-IT", "fr-FR", "ja-JP", "pl-PL", "ko-KR", "el-GR", "grc-GR", "la-x-classical", "la-x-late", "la-x-medieval", "la-x-neo", "ar-001", "ar-EG", "egy-EG"],
+    "modern_or_dialect_profiles": 12,
+    "historical_profiles": 6,
+    "curated_expression_families": 5,
+    "curated_locale_surfaces": 6,
+    "expression_contents_per_curated_family": 100000,
     "total_semantic_expression_contents": 500000,
-    "english_surface_variants": 2,
-    "translation_policy": "canonical-content + localized-surface + contextual-equivalence-before-literal",
+    "knowledge_duplicated_per_language": false,
+    "translation_policy": "canonical-content + localized-surface + contextual-equivalence-before-literal + preserve-original-on-incomplete",
     "strict_no_partial_translation": true,
     "dictionary_sources_minimum_per_family": 5,
     "full_dictionary_index": "runtime/language/dictionaries.sqlite3",
     "full_dictionary_index_optional_at_startup": true,
     "seed_fallback": true,
     "neural_translation_optional": "Argos Translate",
+    "historical_modern_mt_claimed": false,
     "internet_required_at_runtime_after_materialization": false,
     "unknown_translation_policy": "preserve-or-report-missing-never-invent",
     "watch_language_selector": true,
-    "desktop_localized_app": "gui/localized_app.py"
+    "desktop_localized_app": "gui/localized_app.py",
+    "device_runtime_localized_labels": true
   },
   "star_watch_app": {
     "version": "0.4.0",
@@ -240,26 +323,9 @@
     "launcher": "INICIAR_STAR_WATCH_APP.bat",
     "android_transport_client_version": "0.3.0",
     "hardware_real_required": false,
-    "visual_system": {
-      "version": "1.0.0",
-      "renderer": "clients/star_watch_visual.py",
-      "functional_base": "clients/star_watch_app.py",
-      "language_layer": "clients/star_watch_language.py",
-      "style": "plasma-orbit",
-      "procedural": true,
-      "asset_dependency": false,
-      "target_fps": 30,
-      "states": ["PRONTA", "OUVINDO", "PENSANDO", "RESPONDENDO", "ATENÇÃO"]
-    },
-    "interaction": {
-      "ring_rotate": true,
-      "ring_press": true,
-      "touch": true,
-      "voice": true,
-      "pc_mouse_wheel_simulates_ring": true,
-      "pc_enter_simulates_ring_press": true
-    },
-    "modes": ["voice", "search", "health", "gps", "vision", "people", "measure", "media", "weather", "language", "settings"]
+    "visual_system": {"version": "1.0.0", "renderer": "clients/star_watch_visual.py", "functional_base": "clients/star_watch_app.py", "language_layer": "clients/star_watch_language.py", "style": "plasma-orbit", "procedural": true, "asset_dependency": false, "target_fps": 30, "states": ["PRONTA", "OUVINDO", "PENSANDO", "RESPONDENDO", "ATENÇÃO"]},
+    "interaction": {"ring_rotate": true, "ring_press": true, "touch": true, "voice": true, "swipe_now_page": true, "pc_mouse_wheel_simulates_ring": true, "pc_enter_simulates_ring_press": true},
+    "modes": ["voice", "now", "search", "health", "gps", "vision", "people", "measure", "media", "weather", "language", "settings"]
   },
   "voice": {
     "stt": "faster-whisper tiny local",
@@ -275,15 +341,14 @@
     "automatic_reply_from_gui": true,
     "fast_mode": "Windows SAPI preferencial + Piper PT-BR fallback",
     "language_switch_commands": true,
+    "historical_tts_claimed": false,
     "operational_command_variations": 27804,
     "thematic_study_variations_added": 1000000,
     "command_variations_generated_total": 1027804,
     "thematic_id_range": "VOICE-STUDY-0000001..VOICE-STUDY-1000000",
     "thematic_model": "10 actions x 10 tones x 10 depths x 10 formats x 10 contexts x 10 closers",
     "command_model": "intents + slots + wake words + aliases + thematic free-text study parser",
-    "free_text_slots": [
-      "web_search.query", "find_file.query", "spotify_search.query", "weather_current.location", "knowledge.topic"
-    ]
+    "free_text_slots": ["web_search.query", "find_file.query", "spotify_search.query", "weather_current.location", "knowledge.topic"]
   },
   "conversation": {
     "status": "active",
@@ -291,20 +356,19 @@
     "response_variations_generated": 6000,
     "families": ["greeting", "wellbeing", "thanks", "casual", "support", "farewell"],
     "selection": "deterministic-compositional",
-    "weather_grounded_smalltalk": true
+    "weather_grounded_smalltalk": true,
+    "weather_respects_core_network_gate": true
   },
   "weather": {
-    "status": "active-on-demand",
+    "status": "active-on-demand-online-gated",
     "provider": "Open-Meteo",
     "geocoding": "Open-Meteo Geocoding API",
     "automatic_location_fallback": "ipwho.is when enabled and no configured location exists",
     "background_polling": false,
     "persistent_coordinates": false,
     "cache_seconds_default": 600,
-    "general_web_mode_required": false,
-    "environment": [
-      "STAR_WEATHER_ENABLED", "STAR_WEATHER_LOCATION", "STAR_WEATHER_AUTOLOCATE", "STAR_WEATHER_CACHE_SECONDS"
-    ]
+    "core_online_authorization_required": true,
+    "environment": ["STAR_WEATHER_ENABLED", "STAR_WEATHER_LOCATION", "STAR_WEATHER_AUTOLOCATE", "STAR_WEATHER_CACHE_SECONDS"]
   },
   "device_gateway": {
     "status": "experimental",
@@ -317,16 +381,8 @@
   "device_ecosystem": {
     "schema": 1,
     "sync_interval_seconds": 30,
-    "theme": {
-      "background": "#03050A", "surface": "#0B1220", "primary": "#72E8FF",
-      "secondary": "#A276FF", "accent": "#FF79C8", "text": "#FFFFFF", "muted": "#8B96A8"
-    },
-    "labels": {
-      "title": "STAR", "pair": "PAREAR", "send": "ENVIAR", "speak": "FALAR",
-      "stop_and_send": "ENVIAR ÁUDIO", "camera": "VISÃO", "search": "BUSCA",
-      "health": "SAÚDE", "gps": "GPS", "people": "PEOPLE", "measure": "MEDIR",
-      "media": "MÍDIA", "weather": "CLIMA", "language": "IDIOMA", "settings": "CONFIG"
-    },
+    "theme": {"background": "#03050A", "surface": "#0B1220", "primary": "#72E8FF", "secondary": "#A276FF", "accent": "#FF79C8", "text": "#FFFFFF", "muted": "#8B96A8"},
+    "labels": {"title": "STAR", "pair": "PAREAR", "send": "ENVIAR", "speak": "FALAR", "stop_and_send": "ENVIAR ÁUDIO", "camera": "VISÃO", "now": "AGORA", "search": "BUSCA", "health": "SAÚDE", "gps": "GPS", "people": "PEOPLE", "measure": "MEDIR", "media": "MÍDIA", "weather": "CLIMA", "language": "IDIOMA", "settings": "CONFIG"},
     "features": {
       "text": true,
       "voice_input": true,
@@ -337,25 +393,18 @@
       "location_transport": false,
       "ring_navigation": true,
       "ring_press": true,
-      "people_local_store": true,
+      "people_core_store": true,
       "measure_provider": "simulated-until-hardware",
       "core_weather_context": true,
       "language_selection": true,
       "offline_dictionary_lookup": true,
       "contextual_translation": true,
+      "now_page": true,
       "remote_pc_actions": false
     },
     "profiles": {
-      "phone": {
-        "layout": "comfortable", "show_connection_fields": true,
-        "show_response_transcript": true, "preferred_columns": 1
-      },
-      "watch": {
-        "layout": "circular-shell", "shape": "circle", "show_connection_fields": false,
-        "show_response_transcript": true, "preferred_columns": 1,
-        "home_style": "plasma-core-ring", "visual_style": "plasma-orbit",
-        "screens": ["home", "voice", "search", "health", "gps", "vision", "people", "measure", "media", "weather", "language", "settings"]
-      }
+      "phone": {"layout": "comfortable", "show_connection_fields": true, "show_response_transcript": true, "preferred_columns": 1, "screens": ["main", "now"]},
+      "watch": {"layout": "circular-shell", "shape": "circle", "show_connection_fields": false, "show_response_transcript": true, "preferred_columns": 1, "home_style": "plasma-core-ring", "visual_style": "plasma-orbit", "screens": ["home", "voice", "now", "search", "health", "gps", "vision", "people", "measure", "media", "weather", "language", "settings"]}
     }
   }
 }
