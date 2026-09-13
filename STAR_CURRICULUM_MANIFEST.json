@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "status": "active-local",
+  "name": "STAR Canonical Curriculum Expansion",
+  "engine": "core/curriculum_knowledge.py",
+  "taxonomy": "core/curriculum_taxonomy.py",
+  "tests": "tests/test_curriculum_knowledge.py",
+  "themes": 56,
+  "raw_topic_mentions": 956,
+  "unique_canonical_concepts": 885,
+  "deduplicated_mentions": 71,
+  "variations_per_theme": 1000000,
+  "variations_per_concept": 1000000,
+  "theme_addressable_contents": 56000000,
+  "concept_addressable_contents": 885000000,
+  "total_curriculum_addressable_contents": 941000000,
+  "legacy_factual_addressable_contents": 22150000,
+  "legacy_factual_total_is_separate": true,
+  "materialization": "on-demand",
+  "memory_policy": "no bulk materialization of the 941M addressable variants",
+  "id_ranges": {
+    "themes": "CURRT-001-0000001..CURRT-056-1000000",
+    "concepts": "CURRC-0001-0000001..CURRC-0885-1000000"
+  },
+  "variation_model": {
+    "dimensions": 6,
+    "formula": "10 modes x 10 depths x 10 evidence lenses x 10 contexts x 10 representations x 10 verification lenses",
+    "modes": ["fundamentos", "derivacao", "problema", "experimento", "simulacao", "projeto", "evidencia", "comparacao", "falhas_limites", "fronteira"],
+    "depths": ["basico", "intermediario", "avancado", "graduacao", "pos_graduacao", "profissional", "pesquisa", "matematico", "computacional", "revisao"],
+    "evidence_lenses": ["consenso", "padroes", "fonte_primaria", "medicao", "benchmark", "incerteza", "reprodutibilidade", "controversia", "historico", "fronteira"],
+    "contexts": ["teoria", "laboratorio", "engenharia", "industria", "espaco", "energia", "materiais", "computacao", "sistemas", "interdisciplinar"],
+    "representations": ["explicacao", "equacoes", "algoritmo", "workflow", "tabela", "checklist", "estudo_de_caso", "simulacao", "experimento", "design_review"],
+    "verification": ["unidades", "dimensional", "numerica", "incerteza", "fontes", "confirmacao_independente", "casos_limite", "seguranca", "replicacao", "falseabilidade"]
+  },
+  "deduplication": {
+    "canonical_concept_once": true,
+    "multiple_theme_memberships": true,
+    "aliases_are_links_not_copies": true,
+    "priority_list_is_view_not_database": true,
+    "learning_core_summary_is_view_not_database": true,
+    "invention_cycle_is_process_metadata_not_duplicate_factual_base": true,
+    "examples": [
+      "wormholes -> buracos de minhoca",
+      "FEA -> análise por elementos finitos",
+      "interfaces cérebro-computador -> interfaces cérebro-máquina",
+      "computer-generated holography -> holografia computacional"
+    ]
+  },
+  "routing_policy": [
+    "internal_knowledge",
+    "knowledge_plus_when_depth_is_explicit",
+    "physics_legacy",
+    "chemistry_legacy",
+    "multidisciplinary_legacy",
+    "canonical_curriculum_fallback",
+    "knowledge_plus_fallback",
+    "knowledge_packs",
+    "generic_fallback"
+  ],
+  "domain_ownership": {
+    "science": "scientific method, simulation, instrumentation, research, evidence reliability and frontier classification",
+    "mathematics": "fundamental mathematics, calculus, linear algebra, differential equations and advanced mathematics",
+    "physics": "mechanics, thermodynamics, fluids, electromagnetism, relativity, quantum physics, astronomy, astrophysics, cosmology, optics and spacetime physics",
+    "chemistry": "general, organic, inorganic, physical, analytical, material, electrochemical, biochemical and computational chemistry",
+    "engineering": "mechanical, electrical, electronic, control, robotics, mechatronics, materials, manufacturing, aerospace, energy, systems, reliability and experimental engineering",
+    "computing": "computer science, AI, scientific computing, computational perception and knowledge management",
+    "biology": "biology, neuroscience, biotechnology and neurotechnology",
+    "geography": "Earth sciences and geospatial/Earth-system connections"
+  },
+  "frontier_truth_policy": {
+    "enabled": true,
+    "wormholes": "theoretical",
+    "warp_metrics": "theoretical",
+    "closed_timelike_curves": "theoretical",
+    "spacetime_engineering": "speculative-engineering",
+    "interstellar_travel": "frontier-engineering",
+    "advanced_space_propulsion": "frontier-engineering",
+    "nuclear_fusion": "experimental-engineering",
+    "quantum_teleportation": "established quantum-state protocol; not macroscopic matter teleportation",
+    "quantum_communication": "existing-and-experimental"
+  },
+  "source_families": [
+    "NASA Systems Engineering Handbook and NASA Technical Standards",
+    "NIST metrology, uncertainty, engineering and AI/TEVV",
+    "Particle Data Group 2026",
+    "NASA Science and LIGO",
+    "MIT OpenCourseWare",
+    "NIST/CODATA",
+    "IUPAC and NIST Chemistry WebBook",
+    "PubChem/NCBI",
+    "NIH and NIH BRAIN Initiative",
+    "ACM Computing Classification System and IETF RFCs",
+    "USGS, NOAA, NASA Earthdata and IPCC",
+    "U.S. Department of Energy Fusion Energy Sciences"
+  ],
+  "truthfulness_note": "941M is the deterministic addressable curriculum space built from 56 themes and 885 canonical concepts. It is not 941M independently researched facts, and it must not be added to the 22.15M legacy factual addressable total as if both were unique factual claims."
+}
