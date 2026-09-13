@@ -107,10 +107,10 @@ def test_thematic_voice_variants_are_addressable_and_distinct():
 def test_thematic_voice_parser_accepts_natural_study_commands():
     match = parse_thematic_voice("STAR, me ensine lógica modal do zero")
     assert match is not None
-    assert "lógica modal" in match.query.lower()
+    assert "logica modal" in match.query.lower()
     match2 = parse_thematic_voice("Ei STAR, aprofunde genética molecular no nível de pesquisa")
     assert match2 is not None
-    assert "genética molecular" in match2.query.lower()
+    assert "genetica molecular" in match2.query.lower()
 
 
 def test_star_core_exposes_and_uses_multidisciplinary_engine():
