@@ -125,10 +125,12 @@ class ReligionMagicKnowledgeEngine:
     def __init__(self):
         self.subjects = SUBJECTS
         self.aspects = ASPECTS
-        self._subject_catalog = [
-            (index, subject, _norm(subject.label), _tokens(subject.label) | set(subject.key.split("_")))
-            for index, subject in enumerate(self.subjects, 1)
-        ]
+        self._subject_catalog = []
+        for index, subject in enumerate(self.subjects, 1):
+            label_norm = _norm(subject.label)
+            key_norm = _norm(subject.key.replace("_", " "))
+            tokens = _tokens(subject.label) | _tokens(subject.key.replace("_", " "))
+            self._subject_catalog.append((index, subject, label_norm, key_norm, tokens))
         self._aspect_catalog = [(index, label, _norm(label), _tokens(label)) for index, label in enumerate(self.aspects, 1)]
 
     def stats(self) -> dict:
@@ -187,21 +189,23 @@ class ReligionMagicKnowledgeEngine:
             return None
         best = None
         best_score = 0.0
-        for index, subject, label_norm, tokens in self._subject_catalog:
+        for index, subject, label_norm, key_norm, tokens in self._subject_catalog:
             if label_norm and label_norm in normalized:
-                # Matches explícitos são fortes, mas consultas que contêm uma
-                # tradição mais específica também podem conter o nome da tradição
-                # pai (ex.: "budismo theravada"). Desempate por especificidade
-                # lexical para que o assunto mais preciso vença.
                 score = 1.0 if normalized == label_norm else 0.96
                 specificity = (len(label_norm.split()), len(label_norm))
+            elif key_norm and key_norm in normalized:
+                # A chave canônica funciona como alias técnico forte. Isso cobre
+                # rótulos descritivos como "Religião Yorùbá e Ifá" quando a
+                # consulta diz apenas "cosmologia yorùbá", sem rebaixar para uma
+                # coincidência fraca de 1 token entre vários descritores.
+                score = 0.93
+                specificity = (len(key_norm.split()), len(key_norm))
             else:
-                specificity = (0, 0)
                 overlap = len(query_tokens & tokens)
                 score = overlap / max(1, len(tokens))
-                # Evita resolver termos curtos/genéricos por coincidência fraca.
                 if overlap == 1 and len(tokens) > 2:
                     score *= 0.65
+                specificity = (0, 0)
             current_specificity = best[3] if best and len(best) > 3 else (-1, -1)
             if score > best_score or (score == best_score and specificity > current_specificity):
                 best_score = score
