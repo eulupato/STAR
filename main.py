@@ -26,7 +26,7 @@ from core.star_core import StarCore
 from core.star_identity import StarIdentity
 from core.state import StarState
 from core.tools import ToolRegistry, safe_math
-from gui.app import StarApp
+from gui.localized_app import LocalizedStarApp
 
 
 def create_star():
@@ -146,7 +146,7 @@ def main():
 
     gateway = _start_device_gateway(star)
     try:
-        StarApp(brain=star).run()
+        LocalizedStarApp(brain=star).run()
     finally:
         if gateway is not None:
             gateway.stop()
