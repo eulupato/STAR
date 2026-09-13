@@ -1,3 +1,4 @@
+from datetime import datetime
 import time
 
 from core.agents import AgentManager
@@ -7,7 +8,7 @@ from core.evolution import IntegratedEvolutionSuite
 from core.language_manager import LanguageManager
 from core.mind import CognitiveSuite
 from core.thematic_voice import parse_thematic_voice
-from core.weather import WeatherService
+from core.weather import WeatherService, weather_description
 
 
 class StarCore:
@@ -36,7 +37,6 @@ class StarCore:
             cultural_knowledge=cultural,
             mdrive_manager=mdrive_manager,
         )
-        # Interfaces oficiais compartilhadas; não criam sistemas paralelos.
         self.people = self.evolution.people
         self.cure = self.evolution.cure
         self.web = self.evolution.web
@@ -61,6 +61,47 @@ class StarCore:
         except AttributeError:
             return "Lu"
 
+    def now_status(self, *, include_weather: bool = True) -> str:
+        """Painel textual compartilhado por PC/Watch/Mobile.
+
+        Tudo é local, exceto clima ao vivo, que só é consultado quando ONLINE já foi
+        autorizado. O método não ativa rede por conta própria.
+        """
+        now = datetime.now()
+        try:
+            cure = self.cure.stats()
+        except Exception:
+            cure = {}
+        try:
+            people = self.people.stats()
+        except Exception:
+            people = {"people": 0}
+        try:
+            mdrive_stats = self.mdrives.stats() if getattr(self, "mdrives", None) is not None else {}
+        except Exception:
+            mdrive_stats = {}
+        lines = [
+            f"🕒 {now.strftime('%H:%M')} • {now.strftime('%d/%m/%Y')}",
+            f"🌍 {self.language.display()}",
+            "🌐 ONLINE autorizado" if self.network_enabled else "🔒 OFFLINE",
+            f"🩹 Cura: {'known-good ativo' if cure.get('known_good') else 'sem baseline'}",
+            f"👥 People: {people.get('people', 0)} perfil(is)",
+            f"💾 M.drives: {mdrive_stats.get('mdrives', mdrive_stats.get('drives', 0))}",
+        ]
+        if include_weather:
+            if not self.network_enabled:
+                lines.append("☁ Clima ao vivo: offline — nenhuma rede foi acionada.")
+            else:
+                snapshot = self.weather.current()
+                if snapshot is None:
+                    lines.append("☁ Clima: indisponível agora.")
+                else:
+                    lines.append(
+                        f"☁ {snapshot.location}: {snapshot.temperature_c:.0f} °C, "
+                        f"{weather_description(snapshot.weather_code)}, umidade {snapshot.humidity_pct}%"
+                    )
+        return "STAR • AGORA\n" + "\n".join(lines)
+
     def process(self, user_input, allow_actions=True):
         raw_input = str(user_input or "")
         language_action = self.language.handle_command(strip_wake_word(raw_input))
@@ -83,6 +124,8 @@ class StarCore:
             return "🔒 Modo OFFLINE ativado. A STAR continuará usando somente recursos e conhecimento locais."
         if normalized_early in {"status internet", "status online", "rede"}:
             return "🌐 ONLINE autorizado." if self.network_enabled else "🔒 OFFLINE — rede externa desativada."
+        if normalized_early in {"agora", "status agora", "painel agora", "star agora"}:
+            return self.now_status(include_weather=True)
 
         thematic = parse_thematic_voice(user_input)
         if thematic:
@@ -176,9 +219,6 @@ class StarCore:
         route_time = time.perf_counter() - route_start
         response = self.executive.execute(request=request, route=route)
 
-        # Fallback web só acontece quando todos os engines locais declararam que
-        # não têm resposta confiável. Em offline, o mesmo componente pode usar
-        # somente páginas/evidências já aprendidas e armazenadas localmente.
         unknown = str(response).startswith("Ainda não tenho uma resposta confiável")
         if unknown:
             try:
