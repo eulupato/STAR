@@ -43,7 +43,27 @@ class StarCore:
 
         self.last_intent = None
         self.user_name = None
-        self.network_enabled = False
+        self._network_enabled = False
+        self.weather.enabled = False
+
+    @property
+    def network_enabled(self) -> bool:
+        return bool(self._network_enabled)
+
+    @network_enabled.setter
+    def network_enabled(self, value) -> None:
+        """Única trava operacional de rede do Core.
+
+        Qualquer superfície que altere ``network_enabled`` — GUI, comando ou teste —
+        sincroniza também o provider meteorológico compartilhado. Outros módulos web
+        continuam recebendo o flag explicitamente. Assim OFFLINE não depende de cada
+        chamador lembrar de bloquear o clima separadamente.
+        """
+        enabled = bool(value)
+        self._network_enabled = enabled
+        weather = getattr(self, "weather", None)
+        if weather is not None:
+            weather.enabled = enabled
 
     def get_name(self):
         if self.identity is None:
