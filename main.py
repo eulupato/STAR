@@ -19,6 +19,7 @@ from core.knowledge_packs import KnowledgePackManager
 from core.physics_knowledge_150k import PhysicsKnowledgeEngine
 from core.chemistry_knowledge_500k import ChemistryKnowledgeEngine
 from core.multidisciplinary_knowledge import MultidisciplinaryKnowledgeEngine
+from core.knowledge_expansion_15m import KnowledgeExpansion15MEngine
 from core.router import Router
 from core.skills import SkillRegistry
 from core.star_core import StarCore
@@ -34,6 +35,7 @@ def create_star():
     physics = PhysicsKnowledgeEngine()
     chemistry = ChemistryKnowledgeEngine()
     multidisciplinary = MultidisciplinaryKnowledgeEngine()
+    knowledge_plus = KnowledgeExpansion15MEngine()
     packs = KnowledgePackManager(ROOT / "knowledge" / "packs", auto_removable=True)
     state = StarState()
     router = Router(internal_knowledge=knowledge)
@@ -44,6 +46,7 @@ def create_star():
         physics_knowledge=physics,
         chemistry_knowledge=chemistry,
         multidisciplinary_knowledge=multidisciplinary,
+        knowledge_expansion=knowledge_plus,
     )
     star = StarCore(
         router=router,
@@ -59,6 +62,7 @@ def create_star():
     star.physics = physics
     star.chemistry = chemistry
     star.multidisciplinary = multidisciplinary
+    star.knowledge_plus = knowledge_plus
     return star
 
 
@@ -99,6 +103,7 @@ def main():
     physics_stats = star.physics.stats()
     chemistry_stats = star.chemistry.stats()
     multi_stats = star.multidisciplinary.stats()
+    plus_stats = star.knowledge_plus.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -117,6 +122,12 @@ def main():
         f"{multi_stats['subjects']} matérias | "
         f"{multi_stats['canonical_nodes']} nós | "
         f"{multi_stats['total_content_variations']} conteúdos variáveis"
+    )
+    print(
+        "🚀 Knowledge PLUS: "
+        f"+{plus_stats['added_content_variations_per_domain']} por domínio | "
+        f"+{plus_stats['added_content_variations']} novos | "
+        f"{plus_stats['combined_content_variations']} conteúdos de conhecimento combinados"
     )
     print("🧩 Skills: PREPARADAS")
     print("🛠️ Ferramentas: ATIVAS (matemática offline)")
