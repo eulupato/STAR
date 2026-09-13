@@ -103,9 +103,17 @@ def test_difficult_day_stays_conversational_without_weather_lookup():
     assert weather.calls == 0
 
 
-def test_agent_weather_command_uses_dedicated_provider_without_enabling_general_web():
-    manager = AgentManager(weather_provider=FakeWeather(snapshot(temp=25, feels=25)))
-    response = manager.dispatch("qual o clima", network_enabled=False)
-    assert response is not None
-    assert "25" in response
-    assert "Cidade Teste" in response
+def test_agent_weather_command_respects_offline_gate_and_works_when_online():
+    weather = FakeWeather(snapshot(temp=25, feels=25))
+    manager = AgentManager(weather_provider=weather)
+
+    offline = manager.dispatch("qual o clima", network_enabled=False)
+    assert offline is not None
+    assert "internet" in offline.casefold() or "online" in offline.casefold()
+    assert weather.calls == 0
+
+    online = manager.dispatch("qual o clima", network_enabled=True)
+    assert online is not None
+    assert "25" in online
+    assert "Cidade Teste" in online
+    assert weather.calls == 1
