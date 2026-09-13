@@ -12,12 +12,14 @@
   "global_localization": {
     "engine": "core/global_localization.py",
     "manager": "core/language_manager.py",
+    "desktop_ui": "gui/localized_app.py",
     "strict_no_partial_translation": true,
     "protected_invariants": ["content_ids", "numbers_and_units", "urls", "emails", "filesystem_paths", "inline_code", "code_blocks", "math_delimiters"],
     "static_ui_localization": true,
     "core_input_translation": true,
     "core_output_translation": true,
     "watch_localization": true,
+    "desktop_ui_localization": true,
     "desktop_response_localization": true,
     "source_of_truth_policy": "knowledge and cognition are stored once; translations are presentation surfaces only"
   },
