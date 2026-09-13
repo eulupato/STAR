@@ -9,6 +9,7 @@ Documento vivo oficial do projeto.
 - `.x.x` = correção/hotfix.
 - Ideias novas entram primeiro neste roadmap e só depois viram código.
 - Um componente alpha de uma geração futura **não significa** que a geração inteira foi concluída.
+- Contagens composicionais/endereçáveis nunca devem ser apresentadas como fatos pesquisados individualmente.
 
 ## Arquitetura conceitual
 
@@ -18,7 +19,7 @@ A STAR é organizada em oito domínios:
 - **SENSES** — audição, visão, tela e sensores.
 - **EXPRESSION** — linguagem, voz, avatar e animação.
 - **ACTION** — aplicativos, arquivos, sistema operacional, web, dispositivos e robótica.
-- **KNOWLEDGE** — biblioteca, M.drives, busca, Knowledge Graph e ciência.
+- **KNOWLEDGE** — biblioteca, M.drives, busca, Knowledge Graph, ciência e conhecimento cultural.
 - **HEALTH** — diagnóstico, Cura, watchdog, backup e recuperação.
 - **TRUST** — permissões, criptografia, auditoria, sandbox e segredos.
 - **WORLD** — STAR WORLD, ilhas, 3D, interfaces e presença física.
@@ -72,16 +73,28 @@ releases futuras completas:
 - **Guardian alpha** — default-deny, confirmação, audit log e idempotência;
 - **RAG híbrido** — FTS5/BM25 + índice semântico derivado; backend neural opcional;
 - **OCR seletivo** — `pypdf` primeiro, PyMuPDF/Tesseract opcional;
-- **Scientific Knowledge Graph Indexer** — 56 temas/885 conceitos canônicos materializáveis no grafo existente;
+- **Scientific/Cultural Knowledge Graph Indexer** — currículo científico e taxonomia cultural materializáveis no mesmo grafo;
 - **Scientific Simulation Engine** — RK4 vetorial, órbita de dois corpos, pêndulo, calor 1D, onda 1D e RC;
 - **Research Hub** — Crossref, OpenAlex, arXiv e PubMed/NCBI, opt-in de rede;
 - **Operator File Index** — índice local somente leitura;
 - **Senses Observation Contract** — formato único para observações/sensores, sem scene understanding;
-- **M.drives** — nome oficial e loader compatível com legado.
+- **M.drives** — nome oficial e loader compatível com legado;
+- **Religion & Magic Knowledge 5M** — 100 tradições/relações religiosas + 25 campos de magia/esoterismo, 40 eixos por assunto, 5.000 nós canônicos e 5M visões endereçáveis lazy.
 
-Esses componentes ficam documentados em `docs/STAR_INTEGRATED_EVOLUTION_ALPHA.md`.
-Eles adiantam trabalho de V2/V3/V4/V5/V7/V8, mas **não promovem a STAR além da
-V1.9 estável** até que cada geração cumpra seus critérios completos.
+A expansão cultural usa política epistemológica explícita: autodescrição de praticantes,
+registro histórico/etnográfico, interpretação acadêmica e evidência física são camadas
+diferentes. Alegações sobrenaturais não viram automaticamente mecanismos científicos.
+Conhecimento indígena/iniciático marcado como sensível não deve ser reconstruído quando
+for fechado ou restrito pela comunidade.
+
+Documentos principais:
+
+- `docs/STAR_INTEGRATED_EVOLUTION_ALPHA.md`;
+- `docs/STAR_RELIGION_MAGIC_5M.md`;
+- `STAR_RELIGION_MAGIC_MANIFEST.json`.
+
+Esses componentes adiantam trabalho de V2/V3/V4/V5/V7/V8, mas **não promovem a STAR
+além da V1.9 estável** até que cada geração cumpra seus critérios completos.
 
 O runtime compartilhado continua centralizando tema, rótulos, feature flags e perfis
 `phone/watch` em `STAR_MANIFEST.json`. Endpoints não recebem MIND paralelo.
@@ -110,18 +123,19 @@ Inclui:
 
 **Estado antecipado:** Reasoning/Planner/Memory já existem em alpha; Working Context,
 Salience e Model Router explícito já possuem uma fundação alpha. Ainda faltam integração
-cognitiva madura, avaliação de contexto longo, seleção real de todos os modelos e critérios
-de release V2.
+cognitiva madura, compressão/seleção de contexto longo, consolidação e esquecimento
+controlado de memória, seleção real de todos os modelos e critérios de release V2.
 
 ### V2.1 — Memory Architecture
 
 Consolidar memória episódica/semântica/projetos, retenção, relevância, esquecimento
-controlado, temporalidade e avaliação.
+controlado, temporalidade, consolidação e avaliação.
 
 ### V2.2 — Knowledge Graph base
 
-O armazenamento e o indexador curricular já existem em alpha. Falta expandir relações
-semânticas/proveniência em escala, avaliações e integração profunda com consulta/RAG.
+O armazenamento e os indexadores curricular/cultural já existem em alpha. Falta expandir
+relações semânticas/proveniência em escala, resolução de entidades, contradições,
+avaliações e integração profunda com consulta/RAG.
 
 ### V2.3 — Model Router
 
@@ -144,12 +158,22 @@ Inclui:
 - M.drives V2;
 - Knowledge Graph expandido;
 - Scientific Engine;
+- Cultural/History Engine;
 - matemática simbólica, estatística, unidades, física, química e simulações.
 
 **Estado antecipado:** ingestão documental/FTS5, RAG híbrido alpha, OCR opcional,
-Knowledge Graph curricular, Research Hub e simulações científicas iniciais já existem.
-Faltam avaliação/reranking, vector backend maduro opcional, ingestão multimodal robusta,
-proveniência em todo o conhecimento e solvers especializados.
+Knowledge Graph curricular/cultural, Research Hub, 5M culturais e simulações científicas
+iniciais já existem. Faltam avaliação/reranking, vector backend maduro opcional, ingestão
+multimodal robusta, proveniência em todo o conhecimento, resolução/retração de claims,
+materialização licenciada de corpora e solvers especializados.
+
+### Regra para conhecimento cultural
+
+- não copiar obras protegidas integralmente apenas por estarem na web;
+- preferir taxonomia, metadados, síntese original e fontes com licença clara;
+- para tradições vivas, cruzar pesquisa acadêmica com autodescrição/comunidade;
+- respeitar conhecimento restrito e não reconstruir rituais fechados;
+- separar crença, relato, hipótese acadêmica e evidência científica.
 
 ---
 
@@ -316,6 +340,7 @@ Expansões sobre a arquitetura consolidada:
 - Language Engine;
 - tradução offline ampliada;
 - mapas e referência offline;
+- expansão cultural/histórica com corpora licenciados;
 - novos M.drives;
 - novas skills.
 
@@ -371,5 +396,5 @@ Cada geração segue:
 
 # Próximo marco
 
-**V1.9 FINAL + Integrated Evolution Alpha → estabilizar Watch-first e as novas
-fundações → concluir critérios de V2.0 MIND.**
+**V1.9 FINAL + Integrated Evolution Alpha → estabilizar CI/Windows e Watch-first →
+concluir critérios de V2.0 MIND → amadurecer Knowledge/RAG/Graph/Research e Guardian.**
