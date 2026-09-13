@@ -6,6 +6,7 @@ from core.global_localization import (
 )
 from core.language_manager import LanguageManager
 from core.offline_dictionary import OfflineDictionaryStore
+from gui.localized_app import localize_ui_text
 
 
 class FakeNeuralBackend:
@@ -26,6 +27,12 @@ class NullNeuralBackend:
 
     def translate(self, text, source_locale, target_locale):
         return None
+
+
+def make_manager(tmp_path):
+    dictionary = OfflineDictionaryStore(tmp_path / "dict.sqlite3")
+    engine = GlobalLocalizationEngine(dictionary=dictionary, neural_backend=NullNeuralBackend())
+    return LanguageManager(tmp_path / "language.json", dictionary=dictionary, localization=engine)
 
 
 def test_static_catalog_covers_every_star_locale():
@@ -78,9 +85,7 @@ def test_missing_translation_preserves_original_instead_of_mixing_languages(tmp_
 
 
 def test_language_manager_localizes_control_messages(tmp_path):
-    dictionary = OfflineDictionaryStore(tmp_path / "dict.sqlite3")
-    engine = GlobalLocalizationEngine(dictionary=dictionary, neural_backend=NullNeuralBackend())
-    manager = LanguageManager(tmp_path / "language.json", dictionary=dictionary, localization=engine)
+    manager = make_manager(tmp_path)
 
     response = manager.handle_command("mude para francês")
     assert manager.locale == "fr-FR"
@@ -94,12 +99,23 @@ def test_language_manager_localizes_control_messages(tmp_path):
 
 
 def test_language_stats_expose_global_translation_without_changing_old_counts(tmp_path):
-    dictionary = OfflineDictionaryStore(tmp_path / "dict.sqlite3")
-    engine = GlobalLocalizationEngine(dictionary=dictionary, neural_backend=NullNeuralBackend())
-    manager = LanguageManager(tmp_path / "language.json", dictionary=dictionary, localization=engine)
+    manager = make_manager(tmp_path)
     stats = manager.stats()
     assert stats["language_families"] == 5
     assert stats["locale_profiles"] == 6
     assert stats["total_semantic_contents"] == 500000
     assert stats["global_localization"]["strict_no_partial_translation"] is True
     assert stats["global_localization"]["canonical_locale"] == "pt-BR"
+
+
+def test_desktop_gui_uses_same_language_manager_without_tk_window(tmp_path):
+    manager = make_manager(tmp_path)
+    manager.set_locale("es-ES")
+    assert localize_ui_text(manager, "INICIAR") == "INICIAR"
+    assert localize_ui_text(manager, "CONFIGURAÇÕES") == "AJUSTES"
+    assert localize_ui_text(manager, "◈ ILHAS") == "◈ ISLAS"
+    assert localize_ui_text(manager, "● V1.9 • OFFLINE") == "● V1.9 • OFFLINE"
+
+    manager.set_locale("fr-FR")
+    assert localize_ui_text(manager, "Pergunte algo à STAR...") == "Demandez quelque chose à STAR..."
+    assert localize_ui_text(manager, "SISTEMA") == "SYSTÈME"
