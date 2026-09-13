@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "status": "active-local",
+  "engine": "core/multidisciplinary_knowledge.py",
+  "taxonomy": "core/multidisciplinary_taxonomy.py",
+  "voice_engine": "core/thematic_voice.py",
+  "subject_count": 13,
+  "macro_areas_per_subject": 25,
+  "lenses_per_area": 20,
+  "canonical_nodes_per_subject": 500,
+  "variants_per_node": 1000,
+  "contents_per_subject": 500000,
+  "total_canonical_nodes": 6500,
+  "total_content_variations": 6500000,
+  "variation_model": "25 macro areas x 20 canonical lenses x 10 families x 10 styles x 10 contexts",
+  "materialization": "on-demand",
+  "internet_required": false,
+  "subjects": [
+    {"key":"geography","label":"Geografia","prefix":"GEO","id_range":"GEO-000001..GEO-500000"},
+    {"key":"history","label":"História","prefix":"HIST","id_range":"HIST-000001..HIST-500000"},
+    {"key":"mathematics","label":"Matemática","prefix":"MATH","id_range":"MATH-000001..MATH-500000"},
+    {"key":"biology","label":"Biologia","prefix":"BIO","id_range":"BIO-000001..BIO-500000"},
+    {"key":"mechanics","label":"Mecânica","prefix":"MECH","id_range":"MECH-000001..MECH-500000"},
+    {"key":"engineering","label":"Engenharia","prefix":"ENG","id_range":"ENG-000001..ENG-500000"},
+    {"key":"computing","label":"Computação","prefix":"COMP","id_range":"COMP-000001..COMP-500000"},
+    {"key":"it","label":"TI","prefix":"IT","id_range":"IT-000001..IT-500000"},
+    {"key":"logic","label":"Lógica","prefix":"LOGIC","id_range":"LOGIC-000001..LOGIC-500000"},
+    {"key":"psychology_sociology","label":"Psicologia e Sociologia","prefix":"PSYSOC","id_range":"PSYSOC-000001..PSYSOC-500000"},
+    {"key":"decoding","label":"Decodificação","prefix":"DECODE","id_range":"DECODE-000001..DECODE-500000"},
+    {"key":"science","label":"Ciências","prefix":"SCI","id_range":"SCI-000001..SCI-500000"},
+    {"key":"philosophy","label":"Filosofia","prefix":"PHIL","id_range":"PHIL-000001..PHIL-500000"}
+  ],
+  "canonical_lenses": [
+    "conceito","fundamentos","estrutura","processo","modelo","calculo","metodos","evidencias","historia","casos",
+    "comparacao","aplicacoes","erros","limites","controversias","interdisciplinar","cotidiano","curiosidades","avancado","revisao"
+  ],
+  "response_families": [
+    "explicacao","pergunta_resposta","procedimento","exemplo_guiado","comparacao","checagem","erros_e_armadilhas","fontes_e_evidencias","conexoes","desafio"
+  ],
+  "styles": ["direto","intuitivo","didatico","tecnico","escolar","graduacao","profissional","pesquisa","socratico","revisao"],
+  "contexts": ["definicao","interpretacao","problema","caso_real","historico","comparativo","interdisciplinar","aplicado","fronteira","checagem"],
+  "routing": {
+    "legacy_priority": ["internal_knowledge","physics_knowledge_150k","chemistry_knowledge_500k"],
+    "then": "multidisciplinary_knowledge",
+    "collision_policy": "specific-area-and-explicit-subject-scoring; close cross-subject ties request domain context instead of guessing",
+    "bridges": true,
+    "duplicate_shared_fact_policy": "reference neighboring domain rather than clone ownership"
+  },
+  "history": {
+    "microhistory_and_hidden_details": true,
+    "source_policy": "primary sources, museum collections and reliable historiography; controversies and hypotheses must be labeled",
+    "angles": ["daily life","material culture","labor","logistics","technology","food","disease","archives","archaeology","underrepresented actors"]
+  },
+  "decoding": {
+    "scope": ["character encoding","Unicode","codecs","compression","information theory","error-correcting codes","checksums","defensive cryptography","serialization"],
+    "excluded_operational_scope": ["credential cracking","access bypass","malware exploitation"]
+  },
+  "psychology_sociology": {
+    "educational_research_scope": true,
+    "individual_clinical_diagnosis": false
+  },
+  "voice": {
+    "added_variations": 1000000,
+    "id_range": "VOICE-STUDY-0000001..VOICE-STUDY-1000000",
+    "model": "10 actions x 10 tones x 10 depths x 10 formats x 10 contexts x 10 closers",
+    "topic_slot": "free text routed to local knowledge",
+    "materialization": "on-demand"
+  },
+  "source_families": [
+    "USGS","NOAA","NASA Earthdata","Library of Congress","Smithsonian","UNESCO Memory of the World","OpenStax",
+    "MIT OpenCourseWare","NIST","NCBI/NIH","ACM CCS","IETF RFCs","Unicode Standard","APA","ASA",
+    "Stanford Encyclopedia of Philosophy","National Academies","Computer History Museum"
+  ],
+  "transparency": "6.5M are deterministic addressable conversational/knowledge variations derived from 6,500 canonical nodes; they are not 6.5M independently researched facts"
+}
