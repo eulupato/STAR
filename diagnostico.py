@@ -1,4 +1,4 @@
-"""Diagnóstico geral e leve da instalação da STAR V1.9.
+"""Diagnóstico geral e leve da instalação da STAR V1.9 + MIND V2 alpha.
 
 Não carrega o Chatterbox pesado. Para síntese real use DIAGNOSTICO_VOZ.bat.
 """
@@ -21,41 +21,15 @@ def _configure_console_utf8():
 
 
 MODULES = [
-    "config",
-    "core.star_identity",
-    "core.internal_knowledge",
-    "core.physics_knowledge",
-    "core.physics_topics_extended",
-    "core.physics_knowledge_150k",
-    "core.chemistry_topics_01",
-    "core.chemistry_topics_20",
-    "core.chemistry_knowledge_500k",
-    "core.multidisciplinary_taxonomy",
-    "core.multidisciplinary_knowledge",
-    "core.knowledge_expansion_15m",
-    "core.thematic_voice",
-    "core.language_catalog",
-    "core.offline_dictionary",
-    "core.language_manager",
-    "core.router",
-    "core.executive",
-    "core.star_core",
-    "core.commands",
-    "core.conversation",
-    "core.weather",
-    "core.islands",
-    "core.memory",
-    "core.emotion",
-    "core.avatar",
-    "core.knowledge_registry",
-    "core.cure",
-    "core.math_engine",
-    "modules.computer_control",
-    "database.database",
-    "database.memory",
-    "voice.manager",
-    "voice.audio_input",
-    "gui.app",
+    "config", "core.star_identity", "core.internal_knowledge", "core.physics_knowledge",
+    "core.physics_topics_extended", "core.physics_knowledge_150k", "core.chemistry_topics_01",
+    "core.chemistry_topics_20", "core.chemistry_knowledge_500k", "core.multidisciplinary_taxonomy",
+    "core.multidisciplinary_knowledge", "core.knowledge_expansion_15m", "core.cognitive_catalog",
+    "database.cognitive_store", "core.labs", "core.mind", "core.thematic_voice", "core.language_catalog",
+    "core.offline_dictionary", "core.language_manager", "core.router", "core.executive", "core.star_core",
+    "core.commands", "core.conversation", "core.weather", "core.islands", "core.memory", "core.emotion",
+    "core.avatar", "core.knowledge_registry", "core.cure", "core.math_engine", "modules.computer_control",
+    "database.database", "database.memory", "voice.manager", "voice.audio_input", "gui.app",
 ]
 
 
@@ -89,6 +63,7 @@ def main():
     chemistry_stats = star.chemistry.stats()
     multi_stats = star.multidisciplinary.stats()
     plus_stats = star.knowledge_plus.stats()
+    mind_stats = star.mind.stats()
     language_stats = star.language.stats()
     voice_theme_stats = thematic_voice_stats()
 
@@ -97,6 +72,12 @@ def main():
         first = star.knowledge_plus.content_id(domain, 0, 0)
         last = star.knowledge_plus.content_id(domain, 999, 999)
         plus_boundaries_ok = plus_boundaries_ok and first.endswith("-0000001") and last.endswith("-1000000")
+
+    cognitive_boundaries_ok = True
+    for theme in mind_stats.get("capability_keys", []):
+        first = star.mind.catalog.content_id(theme, 0, 0)
+        last = star.mind.catalog.content_id(theme, 999, 999)
+        cognitive_boundaries_ok = cognitive_boundaries_ok and first.endswith("-0000001") and last.endswith("-1000000")
 
     checks = [
         ("identidade", star.get_name() == "STAR"),
@@ -122,6 +103,15 @@ def main():
         ("PLUS = 15000000 novos", plus_stats.get("added_content_variations") == 15_000_000),
         ("conhecimento combinado = 22150000", plus_stats.get("combined_content_variations") == 22_150_000),
         ("IDs PLUS preservam limites 1..1000000", plus_boundaries_ok),
+        ("MIND = 15 capacidades", mind_stats.get("capabilities") == 15),
+        ("MIND = 1000000 conteúdos/capacidade", mind_stats.get("support_contents_per_capability") == 1_000_000),
+        ("MIND = 15000000 conteúdos operacionais", mind_stats.get("support_contents_total") == 15_000_000),
+        ("MIND = 15000 nós canônicos", mind_stats.get("canonical_nodes_total") == 15_000),
+        ("IDs MIND preservam limites 1..1000000", cognitive_boundaries_ok),
+        ("SymPy disponível", bool(mind_stats.get("math", {}).get("sympy_available"))),
+        ("MIND responde status", "STAR MIND" in str(star.process("status mind"))),
+        ("MIND planeja", "Plano:" in str(star.process("planeje criar um software simples"))),
+        ("MIND deriva", "2*x" in str(star.process("derive x^2 em x"))),
         ("voz temática = 1000000", voice_theme_stats.get("variations") == 1000000),
         ("idiomas = 5 famílias", language_stats.get("language_families") == 5),
         ("perfis de idioma = 6", language_stats.get("locale_profiles") == 6),
@@ -137,56 +127,22 @@ def main():
         if not ok:
             failures.append((name, "check failed"))
 
-    print(
-        f"⚛️ Física local: {physics_stats.get('canonical_topics', 0)} tópico(s), "
-        f"{physics_stats.get('content_variations', 0)} conteúdo(s) variável(is)"
-    )
-    print(
-        f"🧪 Química local: {chemistry_stats.get('canonical_topics', 0)} tópico(s), "
-        f"{chemistry_stats.get('domains', 0)} domínio(s), "
-        f"{chemistry_stats.get('content_variations', 0)} conteúdo(s) variável(is)"
-    )
-    print(
-        f"🧭 Multidisciplinar: {multi_stats.get('subjects', 0)} matéria(s), "
-        f"{multi_stats.get('canonical_nodes', 0)} nó(s), "
-        f"{multi_stats.get('total_content_variations', 0)} conteúdo(s) variável(is)"
-    )
-    print(
-        f"🚀 Knowledge PLUS: {plus_stats.get('domains', 0)} domínio(s), "
-        f"+{plus_stats.get('added_content_variations_per_domain', 0)} por domínio, "
-        f"+{plus_stats.get('added_content_variations', 0)} novos | "
-        f"combinado={plus_stats.get('combined_content_variations', 0)}"
-    )
-    print(
-        f"🌐 Idiomas: {language_stats.get('language_families', 0)} famílias / "
-        f"{language_stats.get('locale_profiles', 0)} perfis | "
-        f"{language_stats.get('total_semantic_contents', 0)} conteúdos de expressão"
-    )
-    print(
-        "📚 Dicionários configurados: "
-        + ", ".join(f"{k}={v}" for k, v in sorted(language_stats.get("dictionary_sources", {}).items()))
-        + f" | índice completo={'SIM' if language_stats.get('full_dictionary_index_ready') else 'NÃO (seed ativo)'}"
-    )
-    print(
-        f"📦 Knowledge Packs: {pack_stats.get('packs', 0)} pack(s), "
-        f"{pack_stats.get('entries', 0)} entrada(s) carregada(s)"
-    )
+    print(f"⚛️ Física local: {physics_stats.get('canonical_topics', 0)} tópico(s), {physics_stats.get('content_variations', 0)} conteúdo(s) variável(is)")
+    print(f"🧪 Química local: {chemistry_stats.get('canonical_topics', 0)} tópico(s), {chemistry_stats.get('domains', 0)} domínio(s), {chemistry_stats.get('content_variations', 0)} conteúdo(s) variável(is)")
+    print(f"🧭 Multidisciplinar: {multi_stats.get('subjects', 0)} matéria(s), {multi_stats.get('canonical_nodes', 0)} nó(s), {multi_stats.get('total_content_variations', 0)} conteúdo(s) variável(is)")
+    print(f"🚀 Knowledge PLUS: {plus_stats.get('domains', 0)} domínio(s), +{plus_stats.get('added_content_variations_per_domain', 0)} por domínio, +{plus_stats.get('added_content_variations', 0)} novos | combinado={plus_stats.get('combined_content_variations', 0)}")
+    print(f"🧠 MIND alpha: {mind_stats.get('capabilities', 0)} capacidades, {mind_stats.get('canonical_nodes_total', 0)} nós canônicos, {mind_stats.get('support_contents_total', 0)} conteúdos operacionais | FTS5={'SIM' if mind_stats.get('store', {}).get('fts5_available') else 'fallback textual'}")
+    print(f"🌐 Idiomas: {language_stats.get('language_families', 0)} famílias / {language_stats.get('locale_profiles', 0)} perfis | {language_stats.get('total_semantic_contents', 0)} conteúdos de expressão")
+    print("📚 Dicionários configurados: " + ", ".join(f"{k}={v}" for k, v in sorted(language_stats.get("dictionary_sources", {}).items())) + f" | índice completo={'SIM' if language_stats.get('full_dictionary_index_ready') else 'NÃO (seed ativo)'}")
+    print(f"📦 Knowledge Packs: {pack_stats.get('packs', 0)} pack(s), {pack_stats.get('entries', 0)} entrada(s) carregada(s)")
     if pack_stats.get("packs", 0) and not pack_stats.get("entries", 0):
-        warnings.append(
-            "Knowledge Packs foram descobertos, mas nenhuma entrada de conhecimento "
-            "foi carregada; descoberta de manifesto não equivale a conteúdo utilizável."
-        )
+        warnings.append("Knowledge Packs foram descobertos, mas nenhuma entrada de conhecimento foi carregada; descoberta de manifesto não equivale a conteúdo utilizável.")
     if not language_stats.get("full_dictionary_index_ready"):
-        warnings.append(
-            "Dicionários completos ainda não foram materializados em SQLite; "
-            "tradução contextual e léxico seed funcionam, mas vocabulário arbitrário pode não ser encontrado."
-        )
+        warnings.append("Dicionários completos ainda não foram materializados em SQLite; tradução contextual e léxico seed funcionam, mas vocabulário arbitrário pode não ser encontrado.")
+    if not mind_stats.get("store", {}).get("fts5_available"):
+        warnings.append("SQLite FTS5 indisponível neste build; o RAG usa busca textual fallback, com menor qualidade de ranking.")
 
-    print(
-        f"🗣️ Voz: {command_count()} operacionais + {THEMATIC_VOICE_VARIATIONS} temáticas = "
-        f"{command_count() + THEMATIC_VOICE_VARIATIONS} variações | "
-        f"💬 respostas conversacionais: {conversation_response_count()}"
-    )
+    print(f"🗣️ Voz: {command_count()} operacionais + {THEMATIC_VOICE_VARIATIONS} temáticas = {command_count() + THEMATIC_VOICE_VARIATIONS} variações | 💬 respostas conversacionais: {conversation_response_count()}")
 
     from voice.manager import VoiceManager
 
