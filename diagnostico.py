@@ -4,6 +4,7 @@ Não baixa modelos, não inicializa câmera e não carrega TTS pesado. O objetiv
 validar arquitetura, contratos, contagens e fallbacks seguros no ambiente atual.
 """
 import importlib
+from datetime import datetime, timezone
 
 
 def _configure_console_utf8():
@@ -19,17 +20,18 @@ MODULES = [
     "config", "core.star_identity", "core.internal_knowledge",
     "core.physics_knowledge_150k", "core.chemistry_knowledge_500k",
     "core.multidisciplinary_knowledge", "core.knowledge_expansion_15m",
-    "core.curriculum_knowledge", "core.cognitive_catalog", "database.cognitive_store",
-    "core.labs", "core.mind", "core.cognition_runtime", "core.goal_engine", "core.guardian",
-    "core.semantic_rag", "core.ocr", "core.research_hub", "core.scientific_graph",
-    "core.scientific_simulation", "core.operator_index", "core.senses", "core.evolution",
-    "core.mdrives", "core.m_drive_manager", "core.knowledge_registry",
-    "core.thematic_voice", "core.language_catalog", "core.offline_dictionary",
-    "core.global_localization", "core.language_manager", "core.router", "core.executive",
-    "core.star_core", "core.commands", "core.conversation", "core.weather", "core.islands",
-    "core.memory", "core.emotion", "core.avatar", "core.cure", "core.math_engine",
-    "modules.computer_control", "database.database", "database.memory",
-    "voice.manager", "voice.audio_input", "gui.app", "gui.localized_app",
+    "core.curriculum_knowledge", "core.religion_magic_taxonomy", "core.religion_magic_knowledge",
+    "core.cognitive_catalog", "database.cognitive_store", "core.labs", "core.mind",
+    "core.cognition_runtime", "core.goal_engine", "core.guardian", "core.semantic_rag",
+    "core.ocr", "core.research_hub", "core.scientific_graph", "core.scientific_simulation",
+    "core.operator_index", "core.senses", "core.evolution", "core.mdrives",
+    "core.m_drive_manager", "core.knowledge_registry", "core.thematic_voice",
+    "core.language_catalog", "core.offline_dictionary", "core.global_localization",
+    "core.language_manager", "core.router", "core.executive", "core.star_core",
+    "core.commands", "core.conversation", "core.weather", "core.islands", "core.memory",
+    "core.emotion", "core.avatar", "core.cure", "core.math_engine", "modules.computer_control",
+    "database.database", "database.memory", "voice.manager", "voice.audio_input",
+    "gui.app", "gui.localized_app",
 ]
 
 
@@ -70,6 +72,7 @@ def main():
     multi = star.multidisciplinary.stats()
     plus = star.knowledge_plus.stats()
     curriculum = star.curriculum.stats()
+    cultural = star.religion_magic.stats()
     mind = star.mind.stats()
     language = star.language.stats()
     localization = language.get("global_localization", {})
@@ -90,6 +93,14 @@ def main():
         )
     except (KeyError, ValueError, IndexError):
         curriculum_bounds = False
+
+    try:
+        cultural_bounds = (
+            star.religion_magic.materialize(1, 1)["id"] == "RCM-0001-0001"
+            and star.religion_magic.materialize(5_000, 1_000)["id"] == "RCM-5000-1000"
+        )
+    except (KeyError, ValueError, IndexError):
+        cultural_bounds = False
 
     cognitive_bounds = True
     for capability in mind.get("capability_keys", []):
@@ -120,6 +131,15 @@ def main():
     _check(failures, "currículo = 71 duplicações", curriculum.get("deduplicated_mentions") == 71)
     _check(failures, "currículo = 941000000", curriculum.get("total_new_addressable_contents") == 941_000_000)
     _check(failures, "IDs currículo 1..1000000", curriculum_bounds)
+    _check(failures, "cultural = 125 assuntos", cultural.get("subjects") == 125)
+    _check(failures, "cultural = 100 tradições religiosas", cultural.get("religion_subjects") == 100)
+    _check(failures, "cultural = 25 magia/esoterismo", cultural.get("magic_esotericism_subjects") == 25)
+    _check(failures, "cultural = 5000 nós", cultural.get("canonical_nodes") == 5_000)
+    _check(failures, "cultural = 5000000 visões", cultural.get("total_addressable_contents") == 5_000_000)
+    _check(failures, "IDs culturais 1..5000 / 1..1000", cultural_bounds)
+    _check(failures, "magia não declarada como física", cultural.get("claims_supernatural_as_science") is False)
+    _check(failures, "conhecimento restrito não reconstruído", cultural.get("restricted_knowledge_reconstruction") is False)
+    _check(failures, "consulta cultural local", "Xintoísmo" in str(star.process("história do xintoísmo")))
 
     print("-" * 72)
     print("MIND / EVOLUTION")
@@ -137,11 +157,27 @@ def main():
     _check(failures, "Research Hub opt-in", star.evolution.research.search("gravity", network_enabled=False).get("reason") == "network_disabled")
     _check(failures, "Guardian default-deny", not star.evolution.guardian.authorize("diagnostic.unknown", confirmed=True).allowed)
     _check(failures, "Goal Engine checkpoints", evolution.get("goal_engine", {}).get("durable_checkpoints") is True)
+    _check(failures, "Goal Scheduler persistente", evolution.get("goal_engine", {}).get("persistent_scheduler_foundation") is True)
+    _check(failures, "Goal Engine sem autonomia background", evolution.get("goal_engine", {}).get("background_autonomy") is False)
     _check(failures, "RAG híbrido", evolution.get("semantic_rag", {}).get("status") == "active-local")
     _check(failures, "Knowledge Graph curricular = 885", evolution.get("knowledge_graph", {}).get("concepts_available") == 885)
+    _check(failures, "Knowledge Graph cultural = 125", evolution.get("knowledge_graph", {}).get("cultural_subjects_available") == 125)
+    _check(failures, "Knowledge Graph sem verdade teológica inferida", evolution.get("knowledge_graph", {}).get("theological_truth_inference") is False)
     _check(failures, "Simulation Engine NumPy", "two-body orbit 2D" in evolution.get("simulation", {}).get("models", []))
     _check(failures, "Operator read-only", evolution.get("operator", {}).get("writes_or_deletes") is False)
     _check(failures, "Senses sem scene understanding falso-positivo", evolution.get("senses", {}).get("semantic_scene_understanding") is False)
+    _check(failures, "Evolution reutiliza base cultural", star.evolution.cultural is star.religion_magic)
+
+    scheduled_goal = star.evolution.goals.create(
+        "diagnostic-scheduler",
+        "validar agenda sem executar automaticamente",
+        tasks=[{"key": "future", "title": "Futuro", "not_before": "2099-01-01T00:00:00+00:00", "priority": 1.0}],
+    )
+    _check(
+        failures,
+        "Scheduler respeita not_before",
+        star.evolution.goals.ready_tasks(scheduled_goal["goal_id"], at=datetime(2026, 9, 13, tzinfo=timezone.utc)) == [],
+    )
 
     orbit = star.evolution.simulation.two_body_orbit(dt=20.0, duration=600.0)
     _check(failures, "órbita: drift de energia baixo", orbit.get("relative_energy_drift", 1.0) < 1e-5)
@@ -171,6 +207,7 @@ def main():
     print(f"🧭 Multidisciplinar: {multi.get('total_content_variations', 0)}")
     print(f"🚀 Factual legado combinado: {plus.get('combined_content_variations', 0)}")
     print(f"🧬 Currículo: {curriculum.get('themes', 0)} temas / {curriculum.get('unique_concepts', 0)} conceitos / {curriculum.get('total_new_addressable_contents', 0)} visões")
+    print(f"🌍 Cultural: {cultural.get('religion_subjects', 0)} religiões/tradições + {cultural.get('magic_esotericism_subjects', 0)} magia/esoterismo / {cultural.get('total_addressable_contents', 0)} visões")
     print(f"🧠 MIND: {mind.get('capabilities', 0)} capacidades / {mind.get('support_contents_total', 0)} conteúdos")
     print(f"🛡️ Evolution: Guardian={evolution.get('guardian', {}).get('status')} | Goal={evolution.get('goal_engine', {}).get('status')} | RAG={evolution.get('semantic_rag', {}).get('backend')}")
     print(f"💾 M.drives: {mdrive_stats.get('mdrives', 0)} | local={mdrive_storage.get('local', 0)} legado={mdrive_storage.get('legacy', 0)} removível={mdrive_storage.get('removable', 0)} | entradas={mdrive_stats.get('entries', 0)}")
