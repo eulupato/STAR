@@ -18,9 +18,9 @@ HAND_MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/hand_landmarker/"
     "hand_landmarker/float16/1/hand_landmarker.task"
 )
-# O hash é preenchido depois de validado pelo workflow STAR Vision. Enquanto
-# vazio, ainda há validação por HTTPS fixo + tamanho mínimo + gravação atômica.
-HAND_MODEL_SHA256 = ""
+# Snapshot oficial validado pelo workflow STAR Vision com MediaPipe 0.10.35.
+# O hash fixo impede que um arquivo diferente seja aceito silenciosamente.
+HAND_MODEL_SHA256 = "fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1"
 MIN_MODEL_BYTES = 1_000_000
 
 
@@ -43,10 +43,9 @@ def _validate(path: Path) -> None:
     size = path.stat().st_size
     if size < MIN_MODEL_BYTES:
         raise RuntimeError(f"Modelo HandLandmarker incompleto: {size} bytes.")
-    if HAND_MODEL_SHA256:
-        actual = model_sha256(path)
-        if actual.lower() != HAND_MODEL_SHA256.lower():
-            raise RuntimeError("Hash SHA-256 do modelo HandLandmarker não confere.")
+    actual = model_sha256(path)
+    if actual.lower() != HAND_MODEL_SHA256.lower():
+        raise RuntimeError("Hash SHA-256 do modelo HandLandmarker não confere.")
 
 
 def ensure_hand_model(*, download: bool = True) -> Path:
@@ -56,7 +55,7 @@ def ensure_hand_model(*, download: bool = True) -> Path:
         return HAND_MODEL
     if not download:
         raise FileNotFoundError(
-            f"Modelo de mãos ausente em {HAND_MODEL}. Execute DIAGNOSTICO_STAR_VISION.py --setup-model."
+            f"Modelo de mãos ausente em {HAND_MODEL}. Execute o STAR Vision uma vez para preparar o modelo local."
         )
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
