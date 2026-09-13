@@ -18,6 +18,7 @@ from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
 from core.physics_knowledge_150k import PhysicsKnowledgeEngine
 from core.chemistry_knowledge_500k import ChemistryKnowledgeEngine
+from core.multidisciplinary_knowledge import MultidisciplinaryKnowledgeEngine
 from core.router import Router
 from core.skills import SkillRegistry
 from core.star_core import StarCore
@@ -32,6 +33,7 @@ def create_star():
     knowledge = StarInternalKnowledge(identity)
     physics = PhysicsKnowledgeEngine()
     chemistry = ChemistryKnowledgeEngine()
+    multidisciplinary = MultidisciplinaryKnowledgeEngine()
     packs = KnowledgePackManager(ROOT / "knowledge" / "packs", auto_removable=True)
     state = StarState()
     router = Router(internal_knowledge=knowledge)
@@ -41,6 +43,7 @@ def create_star():
         knowledge_packs=packs,
         physics_knowledge=physics,
         chemistry_knowledge=chemistry,
+        multidisciplinary_knowledge=multidisciplinary,
     )
     star = StarCore(
         router=router,
@@ -55,6 +58,7 @@ def create_star():
     star.packs = packs
     star.physics = physics
     star.chemistry = chemistry
+    star.multidisciplinary = multidisciplinary
     return star
 
 
@@ -94,6 +98,7 @@ def main():
     storage_stats = star.packs.storage_stats()
     physics_stats = star.physics.stats()
     chemistry_stats = star.chemistry.stats()
+    multi_stats = star.multidisciplinary.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -106,6 +111,12 @@ def main():
         "🧪 Química local: "
         f"{chemistry_stats['canonical_topics']} tópicos | "
         f"{chemistry_stats['content_variations']} conteúdos variáveis"
+    )
+    print(
+        "🧭 Biblioteca multidisciplinar: "
+        f"{multi_stats['subjects']} matérias | "
+        f"{multi_stats['canonical_nodes']} nós | "
+        f"{multi_stats['total_content_variations']} conteúdos variáveis"
     )
     print("🧩 Skills: PREPARADAS")
     print("🛠️ Ferramentas: ATIVAS (matemática offline)")
