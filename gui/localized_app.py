@@ -33,6 +33,14 @@ def localize_ui_text(manager, text: str) -> str:
 class LocalizedStarApp(StarApp):
     """A mesma GUI V1.9, com localização aplicada como camada de apresentação."""
 
+    def __init__(self, brain):
+        self._observed_locale = None
+        super().__init__(brain)
+        manager = self.language
+        self._observed_locale = manager.locale if manager is not None else None
+        self._schedule_localization()
+        self._watch_locale()
+
     @property
     def language(self):
         return getattr(self.brain, "language", None)
@@ -44,6 +52,20 @@ class LocalizedStarApp(StarApp):
     def _schedule_localization(self) -> None:
         try:
             self.window.after_idle(self._localize_current_screen)
+        except (AttributeError, tk.TclError):
+            pass
+
+    def _watch_locale(self) -> None:
+        """Redesenha textos somente quando o locale realmente muda."""
+        if getattr(self, "_closing", False):
+            return
+        manager = self.language
+        current = manager.locale if manager is not None else None
+        if current != self._observed_locale:
+            self._observed_locale = current
+            self._localize_current_screen()
+        try:
+            self.window.after(300, self._watch_locale)
         except (AttributeError, tk.TclError):
             pass
 
