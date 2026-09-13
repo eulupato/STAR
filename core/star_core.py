@@ -4,6 +4,7 @@ from core.agents import AgentManager
 from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
 from core.language_manager import LanguageManager
+from core.thematic_voice import parse_thematic_voice
 from core.weather import WeatherService
 
 
@@ -68,6 +69,13 @@ class StarCore:
 
     def _process_portuguese(self, user_input, allow_actions=True):
         request_start = time.perf_counter()
+
+        # Comandos temáticos são linguagem natural, não ações privilegiadas. O
+        # parser remove apenas o wake/preambulo e mantém a intenção (compare,
+        # calcule, aprofunde etc.) para que o engine escolha a lente correta.
+        thematic = parse_thematic_voice(user_input)
+        if thematic:
+            user_input = f"{thematic.action} {thematic.query}".strip()
 
         # STAR Vision é uma capacidade local e opcional. O módulo controlador não
         # importa OpenCV/MediaPipe no startup; a webcam só é aberta após comando

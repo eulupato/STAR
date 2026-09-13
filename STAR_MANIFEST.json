@@ -10,6 +10,9 @@
     "identity",
     "internal_knowledge",
     "physics_knowledge_150k",
+    "chemistry_knowledge_500k",
+    "multidisciplinary_knowledge_6m5",
+    "thematic_voice_catalog_1m",
     "multilingual_language_layer_500k",
     "offline_dictionary_runtime",
     "contextual_translation",
@@ -65,30 +68,71 @@
     "levels": [1, 2, 3, 4, 5],
     "variation_model": "10 families x 10 styles x 10 contexts per canonical topic",
     "families": [
-      "conceito",
-      "formula",
-      "variaveis_unidades",
-      "hipoteses_validade",
-      "derivacao",
-      "calculo",
-      "aplicacao",
-      "erros_comuns",
-      "limites",
-      "conexoes"
+      "conceito", "formula", "variaveis_unidades", "hipoteses_validade", "derivacao",
+      "calculo", "aplicacao", "erros_comuns", "limites", "conexoes"
     ],
     "materialization": "on-demand",
     "internet_required": false,
     "watch_available_via_core": true,
     "source_families": [
-      "MIT OpenCourseWare",
-      "OpenStax University Physics",
-      "NIST/CODATA",
-      "Particle Data Group 2026",
-      "CERN",
-      "NASA Physics of the Cosmos",
-      "LIGO Scientific Collaboration",
-      "IAEA"
+      "MIT OpenCourseWare", "OpenStax University Physics", "NIST/CODATA",
+      "Particle Data Group 2026", "CERN", "NASA Physics of the Cosmos",
+      "LIGO Scientific Collaboration", "IAEA"
     ]
+  },
+  "chemistry": {
+    "status": "active-local",
+    "engine": "core/chemistry_knowledge_500k.py",
+    "manifest": "STAR_CHEMISTRY_MANIFEST.json",
+    "canonical_topics": 500,
+    "domains": 20,
+    "topics_per_domain": 25,
+    "variants_per_topic": 1000,
+    "content_variations": 500000,
+    "id_range": "CHEM-000001..CHEM-500000",
+    "variation_model": "10 families x 10 styles x 10 contexts per canonical topic",
+    "materialization": "on-demand",
+    "internet_required": false,
+    "source_families": [
+      "IUPAC Gold Book 2025", "OpenStax Chemistry 2e", "NIST Chemistry WebBook",
+      "NIST CCCBDB", "NIH/NLM PubChem", "MIT OpenCourseWare", "Chemistry LibreTexts", "IAEA"
+    ]
+  },
+  "multidisciplinary": {
+    "status": "active-local",
+    "engine": "core/multidisciplinary_knowledge.py",
+    "taxonomy": "core/multidisciplinary_taxonomy.py",
+    "manifest": "STAR_MULTIDISCIPLINARY_MANIFEST.json",
+    "subjects": 13,
+    "macro_areas_per_subject": 25,
+    "lenses_per_area": 20,
+    "canonical_nodes_per_subject": 500,
+    "canonical_nodes": 6500,
+    "variants_per_node": 1000,
+    "contents_per_subject": 500000,
+    "total_content_variations": 6500000,
+    "materialization": "on-demand",
+    "internet_required": false,
+    "subject_ranges": {
+      "geography": "GEO-000001..GEO-500000",
+      "history": "HIST-000001..HIST-500000",
+      "mathematics": "MATH-000001..MATH-500000",
+      "biology": "BIO-000001..BIO-500000",
+      "mechanics": "MECH-000001..MECH-500000",
+      "engineering": "ENG-000001..ENG-500000",
+      "computing": "COMP-000001..COMP-500000",
+      "it": "IT-000001..IT-500000",
+      "logic": "LOGIC-000001..LOGIC-500000",
+      "psychology_sociology": "PSYSOC-000001..PSYSOC-500000",
+      "decoding": "DECODE-000001..DECODE-500000",
+      "science": "SCI-000001..SCI-500000",
+      "philosophy": "PHIL-000001..PHIL-500000"
+    },
+    "collision_policy": "specificity + explicit subject + cross-domain bridges; close cross-subject ties are not guessed",
+    "legacy_priority": ["physics", "chemistry"],
+    "history_hidden_details_with_evidence_policy": true,
+    "decoding_defensive_scope": true,
+    "psychology_individual_diagnosis": false
   },
   "languages": {
     "status": "active-local",
@@ -99,14 +143,7 @@
     "manifest": "STAR_LANGUAGE_MANIFEST.json",
     "default_locale": "pt-BR",
     "language_families": 5,
-    "locale_profiles": [
-      "pt-BR",
-      "en-US",
-      "en-GB",
-      "es-ES",
-      "it-IT",
-      "fr-FR"
-    ],
+    "locale_profiles": ["pt-BR", "en-US", "en-GB", "es-ES", "it-IT", "fr-FR"],
     "expression_contents_per_family": 100000,
     "total_semantic_expression_contents": 500000,
     "english_surface_variants": 2,
@@ -137,13 +174,7 @@
       "procedural": true,
       "asset_dependency": false,
       "target_fps": 30,
-      "states": [
-        "PRONTA",
-        "OUVINDO",
-        "PENSANDO",
-        "RESPONDENDO",
-        "ATENÇÃO"
-      ]
+      "states": ["PRONTA", "OUVINDO", "PENSANDO", "RESPONDENDO", "ATENÇÃO"]
     },
     "interaction": {
       "ring_rotate": true,
@@ -153,19 +184,7 @@
       "pc_mouse_wheel_simulates_ring": true,
       "pc_enter_simulates_ring_press": true
     },
-    "modes": [
-      "voice",
-      "search",
-      "health",
-      "gps",
-      "vision",
-      "people",
-      "measure",
-      "media",
-      "weather",
-      "language",
-      "settings"
-    ]
+    "modes": ["voice", "search", "health", "gps", "vision", "people", "measure", "media", "weather", "language", "settings"]
   },
   "voice": {
     "stt": "faster-whisper tiny local",
@@ -181,28 +200,21 @@
     "automatic_reply_from_gui": true,
     "fast_mode": "Windows SAPI preferencial + Piper PT-BR fallback",
     "language_switch_commands": true,
-    "command_variations_minimum": 4000,
-    "command_variations_generated": 27804,
-    "command_model": "intents + slots + wake words + aliases",
+    "operational_command_variations": 27804,
+    "thematic_study_variations_added": 1000000,
+    "command_variations_generated_total": 1027804,
+    "thematic_id_range": "VOICE-STUDY-0000001..VOICE-STUDY-1000000",
+    "thematic_model": "10 actions x 10 tones x 10 depths x 10 formats x 10 contexts x 10 closers",
+    "command_model": "intents + slots + wake words + aliases + thematic free-text study parser",
     "free_text_slots": [
-      "web_search.query",
-      "find_file.query",
-      "spotify_search.query",
-      "weather_current.location"
+      "web_search.query", "find_file.query", "spotify_search.query", "weather_current.location", "knowledge.topic"
     ]
   },
   "conversation": {
     "status": "active",
     "response_variations_minimum": 5000,
     "response_variations_generated": 6000,
-    "families": [
-      "greeting",
-      "wellbeing",
-      "thanks",
-      "casual",
-      "support",
-      "farewell"
-    ],
+    "families": ["greeting", "wellbeing", "thanks", "casual", "support", "farewell"],
     "selection": "deterministic-compositional",
     "weather_grounded_smalltalk": true
   },
@@ -216,10 +228,7 @@
     "cache_seconds_default": 600,
     "general_web_mode_required": false,
     "environment": [
-      "STAR_WEATHER_ENABLED",
-      "STAR_WEATHER_LOCATION",
-      "STAR_WEATHER_AUTOLOCATE",
-      "STAR_WEATHER_CACHE_SECONDS"
+      "STAR_WEATHER_ENABLED", "STAR_WEATHER_LOCATION", "STAR_WEATHER_AUTOLOCATE", "STAR_WEATHER_CACHE_SECONDS"
     ]
   },
   "device_gateway": {
@@ -234,30 +243,14 @@
     "schema": 1,
     "sync_interval_seconds": 30,
     "theme": {
-      "background": "#03050A",
-      "surface": "#0B1220",
-      "primary": "#72E8FF",
-      "secondary": "#A276FF",
-      "accent": "#FF79C8",
-      "text": "#FFFFFF",
-      "muted": "#8B96A8"
+      "background": "#03050A", "surface": "#0B1220", "primary": "#72E8FF",
+      "secondary": "#A276FF", "accent": "#FF79C8", "text": "#FFFFFF", "muted": "#8B96A8"
     },
     "labels": {
-      "title": "STAR",
-      "pair": "PAREAR",
-      "send": "ENVIAR",
-      "speak": "FALAR",
-      "stop_and_send": "ENVIAR ÁUDIO",
-      "camera": "VISÃO",
-      "search": "BUSCA",
-      "health": "SAÚDE",
-      "gps": "GPS",
-      "people": "PEOPLE",
-      "measure": "MEDIR",
-      "media": "MÍDIA",
-      "weather": "CLIMA",
-      "language": "IDIOMA",
-      "settings": "CONFIG"
+      "title": "STAR", "pair": "PAREAR", "send": "ENVIAR", "speak": "FALAR",
+      "stop_and_send": "ENVIAR ÁUDIO", "camera": "VISÃO", "search": "BUSCA",
+      "health": "SAÚDE", "gps": "GPS", "people": "PEOPLE", "measure": "MEDIR",
+      "media": "MÍDIA", "weather": "CLIMA", "language": "IDIOMA", "settings": "CONFIG"
     },
     "features": {
       "text": true,
@@ -279,33 +272,14 @@
     },
     "profiles": {
       "phone": {
-        "layout": "comfortable",
-        "show_connection_fields": true,
-        "show_response_transcript": true,
-        "preferred_columns": 1
+        "layout": "comfortable", "show_connection_fields": true,
+        "show_response_transcript": true, "preferred_columns": 1
       },
       "watch": {
-        "layout": "circular-shell",
-        "shape": "circle",
-        "show_connection_fields": false,
-        "show_response_transcript": true,
-        "preferred_columns": 1,
-        "home_style": "plasma-core-ring",
-        "visual_style": "plasma-orbit",
-        "screens": [
-          "home",
-          "voice",
-          "search",
-          "health",
-          "gps",
-          "vision",
-          "people",
-          "measure",
-          "media",
-          "weather",
-          "language",
-          "settings"
-        ]
+        "layout": "circular-shell", "shape": "circle", "show_connection_fields": false,
+        "show_response_transcript": true, "preferred_columns": 1,
+        "home_style": "plasma-core-ring", "visual_style": "plasma-orbit",
+        "screens": ["home", "voice", "search", "health", "gps", "vision", "people", "measure", "media", "weather", "language", "settings"]
       }
     }
   }

@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 
 from core.commands import CommandMatch, command_count, command_variables, match_command
+from core.thematic_voice import THEMATIC_VOICE_VARIATIONS
 from core.weather import WeatherService, format_weather
 
 
@@ -23,11 +24,11 @@ class AgentSpec:
 
 
 AGENT_SPECS = (
-    AgentSpec("voice_command", "Interpreta comandos de voz/texto em intents estruturadas.", "available", "V1.9 Foundation", "safe"),
+    AgentSpec("voice_command", "Interpreta comandos de voz/texto em intents estruturadas e catálogo temático de estudo.", "available", "V1.9 Foundation", "safe"),
     AgentSpec("computer", "Ações locais simples de computador já suportadas pela Foundation.", "partial", "V1.9 → V4 Operator", "safe-subset"),
     AgentSpec("file", "Busca nominal de arquivos; índice semântico fica para V4.", "partial", "V1.9 → V4 Operator", "read"),
     AgentSpec("research", "Abre pesquisas web quando o modo ONLINE estiver autorizado.", "partial", "V1.9 → V12+ Research", "network"),
-    AgentSpec("knowledge", "Consulta conhecimento interno e Knowledge Packs pelo Core atual.", "partial", "V1.9 → V3 Knowledge", "read"),
+    AgentSpec("knowledge", "Consulta conhecimento interno, Física, Química, biblioteca multidisciplinar e Knowledge Packs.", "partial", "V1.9 → V3 Knowledge", "read"),
     AgentSpec("memory", "Memória básica atual; arquitetura episódica/semântica fica para V2.", "partial", "V1.9 → V2 Mind", "read"),
     AgentSpec("project", "Entidades e acompanhamento persistente de projetos.", "planned", "V2/V8", "none"),
     AgentSpec("music", "Spotify e controles multimídia locais disponíveis em escopo limitado.", "partial", "V1.9 → V4 Operator", "safe-subset"),
@@ -97,16 +98,18 @@ class AgentManager:
         if match.intent == "agents_status":
             return self.summary()
         if match.intent == "commands_status":
+            total = command_count() + THEMATIC_VOICE_VARIATIONS
             return (
-                f"Tenho {command_count()} variações auditáveis de comandos de voz na Foundation, "
-                "organizadas por intents e slots em vez de milhares de if/else."
+                f"Tenho {total} variações auditáveis de comandos de voz: "
+                f"{command_count()} operacionais da Foundation + {THEMATIC_VOICE_VARIATIONS} temáticas de estudo, "
+                "geradas por intents/slots e combinações sob demanda em vez de milhões de if/else."
             )
         if match.intent == "command_variables":
             variables = command_variables()
             names = ", ".join(sorted(variables))
             return (
-                f"Os comandos aceitam {len(variables)} famílias de variáveis/slots: {names}. "
-                "Consultas de web, arquivos, Spotify e localização climática aceitam texto livre."
+                f"Os comandos operacionais aceitam {len(variables)} famílias de variáveis/slots: {names}. "
+                "O catálogo temático aceita matéria, tema livre, profundidade, formato, contexto e intenção de estudo."
             )
         if match.intent == "time":
             return computer.local_time()

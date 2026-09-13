@@ -30,6 +30,9 @@ MODULES = [
     "core.chemistry_topics_01",
     "core.chemistry_topics_20",
     "core.chemistry_knowledge_500k",
+    "core.multidisciplinary_taxonomy",
+    "core.multidisciplinary_knowledge",
+    "core.thematic_voice",
     "core.language_catalog",
     "core.offline_dictionary",
     "core.language_manager",
@@ -60,6 +63,7 @@ def main():
     from config import VERSION
     from core.commands import command_count
     from core.conversation import conversation_response_count
+    from core.thematic_voice import THEMATIC_VOICE_VARIATIONS, thematic_voice_stats
 
     print("=" * 64)
     print(f"⭐ DIAGNÓSTICO GERAL STAR V{VERSION}")
@@ -82,7 +86,9 @@ def main():
     pack_stats = star.packs.stats()
     physics_stats = star.physics.stats()
     chemistry_stats = star.chemistry.stats()
+    multi_stats = star.multidisciplinary.stats()
     language_stats = star.language.stats()
+    voice_theme_stats = thematic_voice_stats()
 
     checks = [
         ("identidade", star.get_name() == "STAR"),
@@ -97,12 +103,19 @@ def main():
         ("química canônica = 500 tópicos", chemistry_stats.get("canonical_topics") == 500),
         ("química = 20 domínios", chemistry_stats.get("domains") == 20),
         ("química = 25 tópicos/domínio", set(chemistry_stats.get("domain_counts", {}).values()) == {25}),
+        ("multidisciplinar = 13 matérias", multi_stats.get("subjects") == 13),
+        ("multidisciplinar = 6500 nós", multi_stats.get("canonical_nodes") == 6500),
+        ("multidisciplinar = 500 nós/matéria", multi_stats.get("canonical_nodes_per_subject") == 500),
+        ("multidisciplinar = 500000/matéria", multi_stats.get("contents_per_subject") == 500000),
+        ("multidisciplinar = 6500000 total", multi_stats.get("total_content_variations") == 6500000),
+        ("voz temática = 1000000", voice_theme_stats.get("variations") == 1000000),
         ("idiomas = 5 famílias", language_stats.get("language_families") == 5),
         ("perfis de idioma = 6", language_stats.get("locale_profiles") == 6),
         ("expressões = 500000", language_stats.get("total_semantic_contents") == 500000),
         ("100k expressões por idioma", language_stats.get("contents_per_language") == 100000),
         (">=5 dicionários/fontes por idioma", min(language_stats.get("dictionary_sources", {}).values(), default=0) >= 5),
-        ("catálogo de voz >= 4000", command_count() >= 4000),
+        ("catálogo operacional de voz >= 4000", command_count() >= 4000),
+        ("catálogo total de voz > 1000000", command_count() + THEMATIC_VOICE_VARIATIONS > 1000000),
         ("catálogo conversacional >= 5000", conversation_response_count() >= 5000),
     ]
     for name, ok in checks:
@@ -112,13 +125,17 @@ def main():
 
     print(
         f"⚛️ Física local: {physics_stats.get('canonical_topics', 0)} tópico(s), "
-        f"{physics_stats.get('content_variations', 0)} conteúdo(s) variável(is) "
-        f"(+{physics_stats.get('added_content_variations', 0)} nesta expansão)"
+        f"{physics_stats.get('content_variations', 0)} conteúdo(s) variável(is)"
     )
     print(
         f"🧪 Química local: {chemistry_stats.get('canonical_topics', 0)} tópico(s), "
         f"{chemistry_stats.get('domains', 0)} domínio(s), "
         f"{chemistry_stats.get('content_variations', 0)} conteúdo(s) variável(is)"
+    )
+    print(
+        f"🧭 Multidisciplinar: {multi_stats.get('subjects', 0)} matéria(s), "
+        f"{multi_stats.get('canonical_nodes', 0)} nó(s), "
+        f"{multi_stats.get('total_content_variations', 0)} conteúdo(s) variável(is)"
     )
     print(
         f"🌐 Idiomas: {language_stats.get('language_families', 0)} famílias / "
@@ -146,7 +163,8 @@ def main():
         )
 
     print(
-        f"🗣️ Catálogo de voz: {command_count()} variações | "
+        f"🗣️ Voz: {command_count()} operacionais + {THEMATIC_VOICE_VARIATIONS} temáticas = "
+        f"{command_count() + THEMATIC_VOICE_VARIATIONS} variações | "
         f"💬 respostas conversacionais: {conversation_response_count()}"
     )
 
