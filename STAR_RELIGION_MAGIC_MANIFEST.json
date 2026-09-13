@@ -1,0 +1,77 @@
+{
+  "name": "STAR Cultural Religion & Magic Knowledge",
+  "schema": 1,
+  "status": "active-local-cultural",
+  "engine": "core/religion_magic_knowledge.py",
+  "taxonomy": "core/religion_magic_taxonomy.py",
+  "subjects": 125,
+  "religion_subjects": 100,
+  "magic_esotericism_subjects": 25,
+  "aspects_per_subject": 40,
+  "canonical_nodes": 5000,
+  "variations_per_node": 1000,
+  "total_addressable_contents": 5000000,
+  "materialization": "on-demand",
+  "id_range": "RCM-0001-0001..RCM-5000-1000",
+  "variation_model": "10 lenses x 10 depths x 10 formats per canonical node",
+  "truthfulness_note": "5M are deterministic addressable study/research views over 5,000 canonical cultural nodes; they are not 5M independently researched facts",
+  "epistemic_policy": {
+    "practitioner_self_description": "attribute beliefs and internal claims to the relevant tradition/community",
+    "scholarship": "distinguish historical, anthropological, sociological and textual interpretations",
+    "supernatural_claims": "do not present supernatural efficacy as an established physical mechanism without independent evidence",
+    "internal_diversity": "do not treat one denomination, school, teacher or community as representative of the whole tradition",
+    "living_communities": "prefer current community-authored/self-descriptive sources when describing living identities and practices",
+    "restricted_indigenous_knowledge": "do not reconstruct closed ceremonies, initiatory knowledge or community-restricted details from fragments",
+    "harmful_rituals": "historical description is allowed, but dangerous ingestion, poisoning, violence or other harmful procedures are not operationalized as instructions"
+  },
+  "source_families": [
+    {
+      "name": "Database of Religious History (University of British Columbia)",
+      "role": "scholar-authored standardized historical religion data, qualitative commentary and references",
+      "url": "https://religiondatabase.org/"
+    },
+    {
+      "name": "Harvard Pluralism Project",
+      "role": "religious diversity, self-description, interfaith context and tradition overviews",
+      "url": "https://pluralism.org/"
+    },
+    {
+      "name": "Pew Research Center Religion",
+      "role": "contemporary demography and survey-based religious landscape data; not doctrine authority",
+      "url": "https://www.pewresearch.org/religion/"
+    },
+    {
+      "name": "Library of Congress Religion Collections / American Folklife Center",
+      "role": "religion, vernacular religion, folklore, ritual, historical magic and archival discovery",
+      "url": "https://www.loc.gov/"
+    },
+    {
+      "name": "Smithsonian Anthropology",
+      "role": "anthropology, ethnology, material culture, archives and community-facing collections",
+      "url": "https://naturalhistory.si.edu/research/anthropology"
+    },
+    {
+      "name": "UNESCO Intangible Cultural Heritage",
+      "role": "living traditions, oral traditions, rituals, festive events and cultural safeguarding",
+      "url": "https://ich.unesco.org/"
+    },
+    {
+      "name": "Sefaria",
+      "role": "open structured Jewish texts, metadata and intertextual links",
+      "url": "https://www.sefaria.org/"
+    },
+    {
+      "name": "SuttaCentral",
+      "role": "structured early Buddhist texts and metadata",
+      "url": "https://suttacentral.net/"
+    },
+    {
+      "name": "OpenAlex + Crossref",
+      "role": "scholarly discovery, metadata, citations/DOIs and current research expansion through Research Hub",
+      "url": "https://openalex.org/"
+    }
+  ],
+  "copyright_policy": "the repository stores taxonomy, derived metadata and original summaries/guidance; full copyrighted texts are not copied without a compatible license",
+  "network_required": false,
+  "research_hub_can_expand_online": true
+}
