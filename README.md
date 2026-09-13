@@ -12,7 +12,8 @@ cloud é somente um recurso utilizado pela STAR; nenhum modelo isolado é a STAR
 - **camada cognitiva:** STAR MIND experimental-alpha;
 - **Integrated Evolution:** alpha sobre V1.9, sem promover artificialmente V2+;
 - **direção de produto:** Watch-first;
-- **internet:** opcional e por capacidades/providers declarados;
+- **internet:** desligada por padrão e autorizada por capacidades/providers declarados;
+- **trava central de rede:** `StarCore.network_enabled`;
 - **banco cognitivo:** um único `star.db`;
 - **branch `main`:** fonte oficial do estado versionado após merge e validação.
 
@@ -59,11 +60,6 @@ uma tradição sem ser apresentada como mecanismo físico demonstrado. Tradiçõ
 marcadas como sensíveis priorizam fontes da própria comunidade; conhecimento fechado,
 iniciático ou restrito não é reconstruído a partir de fragmentos públicos.
 
-Fontes-base incluem Database of Religious History (UBC), Harvard Pluralism Project,
-Pew Research Center para demografia, Library of Congress/American Folklife Center,
-Smithsonian Anthropology, UNESCO Intangible Cultural Heritage, Sefaria, SuttaCentral
-e descoberta acadêmica via OpenAlex/Crossref.
-
 Veja `STAR_RELIGION_MAGIC_MANIFEST.json` e `docs/STAR_RELIGION_MAGIC_5M.md`.
 
 ## 💾 M.drives
@@ -109,16 +105,12 @@ A camada Integrated Evolution acrescenta, sobre os mesmos sistemas:
 
 - objetivos e tarefas persistentes;
 - dependências;
-- checkpoints;
-- retomada;
+- checkpoints e retomada;
 - `not_before`, prazo e prioridade persistentes;
-- ordenação de tarefas prontas por prioridade;
+- ordenação por prioridade;
 - execução por handlers explicitamente registrados;
 - idempotência em conjunto com Guardian;
 - **sem autonomia em background**.
-
-O Scheduler é uma fundação temporal do V8 Agent, não uma autorização para a STAR
-executar ações sensíveis sozinha.
 
 ### Guardian alpha
 
@@ -131,10 +123,53 @@ executar ações sensíveis sozinha.
 
 Ainda **não** existe sandbox de SO, autenticação forte ou Secrets Vault criptográfico completo.
 
+### 🩹 Cura local alpha
+
+`core/cure.py` funciona sem GitHub e sem IA generativa:
+
+- health check de Python/JSON e integridade SQLite;
+- hashes SHA-256;
+- snapshot conhecido como bom (`known-good`);
+- watchdog local;
+- snapshot pré-reparo;
+- restauração somente de arquivos permitidos do snapshot;
+- validação depois da restauração;
+- rollback automático da tentativa se o reparo não resolver;
+- alterações saudáveis não são apagadas só porque diferem do baseline.
+
+Isso **não é auto-reescrita irrestrita**. Sandbox de SO, vault, antimalware, Permission
+Manager completo e backup/restore amplo continuam pertencendo ao Guardian futuro.
+
+### 👥 People alpha
+
+People utiliza o mesmo `star.db` e `runtime/people` para perfis e assets fornecidos
+explicitamente. Imagens recebem SHA-256 e dHash técnico para deduplicação.
+
+Políticas atuais:
+
+- funciona offline;
+- não faz reconhecimento facial/biométrico;
+- não infere raça, religião, saúde, orientação sexual, personalidade ou outros traços
+  sensíveis a partir de foto;
+- não ingere GPS de EXIF;
+- imagem genérica recebida por câmera não é associada automaticamente a uma pessoa sem
+  contexto explícito.
+
+### 🌐 Web Knowledge sem IA generativa
+
+Quando as fontes locais não possuem resposta confiável, a STAR pode — **somente no modo
+ONLINE** — pesquisar a web, extrair texto, ranquear trechos deterministicamente e montar
+um resultado com título/URL/proveniência. SearXNG configurado é preferido e DuckDuckGo
+HTML funciona como fallback.
+
+O conteúdo aceito pode ser gravado no CognitiveStore existente e reutilizado offline.
+Ele não vira verdade absoluta automaticamente. URLs privadas/localhost são bloqueadas
+no fetch para reduzir risco de SSRF.
+
 ### RAG híbrido + OCR
 
-A fonte de verdade continua sendo documentos/chunks no SQLite com FTS5/BM25. A nova
-camada adiciona índice semântico derivado:
+A fonte de verdade continua sendo documentos/chunks no SQLite com FTS5/BM25. A camada
+semântica é derivada:
 
 ```text
 PDF/texto
@@ -146,9 +181,9 @@ PDF/texto
 → recuperação híbrida
 ```
 
-- fallback semântico hashing é local/determinístico;
+- fallback hashing é local/determinístico;
 - Sentence Transformers é opcional;
-- `sqlite-vec` é opcional;
+- `sqlite-vec` está preparado como opcional, mas não é o armazenamento vetorial ativo atual;
 - PyMuPDF + Tesseract são opcionais para OCR;
 - nenhum modelo neural é carregado no boot base.
 
@@ -158,30 +193,22 @@ Dependências opcionais:
 python -m pip install -r requirements-intelligence.txt
 ```
 
-Tesseract precisa ser instalado separadamente no sistema quando OCR real for usado.
-
 ### Knowledge Graph científico + cultural
 
-`core/scientific_graph.py` preserva o nome por compatibilidade e pode materializar no
-mesmo grafo oficial:
+`core/scientific_graph.py` pode materializar no mesmo grafo oficial:
 
 - 56 temas científicos/curriculares;
 - 885 conceitos canônicos;
 - 125 assuntos culturais;
 - 40 aspectos culturais;
-- regiões e famílias de fontes;
 - relações derivadas das taxonomias.
 
-As 5M perspectivas culturais **não** são materializadas no grafo. Só a estrutura
-canônica é indexada. O sistema não inventa causalidade científica nem “verdade
-teológica” a partir de conexões do grafo.
-
-A arquitetura aproveita princípios de GraphRAG — entidades/relações + recuperação —
-sem transformar Microsoft GraphRAG em dependência obrigatória do Core.
+As 5M perspectivas culturais não são materializadas no grafo; apenas a estrutura
+canônica. O sistema não inventa causalidade científica nem verdade teológica.
 
 ### Simulation Engine
 
-Além do laboratório anterior, a STAR possui modelos NumPy locais de:
+Modelos NumPy locais atuais:
 
 - RK4 vetorial;
 - órbita Newtoniana 2D de dois corpos;
@@ -195,19 +222,10 @@ Isso ainda não substitui CFD/FEA/SPICE/astrodinâmica de alta fidelidade ou rel
 
 ### Research Hub
 
-Pesquisa científica estruturada opt-in usa:
-
-- Crossref;
-- OpenAlex;
-- arXiv;
-- PubMed/NCBI.
-
+Pesquisa científica estruturada opt-in usa Crossref, OpenAlex, arXiv e PubMed/NCBI.
 Resultados são deduplicados por DOI → URL → título. Encontrar um paper não significa
 que sua conclusão foi automaticamente validada; avaliação de evidência continua uma
 etapa separada.
-
-Para cultura/religião/magia, `pesquisa cultural ...` usa a taxonomia local para gerar
-uma consulta e prioriza OpenAlex/Crossref quando o modo ONLINE é autorizado.
 
 ### Operator e Senses
 
@@ -223,9 +241,16 @@ Exemplos:
 
 ```text
 status evolução
+status agora
 contexto cognitivo
 rotear engine math
 m.drives
+cadastrar pessoa Ada Lovelace: profissão: matemática
+listar pessoas
+cura status
+diagnosticar star
+executar cura
+buscar web computação quântica topológica
 criar objetivo Estudo: revisar relatividade geral
 listar objetivos
 pesquisar profundamente gravitational waves
@@ -244,17 +269,40 @@ prioridade e a nova camada não sequestra termos genéricos.
 
 ## 🌍 Idiomas
 
-A STAR usa uma fonte canônica de conhecimento e camada de apresentação para:
+A fonte canônica de conhecimento continua única em `pt-BR`. A camada de idioma possui
+**18 perfis em 13 famílias**:
 
-- `pt-BR`;
-- `en-US`;
-- `en-GB`;
-- `es-ES`;
-- `it-IT`;
-- `fr-FR`.
+- Português Brasil;
+- Inglês EUA e Reino Unido;
+- Espanhol, Italiano e Francês;
+- Japonês, Polonês e Coreano;
+- Grego moderno e Grego antigo;
+- Latim clássico, tardio, medieval e neolatim;
+- Árabe padrão moderno e Árabe egípcio;
+- Egípcio antigo.
 
-IDs, números/unidades, URLs, paths, código e matemática são protegidos pela tradução.
-Traduções parciais inseguras são rejeitadas em vez de alterar informação.
+Egípcio antigo (`egy-EG`) **não é árabe**. `ar-EG` representa o árabe egípcio moderno.
+
+O catálogo contextual humano revisado continua sendo **500 mil conteúdos semânticos**
+para as 5 famílias/6 superfícies originais. Os 18 perfis não multiplicam artificialmente
+essa contagem. Novos idiomas usam UI embutida, dicionários locais e Argos opcional já
+materializado quando disponível.
+
+Grego antigo, latim histórico e egípcio antigo são perfis de léxico/corpus; a STAR não
+finge que um MT moderno fornece tradução histórica correta. Se não houver tradução
+completa e segura, o original é preservado.
+
+Setup neural opcional:
+
+```powershell
+python -m pip install -r requirements-translation.txt
+python scripts/setup_offline_translation.py --install
+```
+
+O script só instala pares realmente publicados pelo índice Argos atual. O startup da
+STAR nunca baixa modelos automaticamente.
+
+Veja `STAR_LANGUAGE_MANIFEST.json`.
 
 ## 🎙️ Voz e conversa
 
@@ -274,10 +322,16 @@ O catálogo contém **27.804 variações auditáveis de comandos operacionais** 
 **1.000.000 de variações temáticas de estudo**. A conversa local possui **6.000
 combinações auditáveis**.
 
-## 🌦️ Clima
+Voz para perfis históricos não é apresentada como reconstrução histórica validada sem
+um voice pack local apropriado.
 
-O Core possui clima contextual sob demanda via Open-Meteo. Internet não é ativada
-para outras capacidades só porque o clima foi consultado.
+## 🌦️ Clima e rede
+
+O clima ao vivo via Open-Meteo é uma capacidade online. O Core começa OFFLINE e o
+`WeatherService` compartilha a mesma trava `StarCore.network_enabled`; portanto uma
+conversa genérica sobre clima não pode furar o modo offline.
+
+Hora/data, People, Cura, conhecimento e painel AGORA continuam funcionais localmente.
 
 Configuração opcional:
 
@@ -287,6 +341,9 @@ STAR_WEATHER_LOCATION=Cidade, Estado
 STAR_WEATHER_AUTOLOCATE=0
 STAR_WEATHER_CACHE_SECONDS=600
 ```
+
+A variável de ambiente não substitui a autorização do Core: o provider também precisa
+estar habilitado pelo modo ONLINE.
 
 ## 👁️ STAR Vision
 
@@ -310,37 +367,42 @@ A prioridade prática continua Watch-first:
 
 ### Watch App V0.4
 
-Simulador funcional no PC com **Plasma Orbit**:
+Simulador funcional no PC com Plasma Orbit:
 
 ```bat
 INICIAR_STAR_WATCH_APP.bat
 ```
 
-Modos atuais:
+Modos atuais incluem:
 
-`VOZ · BUSCA · SAÚDE · GPS · VISÃO · PEOPLE · MEDIR · MÍDIA · CLIMA · IDIOMA · CONFIG`
+`VOZ · AGORA · BUSCA · SAÚDE · GPS · VISÃO · PEOPLE · MEDIR · MÍDIA · CLIMA · IDIOMA · CONFIG`
 
-No simulador, saúde/GPS/distância continuam marcados como **SIMULAÇÃO** quando não há
-provider físico real. Não declaramos laser, reconhecimento automático de pessoas ou
-sensores que não existem.
+- `IDIOMA` percorre os 18 perfis do Core;
+- `PEOPLE` usa o armazenamento central em vez de JSON paralelo;
+- `AGORA` mostra hora/data locais e o estado compartilhado da STAR;
+- clima no AGORA só atualiza quando ONLINE;
+- saúde/GPS/distância continuam marcados como **SIMULAÇÃO** quando não há provider físico real.
 
 ### Android Watch V0.3
 
-A base em `clients/star_watch_android/` fornece transporte LAN, texto, áudio PCM/WAV,
-STT no Core, resposta falada, câmera, heartbeat e runtime adaptativo. O shell Plasma
-Orbit ainda precisa ser levado integralmente ao hardware e validado fisicamente.
+A base em `clients/star_watch_android/` preserva transporte LAN, texto, áudio PCM/WAV,
+STT no Core, resposta falada, câmera, heartbeat e runtime adaptativo. Uma segunda página
+AGORA é acessível por swipe horizontal; sem pareamento ela mantém hora/data locais.
+O shell Plasma Orbit completo ainda precisa ser levado ao hardware e validado fisicamente.
 
 ## 📱 Mobile / Device Gateway
 
-- cliente iOS: experimental;
-- Device Gateway LAN: experimental e desligado por padrão;
+- cliente iOS experimental com `TabView` principal ↔ AGORA;
+- Device Gateway LAN experimental e desligado por padrão;
+- Device Runtime distribui tema, feature flags e locale sem MIND paralelo;
 - processamento cognitivo permanece no STAR Core;
 - ações remotas sensíveis continuam bloqueadas;
 - a porta do Gateway não deve ser exposta à internet.
 
 ## 🖥️ PC
 
-A interface desktop V1.9 continua preservada:
+A interface desktop V1.9 continua preservada e a camada localizada adiciona o popup
+**AGORA** sem reconstruir a GUI:
 
 ```bat
 INICIAR_STAR.bat
@@ -373,9 +435,11 @@ STAR/
 ├── docs/
 ├── STAR_MANIFEST.json
 ├── STAR_MIND_MANIFEST.json
+├── STAR_LANGUAGE_MANIFEST.json
 ├── STAR_RELIGION_MAGIC_MANIFEST.json
 ├── requirements.txt
 ├── requirements-intelligence.txt
+├── requirements-translation.txt
 └── main.py
 ```
 
@@ -388,8 +452,10 @@ python diagnostico.py
 python -m pytest -q tests
 ```
 
-Dependências opcionais não devem ser necessárias para o boot/teste base. Interfaces,
-microfone, câmera, sensores e hardware físico exigem validação real além do CI.
+O merge deve usar o **mesmo SHA** aprovado por CI, Quality, Security, Windows, Android
+e iOS relevantes. Dependências opcionais não devem ser necessárias para o boot/teste
+base. Interfaces, microfone, câmera, sensores e hardware físico exigem validação real
+além do CI.
 
 Nunca versione `.env`, tokens, bancos pessoais, referências privadas de voz, modelos,
 caches, fotos pessoais ou arquivos temporários.
@@ -400,19 +466,22 @@ Mesmo com as fundações novas, continuam futuros/parciais:
 
 - V2 MIND completo: consolidação/esquecimento de memória e contexto longo;
 - Model Registry completo e roteamento de modelos reais;
-- embeddings neurais/materialização no PC do usuário;
+- embeddings neurais/materialização de vector backend maduro no PC do usuário;
 - OCR até Tesseract/PyMuPDF serem instalados e testados localmente;
 - Knowledge Graph de todos os fatos, claims, contradições e proveniências;
 - solvers CFD/FEA/SPICE e simulação científica de alta fidelidade;
 - Research Engine full-text/avaliação metodológica/retrações;
-- materialização local de corpora culturais somente quando licença permitir;
+- materialização local de corpora culturais/linguísticos somente quando licença permitir;
+- reconhecimento/scene understanding visual semântico;
+- People com identidade biométrica automática — **não implementado**;
 - Operator geral e seguro;
-- scene/screen/spatial awareness semântico;
-- Guardian com sandbox, vault, autenticação, backup e rollback;
+- Guardian com sandbox, vault, autenticação, antimalware e backup/restore amplo;
 - Agent com workers duráveis e approval gates ponta-a-ponta;
-- sync completo do ecossistema;
+- sync offline completo do ecossistema;
+- sensores reais completos do Watch validados em hardware;
 - STAR WORLD 3D;
 - robótica física.
 
-Consulte `docs/MASTER_ROADMAP.md`, `docs/STAR_INTEGRATED_EVOLUTION_ALPHA.md` e
-`docs/STAR_RELIGION_MAGIC_5M.md` para a separação entre **estável, alpha, parcial e planejado**.
+Consulte `docs/MASTER_ROADMAP.md`, `docs/STAR_INTEGRATED_EVOLUTION_ALPHA.md`,
+`docs/STAR_OFFLINE_EVOLUTION_ALPHA.md` e `docs/STAR_RELIGION_MAGIC_5M.md` para a
+separação entre **estável, alpha, parcial e planejado**.
