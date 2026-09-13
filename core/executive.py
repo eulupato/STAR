@@ -52,17 +52,17 @@ class Executive:
             if answer:
                 return answer
 
-        if self.multidisciplinary_knowledge:
-            answer = self.multidisciplinary_knowledge.answer(text)
+        # A base cultural vem antes do multidisciplinar SOMENTE porque seu próprio
+        # resolver exige uma tradição/campo reconhecido. Assim "história do
+        # xintoísmo" não é sequestrado pelo catálogo genérico de História, enquanto
+        # "história do Brasil" continua seguindo para o engine multidisciplinar.
+        if self.religion_magic_knowledge:
+            answer = self.religion_magic_knowledge.answer(text)
             if answer:
                 return answer
 
-        # Base cultural específica. Ela só responde quando identifica explicitamente
-        # uma tradição/campo e por isso pode vir antes do currículo genérico sem
-        # sequestrar consultas científicas. Alegações sobrenaturais permanecem
-        # atribuídas a crenças/tradições, não a mecanismos físicos estabelecidos.
-        if self.religion_magic_knowledge:
-            answer = self.religion_magic_knowledge.answer(text)
+        if self.multidisciplinary_knowledge:
+            answer = self.multidisciplinary_knowledge.answer(text)
             if answer:
                 return answer
 
