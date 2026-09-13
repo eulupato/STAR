@@ -38,10 +38,10 @@ AGENT_SPECS = (
     AgentSpec("music", "Spotify e controles multimídia locais disponíveis em escopo limitado.", "partial", "V1.9 → V4 Operator", "safe-subset"),
     AgentSpec("vision", "STAR Vision Portal local com webcam, tracking de mãos, portal AR e filtros; análise semântica de cena permanece futura.", "partial", "V1.9 experimental → V5 Senses", "read/local-camera"),
     AgentSpec("device", "Gateway LAN experimental e runtime adaptativo; Device Manager completo é futuro.", "partial", "V1.9 experimental → V9", "read"),
-    AgentSpec("cure", "Diagnóstico básico e avaliação cognitiva existem; Cura inteligente, backup/rollback e reparo autorizado continuam V7.", "partial", "V1.9 → V7 Guardian", "read"),
+    AgentSpec("cure", "Cura local monitora integridade, cria snapshot known-good e pode restaurar corrupção verificável com rollback; não gera código autonomamente.", "partial", "V7 Guardian alpha", "local-guarded"),
     AgentSpec("security", "Guardian alpha implementa default-deny, confirmação, audit log e idempotência; sandbox de SO, vault criptográfico e autenticação forte continuam futuros.", "partial", "V7 Guardian alpha", "block-sensitive"),
-    AgentSpec("personal_assistant", "Hora/data, conversa contextual, clima e agenda de tarefas do Goal Engine; scheduler persistente não executa autonomamente em background.", "partial", "V1.9 → V8 Agent", "read/network-weather"),
-    AgentSpec("web", "Camada operacional mínima de navegador/pesquisa web; pesquisa científica estruturada usa Research Hub quando ONLINE é autorizado.", "partial", "V1.9 → V4/V12+", "network"),
+    AgentSpec("personal_assistant", "Hora/data, People local, conversa contextual, clima sob autorização de rede e agenda de tarefas do Goal Engine.", "partial", "V1.9 → V8 Agent", "read/network-weather"),
+    AgentSpec("web", "Fallback web determinístico sem IA generativa; SearXNG preferido/DuckDuckGo fallback, extração, ranking e cache com proveniência quando ONLINE.", "partial", "V3/V12+", "network-opt-in"),
     AgentSpec("coding", "Code Lab local restrito para pequenos testes Python; não é sandbox de SO nem agente autônomo de edição do repositório.", "partial", "V2/V12+", "local-restricted"),
     AgentSpec("home", "Automação residencial.", "planned", "V9 Ecosystem", "none"),
     AgentSpec("body", "Controle abstrato de corpo/robótica.", "planned", "V10 Embodied", "none"),
@@ -96,6 +96,8 @@ class AgentManager:
         if match.intent == "time": return computer.local_time()
         if match.intent == "date": return computer.local_date()
         if match.intent == "weather_current":
+            if not network_enabled:
+                return computer.network_required_message()
             snapshot = self.weather.current(match.slots.get("location"))
             if snapshot is None: return "Não consegui obter o clima atual agora. Posso tentar novamente quando houver conexão e localização disponível."
             return format_weather(snapshot)
