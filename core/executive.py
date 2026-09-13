@@ -29,25 +29,17 @@ class Executive:
             if answer:
                 return answer
 
-        # A expansão curricular só antecipa engines estáveis quando a consulta
-        # corresponde a um conceito específico e pede profundidade. Consultas
-        # comuns continuam preservando as prioridades legadas.
-        if self.curriculum_knowledge and self.curriculum_knowledge.prefers(text):
-            answer = self.curriculum_knowledge.answer(text)
-            if answer:
-                return answer
-
         # Quando a própria consulta pede profundidade/pesquisa/benchmark/dados,
-        # a camada PLUS pode responder antes. Isso não altera IDs nem remove as
-        # bases legadas; apenas permite alcançar o milhão adicional por domínio.
+        # a camada PLUS pode responder antes. Isso preserva o comportamento já
+        # validado e não altera IDs nem remove as bases legadas.
         if self.knowledge_expansion and self.knowledge_expansion.prefers(text):
             answer = self.knowledge_expansion.answer(text)
             if answer:
                 return answer
 
-        # Física e Química permanecem antes do catálogo amplo. Isso preserva os
-        # engines científicos mais específicos quando a consulta pertence
-        # claramente aos domínios legados e evita que "Ciências" os engula.
+        # Física e Química permanecem antes dos catálogos amplos. O currículo
+        # contém muitos termos genéricos (energia, campo, pressão, memória etc.)
+        # e não deve engolir rotas científicas que já são mais específicas.
         if self.physics_knowledge:
             answer = self.physics_knowledge.answer(text)
             if answer:
@@ -63,9 +55,8 @@ class Executive:
             if answer:
                 return answer
 
-        # Fallback curricular: conceitos novos e específicos que não foram
-        # cobertos pelos engines anteriores continuam acessíveis sem duplicar
-        # a fonte canônica.
+        # Camada curricular granular: cobre os novos subtemas e relações quando
+        # as fontes estáveis anteriores não possuem uma resposta mais adequada.
         if self.curriculum_knowledge:
             answer = self.curriculum_knowledge.answer(text)
             if answer:
