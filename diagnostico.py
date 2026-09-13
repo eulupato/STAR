@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import importlib
 import sys
+import unicodedata
 
 
 MODULES = (
@@ -165,7 +166,11 @@ def main() -> int:
     _check(failures, "UI japonesa offline", star.language.localize_static("INICIAR", "ja-JP") == "開始")
     _check(failures, "UI árabe offline", star.language.localize_static("AGORA", "ar-001") == "الآن")
     _check(failures, "Unicode japonês preservado", normalize_term("日本語") == "日本語")
-    _check(failures, "Unicode coreano preservado", normalize_term("한국어") == "한국어")
+    _check(
+        failures,
+        "Unicode coreano preservado",
+        unicodedata.normalize("NFC", normalize_term("한국어")) == "한국어",
+    )
     _check(failures, "hieróglifo egípcio preservado", "𓂀" in normalize_term("𓂀"))
     _check(failures, ">=5 fontes por família", min(language.get("dictionary_sources", {}).values(), default=0) >= 5)
 
@@ -188,8 +193,6 @@ def main() -> int:
     _check(failures, "catálogo voz > 1M", command_count() + THEMATIC_VOICE_VARIATIONS > 1_000_000)
     _check(failures, "smalltalk >= 5000 combinações", conversation_response_count() >= 5_000)
 
-    # Dependências opcionais não devem transformar uma instalação mínima saudável
-    # em falha. Apenas registramos o estado para o relatório local.
     neural = localization.get("neural", {})
     if not neural.get("installed"):
         warnings.append("Argos Translate/modelos neurais não materializados; fallback offline seguro permanece ativo.")
