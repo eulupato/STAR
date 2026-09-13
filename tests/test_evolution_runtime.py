@@ -1,4 +1,7 @@
+from datetime import datetime, timezone
 from pathlib import Path
+
+import pytest
 
 from core.cognition_runtime import CognitiveRuntime
 from core.goal_engine import GoalEngine
@@ -46,6 +49,39 @@ def test_goal_engine_dependencies_and_checkpoint():
     assert engine.latest_checkpoint(goal["goal_id"])["label"] == "pytest"
 
 
+def test_goal_scheduler_is_persistent_priority_ordered_and_not_autonomous():
+    engine = GoalEngine()
+    goal = engine.create("pytest-scheduler", "validar agenda persistente", tasks=[
+        {"key": "future", "title": "Futuro", "handler": "echo", "not_before": "2099-01-01T00:00:00+00:00", "priority": 1.0},
+        {"key": "now-low", "title": "Agora baixo", "handler": "echo", "priority": 0.2},
+        {"key": "now-high", "title": "Agora alto", "handler": "echo", "priority": 0.9},
+    ])
+    ready = engine.ready_tasks(goal["goal_id"], at=datetime(2026, 9, 13, tzinfo=timezone.utc))
+    assert [task["task_key"] for task in ready] == ["now-high", "now-low"]
+    future_task = next(task for task in goal["tasks"] if task["task_key"] == "future")
+    engine.schedule_task(future_task["task_id"], not_before="2000-01-01T00:00:00+00:00", priority=1.0)
+    ready = engine.ready_tasks(goal["goal_id"], at=datetime(2026, 9, 13, tzinfo=timezone.utc))
+    assert ready[0]["task_key"] == "future"
+    assert any(item["task_id"] == future_task["task_id"] for item in engine.scheduled_tasks())
+    stats = engine.stats()
+    assert stats["persistent_scheduler_foundation"] is True
+    assert stats["background_autonomy"] is False
+
+
+def test_goal_scheduler_rejects_deadline_before_start():
+    engine = GoalEngine()
+    goal = engine.create("pytest-scheduler-invalid", "validar janela")
+    task_goal = engine.create("pytest-scheduler-task", "tarefa", tasks=[{"key": "a", "title": "A"}])
+    task = task_goal["tasks"][0]
+    with pytest.raises(ValueError):
+        engine.schedule_task(
+            task["task_id"],
+            not_before="2030-01-02T00:00:00+00:00",
+            deadline="2030-01-01T00:00:00+00:00",
+        )
+    assert goal["status"] == "active"
+
+
 def test_cognitive_runtime_prioritizes_context_and_routes_registered_engine():
     cognition = CognitiveRuntime()
     cognition.observe("user_input", "estudar equações diferenciais", relevance=0.9, user_priority=0.9)
@@ -79,7 +115,9 @@ def test_scientific_graph_exposes_canonical_curriculum_without_inventing_causali
     stats = graph.stats()
     assert stats["themes_available"] == 56
     assert stats["concepts_available"] >= 885
+    assert stats["cultural_subjects_available"] == 125
     assert stats["causal_relation_inference"] is False
+    assert stats["theological_truth_inference"] is False
     assert graph.concept_node_id(1) == "curriculum:concept:0001"
 
 
