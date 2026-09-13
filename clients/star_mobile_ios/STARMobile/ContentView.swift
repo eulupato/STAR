@@ -4,6 +4,7 @@ import UIKit
 struct ContentView: View {
     @EnvironmentObject private var state: AppState
     @State private var showCamera = false
+    @State private var selectedPage = 0
 
     init() {
         UITextView.appearance().backgroundColor = .clear
@@ -14,42 +15,16 @@ struct ContentView: View {
             Color(hex: state.theme["background"] ?? "#080B12")
                 .ignoresSafeArea()
 
-            ScrollView {
-                VStack(spacing: 14) {
-                    Text("⭐ \(state.label("title", fallback: "STAR"))")
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .foregroundColor(Color(hex: state.theme["text"] ?? "#FFFFFF"))
+            TabView(selection: $selectedPage) {
+                mainPage
+                    .tag(0)
 
-                    Text(state.status)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundColor(Color(hex: state.theme["accent"] ?? "#6CC8FF"))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 7)
-                        .background(surface.opacity(0.9))
-                        .clipShape(Capsule())
-
-                    connectionCard
-                    interactionCard
-
-                    Text(state.response)
-                        .font(.body)
-                        .foregroundColor(textColor)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(14)
-                        .background(surface)
-                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        .textSelection(.enabled)
-
-                    if !state.runtimeRevision.isEmpty {
-                        Text("runtime \(state.runtimeRevision)")
-                            .font(.caption2.monospaced())
-                            .foregroundColor(muted)
-                    }
+                if state.feature("now_page", fallback: true) {
+                    nowPage
+                        .tag(1)
                 }
-                .padding(18)
-                .frame(maxWidth: 720)
-                .frame(maxWidth: .infinity)
             }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
         }
         .sheet(isPresented: $showCamera) {
             CameraPicker { image in
@@ -62,6 +37,129 @@ struct ContentView: View {
         .onAppear {
             state.refreshRuntime()
         }
+        .onChange(of: selectedPage) { newValue in
+            if newValue == 1 {
+                state.refreshNowStatus()
+            }
+        }
+    }
+
+    private var mainPage: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                Text("⭐ \(state.label("title", fallback: "STAR"))")
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .foregroundColor(textColor)
+
+                Text(state.status)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundColor(Color(hex: state.theme["accent"] ?? "#6CC8FF"))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .background(surface.opacity(0.9))
+                    .clipShape(Capsule())
+
+                connectionCard
+                interactionCard
+
+                Text(state.response)
+                    .font(.body)
+                    .foregroundColor(textColor)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .textSelection(.enabled)
+
+                HStack(spacing: 8) {
+                    Text(state.localeDisplay)
+                    if !state.runtimeRevision.isEmpty {
+                        Text("• runtime \(state.runtimeRevision)")
+                    }
+                }
+                .font(.caption2.monospaced())
+                .foregroundColor(muted)
+
+                if state.feature("now_page", fallback: true) {
+                    Text("← deslize para \(state.label("now", fallback: "AGORA"))")
+                        .font(.caption)
+                        .foregroundColor(muted)
+                        .padding(.top, 2)
+                }
+            }
+            .padding(18)
+            .frame(maxWidth: 720)
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var nowPage: some View {
+        ScrollView {
+            VStack(spacing: 18) {
+                Text("⭐ STAR • \(state.label("now", fallback: "AGORA"))")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundColor(textColor)
+
+                TimelineView(.periodic(from: .now, by: 30)) { context in
+                    VStack(spacing: 4) {
+                        Text(context.date.formatted(date: .omitted, time: .shortened))
+                            .font(.system(size: 48, weight: .semibold, design: .rounded))
+                        Text(context.date.formatted(date: .abbreviated, time: .omitted))
+                            .font(.subheadline)
+                            .foregroundColor(muted)
+                    }
+                    .foregroundColor(textColor)
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    statusLine(icon: "🌍", text: state.localeDisplay)
+                    statusLine(icon: state.isPaired ? "📡" : "🔒", text: state.status)
+
+                    Divider().overlay(muted.opacity(0.35))
+
+                    Text(state.nowStatus)
+                        .font(.body)
+                        .foregroundColor(textColor)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                }
+                .padding(16)
+                .background(surface)
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                actionButton(
+                    title: "↻ " + state.label("now", fallback: "AGORA"),
+                    color: Color(hex: state.theme["accent"] ?? "#6CC8FF"),
+                    foreground: .black,
+                    action: state.refreshNowStatus
+                )
+
+                Text("Hora e data são locais. Clima/rede só aparecem quando o STAR Core está pareado e o modo ONLINE foi autorizado no Core.")
+                    .font(.caption)
+                    .foregroundColor(muted)
+                    .multilineTextAlignment(.center)
+
+                Text("deslize → para voltar")
+                    .font(.caption2)
+                    .foregroundColor(muted)
+            }
+            .padding(20)
+            .frame(maxWidth: 720)
+            .frame(maxWidth: .infinity)
+        }
+        .onAppear {
+            state.refreshNowStatus()
+        }
+    }
+
+    private func statusLine(icon: String, text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(icon)
+            Text(text)
+                .foregroundColor(textColor)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.subheadline)
     }
 
     private var connectionCard: some View {
