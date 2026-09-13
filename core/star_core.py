@@ -3,6 +3,7 @@ import time
 from core.agents import AgentManager
 from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
+from core.evolution import IntegratedEvolutionSuite
 from core.language_manager import LanguageManager
 from core.mind import CognitiveSuite
 from core.thematic_voice import parse_thematic_voice
@@ -20,6 +21,8 @@ class StarCore:
         self.internal_knowledge = internal_knowledge
         self.tools = None
         self.skills = None
+        # Compatibilidade de atributo para integrações antigas. O nome público
+        # passou a ser M.drives; nenhuma segunda fonte de verdade é criada.
         self.packs = None
 
         self.weather = WeatherService()
@@ -30,6 +33,10 @@ class StarCore:
         # STAR MIND V2 alpha. Usa o mesmo SQLite oficial e só intercepta pedidos
         # cognitivos explícitos, preservando o roteamento estável da Foundation.
         self.mind = CognitiveSuite()
+
+        # Evolução integrada: adiciona Guardian, Goal Engine, M.drives, RAG híbrido,
+        # OCR, Research Hub, File Index e contrato Senses sem substituir o MIND.
+        self.evolution = IntegratedEvolutionSuite(self.mind)
 
         self.last_intent = None
         self.user_name = None
@@ -77,6 +84,18 @@ class StarCore:
                 return vision_action
         except (ImportError, OSError, RuntimeError, ValueError) as exc:
             print(f"⚠️ STAR Vision indisponível: {exc}")
+
+        try:
+            evolution_action = self.evolution.handle(
+                user_input,
+                network_enabled=self.network_enabled,
+                allow_actions=allow_actions,
+            )
+            if evolution_action:
+                self.last_intent = "evolution"
+                return evolution_action
+        except (ImportError, OSError, RuntimeError, ValueError, TimeoutError) as exc:
+            print(f"⚠️ STAR Evolution não concluiu a operação: {exc}")
 
         try:
             mind_action = self.mind.handle(user_input, network_enabled=self.network_enabled)
