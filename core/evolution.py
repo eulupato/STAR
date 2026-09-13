@@ -20,12 +20,15 @@ from core.senses import SensorFusionBuffer, senses_stats
 class IntegratedEvolutionSuite:
     """Facade única para capacidades novas sem substituir STAR MIND/Core."""
 
-    def __init__(self, mind, cultural_knowledge=None):
+    def __init__(self, mind, cultural_knowledge=None, mdrive_manager=None):
         self.mind = mind
         self.guardian = Guardian()
         self.goals = GoalEngine(self.guardian)
         self.cognition = CognitiveRuntime()
-        self.mdrives = MDriveRegistry()
+        # O runtime reutiliza o mesmo manager oficial entregue ao Executive. O
+        # Registry fica apenas como fallback/utilitário quando a suite é criada
+        # isoladamente em testes ou ferramentas de migração.
+        self.mdrives = mdrive_manager or MDriveRegistry()
         self.semantic_rag = HybridSemanticRAG(self.mind.store, prefer_neural=False)
         self.ocr = OCREngine(self.mind.rag)
         self.research = ResearchHub(self.mind.store)
@@ -53,6 +56,22 @@ class IntegratedEvolutionSuite:
             "principle": "local-first; adapters optional; no autonomous sensitive actions",
         }
 
+    def _mdrive_list(self) -> list[dict]:
+        scanned = self.mdrives.scan()
+        if isinstance(scanned, dict):
+            result = []
+            for drive_id, record in scanned.items():
+                manifest = record.get("manifest") or {}
+                result.append({
+                    "drive_id": drive_id,
+                    "name": manifest.get("name") or drive_id,
+                    "version": str(manifest.get("version") or "1"),
+                    "entries": int(record.get("entries") or 0),
+                    "legacy": record.get("storage") == "legacy",
+                })
+            return sorted(result, key=lambda item: (item["name"].casefold(), item["drive_id"].casefold()))
+        return list(scanned or [])
+
     def handle(self, text: str, *, network_enabled: bool = False, allow_actions: bool = True) -> str | None:
         raw = " ".join(str(text or "").strip().split())
         lower = raw.lower()
@@ -77,9 +96,9 @@ class IntegratedEvolutionSuite:
             route = self.cognition.router.choose(match.group(1).strip(), network_enabled=network_enabled)
             return "Nenhum engine registrado satisfaz essa capacidade nas restrições atuais." if route is None else json.dumps(route, ensure_ascii=False, indent=2)
         if lower in {"listar m.drives", "listar mdrives", "m.drives", "mdrives"}:
-            drives = self.mdrives.scan()
+            drives = self._mdrive_list()
             return "M.drives: nenhum instalado." if not drives else "M.drives:\n" + "\n".join(
-                f"- {d['name']} v{d['version']} ({d['entries']} entradas{' | legado' if d['legacy'] else ''})" for d in drives
+                f"- {d['name']} v{d['version']} ({d['entries']} entradas{' | legado' if d.get('legacy') else ''})" for d in drives
             )
         match = re.match(r"^(?:criar objetivo|novo objetivo)\s+([^:]+):\s*(.+)$", raw, re.I)
         if match:
