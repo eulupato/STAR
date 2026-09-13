@@ -3,6 +3,7 @@ import time
 from core.agents import AgentManager
 from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
+from core.foundations import FoundationSuite
 from core.language_manager import LanguageManager
 from core.mind import CognitiveSuite
 from core.thematic_voice import parse_thematic_voice
@@ -26,6 +27,10 @@ class StarCore:
         self.conversation = ConversationEngine(self.weather)
         self.agents = AgentManager(weather_provider=self.weather)
         self.language = LanguageManager()
+
+        # BLOCO 1: fundamentos centrais reutilizáveis. A suíte usa a identidade
+        # oficial existente e não cria uma STAR paralela.
+        self.foundations = FoundationSuite(identity=self.identity)
 
         # STAR MIND V2 alpha. Usa o mesmo SQLite oficial e só intercepta pedidos
         # cognitivos explícitos, preservando o roteamento estável da Foundation.
@@ -77,6 +82,11 @@ class StarCore:
                 return vision_action
         except (ImportError, OSError, RuntimeError, ValueError) as exc:
             print(f"⚠️ STAR Vision indisponível: {exc}")
+
+        foundation_action = self.foundations.handle(user_input)
+        if foundation_action:
+            self.last_intent = "foundations"
+            return foundation_action
 
         try:
             mind_action = self.mind.handle(user_input, network_enabled=self.network_enabled)

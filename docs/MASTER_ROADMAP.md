@@ -91,6 +91,58 @@ Inclui:
 - memória episódica, semântica, conversa, projetos e preferências;
 - Model Router.
 
+### BLOCO 1 — Princípios invioláveis e modelos fundamentais
+
+O BLOCO 1 é a fundação normativa/cognitiva do V2.0. Pode existir como camada
+experimental integrada sobre a V1.9, mas **não significa que V2.0 esteja concluída**.
+
+Ciclo oficial:
+
+```text
+PERCEBER
+→ IDENTIFICAR
+→ COMPREENDER
+→ CONTEXTUALIZAR
+→ RELACIONAR
+→ PREVER
+→ INTERPRETAR
+→ DECIDIR
+→ AGIR
+→ OBSERVAR
+→ APRENDER
+```
+
+Modelos fundamentais:
+
+- WORLD MODEL;
+- HUMAN MODEL;
+- SOCIAL MODEL;
+- SELF MODEL;
+- SITUATION MODEL.
+
+Distinções invioláveis:
+
+- MODELO ≠ STAR;
+- CORPO ≠ STAR;
+- IA ≠ STAR;
+- PENSAR ≠ AGIR;
+- CURIOSIDADE ≠ AUTORIZAÇÃO;
+- INFERÊNCIA ≠ FATO;
+- AUTONOMIA COGNITIVA ≠ AUTONOMIA OPERACIONAL.
+
+Implementação central: `core/foundations.py`, reutilizada pelo `STAR Core` e
+ancorada na identidade oficial já existente em `core/star_identity.py`.
+
+O catálogo fundacional possui **1.000 nós canônicos × 1.000.000 combinações =
+1.000.000.000 de representações operacionais endereçáveis**, materializadas sob
+demanda. O número representa espaço combinatório de princípios, regras, estados,
+limites e contextos; **não representa 1B de fatos independentes pesquisados** e
+não cria 1B de arquivos/linhas em RAM ou no repositório.
+
+Regra operacional permanente: cognição, curiosidade, inferência, previsão ou
+planejamento nunca concedem sozinhos autorização para uma ação externa. Ação
+requer capacidade + segurança + permissão operacional apropriada.
+
 ### V2.1
 Memory Architecture.
 
