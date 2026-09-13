@@ -1,108 +1,200 @@
 # STAR Integrated Evolution — alpha
 
-Esta evolução aproxima MIND, KNOWLEDGE, OPERATOR, SENSES, GUARDIAN e AGENT sem
-promover artificialmente o projeto para versões completas do roadmap.
+Esta evolução aproxima **MIND, KNOWLEDGE, OPERATOR, SENSES, GUARDIAN e AGENT** sem
+promover artificialmente o projeto para versões completas do roadmap. A Foundation
+pública continua sendo **STAR V1.9 stable**; os sistemas abaixo são fundações alpha
+integradas e testáveis.
 
 ## Referências de arquitetura estudadas
-- LangGraph: execução durável, checkpoints, memória curta/longa e human-in-the-loop.
-- sqlite-vec: índice vetorial local sobre SQLite; adotado apenas como adaptador opcional por ainda ser pre-1.0.
-- Sentence Transformers: semantic search local; modelo neural opcional, nunca requisito de boot.
-- PyMuPDF/Tesseract e OCRmyPDF: OCR local e seletivo para PDFs escaneados.
-- NetworkX: relações explícitas e algoritmos de grafos como referência; o armazenamento oficial continua no SQLite da STAR.
-- NASA F Prime: componentes bem delimitados, comandos/eventos/telemetria e health monitoring como referência de sistemas confiáveis.
-- Crossref, OpenAlex, arXiv e NCBI/PubMed: provedores especializados para descoberta bibliográfica.
 
-Nenhum desses projetos foi copiado/vendorizado. Foram reutilizados princípios e APIs públicas.
+Foram pesquisadas implementações/documentações atuais antes de adaptar os princípios:
 
-## Capacidades adicionadas
+- **LangGraph** — execução durável, checkpoints, memória curta/longa, human-in-the-loop e idempotência de efeitos colaterais;
+- **sqlite-vec** — vetores locais sobre SQLite; mantido opcional por ainda ser pre-1.0;
+- **Sentence Transformers** — semantic search/embeddings locais;
+- **PyMuPDF/Tesseract e OCRmyPDF** — OCR local seletivo para PDFs escaneados;
+- **NetworkX** — relações explícitas e algoritmos de grafos como referência; o armazenamento oficial continua no SQLite da STAR;
+- **NASA F Prime** — componentes, comandos, eventos, telemetria e health monitoring como referência de sistemas confiáveis;
+- **Crossref, OpenAlex, arXiv e NCBI/PubMed** — provedores especializados para descoberta bibliográfica.
 
-### Goal Engine durável
+Nenhum desses projetos foi copiado ou vendorizado. A STAR mantém implementação e
+contratos próprios e usa bibliotecas externas somente como adapters quando isso traz
+benefício real.
+
+## 1. Runtime cognitivo
+
+`core/cognition_runtime.py`
+
+- Working Context limitado em RAM;
+- seleção contextual por importância, relevância e recência;
+- Salience Engine com fatores explícitos de relevância, novidade, risco, urgência e prioridade do usuário;
+- Model Router com perfis de engines registrados;
+- respeita local/network/custo e nunca inventa modelos instalados;
+- memória persistente continua no `CognitiveStore`: não existe segundo sistema de memória.
+
+## 2. Goal Engine durável
+
 `core/goal_engine.py`
+
 - objetivos e tarefas persistentes no `star.db`;
 - dependências entre tarefas;
 - checkpoints;
 - retomada de estado;
-- execução por handlers registrados;
-- idempotência quando usado com Guardian.
+- execução por handlers registrados explicitamente;
+- idempotência quando usado com Guardian;
+- nenhuma ação sensível recebe autonomia implícita.
 
-### Guardian alpha
+## 3. Guardian alpha
+
 `core/guardian.py`
+
 - default-deny para ações desconhecidas;
 - política por ação;
 - confirmação e restrições remotas;
 - audit log persistente;
 - claims idempotentes para evitar repetição de efeitos colaterais;
-- redaction básica de segredos em logs.
+- redaction básica de padrões de segredo/token.
 
-Ainda NÃO é sandbox de SO nem Secrets Vault criptográfico completo.
+Ainda **não** é sandbox de SO, autenticação forte completa ou Secrets Vault criptográfico.
 
-### RAG híbrido
+## 4. RAG híbrido semântico
+
 `core/semantic_rag.py`
-- preserva FTS5/BM25 como fonte de verdade;
+
+- preserva documentos/chunks/FTS5/BM25 como fonte de verdade;
 - adiciona índice derivado de embeddings por chunk;
-- Sentence Transformers opcional;
-- fallback hashing local e determinístico quando o backend neural não existe;
-- índice pode ser reconstruído sem perder documentos.
+- Sentence Transformers é opcional;
+- fallback hashing local, determinístico e explicitamente não-neural;
+- `sqlite-vec` fica como adapter opcional, não requisito de boot;
+- o índice derivado pode ser reconstruído sem perder documentos.
 
-### OCR local
+## 5. OCR local seletivo
+
 `core/ocr.py`
-- tenta `pypdf` primeiro;
-- só ativa OCR em PDF escaneado/sem texto suficiente;
-- PyMuPDF + Tesseract opcionais;
-- texto OCR entra no DocumentRAG existente, não em um RAG paralelo.
 
-### Research Hub
+- tenta `pypdf` primeiro;
+- OCR só é acionado em PDF escaneado/sem texto suficiente ou quando forçado;
+- PyMuPDF + Tesseract são opcionais;
+- texto OCR entra no `DocumentRAG` já existente, não em um pipeline paralelo.
+
+## 6. Knowledge Graph científico
+
+`core/scientific_graph.py`
+
+- reutiliza `knowledge_nodes` e `knowledge_edges` do mesmo `star.db`;
+- pode materializar os **56 temas e 885 conceitos canônicos** do currículo;
+- cria relações `belongs_to`, `owned_by`, `domain_member` e `co_theme` derivadas da taxonomia;
+- múltiplas áreas apontam para o mesmo conceito canônico;
+- não infere causalidade científica sem fonte que a sustente;
+- materialização é explícita/on-demand para não aumentar o boot.
+
+## 7. Simulation Engine científico
+
+`core/scientific_simulation.py`
+
+Complementa o SimulationLab anterior usando NumPy já presente:
+
+- RK4 vetorial genérico;
+- órbita Newtoniana 2D de dois corpos + monitor de drift de energia;
+- pêndulo não linear amortecido;
+- equação do calor 1D com verificação de estabilidade explícita;
+- equação da onda 1D com verificação CFL;
+- circuito RC.
+
+Os modelos são úteis para ciência/engenharia inicial e testes. Eles **não** substituem
+solvers validados de CFD, FEA, SPICE, astrodinâmica de alta fidelidade ou relatividade numérica.
+
+## 8. Research Hub
+
 `core/research_hub.py`
+
 - Crossref;
 - OpenAlex;
 - arXiv;
 - PubMed/NCBI E-utilities;
-- deduplicação por DOI, URL e título;
+- deduplicação por DOI, depois URL, depois título normalizado;
 - rede desativada por padrão;
-- descoberta bibliográfica não é tratada automaticamente como evidência validada.
+- descoberta bibliográfica não é automaticamente tratada como evidência validada;
+- full-text arbitrário não é baixado automaticamente.
 
-### Operator File Index
+## 9. Operator File Index
+
 `core/operator_index.py`
+
 - índice persistente e somente leitura;
 - varredura explícita, nunca em background no boot;
-- ignora `.git`, `.venv`, caches e `node_modules`;
+- ignora `.git`, `.venv`, caches, `node_modules` e diretórios de IDE;
 - busca nominal rápida;
-- não escreve/apaga arquivos.
+- não escreve, move ou apaga arquivos.
 
-### Senses observation contract
+## 10. Senses observation contract
+
 `core/senses.py`
-- envelope comum para câmera/tela/sensores;
-- buffer de fusão temporal;
-- provenance/confidence;
-- não declara compreensão semântica de cena antes de existir.
 
-### M.drives
-`core/mdrives.py`
-- novo nome oficial de Knowledge Packs: **M.drives (Memory + Drives/Pendrives)**;
-- novo diretório `knowledge/m_drives`;
-- leitura compatível de `knowledge/packs`;
-- M.drive atual vence duplicata legada;
-- migração explícita e não destrutiva.
+- envelope comum para câmera/tela/sensores;
+- timestamp, confiança e proveniência;
+- buffer de fusão temporal;
+- prepara integração MIND/Device Gateway;
+- continua marcando `semantic_scene_understanding=false` e `multimodal_semantic_fusion=false`.
+
+## 11. M.drives
+
+`core/mdrives.py` + `core/m_drive_manager.py`
+
+**M.drive = Memory + Drive/Pendrive.** É o novo nome oficial dos antigos Knowledge Packs.
+
+- novo diretório: `knowledge/m_drives`;
+- mídia removível preferida: `STAR_KNOWLEDGE/m_drives`;
+- leitura compatível de `knowledge/packs` e `STAR_KNOWLEDGE/packs`;
+- M.drive moderno/primeira identidade carregada vence duplicata, e conflitos são registrados;
+- migração é explícita e não destrutiva;
+- um M.drive nunca ganha permissão de executar código só por ser detectado.
+
+O nome antigo permanece apenas em classes/paths de compatibilidade durante a transição,
+para não quebrar instalações já existentes.
 
 ## Integração no Core
-`core/evolution.py` agrega as novas capacidades sobre a instância existente do MIND.
-Os comandos explícitos são deliberadamente estreitos para evitar regressões no router:
+
+`core/evolution.py` agrega essas capacidades sobre a instância já existente do MIND.
+Comandos explícitos atuais incluem:
+
 - `status evolução`;
+- `contexto cognitivo`;
+- `rotear engine <capacidade>`;
 - `m.drives` / `listar m.drives`;
 - `criar objetivo NOME: OBJETIVO`;
 - `listar objetivos`;
 - `pesquisar profundamente ...`;
 - `rag semântico ...`;
 - `ocr caminho.pdf`;
-- `indexar arquivos CAMINHO`.
+- `indexar arquivos CAMINHO`;
+- `indexar grafo científico`;
+- `simular órbita`;
+- `simular pêndulo`.
+
+Os comandos são deliberadamente estreitos para evitar regressões no router estável.
+
+## Dependências opcionais
+
+`requirements-intelligence.txt` mantém fora do boot mínimo:
+
+- `sentence-transformers`;
+- `sqlite-vec`;
+- `PyMuPDF`.
+
+Tesseract é uma dependência externa do sistema para OCR. Nenhum modelo neural é
+baixado automaticamente na inicialização da STAR.
 
 ## Limites honestos
-- V2/V3/V4/V5/V7/V8 continuam não concluídos como releases completas;
+
+- V2/V3/V4/V5/V7/V8 **não estão concluídos como releases inteiras**;
+- o Model Router escolhe engines registrados, mas ainda não é um registry completo de todos os LLMs/modelos locais/cloud;
 - embeddings neurais dependem de instalação/modelo opcional;
-- `sqlite-vec` permanece adaptador futuro/experimental;
-- OCR exige Tesseract externo;
+- OCR depende de stack externo quando o PDF não contém texto;
 - Research Hub encontra literatura, mas não substitui avaliação metodológica;
-- Operator ainda é read-only;
-- Senses ainda não possui scene understanding multimodal;
-- Guardian ainda não possui sandbox de SO nem vault criptográfico;
-- autonomia sensível continua bloqueada.
+- o Knowledge Graph não inventa relações causais e ainda não contém automaticamente todo fato da base factual;
+- Operator continua read-only neste alpha;
+- Senses não possui scene understanding multimodal;
+- Guardian não possui sandbox de SO nem vault criptográfico;
+- autonomia sensível continua bloqueada;
+- hardware real do Watch, GPS, saúde, laser e robótica continua exigindo implementação e validação física.
