@@ -34,9 +34,10 @@ class StarCore:
         # cognitivos explícitos, preservando o roteamento estável da Foundation.
         self.mind = CognitiveSuite()
 
-        # Evolução integrada: adiciona Guardian, Goal Engine, M.drives, RAG híbrido,
-        # OCR, Research Hub, File Index e contrato Senses sem substituir o MIND.
-        self.evolution = IntegratedEvolutionSuite(self.mind)
+        # Evolução integrada. Reutiliza a mesma instância cultural entregue ao
+        # Executive em vez de criar outra taxonomia/estado paralelo.
+        cultural = getattr(self.executive, "religion_magic_knowledge", None)
+        self.evolution = IntegratedEvolutionSuite(self.mind, cultural_knowledge=cultural)
 
         self.last_intent = None
         self.user_name = None
