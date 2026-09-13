@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'modules/vision.py'
+      - 'modules/vision_model.py'
       - 'clients/star_vision_portal.py'
       - 'requirements-vision.txt'
       - 'DIAGNOSTICO_STAR_VISION.py'
@@ -28,18 +29,33 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt -r requirements-vision.txt pytest
-      - name: Verify optional vision stack
+      - name: Verify MediaPipe Tasks stack and official hand model
         run: |
           python - <<'PY'
           import cv2
           import mediapipe as mp
           import numpy as np
           import clients.star_vision_portal as portal
-          assert hasattr(mp, 'solutions'), 'MediaPipe classic solutions API unavailable'
+          from modules.vision_model import ensure_hand_model, model_sha256
+
+          assert hasattr(mp, 'tasks'), 'MediaPipe Tasks API unavailable'
+          assert hasattr(mp, 'Image'), 'MediaPipe Image API unavailable'
           assert len(portal.PORTAL_FILTERS) == 12
+
+          model = ensure_hand_model(download=True)
+          vision = mp.tasks.vision
+          options = vision.HandLandmarkerOptions(
+              base_options=mp.tasks.BaseOptions(model_asset_path=str(model)),
+              running_mode=vision.RunningMode.VIDEO,
+              num_hands=2,
+          )
+          landmarker = vision.HandLandmarker.create_from_options(options)
+          landmarker.close()
+
           print('OpenCV', cv2.__version__)
           print('MediaPipe', mp.__version__)
           print('NumPy', np.__version__)
+          print('Hand model SHA256', model_sha256(model))
           PY
       - name: Run STAR Vision diagnostic
         run: python DIAGNOSTICO_STAR_VISION.py
