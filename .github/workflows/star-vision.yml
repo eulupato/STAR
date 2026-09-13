@@ -28,7 +28,7 @@ jobs:
       - name: Install Linux MediaPipe runtime libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgles2
+          sudo apt-get install -y libgles2 libegl1
       - name: Install core and vision dependencies
         run: |
           python -m pip install --upgrade pip
