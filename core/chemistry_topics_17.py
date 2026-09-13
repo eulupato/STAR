@@ -1,0 +1,29 @@
+"""STAR Chemistry canonical topics 401-425 of 500."""
+
+CHEMISTRY_ROWS_17 = r"""\
+schrodinger_chem	quimica_quantica_computacional	4	Equação de Schrödinger molecular	ĤΨ=EΨ	Define estados estacionários do sistema eletrônico-nuclear em mecânica quântica.	schrodinger;quimica quantica;hamiltoniano	MIT_561
+born_oppenheimer	quimica_quantica_computacional	4	Aproximação de Born–Oppenheimer	Ψ(r,R)≈ψ_e(r;R)χ_n(R)	Separa aproximadamente movimentos eletrônico e nuclear por diferença de massas.	born oppenheimer;eletrons nucleos;quimica quantica	MIT_561
+particle_in_box_chem	quimica_quantica_computacional	3	Partícula em uma caixa	E_n=n^2h^2/(8mL^2)	Modelo simples de confinamento e crescimento de gap com redução de tamanho.	particula caixa;confinamento;energia quantizada	MIT_561
+rigid_rotor	quimica_quantica_computacional	4	Rotor rígido	E_J=B J(J+1)	Modela níveis rotacionais de moléculas diatômicas/lineares.	rotor rigido;rotacao molecular;b j	MIT_561
+quantum_harmonic_oscillator_chem	quimica_quantica_computacional	4	Oscilador harmônico quântico	E_v=ħω(v+1/2)	Modelo fundamental para vibrações moleculares próximas ao mínimo.	oscilador harmonico quantico;vibracao;energia zero	MIT_561
+hydrogen_atom_wavefunctions	quimica_quantica_computacional	4	Átomo de hidrogênio quântico	E_n∝-1/n^2; ψ=R_nl Y_lm	Solução central que introduz orbitais e momento angular.	hidrogenio;funcao de onda;esfericos harmonicos	MIT_561
+variational_principle	quimica_quantica_computacional	5	Princípio variacional	E_trial=<Ψ|H|Ψ>/<Ψ|Ψ> ≥ E_0	Fornece limite superior para energia do estado fundamental.	principio variacional;energia trial;estado fundamental	MIT_561
+perturbation_theory	quimica_quantica_computacional	5	Teoria de perturbação	E_n=E_n^(0)+λE_n^(1)+...	Aproxima efeitos de termos fracos sobre sistema solucionável.	perturbacao;correcao energia;lambda	MIT_561
+hartree_fock	quimica_quantica_computacional	5	Método Hartree–Fock	Fφ_i=ε_iφ_i com campo médio autoconsistente	Aproxima função eletrônica por determinante de orbitais otimizados.	hartree fock;scf;determinante slater	MIT_561
+self_consistent_field	quimica_quantica_computacional	5	Ciclo de campo autoconsistente	densidade→Fock→orbitais→nova densidade até convergência	Resolve iterativamente equações de campo médio.	scf;autoconsistente;convergencia	NIST_CCCBDB
+electron_correlation	quimica_quantica_computacional	5	Correlação eletrônica	E_corr=E_exata(não relativística)-E_HF	Quantifica energia ausente da aproximação Hartree–Fock.	correlacao eletronica;energia correlacao;post hf	NIST_CCCBDB
+configuration_interaction	quimica_quantica_computacional	5	Interação de configurações	Ψ=Σ c_I Φ_I	Expande função de onda em determinantes excitados para recuperar correlação.	configuration interaction;ci;determinantes	NIST_CCCBDB
+coupled_cluster	quimica_quantica_computacional	5	Coupled cluster	Ψ=e^T Φ_0	Usa operador exponencial de excitações para descrição sistemática de correlação.	coupled cluster;ccsd;post hf	NIST_CCCBDB
+density_functional_theory	quimica_quantica_computacional	5	Teoria do funcional da densidade	E[n]=T[n]+V_ext[n]+J[n]+E_xc[n]	Reformula problema eletrônico em termos da densidade.	dft;funcional densidade;exchange correlation	NIST_CCCBDB
+basis_sets	quimica_quantica_computacional	4	Conjuntos de base	φ_i=Σ c_μ χ_μ	Representa orbitais numericamente em funções de base finitas.	basis set;conjunto base;gaussianas	NIST_CCCBDB
+basis_set_superposition_error	quimica_quantica_computacional	5	Erro de superposição de base	BSSE pode ser estimado por counterpoise	Identifica estabilização artificial em complexos por compartilhamento desigual de funções de base.	bsse;counterpoise;conjunto base	NIST_CCCBDB
+potential_energy_minima_ts	quimica_quantica_computacional	5	Mínimos e estados de transição computacionais	mínimo: Hessiana sem autovalor negativo; TS de 1ª ordem: um modo imaginário	Classifica pontos estacionários de superfície de energia.	hessiana;estado transicao;frequencia imaginaria	NIST_CCCBDB
+geometry_optimization	quimica_quantica_computacional	4	Otimização de geometria	∇E(R)=0 no ponto estacionário	Busca estruturas estacionárias em superfície potencial.	otimizacao geometria;gradiente;estrutura	NIST_CCCBDB
+normal_modes	quimica_quantica_computacional	4	Modos normais moleculares	Hessiana mass-weighted → autovalores ω_i^2	Decompõe vibrações pequenas em coordenadas normais independentes.	modos normais;hessiana;frequencias	NIST_CCCBDB
+partition_function_chem	quimica_quantica_computacional	5	Função de partição molecular	q=Σ_i g_i e^{-E_i/kT}	Liga níveis microscópicos a propriedades termodinâmicas.	funcao particao;estatistica;estados	MIT_560
+trans_rot_vib_partition	quimica_quantica_computacional	5	Partições translacional, rotacional e vibracional	q≈q_trans q_rot q_vib q_elec em aproximação separável	Organiza contribuições microscópicas à termodinâmica molecular.	particao translacional;rotacional;vibracional	MIT_560
+boltzmann_populations	quimica_quantica_computacional	3	Distribuição de Boltzmann	N_i/N_j=(g_i/g_j)e^{-(E_i-E_j)/kT}	Relaciona energia e degenerescência à população térmica.	boltzmann;populacao;degenerescencia	MIT_560
+monte_carlo_chem	quimica_quantica_computacional	5	Monte Carlo em química computacional	<A>≈(1/N)ΣA(x_i) para amostragem adequada	Estima médias de ensemble por amostragem estocástica.	monte carlo;amostragem;ensemble	MIT_560
+molecular_dynamics	quimica_quantica_computacional	5	Dinâmica molecular	m_i d²r_i/dt²=-∇_i U	Propaga trajetórias clássicas sob campo de forças para amostrar dinâmica molecular.	dinamica molecular;md;campo forca	MIT_560
+benchmarking_computational_methods	quimica_quantica_computacional	5	Benchmark de métodos computacionais	erro=propriedade_calc-propriedade_ref; MAE=Σ|erro|/N	Compara métodos a dados experimentais ou referências de alto nível.	benchmark;mae;quimica computacional	NIST_CCCBDB
+"""
