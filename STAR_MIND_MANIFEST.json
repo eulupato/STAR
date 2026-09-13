@@ -1,0 +1,105 @@
+{
+  "name": "STAR MIND",
+  "schema": 1,
+  "status": "experimental-alpha",
+  "host_release": "STAR V1.9 stable",
+  "roadmap_alignment": ["V2.0 MIND", "V2.1 Memory", "V2.2 Knowledge Graph", "partial V3 Knowledge", "partial V3.3 Scientific Engine"],
+  "principles": [
+    "local-first",
+    "one STAR Core",
+    "same official SQLite database",
+    "legacy routing preserved",
+    "auditable artifacts instead of hidden chain-of-thought",
+    "no autonomous code modification",
+    "no invented certainty",
+    "provenance before growth counters"
+  ],
+  "capabilities": [
+    "reasoning",
+    "planning",
+    "memory",
+    "knowledge_graph",
+    "scientific_reasoning",
+    "mathematics",
+    "simulation",
+    "coding",
+    "verification",
+    "document_rag",
+    "research",
+    "projects",
+    "user_model",
+    "multi_agent",
+    "self_improvement"
+  ],
+  "cognitive_catalog": {
+    "themes": 15,
+    "areas_per_theme": 20,
+    "lenses_per_area": 50,
+    "canonical_nodes_per_theme": 1000,
+    "variants_per_node": 1000,
+    "contents_per_theme": 1000000,
+    "total_operational_contents": 15000000,
+    "materialization": "on-demand",
+    "truthfulness_note": "15M are deterministic operational/cognitive support variations, not 15M independently researched facts"
+  },
+  "persistence": {
+    "database": "star.db",
+    "engine": "database.database.engine",
+    "tables": [
+      "cognitive_memory",
+      "knowledge_nodes",
+      "knowledge_edges",
+      "cognitive_projects",
+      "cognitive_project_events",
+      "cognitive_user_model",
+      "cognitive_documents",
+      "cognitive_document_chunks",
+      "cognitive_evaluations",
+      "cognitive_research_sources",
+      "cognitive_facts",
+      "cognitive_growth_runs"
+    ],
+    "document_search": "SQLite FTS5/BM25 when available; textual fallback otherwise"
+  },
+  "math": {
+    "engine": "SymPy",
+    "features": ["symbolic simplify", "equation solving", "derivatives", "integrals", "numeric evaluation"]
+  },
+  "simulation": {
+    "features": ["projectile", "exponential dynamics", "Monte Carlo", "scalar RK4"]
+  },
+  "code_lab": {
+    "status": "restricted-local",
+    "isolated_python_flags": ["-I", "-S"],
+    "os_grade_sandbox": false,
+    "note": "untrusted code still belongs to future Guardian/Sandbox"
+  },
+  "rag": {
+    "formats": ["txt", "md", "csv", "json", "py", "rst", "pdf"],
+    "pdf_engine": "pypdf",
+    "ocr": false,
+    "note": "image-only/scanned PDFs require a future OCR pipeline"
+  },
+  "research": {
+    "provider": "Crossref REST API",
+    "network_default": false,
+    "scope": "scholarly metadata search; general autonomous web research remains future/partial"
+  },
+  "user_model": {
+    "policy": "explicit and auditable",
+    "automatic_sensitive_trait_inference": false
+  },
+  "self_improvement": {
+    "records_metrics": true,
+    "recommends_changes": true,
+    "autonomous_repository_edits": false
+  },
+  "daily_growth": {
+    "requested_target_per_theme": 1000000,
+    "target_is_guarantee": false,
+    "accepted_definition": "unique record with content, source and source_type/provenance",
+    "duplicates_count_as_new": false,
+    "rejected_records_count_as_new": false,
+    "deterministic_variants_count_as_new_facts": false
+  }
+}
