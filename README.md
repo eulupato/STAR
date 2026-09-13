@@ -20,6 +20,42 @@ A prioridade prática passa a ser o **STAR Watch App**.
 A Foundation V1.9 continua preservada como base estável do Core. Ela não está sendo
 reconstruída nem descartada; o Watch reutiliza o que já funciona.
 
+## 🧠 Knowledge Foundation
+
+A base factual endereçável anterior continua em **22,15M** de variações, composta
+pelos engines de Física, Química, Multidisciplinar e Knowledge PLUS. Esse número é
+composicional e não significa 22,15M fatos escritos/pesquisados individualmente.
+
+A expansão curricular canônica adiciona uma camada granular sobre o mesmo Core:
+
+- **56 temas** de ciência, matemática, física, engenharia, computação, química,
+  biologia, neurociência e Ciências da Terra;
+- **956 menções** de subtemas consolidadas em **885 conceitos canônicos únicos**;
+- **71 duplicações** removidas por identidade semântica/alias;
+- **1.000.000** de variações endereçáveis por tema;
+- **1.000.000** de variações endereçáveis por conceito único;
+- **941.000.000** de conteúdos/visões curriculares endereçáveis no total,
+  materializados sob demanda.
+
+Os 941M curriculares **não são 941M novos fatos independentes** e permanecem como
+métrica separada dos 22,15M factuais legados. Um conceito existe uma vez e pode
+pertencer a várias áreas; por exemplo, visão computacional conecta Robótica, IA e
+Percepção Computacional sem manter três cópias do mesmo conceito.
+
+Arquivos principais:
+
+```text
+core/curriculum_taxonomy.py
+core/curriculum_knowledge.py
+STAR_CURRICULUM_MANIFEST.json
+docs/STAR_CURRICULUM_EXPANSION.md
+```
+
+A STAR também possui localização global para `pt-BR`, `en-US`, `en-GB`, `es-ES`,
+`it-IT` e `fr-FR`. O conhecimento canônico continua único; idioma é camada de
+apresentação. Traduções protegem IDs, números/unidades, URLs, paths, código e
+matemática, e uma tradução parcial insegura é rejeitada em vez de alterar informação.
+
 ## ⌚ STAR Watch App V0.4
 
 A V0.4 inaugura a abordagem **Watch-first** e roda atualmente como simulador no PC,
@@ -291,8 +327,9 @@ python diagnostico.py
 python -m pytest -q tests
 ```
 
-O diagnóstico valida também os contratos mínimos de catálogo de voz e conversa e
-distingue Knowledge Packs descobertos de entradas efetivamente carregadas.
+O diagnóstico valida também os contratos mínimos de catálogo de voz e conversa,
+os limites da expansão curricular e distingue Knowledge Packs descobertos de entradas
+efetivamente carregadas.
 
 Além dos testes automáticos, interfaces, microfone, sensores e hardware precisam de
 validação física quando a mudança depender deles.
@@ -303,6 +340,9 @@ caches, fotos pessoais ou arquivos temporários.
 ## Estado atual
 
 - **STAR Core/Foundation:** V1.9 stable;
+- **conhecimento factual endereçável legado:** 22,15M variações composicionais;
+- **currículo canônico:** 56 temas + 885 conceitos únicos = 941M variações curriculares on-demand;
+- **idiomas:** 6 locales de apresentação sobre uma fonte canônica única;
 - **voz:** 27.804 variações auditáveis de comandos no catálogo atual;
 - **conversa local:** 6.000 combinações auditáveis;
 - **clima contextual:** provider online sob demanda integrado ao Core;

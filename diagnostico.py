@@ -24,13 +24,13 @@ MODULES = [
     "config", "core.star_identity", "core.internal_knowledge", "core.physics_knowledge",
     "core.physics_topics_extended", "core.physics_knowledge_150k", "core.chemistry_topics_01",
     "core.chemistry_topics_20", "core.chemistry_knowledge_500k", "core.multidisciplinary_taxonomy",
-    "core.multidisciplinary_knowledge", "core.knowledge_expansion_15m", "core.cognitive_catalog",
-    "database.cognitive_store", "core.labs", "core.mind", "core.thematic_voice", "core.language_catalog",
-    "core.offline_dictionary", "core.global_localization", "core.language_manager", "core.router", "core.executive",
-    "core.star_core", "core.commands", "core.conversation", "core.weather", "core.islands", "core.memory",
-    "core.emotion", "core.avatar", "core.knowledge_registry", "core.cure", "core.math_engine",
-    "modules.computer_control", "database.database", "database.memory", "voice.manager", "voice.audio_input",
-    "gui.app",
+    "core.multidisciplinary_knowledge", "core.knowledge_expansion_15m", "core.curriculum_taxonomy",
+    "core.curriculum_knowledge", "core.cognitive_catalog", "database.cognitive_store", "core.labs",
+    "core.mind", "core.thematic_voice", "core.language_catalog", "core.offline_dictionary",
+    "core.global_localization", "core.language_manager", "core.router", "core.executive", "core.star_core",
+    "core.commands", "core.conversation", "core.weather", "core.islands", "core.memory", "core.emotion",
+    "core.avatar", "core.knowledge_registry", "core.cure", "core.math_engine", "modules.computer_control",
+    "database.database", "database.memory", "voice.manager", "voice.audio_input", "gui.app",
 ]
 
 
@@ -64,6 +64,7 @@ def main():
     chemistry_stats = star.chemistry.stats()
     multi_stats = star.multidisciplinary.stats()
     plus_stats = star.knowledge_plus.stats()
+    curriculum_stats = star.curriculum.stats()
     mind_stats = star.mind.stats()
     language_stats = star.language.stats()
     localization_stats = language_stats.get("global_localization", {})
@@ -74,6 +75,21 @@ def main():
         first = star.knowledge_plus.content_id(domain, 0, 0)
         last = star.knowledge_plus.content_id(domain, 999, 999)
         plus_boundaries_ok = plus_boundaries_ok and first.endswith("-0000001") and last.endswith("-1000000")
+
+    curriculum_boundaries_ok = False
+    try:
+        first_theme = star.curriculum.materialize_theme(1, 1)["id"]
+        last_theme = star.curriculum.materialize_theme(56, 1_000_000)["id"]
+        first_concept = star.curriculum.materialize_concept(1, 1)["id"]
+        last_concept = star.curriculum.materialize_concept(curriculum_stats["unique_concepts"], 1_000_000)["id"]
+        curriculum_boundaries_ok = (
+            first_theme == "CURRT-001-0000001"
+            and last_theme == "CURRT-056-1000000"
+            and first_concept.endswith("-0000001")
+            and last_concept.endswith("-1000000")
+        )
+    except (KeyError, ValueError, IndexError):
+        curriculum_boundaries_ok = False
 
     cognitive_boundaries_ok = True
     for theme in mind_stats.get("capability_keys", []):
@@ -110,8 +126,15 @@ def main():
         ("PLUS = 1000 nós novos/domínio", plus_stats.get("added_canonical_nodes_per_domain") == 1000),
         ("PLUS = 1000000 novos/domínio", plus_stats.get("added_content_variations_per_domain") == 1_000_000),
         ("PLUS = 15000000 novos", plus_stats.get("added_content_variations") == 15_000_000),
-        ("conhecimento combinado = 22150000", plus_stats.get("combined_content_variations") == 22_150_000),
+        ("conhecimento combinado legado = 22150000", plus_stats.get("combined_content_variations") == 22_150_000),
         ("IDs PLUS preservam limites 1..1000000", plus_boundaries_ok),
+        ("currículo = 56 temas", curriculum_stats.get("themes") == 56),
+        ("currículo >400 conceitos únicos", curriculum_stats.get("unique_concepts", 0) > 400),
+        ("currículo deduplica menções", curriculum_stats.get("deduplicated_mentions", 0) > 0),
+        ("currículo = 1M por tema", curriculum_stats.get("variations_per_theme") == 1_000_000),
+        ("currículo = 1M por conceito", curriculum_stats.get("variations_per_concept") == 1_000_000),
+        ("currículo total coerente", curriculum_stats.get("total_new_addressable_contents") == (curriculum_stats.get("themes", 0) + curriculum_stats.get("unique_concepts", 0)) * 1_000_000),
+        ("IDs currículo preservam limites 1..1000000", curriculum_boundaries_ok),
         ("MIND = 15 capacidades", mind_stats.get("capabilities") == 15),
         ("MIND = 1000000 conteúdos/capacidade", mind_stats.get("support_contents_per_capability") == 1_000_000),
         ("MIND = 15000000 conteúdos operacionais", mind_stats.get("support_contents_total") == 15_000_000),
@@ -144,7 +167,15 @@ def main():
     print(f"⚛️ Física local: {physics_stats.get('canonical_topics', 0)} tópico(s), {physics_stats.get('content_variations', 0)} conteúdo(s) variável(is)")
     print(f"🧪 Química local: {chemistry_stats.get('canonical_topics', 0)} tópico(s), {chemistry_stats.get('domains', 0)} domínio(s), {chemistry_stats.get('content_variations', 0)} conteúdo(s) variável(is)")
     print(f"🧭 Multidisciplinar: {multi_stats.get('subjects', 0)} matéria(s), {multi_stats.get('canonical_nodes', 0)} nó(s), {multi_stats.get('total_content_variations', 0)} conteúdo(s) variável(is)")
-    print(f"🚀 Knowledge PLUS: {plus_stats.get('domains', 0)} domínio(s), +{plus_stats.get('added_content_variations_per_domain', 0)} por domínio, +{plus_stats.get('added_content_variations', 0)} novos | combinado={plus_stats.get('combined_content_variations', 0)}")
+    print(f"🚀 Knowledge PLUS: {plus_stats.get('domains', 0)} domínio(s), +{plus_stats.get('added_content_variations_per_domain', 0)} por domínio, +{plus_stats.get('added_content_variations', 0)} novos | combinado legado={plus_stats.get('combined_content_variations', 0)}")
+    print(
+        "🧬 Currículo: "
+        f"{curriculum_stats.get('themes', 0)} temas | "
+        f"{curriculum_stats.get('raw_topic_mentions', 0)} menções brutas -> "
+        f"{curriculum_stats.get('unique_concepts', 0)} conceitos únicos | "
+        f"{curriculum_stats.get('deduplicated_mentions', 0)} duplicações consolidadas | "
+        f"{curriculum_stats.get('total_new_addressable_contents', 0)} visões/conteúdos curriculares endereçáveis"
+    )
     print(f"🧠 MIND alpha: {mind_stats.get('capabilities', 0)} capacidades, {mind_stats.get('canonical_nodes_total', 0)} nós canônicos, {mind_stats.get('support_contents_total', 0)} conteúdos operacionais | FTS5={'SIM' if mind_stats.get('store', {}).get('fts5_available') else 'fallback textual'}")
     print(f"🌐 Idiomas: {language_stats.get('language_families', 0)} famílias / {language_stats.get('locale_profiles', 0)} perfis | {language_stats.get('total_semantic_contents', 0)} conteúdos de expressão")
     neural_stats = localization_stats.get("neural", {})
