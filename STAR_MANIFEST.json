@@ -38,16 +38,28 @@
     "fast_local_tts_fallback",
     "voice_degraded_startup",
     "automatic_spoken_replies",
-    "removable_knowledge_packs"
+    "removable_mdrives"
   ],
   "features_prepared": [
     "expanded_automation",
     "messaging_integrations",
     "web_tools",
-    "star_mind_v2_full"
+    "star_mind_v2_full",
+    "guardian_full",
+    "operator_full",
+    "semantic_scene_understanding",
+    "encrypted_secrets_vault"
   ],
   "experimental_features": [
     "star_mind_v2_alpha",
+    "integrated_evolution_alpha",
+    "goal_engine_durable_alpha",
+    "guardian_permissions_audit_alpha",
+    "hybrid_semantic_rag_alpha",
+    "optional_pdf_ocr_alpha",
+    "research_hub_multi_provider_alpha",
+    "operator_file_index_alpha",
+    "senses_observation_contract_alpha",
     "star_device_gateway_v0_2",
     "star_watch_android_v0_3",
     "star_watch_app_v0_4",
@@ -180,6 +192,20 @@
     "frontier_evidence_classification": true,
     "truthfulness_note": "941M is a deterministic addressable study/research space over 56 themes and 885 canonical concepts; it is not 941M independently researched facts and must not be reported as unique factual claims"
   },
+  "mdrives": {
+    "status": "active-local-removable",
+    "meaning": "Memory + Drives/Pendrives",
+    "manager": "core/m_drive_manager.py",
+    "registry": "core/mdrives.py",
+    "primary_root": "knowledge/m_drives",
+    "legacy_root": "knowledge/packs",
+    "legacy_public_name": "Knowledge Packs",
+    "legacy_read_compatibility": true,
+    "migration_destructive": false,
+    "removable_roots": ["STAR_KNOWLEDGE/m_drives", "STAR_KNOWLEDGE/packs"],
+    "code_execution_from_drive": false,
+    "duplicate_policy": "modern M.drive/first loaded identity wins; conflicts are reported"
+  },
   "mind": {
     "status": "experimental-alpha",
     "manifest": "STAR_MIND_MANIFEST.json",
@@ -197,12 +223,77 @@
     "fts5_with_fallback": true,
     "sympy_math": true,
     "pdf_text_rag": true,
-    "pdf_ocr": false,
-    "crossref_research": true,
+    "pdf_ocr_base": false,
+    "pdf_ocr_optional_evolution": true,
+    "research_providers_base": ["Crossref"],
+    "research_providers_evolution": ["Crossref", "OpenAlex", "arXiv", "PubMed/NCBI"],
     "network_default": false,
     "code_lab_os_grade_sandbox": false,
     "autonomous_repository_modification": false,
     "truthfulness_note": "15M MIND items are operational/cognitive support variations, not 15M independently researched facts"
+  },
+  "integrated_evolution": {
+    "status": "experimental-alpha",
+    "facade": "core/evolution.py",
+    "documentation": "docs/STAR_INTEGRATED_EVOLUTION_ALPHA.md",
+    "database": "star.db",
+    "goal_engine": {
+      "engine": "core/goal_engine.py",
+      "persistent_goals": true,
+      "task_dependencies": true,
+      "durable_checkpoints": true,
+      "idempotent_execution_with_guardian": true,
+      "autonomous_sensitive_actions": false
+    },
+    "guardian": {
+      "engine": "core/guardian.py",
+      "default_deny_unknown": true,
+      "permission_policy": true,
+      "audit_log": true,
+      "idempotent_action_claims": true,
+      "secret_redaction_basic": true,
+      "os_grade_sandbox": false,
+      "encrypted_secrets_vault": false
+    },
+    "rag": {
+      "engine": "core/semantic_rag.py",
+      "source_of_truth": "existing cognitive documents + SQLite FTS5/BM25",
+      "hybrid_retrieval": true,
+      "deterministic_hashing_fallback": true,
+      "sentence_transformers_optional": true,
+      "sqlite_vec_optional": true,
+      "bulk_model_load_at_startup": false
+    },
+    "ocr": {
+      "engine": "core/ocr.py",
+      "plain_pdf_first": "pypdf",
+      "optional_backend": "PyMuPDF + external Tesseract",
+      "selective_ocr": true,
+      "startup_dependency": false
+    },
+    "research": {
+      "engine": "core/research_hub.py",
+      "providers": ["Crossref", "OpenAlex", "arXiv", "PubMed/NCBI"],
+      "network_default": false,
+      "deduplication": "DOI > URL > normalized title",
+      "full_text_download": false,
+      "metadata_is_not_automatically_validated_evidence": true
+    },
+    "operator": {
+      "engine": "core/operator_index.py",
+      "file_index": true,
+      "explicit_scan_only": true,
+      "background_scan": false,
+      "writes_or_deletes": false
+    },
+    "senses": {
+      "engine": "core/senses.py",
+      "observation_contract": true,
+      "fusion_buffer": true,
+      "semantic_scene_understanding": false,
+      "multimodal_semantic_fusion": false
+    },
+    "optional_requirements": "requirements-intelligence.txt"
   },
   "languages": {
     "status": "active-local",
