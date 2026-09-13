@@ -1,0 +1,70 @@
+{
+  "name": "STAR Vision Portal",
+  "version": "1.0.0",
+  "status": "active-optional-local",
+  "inspiration": {
+    "repository": "mishu006/Filters",
+    "policy": "clean reimplementation of the public concept; no vendored source",
+    "original_readme_license_claim": "MIT"
+  },
+  "controller": "modules/vision.py",
+  "client": "clients/star_vision_portal.py",
+  "optional_requirements": "requirements-vision.txt",
+  "runtime": {
+    "internet_required": false,
+    "camera_required": true,
+    "opencv_loaded_at_star_startup": false,
+    "mediapipe_loaded_at_star_startup": false,
+    "captures": "runtime/vision/captures"
+  },
+  "tracking": {
+    "hands": 2,
+    "anchors": ["left-index", "left-thumb", "right-index", "right-thumb"],
+    "adaptive_point_smoothing": true,
+    "geometry_gate": true,
+    "temporal_gesture_confirmation": true,
+    "gesture_hysteresis": true,
+    "gesture_cooldown": true,
+    "adaptive_processing_scale": true
+  },
+  "rendering": {
+    "polygon_mask": true,
+    "feathered_edges": true,
+    "animated_plasma_border": true,
+    "hud": true,
+    "fps_monitor": true,
+    "fullscreen": true,
+    "manual_capture": true
+  },
+  "filters": [
+    "hologram",
+    "neon",
+    "halftone",
+    "chromatic",
+    "thermal",
+    "vintage",
+    "frosted",
+    "magenta",
+    "edges",
+    "night",
+    "xray",
+    "cyber"
+  ],
+  "security": {
+    "local_camera_open_requires_local_action": true,
+    "watch_mobile_can_open_pc_camera": false,
+    "watch_mobile_can_stop_pc_camera": false,
+    "read_only_status_remote_safe": true
+  },
+  "controls": {
+    "gesture": "bring both portal sides together to advance filter",
+    "keyboard": {
+      "A": "previous filter",
+      "D": "next filter",
+      "S": "capture frame",
+      "H": "toggle HUD",
+      "F": "toggle fullscreen",
+      "Q_or_Escape": "close"
+    }
+  }
+}
