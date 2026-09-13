@@ -1,0 +1,73 @@
+{
+  "name": "STAR Knowledge PLUS 15M",
+  "version": "1.0.0",
+  "status": "active-local-additive",
+  "engine": "core/knowledge_expansion_15m.py",
+  "legacy_ids_unchanged": true,
+  "materialization": "on-demand",
+  "internet_required_at_runtime": false,
+  "domains": 15,
+  "added_canonical_nodes_per_domain": 1000,
+  "variants_per_node": 1000,
+  "added_contents_per_domain": 1000000,
+  "added_contents_total": 15000000,
+  "existing_knowledge_contents_before_plus": 7150000,
+  "combined_knowledge_contents_after_plus": 22150000,
+  "domains_and_ranges": {
+    "physics": "PHYSX-0000001..PHYSX-1000000",
+    "chemistry": "CHEMX-0000001..CHEMX-1000000",
+    "geography": "GEOX-0000001..GEOX-1000000",
+    "history": "HISTX-0000001..HISTX-1000000",
+    "mathematics": "MATHX-0000001..MATHX-1000000",
+    "biology": "BIOX-0000001..BIOX-1000000",
+    "mechanics": "MECHX-0000001..MECHX-1000000",
+    "engineering": "ENGX-0000001..ENGX-1000000",
+    "computing": "COMPX-0000001..COMPX-1000000",
+    "it": "ITX-0000001..ITX-1000000",
+    "logic": "LOGICX-0000001..LOGICX-1000000",
+    "psychology_sociology": "PSYSOCX-0000001..PSYSOCX-1000000",
+    "decoding": "DECODEX-0000001..DECODEX-1000000",
+    "science": "SCIX-0000001..SCIX-1000000",
+    "philosophy": "PHILX-0000001..PHILX-1000000"
+  },
+  "multidisciplinary_expansion_model": "25 existing macroareas x 40 new deep lenses x 1000 variants",
+  "physics_chemistry_expansion_model": "50 advanced axes x 20 research lenses x 1000 variants",
+  "variant_model": "10 families x 10 styles x 10 contexts",
+  "families": [
+    "explicacao_profunda",
+    "problema_resolvido",
+    "derivacao_ou_argumento",
+    "interpretacao_de_dados",
+    "analise_de_fontes",
+    "comparacao",
+    "validacao",
+    "falhas_e_limites",
+    "conexoes",
+    "pergunta_de_pesquisa"
+  ],
+  "routing": {
+    "legacy_priority_preserved": true,
+    "plus_preferred_for_depth_hints": true,
+    "plus_fallback_for_new_specific_topics": true,
+    "knowledge_packs_after_plus": true
+  },
+  "research_source_families": [
+    "NIST Standard Reference Data and CODATA",
+    "MIT OpenCourseWare",
+    "USGS GIS/Data",
+    "NASA Science Data and Earthdata",
+    "NCBI/NIH Bookshelf and molecular-biology resources",
+    "IUPAC and NIST Chemistry WebBook",
+    "Library of Congress and museum/archive collections",
+    "Unicode Consortium",
+    "IETF standards",
+    "APA standards and research-method guidance",
+    "Stanford Encyclopedia of Philosophy"
+  ],
+  "policies": {
+    "history": "distinguish primary evidence, historiography, controversy and certainty",
+    "psychology_sociology": "educational/research; no individual clinical diagnosis",
+    "decoding": "educational/defensive; no credential bypass or exploitation",
+    "all_domains": "state assumptions, evidence, uncertainty, limits and verification path"
+  }
+}
