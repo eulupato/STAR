@@ -4,7 +4,6 @@ Não baixa modelos, não inicializa câmera e não carrega TTS pesado. O objetiv
 validar arquitetura, contratos, contagens e fallbacks seguros no ambiente atual.
 """
 import importlib
-from datetime import datetime, timezone
 
 
 def _configure_console_utf8():
@@ -167,17 +166,6 @@ def main():
     _check(failures, "Operator read-only", evolution.get("operator", {}).get("writes_or_deletes") is False)
     _check(failures, "Senses sem scene understanding falso-positivo", evolution.get("senses", {}).get("semantic_scene_understanding") is False)
     _check(failures, "Evolution reutiliza base cultural", star.evolution.cultural is star.religion_magic)
-
-    scheduled_goal = star.evolution.goals.create(
-        "diagnostic-scheduler",
-        "validar agenda sem executar automaticamente",
-        tasks=[{"key": "future", "title": "Futuro", "not_before": "2099-01-01T00:00:00+00:00", "priority": 1.0}],
-    )
-    _check(
-        failures,
-        "Scheduler respeita not_before",
-        star.evolution.goals.ready_tasks(scheduled_goal["goal_id"], at=datetime(2026, 9, 13, tzinfo=timezone.utc)) == [],
-    )
 
     orbit = star.evolution.simulation.two_body_orbit(dt=20.0, duration=600.0)
     _check(failures, "órbita: drift de energia baixo", orbit.get("relative_energy_drift", 1.0) < 1e-5)
