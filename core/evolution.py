@@ -20,7 +20,7 @@ from core.senses import SensorFusionBuffer, senses_stats
 class IntegratedEvolutionSuite:
     """Facade única para capacidades novas sem substituir STAR MIND/Core."""
 
-    def __init__(self, mind):
+    def __init__(self, mind, cultural_knowledge=None):
         self.mind = mind
         self.guardian = Guardian()
         self.goals = GoalEngine(self.guardian)
@@ -33,6 +33,7 @@ class IntegratedEvolutionSuite:
         self.graph = ScientificGraphIndexer(self.mind.store)
         self.simulation = ScientificSimulationEngine()
         self.senses = SensorFusionBuffer()
+        self.cultural = cultural_knowledge
 
     def stats(self) -> dict:
         return {
@@ -48,43 +49,74 @@ class IntegratedEvolutionSuite:
             "simulation": self.simulation.stats(),
             "operator": self.files.stats(),
             "senses": senses_stats(),
+            "cultural_knowledge": None if self.cultural is None else self.cultural.stats(),
             "principle": "local-first; adapters optional; no autonomous sensitive actions",
         }
 
     def handle(self, text: str, *, network_enabled: bool = False, allow_actions: bool = True) -> str | None:
-        raw = " ".join(str(text or "").strip().split()); lower = raw.lower()
+        raw = " ".join(str(text or "").strip().split())
+        lower = raw.lower()
         if raw:
-            self.cognition.observe("user_input", raw, relevance=0.7, novelty=0.5, user_priority=0.7,
-                                   metadata={"network_enabled": bool(network_enabled), "local_action": bool(allow_actions)})
+            self.cognition.observe(
+                "user_input",
+                raw,
+                relevance=0.7,
+                novelty=0.5,
+                user_priority=0.7,
+                metadata={"network_enabled": bool(network_enabled), "local_action": bool(allow_actions)},
+            )
         if lower in {"status evolução", "status evolucao", "status evolução star", "status evolution", "status m.drives"}:
             return json.dumps(self.stats(), ensure_ascii=False, indent=2)
         if lower in {"contexto cognitivo", "working context", "contexto ativo"}:
             selected = self.cognition.context.select("", limit=10)
-            return "Contexto ativo: vazio." if not selected else "Contexto ativo:\n" + "\n".join(f"- [{x['kind']}] {x['content']} | saliência={x['salience']:.3f}" for x in selected)
+            return "Contexto ativo: vazio." if not selected else "Contexto ativo:\n" + "\n".join(
+                f"- [{x['kind']}] {x['content']} | saliência={x['salience']:.3f}" for x in selected
+            )
         match = re.match(r"^(?:rotear engine|escolher engine|model router)\s+(.+)$", raw, re.I)
         if match:
             route = self.cognition.router.choose(match.group(1).strip(), network_enabled=network_enabled)
             return "Nenhum engine registrado satisfaz essa capacidade nas restrições atuais." if route is None else json.dumps(route, ensure_ascii=False, indent=2)
         if lower in {"listar m.drives", "listar mdrives", "m.drives", "mdrives"}:
             drives = self.mdrives.scan()
-            return "M.drives: nenhum instalado." if not drives else "M.drives:\n" + "\n".join(f"- {d['name']} v{d['version']} ({d['entries']} entradas{' | legado' if d['legacy'] else ''})" for d in drives)
+            return "M.drives: nenhum instalado." if not drives else "M.drives:\n" + "\n".join(
+                f"- {d['name']} v{d['version']} ({d['entries']} entradas{' | legado' if d['legacy'] else ''})" for d in drives
+            )
         match = re.match(r"^(?:criar objetivo|novo objetivo)\s+([^:]+):\s*(.+)$", raw, re.I)
         if match:
             goal = self.goals.create(match.group(1).strip(), match.group(2).strip())
             return f"Objetivo #{goal['goal_id']} criado: {goal['name']}."
         if lower in {"listar objetivos", "meus objetivos", "objetivos"}:
             goals = self.goals.list()
-            return "Nenhum objetivo persistente." if not goals else "Objetivos:\n" + "\n".join(f"- #{g['goal_id']} {g['name']} [{g['status']}] — {g['objective']}" for g in goals)
+            return "Nenhum objetivo persistente." if not goals else "Objetivos:\n" + "\n".join(
+                f"- #{g['goal_id']} {g['name']} [{g['status']}] — {g['objective']}" for g in goals
+            )
         match = re.match(r"^(?:pesquisa profunda|pesquisar profundamente|research hub)\s+(.+)$", raw, re.I)
         if match:
             result = self.research.search(match.group(1), network_enabled=network_enabled)
             if not result["ok"]:
                 return "Research Hub requer modo ONLINE autorizado." if result.get("reason") == "network_disabled" else json.dumps(result, ensure_ascii=False)
-            return "Pesquisa:\n" + "\n".join(f"- [{s['provider']}] {s['title']} — {s.get('doi') or s.get('url') or 'sem identificador'}" for s in result["sources"][:12])
+            return "Pesquisa:\n" + "\n".join(
+                f"- [{s['provider']}] {s['title']} — {s.get('doi') or s.get('url') or 'sem identificador'}" for s in result["sources"][:12]
+            )
+        match = re.match(r"^(?:pesquisa cultural|pesquisar tradição|pesquisar tradicao)\s+(.+)$", raw, re.I)
+        if match and self.cultural is not None:
+            queries = self.cultural.research_queries(match.group(1))
+            if not queries:
+                return "Não consegui resolver uma tradição/campo cultural específico nessa consulta."
+            if not network_enabled:
+                return "Pesquisa cultural profunda requer modo ONLINE autorizado; a taxonomia local continua disponível offline."
+            result = self.research.search(queries[0], providers=("openalex", "crossref"), limit_per_provider=8, network_enabled=True)
+            if not result["ok"]:
+                return json.dumps(result, ensure_ascii=False)
+            return "Pesquisa cultural acadêmica:\n" + "\n".join(
+                f"- [{s['provider']}] {s['title']} — {s.get('doi') or s.get('url') or 'sem identificador'}" for s in result["sources"][:12]
+            )
         match = re.match(r"^(?:rag semantico|rag semântico|busca semantica|busca semântica)\s+(.+)$", raw, re.I)
         if match:
             hits = self.semantic_rag.search(match.group(1), top_k=5)
-            return "Nenhum trecho indexado." if not hits else "RAG híbrido:\n" + "\n".join(f"- {h['title']} | score={h['score']:.3f}: {h['content'][:240]}" for h in hits)
+            return "Nenhum trecho indexado." if not hits else "RAG híbrido:\n" + "\n".join(
+                f"- {h['title']} | score={h['score']:.3f}: {h['content'][:240]}" for h in hits
+            )
         match = re.match(r"^ocr\s+(.+\.pdf)$", raw, re.I)
         if match:
             decision = self.guardian.authorize("read.files", remote=not allow_actions, confirmed=allow_actions, subject=match.group(1))
@@ -106,12 +138,24 @@ class IntegratedEvolutionSuite:
             if not allow_actions:
                 return "Indexação do Knowledge Graph exige ação local autorizada."
             result = self.graph.index_curriculum()
-            return (f"Knowledge Graph atualizado: {result['themes']} temas, {result['concepts']} conceitos, "
-                    f"{result['edges_touched']} relações taxonômicas tocadas.")
+            return (
+                f"Knowledge Graph atualizado: {result['themes']} temas, {result['concepts']} conceitos, "
+                f"{result['edges_touched']} relações taxonômicas tocadas."
+            )
+        if lower in {"indexar grafo cultural", "materializar grafo cultural", "indexar religiões", "indexar religioes"}:
+            if not allow_actions:
+                return "Indexação cultural do Knowledge Graph exige ação local autorizada."
+            result = self.graph.index_cultural()
+            return (
+                f"Grafo cultural atualizado: {result['subjects']} assuntos, {result['aspects']} aspectos e "
+                f"{result['edges_touched']} relações taxonômicas tocadas; as 5M variações permanecem lazy."
+            )
         if lower in {"simular órbita", "simular orbita", "simulação orbital", "simulacao orbital"}:
             result = self.simulation.two_body_orbit()
-            return ("Simulação orbital 2-corpos concluída: "
-                    f"{len(result['times'])} passos | drift relativo de energia={result['relative_energy_drift']:.3e}.")
+            return (
+                "Simulação orbital 2-corpos concluída: "
+                f"{len(result['times'])} passos | drift relativo de energia={result['relative_energy_drift']:.3e}."
+            )
         if lower in {"simular pêndulo", "simular pendulo", "simulação pêndulo", "simulacao pendulo"}:
             result = self.simulation.damped_pendulum()
             final = result["states"][-1]
