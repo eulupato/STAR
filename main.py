@@ -104,6 +104,7 @@ def main():
     chemistry_stats = star.chemistry.stats()
     multi_stats = star.multidisciplinary.stats()
     plus_stats = star.knowledge_plus.stats()
+    mind_stats = star.mind.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -129,8 +130,14 @@ def main():
         f"+{plus_stats['added_content_variations']} novos | "
         f"{plus_stats['combined_content_variations']} conteúdos de conhecimento combinados"
     )
+    print(
+        "🧠 STAR MIND alpha: "
+        f"{mind_stats['capabilities']} capacidades | "
+        f"{mind_stats['canonical_nodes_total']} nós cognitivos | "
+        f"{mind_stats['support_contents_total']} conteúdos operacionais endereçáveis"
+    )
     print("🧩 Skills: PREPARADAS")
-    print("🛠️ Ferramentas: ATIVAS (matemática offline)")
+    print("🛠️ Ferramentas: ATIVAS (matemática offline + MIND experimental)")
     print(f"📦 Knowledge Packs detectados: {pack_stats['packs']}")
     print(f"💾 Packs locais: {storage_stats['local']} | removíveis: {storage_stats['removable']}")
     print(f"📄 Entradas de conhecimento carregadas: {pack_stats['entries']}")

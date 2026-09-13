@@ -4,6 +4,7 @@ from core.agents import AgentManager
 from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
 from core.language_manager import LanguageManager
+from core.mind import CognitiveSuite
 from core.thematic_voice import parse_thematic_voice
 from core.weather import WeatherService
 
@@ -21,13 +22,14 @@ class StarCore:
         self.skills = None
         self.packs = None
 
-        # Clima é uma capacidade online estreita e sob demanda. Ela não libera
-        # navegador/pesquisa web em geral. O provider usa somente endpoints fixos,
-        # cache em memória e pode ser desligado por STAR_WEATHER_ENABLED=0.
         self.weather = WeatherService()
         self.conversation = ConversationEngine(self.weather)
         self.agents = AgentManager(weather_provider=self.weather)
         self.language = LanguageManager()
+
+        # STAR MIND V2 alpha. Usa o mesmo SQLite oficial e só intercepta pedidos
+        # cognitivos explícitos, preservando o roteamento estável da Foundation.
+        self.mind = CognitiveSuite()
 
         self.last_intent = None
         self.user_name = None
@@ -50,14 +52,6 @@ class StarCore:
             return "Lu"
 
     def process(self, user_input, allow_actions=True):
-        """Processa entrada no idioma ativo e mantém o Core interno em pt-BR.
-
-        A troca de idioma/tradução explícita é resolvida primeiro e funciona tanto
-        para texto quanto para transcrições de voz. Para demais pedidos, a camada
-        linguística traduz a entrada para o idioma canônico quando possível e
-        localiza a resposta ao final. Termos ausentes são preservados em vez de
-        receber tradução inventada.
-        """
         raw_input = str(user_input or "")
         language_action = self.language.handle_command(strip_wake_word(raw_input))
         if language_action:
@@ -70,17 +64,10 @@ class StarCore:
     def _process_portuguese(self, user_input, allow_actions=True):
         request_start = time.perf_counter()
 
-        # Comandos temáticos são linguagem natural, não ações privilegiadas. O
-        # parser remove apenas o wake/preambulo e mantém a intenção (compare,
-        # calcule, aprofunde etc.) para que o engine escolha a lente correta.
         thematic = parse_thematic_voice(user_input)
         if thematic:
             user_input = f"{thematic.action} {thematic.query}".strip()
 
-        # STAR Vision é uma capacidade local e opcional. O módulo controlador não
-        # importa OpenCV/MediaPipe no startup; a webcam só é aberta após comando
-        # explícito local. Watch/Mobile podem consultar status/filtros, mas não
-        # ativam ou encerram a câmera do PC remotamente.
         try:
             from modules.vision import handle_vision_command
 
@@ -91,9 +78,14 @@ class StarCore:
         except (ImportError, OSError, RuntimeError, ValueError) as exc:
             print(f"⚠️ STAR Vision indisponível: {exc}")
 
-        # Camada única de comandos. Endpoints remotos (Watch/Mobile) podem usar
-        # somente o subconjunto marcado como remote_safe. Ações sensíveis seguem
-        # bloqueadas até existir Permission Manager.
+        try:
+            mind_action = self.mind.handle(user_input, network_enabled=self.network_enabled)
+            if mind_action:
+                self.last_intent = "mind"
+                return mind_action
+        except (ImportError, OSError, RuntimeError, ValueError, TimeoutError) as exc:
+            print(f"⚠️ STAR MIND não concluiu a operação: {exc}")
+
         try:
             action = self.agents.dispatch(
                 user_input,
@@ -142,9 +134,6 @@ class StarCore:
         if normalized in {"qual meu nome", "qual e meu nome", "qual é meu nome"} and self.user_name:
             return f"Você me disse que seu nome é {self.user_name}. ⭐"
 
-        # Small talk vem antes do fallback genérico. A camada responde apenas
-        # quando reconhece uma família segura; fatos meteorológicos são
-        # confirmados pelo provider em vez de serem inventados.
         conversation_response = self.conversation.respond(
             request["input"],
             user_name=self.user_name,

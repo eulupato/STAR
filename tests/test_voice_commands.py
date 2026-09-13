@@ -51,8 +51,16 @@ def test_low_risk_remote_commands_remain_available():
     assert match_command("STAR, que horas são").remote_safe is True
 
 
-def test_agent_catalog_registers_all_specialized_agents_without_claiming_availability():
-    assert len(AGENT_SPECS) == 19
+def test_agent_catalog_registers_specialized_agents_with_explicit_statuses():
+    names = [spec.name for spec in AGENT_SPECS]
+    assert len(names) == len(set(names))
+    assert {
+        "voice_command", "computer", "file", "research", "knowledge", "memory",
+        "project", "music", "vision", "device", "cure", "security",
+        "personal_assistant", "web", "coding", "home", "body", "creation",
+        "orchestrator",
+    } <= set(names)
+    assert {"reasoning", "scientific", "verification", "simulation", "rag"} <= set(names)
     statuses = {spec.status for spec in AGENT_SPECS}
     assert statuses <= {"available", "partial", "planned"}
     assert any(spec.status == "planned" for spec in AGENT_SPECS)
