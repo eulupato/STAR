@@ -71,6 +71,12 @@ class LocalImageObservation:
 
 
 def senses_stats() -> dict:
-    return {"status": "foundation", "observation_contract": True, "fusion_buffer": True,
-            "vision_portal_bridge_ready": True, "screen_awareness_semantic": False,
-            "multimodal_semantic_fusion": False}
+    return {
+        "status": "foundation",
+        "observation_contract": True,
+        "fusion_buffer": True,
+        "vision_portal_bridge_ready": True,
+        "semantic_scene_understanding": False,
+        "screen_awareness_semantic": False,
+        "multimodal_semantic_fusion": False,
+    }
