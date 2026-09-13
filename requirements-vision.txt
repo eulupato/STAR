@@ -1,0 +1,5 @@
+# Dependências opcionais do STAR Vision Portal.
+# O Core da STAR continua inicializando sem elas.
+opencv-python>=4.10,<6
+mediapipe>=0.10.35,<0.11
+# numpy já faz parte de requirements.txt

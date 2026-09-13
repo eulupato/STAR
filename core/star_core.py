@@ -69,6 +69,20 @@ class StarCore:
     def _process_portuguese(self, user_input, allow_actions=True):
         request_start = time.perf_counter()
 
+        # STAR Vision é uma capacidade local e opcional. O módulo controlador não
+        # importa OpenCV/MediaPipe no startup; a webcam só é aberta após comando
+        # explícito local. Watch/Mobile podem consultar status/filtros, mas não
+        # ativam ou encerram a câmera do PC remotamente.
+        try:
+            from modules.vision import handle_vision_command
+
+            vision_action = handle_vision_command(user_input, allow_actions=allow_actions)
+            if vision_action:
+                self.last_intent = "vision"
+                return vision_action
+        except (ImportError, OSError, RuntimeError, ValueError) as exc:
+            print(f"⚠️ STAR Vision indisponível: {exc}")
+
         # Camada única de comandos. Endpoints remotos (Watch/Mobile) podem usar
         # somente o subconjunto marcado como remote_safe. Ações sensíveis seguem
         # bloqueadas até existir Permission Manager.
