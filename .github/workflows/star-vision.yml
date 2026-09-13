@@ -1,0 +1,47 @@
+name: STAR Vision
+
+on:
+  pull_request:
+    paths:
+      - 'modules/vision.py'
+      - 'clients/star_vision_portal.py'
+      - 'requirements-vision.txt'
+      - 'DIAGNOSTICO_STAR_VISION.py'
+      - 'tests/test_star_vision.py'
+      - 'tests/test_star_vision_core.py'
+      - '.github/workflows/star-vision.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vision-smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install core and vision dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-vision.txt pytest
+      - name: Verify optional vision stack
+        run: |
+          python - <<'PY'
+          import cv2
+          import mediapipe as mp
+          import numpy as np
+          import clients.star_vision_portal as portal
+          assert hasattr(mp, 'solutions'), 'MediaPipe classic solutions API unavailable'
+          assert len(portal.PORTAL_FILTERS) == 12
+          print('OpenCV', cv2.__version__)
+          print('MediaPipe', mp.__version__)
+          print('NumPy', np.__version__)
+          PY
+      - name: Run STAR Vision diagnostic
+        run: python DIAGNOSTICO_STAR_VISION.py
+      - name: Run vision tests
+        run: pytest -q tests/test_star_vision.py tests/test_star_vision_core.py
