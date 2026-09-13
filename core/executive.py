@@ -9,6 +9,7 @@ class Executive:
         physics_knowledge=None,
         chemistry_knowledge=None,
         multidisciplinary_knowledge=None,
+        knowledge_expansion=None,
     ):
         self.model_manager = model_manager
         self.internal_knowledge = internal_knowledge
@@ -16,12 +17,21 @@ class Executive:
         self.physics_knowledge = physics_knowledge
         self.chemistry_knowledge = chemistry_knowledge
         self.multidisciplinary_knowledge = multidisciplinary_knowledge
+        self.knowledge_expansion = knowledge_expansion
 
     def execute(self, request, route):
         text = request.get("input", "")
 
         if self.internal_knowledge:
             answer = self.internal_knowledge.answer(text)
+            if answer:
+                return answer
+
+        # Quando a própria consulta pede profundidade/pesquisa/benchmark/dados,
+        # a camada PLUS pode responder antes. Isso não altera IDs nem remove as
+        # bases legadas; apenas permite alcançar o milhão adicional por domínio.
+        if self.knowledge_expansion and self.knowledge_expansion.prefers(text):
+            answer = self.knowledge_expansion.answer(text)
             if answer:
                 return answer
 
@@ -40,6 +50,13 @@ class Executive:
 
         if self.multidisciplinary_knowledge:
             answer = self.multidisciplinary_knowledge.answer(text)
+            if answer:
+                return answer
+
+        # Fallback PLUS: tópicos novos e específicos que não existem nas bases
+        # anteriores ainda podem ser resolvidos sem exigir a palavra "avançado".
+        if self.knowledge_expansion:
+            answer = self.knowledge_expansion.answer(text)
             if answer:
                 return answer
 
