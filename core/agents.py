@@ -77,7 +77,7 @@ class AgentManager:
             return None
         if remote and not match.remote_safe:
             return (
-                "Esse comando é reconhecido, mas exige autorização local. "
+                "Esse comando é reconhecido, mas exige confirmação local. "
                 "A STAR mantém ações sensíveis bloqueadas remotamente; o Guardian alpha "
                 "já audita novas capacidades, mas a integração completa de permissões do Operator continua em evolução."
             )
