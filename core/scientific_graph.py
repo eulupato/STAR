@@ -7,6 +7,7 @@ teológicas que as fontes não declaram.
 from __future__ import annotations
 
 from collections import defaultdict
+from hashlib import sha256
 
 from core.curriculum_knowledge import CONCEPTS
 from core.curriculum_taxonomy import THEMES
@@ -49,6 +50,11 @@ class ScientificGraphIndexer:
         value = "".join(ch for ch in unicodedata.normalize("NFD", str(region).lower()) if unicodedata.category(ch) != "Mn")
         value = re.sub(r"[^a-z0-9]+", "_", value).strip("_")
         return "culture:region:" + value
+
+    @staticmethod
+    def source_family_node_id(source: str) -> str:
+        digest = sha256(str(source).encode("utf-8")).hexdigest()[:16]
+        return f"culture:source:{digest}"
 
     def index_curriculum(self, *, include_peer_links: bool = True, peer_limit_per_theme: int = 8) -> dict:
         concepts_by_theme: dict[int, list] = defaultdict(list)
@@ -107,8 +113,6 @@ class ScientificGraphIndexer:
         if include_peer_links:
             limit = max(0, min(int(peer_limit_per_theme), 32))
             for theme_id, concepts in concepts_by_theme.items():
-                # Navegação sem inferência causal: apenas conceitos que compartilham
-                # um tema canônico, com grau limitado para manter o grafo leve.
                 for index, concept in enumerate(concepts):
                     for peer in concepts[index + 1:index + 1 + limit]:
                         self.store.add_edge(
@@ -131,7 +135,7 @@ class ScientificGraphIndexer:
 
     def index_cultural(self) -> dict:
         """Liga religiões/magia ao mesmo grafo sem materializar 5M variações."""
-        from core.religion_magic_knowledge import SOURCE_FAMILIES, _sources
+        from core.religion_magic_knowledge import _sources
         from core.religion_magic_taxonomy import ASPECTS, SUBJECTS
 
         nodes = edges = 0
@@ -180,7 +184,7 @@ class ScientificGraphIndexer:
                 edges += 1
 
             for source in _sources(subject):
-                source_id = "culture:source:" + str(abs(hash(source)))
+                source_id = self.source_family_node_id(source)
                 if source_id not in seen_sources:
                     seen_sources.add(source_id)
                     self.store.upsert_node(source_id, "source_family", source, data={"scope": "cultural-research"})
