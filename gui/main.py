@@ -11,12 +11,12 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from main import create_star
-from gui.app import StarApp
+from gui.localized_app import LocalizedStarApp
 
 
 def main():
     star = create_star()
-    StarApp(brain=star).run()
+    LocalizedStarApp(brain=star).run()
 
 
 if __name__ == "__main__":
