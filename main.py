@@ -21,6 +21,7 @@ from core.chemistry_knowledge_500k import ChemistryKnowledgeEngine
 from core.multidisciplinary_knowledge import MultidisciplinaryKnowledgeEngine
 from core.knowledge_expansion_15m import KnowledgeExpansion15MEngine
 from core.curriculum_knowledge import CurriculumKnowledgeEngine
+from core.religion_magic_knowledge import ReligionMagicKnowledgeEngine
 from core.router import Router
 from core.skills import SkillRegistry
 from core.star_core import StarCore
@@ -38,6 +39,7 @@ def create_star():
     multidisciplinary = MultidisciplinaryKnowledgeEngine()
     knowledge_plus = KnowledgeExpansion15MEngine()
     curriculum = CurriculumKnowledgeEngine()
+    religion_magic = ReligionMagicKnowledgeEngine()
     mdrives = MDriveManager(
         ROOT / "knowledge" / "m_drives",
         legacy_root=ROOT / "knowledge" / "packs",
@@ -54,6 +56,7 @@ def create_star():
         multidisciplinary_knowledge=multidisciplinary,
         knowledge_expansion=knowledge_plus,
         curriculum_knowledge=curriculum,
+        religion_magic_knowledge=religion_magic,
     )
     star = StarCore(
         router=router,
@@ -72,6 +75,7 @@ def create_star():
     star.multidisciplinary = multidisciplinary
     star.knowledge_plus = knowledge_plus
     star.curriculum = curriculum
+    star.religion_magic = religion_magic
     return star
 
 
@@ -114,6 +118,7 @@ def main():
     multi_stats = star.multidisciplinary.stats()
     plus_stats = star.knowledge_plus.stats()
     curriculum_stats = star.curriculum.stats()
+    cultural_stats = star.religion_magic.stats()
     mind_stats = star.mind.stats()
     evolution_stats = star.evolution.stats()
     print(f"🧠 Identidade: {star.get_name()}")
@@ -147,6 +152,13 @@ def main():
         f"{curriculum_stats['unique_concepts']} conceitos únicos | "
         f"{curriculum_stats['deduplicated_mentions']} menções duplicadas consolidadas | "
         f"{curriculum_stats['total_new_addressable_contents']} conteúdos endereçáveis"
+    )
+    print(
+        "🌍 Religiões/magia: "
+        f"{cultural_stats['religion_subjects']} tradições religiosas + "
+        f"{cultural_stats['magic_esotericism_subjects']} campos de magia/esoterismo | "
+        f"{cultural_stats['canonical_nodes']} nós | "
+        f"{cultural_stats['total_addressable_contents']} visões culturais endereçáveis"
     )
     print(
         "🧠 STAR MIND alpha: "
