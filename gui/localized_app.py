@@ -18,15 +18,20 @@ def localize_ui_text(manager, text: str) -> str:
     value = str(text or "")
     if not value:
         return value
-    direct = manager.localization.static(value, manager.locale)
-    if direct is not None:
-        return direct
+
+    # Prefixos visuais fazem parte da interface, não da linguagem. Eles precisam
+    # sobreviver exatamente à localização; por isso são separados antes da
+    # normalização textual do catálogo.
     for prefix in _UI_PREFIXES:
         if value.startswith(prefix):
             tail = value[len(prefix):]
             translated = manager.localization.static(tail, manager.locale)
             if translated is not None:
                 return prefix + translated
+
+    direct = manager.localization.static(value, manager.locale)
+    if direct is not None:
+        return direct
     return value
 
 
