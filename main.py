@@ -106,6 +106,26 @@ def _start_device_gateway(star):
     return gateway
 
 
+def _start_cure(star):
+    """Inicializa baseline/watchdog sem impedir o boot em caso de diagnóstico parcial."""
+    try:
+        baseline = star.cure.ensure_known_good()
+        if baseline.get("created"):
+            print(f"🩹 Cura: baseline known-good criado ({baseline.get('snapshot_id')}).")
+        elif baseline.get("snapshot_id"):
+            print(f"🩹 Cura: baseline known-good ativo ({baseline.get('snapshot_id')}).")
+        else:
+            print("⚠️ Cura: baseline não criado; estado atual requer revisão antes de aceitar known-good.")
+        started = star.cure.start(
+            interval_seconds=float(os.getenv("STAR_CURE_INTERVAL_SECONDS", "60")),
+            auto_repair=os.getenv("STAR_CURE_AUTO_REPAIR", "1").strip().lower() not in {"0", "false", "no", "off"},
+        )
+        if started:
+            print("🛡️ Cura watchdog local: ATIVO")
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"⚠️ Cura indisponível no boot: {exc}")
+
+
 def main():
     print("=" * 60)
     print(f"⭐ INICIALIZANDO STAR V{VERSION} — MODO OFFLINE-FIRST")
@@ -121,6 +141,7 @@ def main():
     cultural_stats = star.religion_magic.stats()
     mind_stats = star.mind.stats()
     evolution_stats = star.evolution.stats()
+    language_stats = star.language.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -161,6 +182,13 @@ def main():
         f"{cultural_stats['total_addressable_contents']} visões culturais endereçáveis"
     )
     print(
+        "🌐 Idiomas offline: "
+        f"{language_stats['language_families']} famílias | "
+        f"{language_stats['locale_profiles']} perfis | "
+        f"{language_stats['modern_locales']} modernos | "
+        f"{language_stats['historical_locales']} históricos"
+    )
+    print(
         "🧠 STAR MIND alpha: "
         f"{mind_stats['capabilities']} capacidades | "
         f"{mind_stats['canonical_nodes_total']} nós cognitivos | "
@@ -181,13 +209,25 @@ def main():
         f"Goal Engine={evolution_stats['goal_engine']['status']} | "
         f"RAG híbrido={evolution_stats['semantic_rag']['status']}"
     )
+    print(
+        "👥 People/Cura/Web: "
+        f"People={evolution_stats['people']['status']} | "
+        f"Cura={evolution_stats['cure']['status']} | "
+        f"Web={evolution_stats['web_knowledge']['status']}"
+    )
+    print("🌐 Rede geral: DESATIVADA por padrão; somente capacidades online autorizadas podem usar internet.")
     print("🤖 IA externa:", "ATIVA" if EXTERNAL_AI_ENABLED else "DESATIVADA")
     print("🖥️ Interface: ATIVA")
 
+    _start_cure(star)
     gateway = _start_device_gateway(star)
     try:
         LocalizedStarApp(brain=star).run()
     finally:
+        try:
+            star.cure.stop()
+        except Exception:
+            pass
         if gateway is not None:
             gateway.stop()
 
