@@ -32,43 +32,62 @@ def status(package) -> tuple[set[tuple[str, str]], list[str]]:
     return pairs, sorted(f"{a}->{b}" for a, b in pairs)
 
 
-def install_missing(package) -> None:
+def install_missing(package) -> dict:
+    """Instala somente pares realmente publicados no índice Argos atual.
+
+    A ausência de um par não é erro fatal: a STAR continua funcional com catálogo
+    estático/dicionário local e preserva o original quando não consegue traduzir a
+    frase inteira. Isso evita que uma mudança externa do índice quebre o setup.
+    """
     package.update_package_index()
     available = package.get_available_packages()
     installed, _ = status(package)
     missing = [pair for pair in PAIRS if pair not in installed]
     if not missing:
-        print("Todos os pares modernos da STAR já estão instalados.")
-        return
+        print("Todos os pares modernos disponíveis para esta configuração já estão instalados.")
+        return {"installed_now": [], "unavailable": []}
+
     by_pair = {(p.from_code, p.to_code): p for p in available if p.from_code and p.to_code}
     unavailable = [pair for pair in missing if pair not in by_pair]
-    if unavailable:
-        formatted = ", ".join(f"{a}->{b}" for a, b in unavailable)
-        raise SystemExit(f"Pares não encontrados no índice Argos atual: {formatted}")
-    for pair in missing:
+    installable = [pair for pair in missing if pair in by_pair]
+    installed_now = []
+
+    for pair in installable:
         model = by_pair[pair]
         print(f"Instalando {pair[0]} -> {pair[1]}...")
         path = model.download()
         package.install_from_path(path)
-        try: path.unlink(missing_ok=True)
-        except OSError: pass
+        installed_now.append(pair)
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+    if unavailable:
+        formatted = ", ".join(f"{a}->{b}" for a, b in unavailable)
+        print("Pares não publicados no índice Argos atual:", formatted)
+        print("Esses pares permanecem no fallback offline de UI/dicionário sem alegar cobertura neural completa.")
+    return {"installed_now": installed_now, "unavailable": unavailable}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--install", action="store_true", help="baixa e instala explicitamente os pares modernos")
+    parser.add_argument("--install", action="store_true", help="baixa e instala explicitamente os pares modernos disponíveis")
     args = parser.parse_args()
     package = _load_argos()
-    if args.install: install_missing(package)
+    if args.install:
+        install_missing(package)
+
     installed, labels = status(package)
-    required = set(PAIRS)
+    requested = set(PAIRS)
     print("STAR Offline Translation")
     print("Instalados:", ", ".join(labels) if labels else "nenhum")
-    print(f"Cobertura moderna STAR: {len(required & installed)}/{len(required)} pares")
-    print("Pronto para PT/EN/ES/IT/FR/JA/PL/KO/EL/AR via inglês:", "SIM" if required <= installed else "NÃO")
+    print(f"Cobertura solicitada STAR: {len(requested & installed)}/{len(requested)} pares")
+    print("Runtime continua offline mesmo com cobertura parcial: SIM")
     print("Históricos (GRC/LA/EGY): léxico/corpus local, sem alegar MT moderno equivalente.")
-    if not required <= installed:
-        print("Execute novamente com --install somente quando quiser baixar os modelos; depois o runtime fica offline.")
+    if not requested <= installed:
+        print("Execute --install quando quiser materializar os modelos disponíveis; o startup nunca baixa modelos sozinho.")
 
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()
