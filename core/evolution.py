@@ -5,16 +5,19 @@ import json
 import re
 
 from core.cognition_runtime import CognitiveRuntime
+from core.cure import CureSystem
 from core.goal_engine import GoalEngine
 from core.guardian import Guardian
 from core.mdrives import MDriveRegistry
 from core.ocr import OCREngine, OCRUnavailable
 from core.operator_index import FileIndex
+from core.people import PeopleStore
 from core.research_hub import ResearchHub
 from core.scientific_graph import ScientificGraphIndexer
 from core.scientific_simulation import ScientificSimulationEngine
 from core.semantic_rag import HybridSemanticRAG
 from core.senses import SensorFusionBuffer, senses_stats
+from core.web_knowledge import WebKnowledgeEngine
 
 
 class IntegratedEvolutionSuite:
@@ -25,18 +28,18 @@ class IntegratedEvolutionSuite:
         self.guardian = Guardian()
         self.goals = GoalEngine(self.guardian)
         self.cognition = CognitiveRuntime()
-        # O runtime reutiliza o mesmo manager oficial entregue ao Executive. O
-        # Registry fica apenas como fallback/utilitário quando a suite é criada
-        # isoladamente em testes ou ferramentas de migração.
         self.mdrives = mdrive_manager or MDriveRegistry()
         self.semantic_rag = HybridSemanticRAG(self.mind.store, prefer_neural=False)
         self.ocr = OCREngine(self.mind.rag)
         self.research = ResearchHub(self.mind.store)
+        self.web = WebKnowledgeEngine(self.mind.store)
         self.files = FileIndex()
         self.graph = ScientificGraphIndexer(self.mind.store)
         self.simulation = ScientificSimulationEngine()
         self.senses = SensorFusionBuffer()
         self.cultural = cultural_knowledge
+        self.people = PeopleStore()
+        self.cure = CureSystem(guardian=self.guardian)
 
     def stats(self) -> dict:
         return {
@@ -44,6 +47,9 @@ class IntegratedEvolutionSuite:
             "cognition_runtime": self.cognition.stats(),
             "goal_engine": self.goals.stats(),
             "guardian": self.guardian.stats(),
+            "cure": self.cure.stats(),
+            "people": self.people.stats(),
+            "web_knowledge": self.web.stats(),
             "mdrives": self.mdrives.stats(),
             "semantic_rag": self.semantic_rag.stats(),
             "ocr": self.ocr.stats(),
@@ -53,7 +59,7 @@ class IntegratedEvolutionSuite:
             "operator": self.files.stats(),
             "senses": senses_stats(),
             "cultural_knowledge": None if self.cultural is None else self.cultural.stats(),
-            "principle": "local-first; adapters optional; no autonomous sensitive actions",
+            "principle": "local-first; web opt-in; no autonomous sensitive actions",
         }
 
     def _mdrive_list(self) -> list[dict]:
@@ -72,16 +78,23 @@ class IntegratedEvolutionSuite:
             return sorted(result, key=lambda item: (item["name"].casefold(), item["drive_id"].casefold()))
         return list(scanned or [])
 
+    @staticmethod
+    def _person_summary(person: dict) -> str:
+        aliases = ", ".join(person.get("aliases") or []) or "—"
+        fields = person.get("fields") or {}
+        field_text = "; ".join(f"{k}: {v}" for k, v in list(fields.items())[:12]) or "—"
+        return (
+            f"👤 {person['name']} (#{person['person_id']})\n"
+            f"Aliases: {aliases}\nInformações: {field_text}\n"
+            f"Notas: {person.get('notes') or '—'}\nImagens/arquivos: {len(person.get('assets') or [])}"
+        )
+
     def handle(self, text: str, *, network_enabled: bool = False, allow_actions: bool = True) -> str | None:
         raw = " ".join(str(text or "").strip().split())
         lower = raw.lower()
         if raw:
             self.cognition.observe(
-                "user_input",
-                raw,
-                relevance=0.7,
-                novelty=0.5,
-                user_priority=0.7,
+                "user_input", raw, relevance=0.7, novelty=0.5, user_priority=0.7,
                 metadata={"network_enabled": bool(network_enabled), "local_action": bool(allow_actions)},
             )
         if lower in {"status evolução", "status evolucao", "status evolução star", "status evolution", "status m.drives"}:
@@ -100,6 +113,38 @@ class IntegratedEvolutionSuite:
             return "M.drives: nenhum instalado." if not drives else "M.drives:\n" + "\n".join(
                 f"- {d['name']} v{d['version']} ({d['entries']} entradas{' | legado' if d.get('legacy') else ''})" for d in drives
             )
+
+        # People: dados fornecidos explicitamente e imagens locais; sem inferência sensível.
+        if lower in {"listar pessoas", "pessoas cadastradas", "people"}:
+            people = self.people.list()
+            return "Nenhuma pessoa cadastrada." if not people else "Pessoas:\n" + "\n".join(f"- #{p['person_id']} {p['name']}" for p in people)
+        match = re.match(r"^(?:pessoa|perfil de|quem é|quem e)\s+(.+)$", raw, re.I)
+        if match:
+            person = self.people.find(match.group(1).strip())
+            if person is not None:
+                return self._person_summary(person)
+        match = re.match(r"^(?:cadastrar pessoa|adicionar pessoa)\s+([^:]+)(?::\s*(.*))?$", raw, re.I)
+        if match:
+            if not allow_actions:
+                return "Cadastro de pessoas exige ação local autorizada."
+            person = self.people.ingest_profile(match.group(1).strip(), match.group(2) or "")
+            return f"Pessoa #{person['person_id']} cadastrada localmente: {person['name']}."
+
+        # Cura local: restauração é feita apenas de snapshot conhecido como bom.
+        if lower in {"cura status", "status cura", "saúde da star", "saude da star"}:
+            return json.dumps({"cure": self.cure.stats(), "health": self.cure.health_check(deep=False)}, ensure_ascii=False, indent=2)
+        if lower in {"diagnosticar star", "diagnóstico cura", "diagnostico cura", "verificar integridade"}:
+            return json.dumps({"health": self.cure.health_check(deep=True), "integrity": self.cure.verify_integrity()}, ensure_ascii=False, indent=2)
+        if lower in {"executar cura", "auto reparar star", "autoreparar star"}:
+            if not allow_actions:
+                return "Auto-reparo da Cura só pode ser iniciado localmente."
+            report = self.cure.auto_repair()
+            return json.dumps(report.__dict__, ensure_ascii=False, indent=2, default=str)
+        if lower in {"marcar versão boa", "marcar versao boa", "criar snapshot star"}:
+            if not allow_actions:
+                return "Criar snapshot known-good exige ação local."
+            return json.dumps(self.cure.mark_known_good(), ensure_ascii=False, indent=2, default=str)
+
         match = re.match(r"^(?:criar objetivo|novo objetivo)\s+([^:]+):\s*(.+)$", raw, re.I)
         if match:
             goal = self.goals.create(match.group(1).strip(), match.group(2).strip())
@@ -109,6 +154,15 @@ class IntegratedEvolutionSuite:
             return "Nenhum objetivo persistente." if not goals else "Objetivos:\n" + "\n".join(
                 f"- #{g['goal_id']} {g['name']} [{g['status']}] — {g['objective']}" for g in goals
             )
+
+        # Busca geral atual sem IA generativa. Só toca rede quando ONLINE foi autorizado.
+        match = re.match(r"^(?:buscar web|busca web|pesquisar web|procure na web|pesquise na web)\s+(.+)$", raw, re.I)
+        if match:
+            if not network_enabled:
+                cached = self.web.answer(match.group(1), network_enabled=False)
+                return cached or "Busca web requer modo ONLINE; não há evidência local em cache para essa consulta."
+            return self.web.answer(match.group(1), network_enabled=True) or "Não consegui obter resultados web utilizáveis agora."
+
         match = re.match(r"^(?:pesquisa profunda|pesquisar profundamente|research hub)\s+(.+)$", raw, re.I)
         if match:
             result = self.research.search(match.group(1), network_enabled=network_enabled)
@@ -157,24 +211,15 @@ class IntegratedEvolutionSuite:
             if not allow_actions:
                 return "Indexação do Knowledge Graph exige ação local autorizada."
             result = self.graph.index_curriculum()
-            return (
-                f"Knowledge Graph atualizado: {result['themes']} temas, {result['concepts']} conceitos, "
-                f"{result['edges_touched']} relações taxonômicas tocadas."
-            )
+            return f"Knowledge Graph atualizado: {result['themes']} temas, {result['concepts']} conceitos, {result['edges_touched']} relações taxonômicas tocadas."
         if lower in {"indexar grafo cultural", "materializar grafo cultural", "indexar religiões", "indexar religioes"}:
             if not allow_actions:
                 return "Indexação cultural do Knowledge Graph exige ação local autorizada."
             result = self.graph.index_cultural()
-            return (
-                f"Grafo cultural atualizado: {result['subjects']} assuntos, {result['aspects']} aspectos e "
-                f"{result['edges_touched']} relações taxonômicas tocadas; as 5M variações permanecem lazy."
-            )
+            return f"Grafo cultural atualizado: {result['subjects']} assuntos, {result['aspects']} aspectos e {result['edges_touched']} relações taxonômicas tocadas; as 5M variações permanecem lazy."
         if lower in {"simular órbita", "simular orbita", "simulação orbital", "simulacao orbital"}:
             result = self.simulation.two_body_orbit()
-            return (
-                "Simulação orbital 2-corpos concluída: "
-                f"{len(result['times'])} passos | drift relativo de energia={result['relative_energy_drift']:.3e}."
-            )
+            return f"Simulação orbital 2-corpos concluída: {len(result['times'])} passos | drift relativo de energia={result['relative_energy_drift']:.3e}."
         if lower in {"simular pêndulo", "simular pendulo", "simulação pêndulo", "simulacao pendulo"}:
             result = self.simulation.damped_pendulum()
             final = result["states"][-1]
