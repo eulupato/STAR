@@ -60,7 +60,9 @@ Atualmente:
 - **Command/Agent Foundation V0** — intents + catálogo de capacidades com estados `available/partial/planned`;
 - **Voice Command Catalog V1.9** — catálogo por intents/slots;
 - **Conversation Foundation V1.9** — small talk composicional;
-- **Contextual Weather Provider V1.9** — clima online sob demanda de domínio estreito;
+- **Contextual Weather Provider V1.9** — clima online sob demanda e subordinado à trava central ONLINE/OFFLINE;
+- **Language Surface Expansion alpha** — 18 perfis em 13 famílias, com conhecimento canônico único e recursos de localização offline;
+- **AGORA Surface alpha** — painel compartilhado de hora/data, rede, idioma, Cura, People, M.drives e clima autorizado, adaptado para PC/Watch/Android/iOS;
 - **M.drives** — módulos removíveis de memória/conhecimento; `knowledge/packs` permanece apenas como compatibilidade legada.
 
 ### Integrated Evolution Alpha
@@ -71,6 +73,9 @@ releases futuras completas:
 - **Cognitive Runtime** — Working Context, Salience e Model Router de engines registrados;
 - **Goal Engine** — objetivos/tarefas persistentes, dependências, checkpoints e retomada;
 - **Guardian alpha** — default-deny, confirmação, audit log e idempotência;
+- **Cura local alpha** — health checks, hashes, snapshot known-good, watchdog, restauração direcionada e rollback da tentativa de reparo, sem IA/GitHub obrigatórios;
+- **People alpha** — perfis e imagens fornecidos explicitamente, no SQLite oficial + armazenamento local, sem reconhecimento biométrico ou inferência de traços sensíveis;
+- **Web Knowledge alpha** — fallback web sem IA generativa, opt-in de rede, síntese determinística, proveniência e cache reutilizável offline;
 - **RAG híbrido** — FTS5/BM25 + índice semântico derivado; backend neural opcional;
 - **OCR seletivo** — `pypdf` primeiro, PyMuPDF/Tesseract opcional;
 - **Scientific/Cultural Knowledge Graph Indexer** — currículo científico e taxonomia cultural materializáveis no mesmo grafo;
@@ -81,23 +86,41 @@ releases futuras completas:
 - **M.drives** — nome oficial e loader compatível com legado;
 - **Religion & Magic Knowledge 5M** — 100 tradições/relações religiosas + 25 campos de magia/esoterismo, 40 eixos por assunto, 5.000 nós canônicos e 5M visões endereçáveis lazy.
 
+A expansão linguística mantém uma fonte canônica de conhecimento. Os 18 perfis de
+idioma **não multiplicam** os 500 mil conteúdos contextuais revisados do catálogo
+original. Japonês, polonês, coreano, grego moderno e árabe podem usar modelos locais
+opcionais quando materializados; grego antigo, quatro eras de latim e egípcio antigo
+são perfis históricos de léxico/corpus e não fingem cobertura por MT moderno.
+
 A expansão cultural usa política epistemológica explícita: autodescrição de praticantes,
 registro histórico/etnográfico, interpretação acadêmica e evidência física são camadas
 diferentes. Alegações sobrenaturais não viram automaticamente mecanismos científicos.
 Conhecimento indígena/iniciático marcado como sensível não deve ser reconstruído quando
 for fechado ou restrito pela comunidade.
 
+### Contrato offline-first atual
+
+O Core inicia com rede externa desativada. Identidade, conhecimento local, MIND alpha,
+M.drives, People, Cura, idioma/localização, RAG local, matemática, simulações e interfaces
+fundamentais continuam funcionando sem internet. A propriedade `StarCore.network_enabled`
+é a trava central; o provider de clima compartilha a mesma trava. Web Knowledge e
+Research Hub exigem autorização ONLINE explícita. Conteúdo web previamente aprendido
+pode ser reutilizado pelo cache local sem rede.
+
 Documentos principais:
 
 - `docs/STAR_INTEGRATED_EVOLUTION_ALPHA.md`;
+- `docs/STAR_OFFLINE_EVOLUTION_ALPHA.md`;
 - `docs/STAR_RELIGION_MAGIC_5M.md`;
+- `STAR_LANGUAGE_MANIFEST.json`;
+- `STAR_MIND_MANIFEST.json`;
 - `STAR_RELIGION_MAGIC_MANIFEST.json`.
 
-Esses componentes adiantam trabalho de V2/V3/V4/V5/V7/V8, mas **não promovem a STAR
+Esses componentes adiantam trabalho de V2/V3/V4/V5/V7/V8/V9, mas **não promovem a STAR
 além da V1.9 estável** até que cada geração cumpra seus critérios completos.
 
-O runtime compartilhado continua centralizando tema, rótulos, feature flags e perfis
-`phone/watch` em `STAR_MANIFEST.json`. Endpoints não recebem MIND paralelo.
+O runtime compartilhado continua centralizando tema, rótulos, feature flags, locale e
+perfis `phone/watch` sem MIND paralelo nos endpoints.
 
 Ações remotas/sensíveis continuam bloqueadas até o Guardian completo integrar todas
 as ações do Operator, autenticação, vault e sandbox.
@@ -162,10 +185,11 @@ Inclui:
 - matemática simbólica, estatística, unidades, física, química e simulações.
 
 **Estado antecipado:** ingestão documental/FTS5, RAG híbrido alpha, OCR opcional,
-Knowledge Graph curricular/cultural, Research Hub, 5M culturais e simulações científicas
-iniciais já existem. Faltam avaliação/reranking, vector backend maduro opcional, ingestão
-multimodal robusta, proveniência em todo o conhecimento, resolução/retração de claims,
-materialização licenciada de corpora e solvers especializados.
+Knowledge Graph curricular/cultural, Research Hub, Web Knowledge determinístico,
+5M culturais e simulações científicas iniciais já existem. Faltam avaliação/reranking,
+vector backend maduro opcional, ingestão multimodal robusta, proveniência em todo o
+conhecimento, resolução/retração de claims, materialização licenciada de corpora e
+solvers especializados.
 
 ### Regra para conhecimento cultural
 
@@ -261,8 +285,11 @@ Inclui:
 - proposta de reparo e aplicação autorizada.
 
 **Estado antecipado:** Guardian alpha já fornece default-deny, política de ação, confirmação,
-audit log, redaction básica e idempotência. Sandbox de SO, vault criptográfico, autenticação,
-backup/rollback e cobertura de todas as ações ainda faltam.
+audit log, redaction básica e idempotência. Cura alpha já fornece health check, hashes,
+known-good, watchdog, snapshot pré-reparo, restauração dirigida e rollback da tentativa
+quando a validação falha. Ainda faltam sandbox de SO, vault criptográfico, autenticação
+forte, Permission Manager completo, integração antimalware e backup/restore amplo do
+sistema. A Cura atual não é autorização para auto-reescrita irrestrita.
 
 ---
 
@@ -301,6 +328,12 @@ Princípio permanente: endpoints percebem, transmitem e executam; a fonte centra
 processa. Os protótipos Gateway/Mobile/Watch validam esse princípio, mas não substituem
 Device Manager/Sync completos.
 
+**Estado antecipado:** Adaptive Runtime compartilha tema, feature flags e locale; PC,
+Watch simulator, Android Watch e iOS possuem superfícies AGORA adaptadas. Isso valida
+apresentação multiplataforma e Core compartilhado, mas sincronização offline completa,
+Device Manager, sensores reais e operação independente dos endpoints ainda não estão
+concluídos.
+
 LOCAL continua funcional sem LAN ou Internet.
 
 ---
@@ -337,8 +370,8 @@ Expansões sobre a arquitetura consolidada:
 - Coding Lab ampliado;
 - Creative Engine;
 - música/arte/vídeo/modelagem 3D;
-- Language Engine;
-- tradução offline ampliada;
+- Language Engine avançado sobre os 18 perfis já existentes;
+- tradução offline com corpora/modelos adicionais e avaliação de qualidade;
 - mapas e referência offline;
 - expansão cultural/histórica com corpora licenciados;
 - novos M.drives;
@@ -372,13 +405,14 @@ Evoluem em várias gerações:
 # Modos oficiais
 
 ## LOCAL
-STAR completa no computador.
+STAR completa no computador, sem internet como requisito de existência.
 
 ## LAN
 STAR + dispositivos locais.
 
 ## ONLINE
-Recursos externos opcionais.
+Recursos externos opcionais: busca web, pesquisa científica e dados atuais que
+intrinsecamente dependem de fontes externas, como clima ao vivo.
 
 **Internet amplia a STAR; não constitui a STAR.**
 
@@ -396,5 +430,6 @@ Cada geração segue:
 
 # Próximo marco
 
-**V1.9 FINAL + Integrated Evolution Alpha → estabilizar CI/Windows e Watch-first →
-concluir critérios de V2.0 MIND → amadurecer Knowledge/RAG/Graph/Research e Guardian.**
+**V1.9 FINAL + Integrated Evolution Alpha → fechar CI/Windows/iOS/Watch no mesmo SHA →
+validar offline-first + Cura/People/Web/18 idiomas → concluir critérios de V2.0 MIND →
+amadurecer Knowledge/RAG/Graph/Research e Guardian.**
