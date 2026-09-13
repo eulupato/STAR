@@ -157,5 +157,6 @@ def test_create_star_exposes_mdrives_and_integrated_evolution():
     from main import create_star
     star = create_star()
     assert star.mdrives is star.packs
+    assert star.evolution.mdrives is star.mdrives
     assert star.evolution.guardian.stats()["default_deny_unknown"] is True
     assert star.evolution.cognition.router.choose("math")["name"] == "math_sympy"
