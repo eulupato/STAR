@@ -1,0 +1,29 @@
+"""STAR Chemistry canonical topics 451-475 of 500."""
+
+CHEMISTRY_ROWS_19 = r"""\
+amino_acids_zwitterions	bioquimica_quimica_biologica	2	Aminoácidos e zwitterions	H2N-CHR-COOH ⇌ formas protonadas/desprotonadas	Relaciona grupos ácido/base à carga líquida dependente do pH.	aminoacido;zwitterion;carga	OPENSTAX
+amino_acid_pI	bioquimica_quimica_biologica	3	Ponto isoelétrico de aminoácidos	pI≈média dos pKa que flanqueiam a espécie neutra dominante	Estima pH de carga líquida média zero para casos simples.	ponto isoeletrico;pi;aminoacido	OPENSTAX
+peptide_bond	bioquimica_quimica_biologica	2	Ligação peptídica	amida C(O)-N com ressonância e caráter parcial de dupla	Explica planaridade e rotação restrita do esqueleto peptídico.	ligacao peptidica;amida;peptideo	MIT_5111
+protein_primary_structure	bioquimica_quimica_biologica	1	Estrutura primária de proteínas	sequência de resíduos aminoacídicos	Define identidade química linear de uma cadeia polipeptídica.	estrutura primaria;proteina;sequencia	MIT_5111
+protein_secondary_structure	bioquimica_quimica_biologica	2	Estrutura secundária de proteínas	α-hélice e folha β estabilizadas por ligações de H do esqueleto	Relaciona geometria local e rede de ligações de hidrogênio.	estrutura secundaria;alfa helice;folha beta	MIT_5111
+protein_folding_thermo	bioquimica_quimica_biologica	4	Termodinâmica do enovelamento proteico	ΔG_fold=ΔH_fold-TΔS_fold	Combina interações intramoleculares, solvatação e entropia conformacional.	folding;enovelamento;delta g proteina	MIT_560
+enzyme_catalysis	bioquimica_quimica_biologica	3	Catálise enzimática	enzima reduz ΔG‡ sem alterar ΔG° global	Conecta reconhecimento molecular e estabilização do estado de transição à velocidade.	enzima;catálise;estado transicao	MIT_5111
+enzyme_inhibition_competitive	bioquimica_quimica_biologica	3	Inibição competitiva	K_M,app=K_M(1+[I]/K_i); V_max inalterado no modelo ideal	Descreve competição de inibidor e substrato pelo sítio ativo.	inibicao competitiva;km;ki	OPENSTAX
+enzyme_inhibition_noncompetitive	bioquimica_quimica_biologica	3	Inibição não competitiva ideal	V_max,app diminui; K_M pode permanecer em caso puro	Distingue efeitos de ligação do inibidor sobre capacidade catalítica.	inibicao nao competitiva;vmax;enzima	OPENSTAX
+allostery_hill	bioquimica_quimica_biologica	4	Cooperatividade e equação de Hill	θ=[L]^n_H/(K_0.5^n_H+[L]^n_H)	Usa coeficiente de Hill como medida empírica de cooperatividade.	hill;cooperatividade;alosteria	OPENSTAX
+carbohydrate_stereochemistry	bioquimica_quimica_biologica	2	Estereoquímica de carboidratos	D/L definido por relação configuracional; α/β por carbono anomérico	Organiza formas lineares e cíclicas de açúcares.	carboidrato;anomero;d l;alfa beta	MIT_ORG
+glycosidic_bonds	bioquimica_quimica_biologica	2	Ligações glicosídicas	acetal/ketal conecta unidade anomérica a nucleófilo	Explica conectividade em oligossacarídeos e polissacarídeos.	ligacao glicosidica;acucar;polissacarideo	MIT_ORG
+lipid_amphiphilicity	bioquimica_quimica_biologica	2	Anfifilicidade de lipídios	ΔG de agregação depende de efeito hidrofóbico e interações da cabeça polar	Explica formação espontânea de micelas e bicamadas em água.	lipidio;anfifilico;micela;bicamada	MIT_5111
+micelle_critical_concentration	bioquimica_quimica_biologica	4	Concentração micelar crítica	acima da CMC a atividade monomérica cresce lentamente e formam-se agregados	Caracteriza transição de monômeros anfifílicos para micelas.	cmc;micela;surfactante	IUPAC
+membrane_partitioning	bioquimica_quimica_biologica	4	Partição em membranas	K_part=C_membrana/C_aq	Relaciona hidrofobicidade e estado de ionização à distribuição entre fases.	particao membrana;lipofilia;membrana	IUPAC
+dna_base_pairing	bioquimica_quimica_biologica	2	Pareamento de bases em DNA	A-T e G-C combinam ligações de H e empilhamento	Conecta complementaridade e interações não covalentes à dupla hélice.	dna;base;pareamento	MIT_5111
+dna_melting	bioquimica_quimica_biologica	4	Desnaturação térmica de DNA	K(T) e ΔG=ΔH-TΔS governam duplex⇌fitas	Relaciona composição, força iônica e temperatura à estabilidade do duplex.	dna melting;tm;duplex	MIT_560
+atp_hydrolysis_thermo	bioquimica_quimica_biologica	3	Termodinâmica da hidrólise de ATP	ΔG=ΔG°'+RT ln Q	Mostra por que força motriz celular depende das concentrações reais, não só do padrão.	atp;hidrolise;energia livre	OPENSTAX
+redox_biochemistry	bioquimica_quimica_biologica	3	Pares redox bioquímicos	ΔG=-nFΔE em condições compatíveis	Conecta potenciais redox a transferência eletrônica em metabolismo.	redox bioquimico;nadh;potencial	OPENSTAX
+proton_motive_force	bioquimica_quimica_biologica	4	Força próton-motriz	Δp=Δψ-(2.303RT/F)ΔpH em convenção comum	Combina gradiente elétrico e químico de prótons através de membrana.	forca proton motriz;delta psi;delta ph	OPENSTAX
+binding_equilibrium_biomolecule	bioquimica_quimica_biologica	3	Equilíbrio de ligação molecular	K_d=[P][L]/[PL]	Quantifica afinidade de receptor/proteína por ligante em modelo 1:1.	kd;afinidade;ligacao proteina ligante	IUPAC
+binding_fraction	bioquimica_quimica_biologica	3	Fração ligada em modelo 1:1	θ=[L]/(K_d+[L]) sob excesso de ligante	Relaciona ocupação de sítios à concentração livre de ligante.	fracao ligada;ocupacao;kd	IUPAC
+beer_lambert_biochem	bioquimica_quimica_biologica	2	Quantificação espectrofotométrica de biomoléculas	A=εbc	Aplica Beer–Lambert a cromóforos biológicos dentro da faixa linear.	espectrofotometria biomolecula;beer lambert;proteina dna	LIBRE_ANALYTICAL
+buffer_biochemistry	bioquimica_quimica_biologica	2	Tampões em sistemas biológicos	pH=pK_a+log([base]/[ácido]) em aproximação	Relaciona pKa de grupos e razão de espécies ao controle de pH.	tampao biologico;ph;pka	OPENSTAX
+coupled_reactions_biochem	bioquimica_quimica_biologica	4	Acoplamento de reações bioquímicas	ΔG_total=ΣΔG_i	Explica como reação favorável pode impulsionar outra quando mecanisticamente acopladas.	reacao acoplada;delta g;metabolismo	OPENSTAX
+"""

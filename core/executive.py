@@ -7,11 +7,13 @@ class Executive:
         internal_knowledge=None,
         knowledge_packs=None,
         physics_knowledge=None,
+        chemistry_knowledge=None,
     ):
         self.model_manager = model_manager
         self.internal_knowledge = internal_knowledge
         self.knowledge_packs = knowledge_packs
         self.physics_knowledge = physics_knowledge
+        self.chemistry_knowledge = chemistry_knowledge
 
     def execute(self, request, route):
         text = request.get("input", "")
@@ -23,6 +25,11 @@ class Executive:
 
         if self.physics_knowledge:
             answer = self.physics_knowledge.answer(text)
+            if answer:
+                return answer
+
+        if self.chemistry_knowledge:
+            answer = self.chemistry_knowledge.answer(text)
             if answer:
                 return answer
 
