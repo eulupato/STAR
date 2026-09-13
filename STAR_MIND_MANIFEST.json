@@ -1,9 +1,15 @@
 {
   "name": "STAR MIND",
-  "schema": 1,
+  "schema": 2,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
-  "roadmap_alignment": ["V2.0 MIND", "V2.1 Memory", "V2.2 Knowledge Graph", "partial V3 Knowledge", "partial V3.3 Scientific Engine"],
+  "roadmap_alignment": [
+    "V2.0 MIND",
+    "V2.1 Memory",
+    "V2.2 Knowledge Graph",
+    "partial V3.0 Knowledge",
+    "partial V3.3 Scientific Engine"
+  ],
   "principles": [
     "local-first",
     "one STAR Core",
@@ -12,7 +18,9 @@
     "auditable artifacts instead of hidden chain-of-thought",
     "no autonomous code modification",
     "no invented certainty",
-    "provenance before growth counters"
+    "provenance before growth counters",
+    "knowledge does not silently rewrite core identity",
+    "functional cognition does not imply subjective consciousness"
   ],
   "capabilities": [
     "reasoning",
@@ -42,6 +50,47 @@
     "materialization": "on-demand",
     "truthfulness_note": "15M are deterministic operational/cognitive support variations, not 15M independently researched facts"
   },
+  "cognitive_foundation": {
+    "data": "knowledge/cognitive_foundation.json.gz",
+    "engine": "core/cognitive_catalog.py::CognitiveFoundationCatalog",
+    "world_domains": 200,
+    "world_subtopics": 869,
+    "continuous_cognition_domains": 85,
+    "continuous_cognition_subtopics": 174,
+    "canonical_nodes": 1328,
+    "views_per_node": 1000000000,
+    "total_addressable_views": 1328000000000,
+    "view_dimensions": 9,
+    "values_per_dimension": 10,
+    "five_models": [
+      "world",
+      "human",
+      "social",
+      "self",
+      "situation"
+    ],
+    "knowledge_quarantine": [
+      "DISCOVERED",
+      "QUARANTINED",
+      "VERIFIED",
+      "CANONICAL",
+      "SUPERSEDED",
+      "RETRACTED"
+    ],
+    "materialization": "on-demand-with-canonical-content",
+    "truthfulness_note": "Every node contains canonical content from the corrected STAR specification. 1B views per node are meaningful derived perspectives, not 1B independently researched facts."
+  },
+  "continuous_cognitive_state": {
+    "engine": "core/mind.py::ContinuousCognitiveState",
+    "persistence": "same star.db through cognitive_memory/knowledge_nodes/knowledge_edges",
+    "working_memory": true,
+    "autobiographical_memory": true,
+    "revisable_claims": true,
+    "knowledge_gaps": true,
+    "personality_plasticity": "bounded ±0.02 per validated repeated pattern",
+    "core_identity_mutable_by_learning": false,
+    "consciousness_claim": false
+  },
   "persistence": {
     "database": "star.db",
     "engine": "database.database.engine",
@@ -63,19 +112,41 @@
   },
   "math": {
     "engine": "SymPy",
-    "features": ["symbolic simplify", "equation solving", "derivatives", "integrals", "numeric evaluation"]
+    "features": [
+      "symbolic simplify",
+      "equation solving",
+      "derivatives",
+      "integrals",
+      "numeric evaluation"
+    ]
   },
   "simulation": {
-    "features": ["projectile", "exponential dynamics", "Monte Carlo", "scalar RK4"]
+    "features": [
+      "projectile",
+      "exponential dynamics",
+      "Monte Carlo",
+      "scalar RK4"
+    ]
   },
   "code_lab": {
     "status": "restricted-local",
-    "isolated_python_flags": ["-I", "-S"],
+    "isolated_python_flags": [
+      "-I",
+      "-S"
+    ],
     "os_grade_sandbox": false,
     "note": "untrusted code still belongs to future Guardian/Sandbox"
   },
   "rag": {
-    "formats": ["txt", "md", "csv", "json", "py", "rst", "pdf"],
+    "formats": [
+      "txt",
+      "md",
+      "csv",
+      "json",
+      "py",
+      "rst",
+      "pdf"
+    ],
     "pdf_engine": "pypdf",
     "ocr": false,
     "note": "image-only/scanned PDFs require a future OCR pipeline"
@@ -100,6 +171,7 @@
     "accepted_definition": "unique record with content, source and source_type/provenance",
     "duplicates_count_as_new": false,
     "rejected_records_count_as_new": false,
-    "deterministic_variants_count_as_new_facts": false
+    "deterministic_variants_count_as_new_facts": false,
+    "billion_scale_rule": "1B views per foundation node is addressable semantic capacity; actual learned facts are counted only when materialized with provenance"
   }
 }
