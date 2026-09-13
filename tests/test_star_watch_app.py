@@ -39,8 +39,10 @@ def test_star_ring_rotates_wraps_and_opens_selected_mode():
     assert model.selected_mode.key == "now"
     assert model.press() == "now"
 
+    # Voltar fecha a tela atual, mas preserva a posição do bezel. Partindo de
+    # AGORA (índice 1), três passos anti-horários chegam em IDIOMA (índice 10).
     assert model.back() == "home"
-    model.rotate(-2)
+    model.rotate(-3)
     assert model.selected_mode.key == "language"
 
 
