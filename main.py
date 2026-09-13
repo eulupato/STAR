@@ -17,6 +17,7 @@ from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
 from core.physics_knowledge_150k import PhysicsKnowledgeEngine
+from core.chemistry_knowledge_500k import ChemistryKnowledgeEngine
 from core.router import Router
 from core.skills import SkillRegistry
 from core.star_core import StarCore
@@ -30,6 +31,7 @@ def create_star():
     identity = StarIdentity()
     knowledge = StarInternalKnowledge(identity)
     physics = PhysicsKnowledgeEngine()
+    chemistry = ChemistryKnowledgeEngine()
     packs = KnowledgePackManager(ROOT / "knowledge" / "packs", auto_removable=True)
     state = StarState()
     router = Router(internal_knowledge=knowledge)
@@ -38,6 +40,7 @@ def create_star():
         internal_knowledge=knowledge,
         knowledge_packs=packs,
         physics_knowledge=physics,
+        chemistry_knowledge=chemistry,
     )
     star = StarCore(
         router=router,
@@ -51,6 +54,7 @@ def create_star():
     star.tools.register("math", safe_math, True, "Cálculo matemático offline")
     star.packs = packs
     star.physics = physics
+    star.chemistry = chemistry
     return star
 
 
@@ -89,6 +93,7 @@ def main():
     pack_stats = star.packs.stats()
     storage_stats = star.packs.storage_stats()
     physics_stats = star.physics.stats()
+    chemistry_stats = star.chemistry.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -96,6 +101,11 @@ def main():
         "⚛️ Física local: "
         f"{physics_stats['canonical_topics']} tópicos | "
         f"{physics_stats['content_variations']} conteúdos variáveis"
+    )
+    print(
+        "🧪 Química local: "
+        f"{chemistry_stats['canonical_topics']} tópicos | "
+        f"{chemistry_stats['content_variations']} conteúdos variáveis"
     )
     print("🧩 Skills: PREPARADAS")
     print("🛠️ Ferramentas: ATIVAS (matemática offline)")
