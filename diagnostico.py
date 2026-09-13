@@ -32,6 +32,7 @@ MODULES = [
     "core.chemistry_knowledge_500k",
     "core.multidisciplinary_taxonomy",
     "core.multidisciplinary_knowledge",
+    "core.knowledge_expansion_15m",
     "core.thematic_voice",
     "core.language_catalog",
     "core.offline_dictionary",
@@ -87,8 +88,15 @@ def main():
     physics_stats = star.physics.stats()
     chemistry_stats = star.chemistry.stats()
     multi_stats = star.multidisciplinary.stats()
+    plus_stats = star.knowledge_plus.stats()
     language_stats = star.language.stats()
     voice_theme_stats = thematic_voice_stats()
+
+    plus_boundaries_ok = True
+    for domain in plus_stats.get("domain_keys", []):
+        first = star.knowledge_plus.content_id(domain, 0, 0)
+        last = star.knowledge_plus.content_id(domain, 999, 999)
+        plus_boundaries_ok = plus_boundaries_ok and first.endswith("-0000001") and last.endswith("-1000000")
 
     checks = [
         ("identidade", star.get_name() == "STAR"),
@@ -108,6 +116,12 @@ def main():
         ("multidisciplinar = 500 nós/matéria", multi_stats.get("canonical_nodes_per_subject") == 500),
         ("multidisciplinar = 500000/matéria", multi_stats.get("contents_per_subject") == 500000),
         ("multidisciplinar = 6500000 total", multi_stats.get("total_content_variations") == 6500000),
+        ("PLUS = 15 domínios", plus_stats.get("domains") == 15),
+        ("PLUS = 1000 nós novos/domínio", plus_stats.get("added_canonical_nodes_per_domain") == 1000),
+        ("PLUS = 1000000 novos/domínio", plus_stats.get("added_content_variations_per_domain") == 1_000_000),
+        ("PLUS = 15000000 novos", plus_stats.get("added_content_variations") == 15_000_000),
+        ("conhecimento combinado = 22150000", plus_stats.get("combined_content_variations") == 22_150_000),
+        ("IDs PLUS preservam limites 1..1000000", plus_boundaries_ok),
         ("voz temática = 1000000", voice_theme_stats.get("variations") == 1000000),
         ("idiomas = 5 famílias", language_stats.get("language_families") == 5),
         ("perfis de idioma = 6", language_stats.get("locale_profiles") == 6),
@@ -136,6 +150,12 @@ def main():
         f"🧭 Multidisciplinar: {multi_stats.get('subjects', 0)} matéria(s), "
         f"{multi_stats.get('canonical_nodes', 0)} nó(s), "
         f"{multi_stats.get('total_content_variations', 0)} conteúdo(s) variável(is)"
+    )
+    print(
+        f"🚀 Knowledge PLUS: {plus_stats.get('domains', 0)} domínio(s), "
+        f"+{plus_stats.get('added_content_variations_per_domain', 0)} por domínio, "
+        f"+{plus_stats.get('added_content_variations', 0)} novos | "
+        f"combinado={plus_stats.get('combined_content_variations', 0)}"
     )
     print(
         f"🌐 Idiomas: {language_stats.get('language_families', 0)} famílias / "
