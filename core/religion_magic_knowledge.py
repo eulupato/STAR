@@ -189,17 +189,27 @@ class ReligionMagicKnowledgeEngine:
         best_score = 0.0
         for index, subject, label_norm, tokens in self._subject_catalog:
             if label_norm and label_norm in normalized:
+                # Matches explícitos são fortes, mas consultas que contêm uma
+                # tradição mais específica também podem conter o nome da tradição
+                # pai (ex.: "budismo theravada"). Desempate por especificidade
+                # lexical para que o assunto mais preciso vença.
                 score = 1.0 if normalized == label_norm else 0.96
+                specificity = (len(label_norm.split()), len(label_norm))
             else:
+                specificity = (0, 0)
                 overlap = len(query_tokens & tokens)
                 score = overlap / max(1, len(tokens))
                 # Evita resolver termos curtos/genéricos por coincidência fraca.
                 if overlap == 1 and len(tokens) > 2:
                     score *= 0.65
-            if score > best_score:
+            current_specificity = best[3] if best and len(best) > 3 else (-1, -1)
+            if score > best_score or (score == best_score and specificity > current_specificity):
                 best_score = score
-                best = (index, subject, score)
-        return best if best and best_score >= 0.45 else None
+                best = (index, subject, score, specificity)
+        if not best or best_score < 0.45:
+            return None
+        index, subject, score, _specificity = best
+        return index, subject, score
 
     def resolve_aspect(self, query: str) -> tuple[int, str, float]:
         query_tokens = _tokens(query)
