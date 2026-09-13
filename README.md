@@ -2,283 +2,296 @@
 
 **S.T.A.R. — System for Thought, Analysis and Response**
 
-A STAR é uma arquitetura **offline-first** formada por identidade, Core, memória,
-conhecimento local, voz, ferramentas, interfaces e dispositivos. Modelos locais ou
-cloud são recursos utilizados pela STAR; nenhum modelo isolado é a STAR.
+A STAR é uma arquitetura **offline-first** composta por identidade, Core, memória,
+conhecimento, MIND, ferramentas, voz, interfaces e dispositivos. Um modelo local ou
+cloud é somente um recurso utilizado pela STAR; nenhum modelo isolado é a STAR.
 
-## Direção atual do projeto
+## Estado oficial
 
-A prioridade prática passa a ser o **STAR Watch App**.
+- **release estável:** STAR V1.9 Foundation;
+- **camada cognitiva:** STAR MIND experimental-alpha;
+- **Integrated Evolution:** alpha sobre V1.9, sem promover artificialmente V2+;
+- **direção de produto:** Watch-first;
+- **internet:** opcional e por capacidades/providers declarados;
+- **banco cognitivo:** um único `star.db`;
+- **branch `main`:** fonte oficial do estado versionado.
 
-```text
-1. construir e validar a experiência do relógio no PC;
-2. portar o shell validado para Android/smartwatch real;
-3. integrar sensores e hardware reais por providers;
-4. depois construir a nova experiência principal para PC.
-```
+## 🧠 Conhecimento
 
-A Foundation V1.9 continua preservada como base estável do Core. Ela não está sendo
-reconstruída nem descartada; o Watch reutiliza o que já funciona.
+A base factual endereçável anterior continua em **22,15M de variações composicionais**
+(Física, Química, Multidisciplinar e Knowledge PLUS). Esse número não representa
+22,15M fatos pesquisados individualmente.
 
-## 🧠 Knowledge Foundation
+A expansão curricular adiciona:
 
-A base factual endereçável anterior continua em **22,15M** de variações, composta
-pelos engines de Física, Química, Multidisciplinar e Knowledge PLUS. Esse número é
-composicional e não significa 22,15M fatos escritos/pesquisados individualmente.
+- **56 temas**;
+- **956 menções** consolidadas em **885 conceitos canônicos únicos**;
+- **71 duplicações** removidas por identidade/alias;
+- **941.000.000** de visões curriculares endereçáveis on-demand.
 
-A expansão curricular canônica adiciona uma camada granular sobre o mesmo Core:
+Os 941M são um espaço determinístico de estudo/pesquisa sobre os conceitos canônicos,
+e não 941M afirmações factuais independentes.
 
-- **56 temas** de ciência, matemática, física, engenharia, computação, química,
-  biologia, neurociência e Ciências da Terra;
-- **956 menções** de subtemas consolidadas em **885 conceitos canônicos únicos**;
-- **71 duplicações** removidas por identidade semântica/alias;
-- **1.000.000** de variações endereçáveis por tema;
-- **1.000.000** de variações endereçáveis por conceito único;
-- **941.000.000** de conteúdos/visões curriculares endereçáveis no total,
-  materializados sob demanda.
+## 💾 M.drives
 
-Os 941M curriculares **não são 941M novos fatos independentes** e permanecem como
-métrica separada dos 22,15M factuais legados. Um conceito existe uma vez e pode
-pertencer a várias áreas; por exemplo, visão computacional conecta Robótica, IA e
-Percepção Computacional sem manter três cópias do mesmo conceito.
+**M.drive = Memory + Drive/Pendrive.** É o nome oficial dos antigos **Knowledge Packs**.
 
-Arquivos principais:
+Novos módulos ficam em:
 
 ```text
-core/curriculum_taxonomy.py
-core/curriculum_knowledge.py
-STAR_CURRICULUM_MANIFEST.json
-docs/STAR_CURRICULUM_EXPANSION.md
+knowledge/m_drives/
 ```
 
-A STAR também possui localização global para `pt-BR`, `en-US`, `en-GB`, `es-ES`,
-`it-IT` e `fr-FR`. O conhecimento canônico continua único; idioma é camada de
-apresentação. Traduções protegem IDs, números/unidades, URLs, paths, código e
-matemática, e uma tradução parcial insegura é rejeitada em vez de alterar informação.
+Mídia removível usa preferencialmente:
 
-## ⌚ STAR Watch App V0.4
-
-A V0.4 inaugura a abordagem **Watch-first** e roda atualmente como simulador no PC,
-com a interface oficial **Plasma Orbit**.
-
-Para abrir:
-
-```bat
-INICIAR_STAR_WATCH_APP.bat
+```text
+STAR_KNOWLEDGE/m_drives/
 ```
 
-ou:
+Para não quebrar dados existentes, `knowledge/packs` e `STAR_KNOWLEDGE/packs`
+continuam legíveis como caminhos **legados**. A migração é explícita e não destrutiva;
+nenhum M.drive executa código automaticamente por ser descoberto.
+
+## 🧠 STAR MIND + Integrated Evolution
+
+O MIND alpha mantém 15 capacidades cognitivas: raciocínio, planejamento, memória,
+Knowledge Graph, raciocínio científico, matemática, simulação, coding, verificação,
+RAG documental, pesquisa, projetos, user model, multiagentes e autoavaliação.
+
+A camada Integrated Evolution acrescenta, sobre os mesmos sistemas:
+
+### Cognitive Runtime
+
+- Working Context limitado em RAM;
+- Salience por relevância/novidade/risco/urgência/prioridade;
+- Model Router para engines explicitamente registrados;
+- sem criar memória persistente paralela.
+
+### Goal Engine
+
+- objetivos e tarefas persistentes;
+- dependências;
+- checkpoints;
+- retomada;
+- execução por handlers registrados;
+- idempotência em conjunto com Guardian.
+
+### Guardian alpha
+
+- default-deny para ações desconhecidas;
+- política e confirmação por ação;
+- restrições remotas;
+- audit log;
+- claims idempotentes;
+- redaction básica de segredos.
+
+Ainda **não** existe sandbox de SO ou Secrets Vault criptográfico completo.
+
+### RAG híbrido + OCR
+
+A fonte de verdade continua sendo documentos/chunks no SQLite com FTS5/BM25. A nova
+camada adiciona índice semântico derivado:
+
+```text
+PDF/texto
+→ extração
+→ OCR seletivo quando necessário
+→ chunks
+→ SQLite / FTS5
+→ embedding derivado opcional
+→ recuperação híbrida
+```
+
+- fallback semântico hashing é local/determinístico;
+- Sentence Transformers é opcional;
+- `sqlite-vec` é opcional;
+- PyMuPDF + Tesseract são opcionais para OCR;
+- nenhum modelo neural é carregado no boot base.
+
+Dependências opcionais:
 
 ```powershell
-.\.venv\Scripts\python.exe clients\star_watch_visual.py
+python -m pip install -r requirements-intelligence.txt
 ```
 
-### STAR Ring
+Tesseract precisa ser instalado separadamente no sistema quando OCR real for usado.
 
-A interação do relógio não depende de um modelo específico de hardware.
-O app trabalha com um contrato de entrada equivalente a:
+### Knowledge Graph científico
+
+`core/scientific_graph.py` pode materializar no grafo já existente:
+
+- 56 temas;
+- 885 conceitos canônicos;
+- domínios;
+- relações de pertencimento e co-tema derivadas da taxonomia.
+
+Ele deliberadamente **não inventa relações causais** que não estejam sustentadas pela
+fonte/taxonomia.
+
+### Simulation Engine
+
+Além do laboratório anterior, a STAR possui modelos NumPy locais de:
+
+- RK4 vetorial;
+- órbita Newtoniana 2D de dois corpos;
+- pêndulo não linear amortecido;
+- equação do calor 1D;
+- equação da onda 1D;
+- circuito RC.
+
+Existem verificações como drift de energia, estabilidade explícita e condição CFL.
+Isso ainda não substitui CFD/FEA/SPICE/astrodinâmica de alta fidelidade ou relatividade numérica.
+
+### Research Hub
+
+Pesquisa científica estruturada opt-in usa:
+
+- Crossref;
+- OpenAlex;
+- arXiv;
+- PubMed/NCBI.
+
+Resultados são deduplicados por DOI → URL → título. Encontrar um paper não significa
+que sua conclusão foi automaticamente validada; avaliação de evidência continua uma
+etapa separada.
+
+### Operator e Senses
+
+- File Index persistente **somente leitura**, iniciado apenas por ação explícita;
+- contrato unificado para observações de câmera/tela/sensores;
+- buffer de fusão temporal;
+- `semantic_scene_understanding=false` por enquanto;
+- ações sensíveis continuam bloqueadas.
+
+## Comandos alpha explícitos
+
+Exemplos:
 
 ```text
-ROTATE_LEFT
-ROTATE_RIGHT
-PRESS
-BACK
+status evolução
+contexto cognitivo
+rotear engine math
+m.drives
+criar objetivo Estudo: revisar relatividade geral
+listar objetivos
+pesquisar profundamente gravitational waves
+rag semântico decoerência quântica
+ocr C:\documentos\paper.pdf
+indexar arquivos C:\Development\Projects
+indexar grafo científico
+simular órbita
+simular pêndulo
 ```
 
-No simulador:
+Esses comandos são estreitos de propósito: o router estável da V1.9 continua com
+prioridade e a nova camada não sequestra termos genéricos.
 
-- roda do mouse ou setas esquerda/direita = girar o STAR Ring;
-- clique no núcleo ou Enter = pressionar/confirmar;
-- Backspace = voltar;
-- Espaço = iniciar/encerrar voz.
+## 🌍 Idiomas
 
-No hardware real esses mesmos eventos poderão vir de bezel, coroa ou do futuro
-anel físico próprio da STAR.
+A STAR usa uma fonte canônica de conhecimento e camada de apresentação para:
 
-### Modos atuais
+- `pt-BR`;
+- `en-US`;
+- `en-GB`;
+- `es-ES`;
+- `it-IT`;
+- `fr-FR`.
 
-- **VOZ** — microfone → STT local → STAR Core → resposta → TTS;
-- **BUSCA** — usa a capacidade de pesquisa já existente no Core quando autorizada;
-- **SAÚDE** — UX pronta com provider simulado claramente identificado;
-- **GPS** — UX pronta com provider simulado claramente identificado;
-- **VISÃO** — prepara STAR Scan e permite selecionar uma imagem no simulador;
-- **PEOPLE** — cadastro pessoal manual e local;
-- **MEDIR** — UX STAR Measure com provider simulado até existir laser real;
-- **MÍDIA** — reaproveita comandos de mídia existentes;
-- **CLIMA** — tela preservada no shell; o Core possui provider meteorológico contextual separado;
-- **CONFIG** — simulação e resposta falada.
+IDs, números/unidades, URLs, paths, código e matemática são protegidos pela tradução.
+Traduções parciais inseguras são rejeitadas em vez de alterar informação.
 
-### O que é real e o que é simulado
+## 🎙️ Voz e conversa
 
-A V0.4 **não finge possuir hardware inexistente**.
-
-No PC, GPS, saúde e distância aparecem como `SIMULAÇÃO` quando ativados. Vision AI,
-laser físico e reconhecimento automático de pessoas ainda não são declarados como
-disponíveis. O clima contextual do Core é uma capacidade online sob demanda e não
-transforma GPS/hardware do Watch em recurso real.
-
-O cadastro PEOPLE fica em:
-
-```text
-runtime/star_watch/people.json
-```
-
-e permanece fora da base versionada.
-
-Veja `docs/STAR_WATCH_APP_V0_4.md` e `docs/STAR_WATCH_VISUAL_SYSTEM.md`.
-
-## Android Watch V0.3
-
-A base Android já existente continua sendo preservada em:
-
-```text
-clients/star_watch_android/
-```
-
-Ela fornece:
-
-- Android 8.1+ (`minSdk 27`);
-- pareamento LAN;
-- texto;
-- microfone PCM 16-bit mono/WAV;
-- STT no Core;
-- resposta falada pelo TTS do endpoint;
-- câmera;
-- heartbeat;
-- runtime adaptativo;
-- comandos de voz centralizados.
-
-A V0.4 não cria um segundo cliente Android. Primeiro valida a experiência no PC e,
-no próximo marco, porta o shell circular para essa base Android.
-
-## Voz
-
-Arquitetura local atual:
+Arquitetura local:
 
 ```text
 Microfone
-    ↓
-AudioRecorder / PCM
-    ↓
-faster-whisper local PT-BR
-    ↓
-STAR Core
-    ↓
-Chatterbox oficial / modo rápido local
-    ↓
-Alto-falante
+→ faster-whisper
+→ STAR Core
+→ Chatterbox oficial / Piper / SAPI fallback
+→ alto-falante
 ```
 
-A referência da voz oficial continua privada e local. Não deve ser enviada ao Git.
-Seed-VC permanece opcional e separado do ambiente principal.
+A referência oficial de voz é privada/local e nunca deve ser versionada.
 
-## Command / Capability Foundation
+O catálogo contém **27.804 variações auditáveis de comandos operacionais** e
+**1.000.000 de variações temáticas de estudo**. A conversa local possui **6.000
+combinações auditáveis**.
 
-A STAR usa um registro central de intents em `core/commands.py`.
-O catálogo atual gera **27.804 variações auditáveis de comandos de voz**, acima do
-contrato mínimo de 4.000, sem manter milhares de `if/else` duplicados.
+## 🌦️ Clima
 
-Os comandos são formados por intents + aliases + wake words + slots/variáveis. Entre
-os slots atuais estão:
-
-- `open_app.target` e `close_app.target`;
-- `web_search.query`;
-- `find_file.query`;
-- `spotify_search.query`;
-- `weather_current.location`.
-
-Os campos de pesquisa, arquivo, Spotify e localização climática aceitam texto livre;
-o catálogo de exemplos existe para teste e auditoria, não como limite do vocabulário.
-
-`core/agents.py` funciona como catálogo/dispatcher de capacidades especializadas.
-Essas capacidades **não são personalidades nem STARs separadas**.
-
-Comandos sensíveis originados de Watch/Mobile permanecem restritos. Screenshot,
-busca de arquivos, terminal, PowerShell, fechamento de aplicações e bloqueio do PC
-não devem ser liberados remotamente sem confirmação local/permissões apropriadas.
-
-## 💬 Conversa natural
-
-`core/conversation.py` adiciona small talk local antes do fallback genérico do Core.
-O sistema compõe atualmente **6.000 respostas únicas**, acima do mínimo de 5.000,
-organizadas em famílias de:
-
-- saudação;
-- bem-estar;
-- agradecimento;
-- conversa casual;
-- apoio cotidiano;
-- despedida.
-
-As respostas são combinadas deterministicamente a partir da mensagem recebida. Isso
-mantém variedade sem armazenar milhares de respostas copiadas ou gerar comportamento
-aleatório impossível de reproduzir em testes.
-
-## 🌦️ Clima contextual
-
-A STAR agora consulta condições meteorológicas quando a conversa realmente depende
-do clima. Exemplos:
-
-```text
-"o dia está bonito"
-"o dia está chuvoso"
-"está frio hoje"
-"que calor"
-"como está o tempo"
-"como está o tempo em Porto Alegre"
-```
-
-A resposta é confrontada com temperatura, sensação térmica, precipitação, nuvens e
-código meteorológico. Assim, por exemplo, uma leitura de **30 °C não é confirmada
-como frio** apenas para concordar com a frase do usuário.
-
-O provider usa **Open-Meteo** para geocoding e condições atuais. Quando nenhuma
-localização foi configurada, a estimativa automática por IP pode usar `ipwho.is`.
-Essa consulta é sob demanda, possui cache em memória e esta camada não persiste
-coordenadas em disco.
+O Core possui clima contextual sob demanda via Open-Meteo. Internet não é ativada
+para outras capacidades só porque o clima foi consultado.
 
 Configuração opcional:
 
 ```text
 STAR_WEATHER_ENABLED=1
 STAR_WEATHER_LOCATION=Cidade, Estado
-STAR_WEATHER_AUTOLOCATE=1
+STAR_WEATHER_AUTOLOCATE=0
 STAR_WEATHER_CACHE_SECONDS=600
 ```
 
-Para maior privacidade, configure `STAR_WEATHER_LOCATION` localmente e use
-`STAR_WEATHER_AUTOLOCATE=0`.
+## 👁️ STAR Vision
 
-O acesso meteorológico é propositalmente estreito: ele **não habilita o modo web
-geral**, navegador, Spotify ou pesquisa arbitrária. Veja
-`docs/STAR_CONVERSATION_WEATHER_V1_9.md`.
+O Vision Portal local possui:
 
-## Estrutura principal
+- webcam local;
+- MediaPipe HandLandmarker;
+- duas mãos;
+- tracking/suavização;
+- portal AR;
+- HUD/captura/fullscreen;
+- 12 filtros.
+
+Isso **não é ainda compreensão semântica de cena**. Abertura/fechamento remoto da
+câmera do PC permanece bloqueado.
+
+## ⌚ STAR Watch
+
+A prioridade prática continua Watch-first:
 
 ```text
-STAR/
-├── clients/
-│   ├── star_watch_visual.py    # shell oficial Plasma Orbit no PC
-│   ├── star_watch_app.py       # base funcional reutilizada pelo renderer
-│   ├── star_watch_android/     # transporte Android V0.3
-│   └── star_mobile_ios/        # cliente iOS experimental
-├── core/                       # identidade, Core, comandos, conversa e capacidades
-├── database/                   # persistência
-├── gui/                        # interface PC anterior preservada
-├── knowledge/                  # Knowledge Packs
-├── modules/                    # ferramentas
-├── voice/                      # STT/TTS/Seed-VC opcional
-├── tests/                      # testes automatizados
-├── docs/                       # documentação
-├── STAR_MANIFEST.json          # capacidades/versões declaradas
-├── INICIAR_STAR_WATCH_APP.bat
-├── INICIAR_STAR.bat
-└── main.py
+1. validar shell/voz/providers no PC;
+2. portar Plasma Orbit para a base Android Watch existente;
+3. integrar sensores/hardware reais;
+4. validar em hardware físico;
+5. depois construir a nova experiência principal de PC.
 ```
 
-## STAR Core no PC
+### Watch App V0.4
 
-A interface desktop anterior continua disponível e pode ser iniciada por:
+Simulador funcional no PC com **Plasma Orbit**:
+
+```bat
+INICIAR_STAR_WATCH_APP.bat
+```
+
+Modos atuais:
+
+`VOZ · BUSCA · SAÚDE · GPS · VISÃO · PEOPLE · MEDIR · MÍDIA · CLIMA · IDIOMA · CONFIG`
+
+No simulador, saúde/GPS/distância continuam marcados como **SIMULAÇÃO** quando não há
+provider físico real. Não declaramos laser, reconhecimento automático de pessoas ou
+sensores que não existem.
+
+### Android Watch V0.3
+
+A base em `clients/star_watch_android/` fornece transporte LAN, texto, áudio PCM/WAV,
+STT no Core, resposta falada, câmera, heartbeat e runtime adaptativo. O shell Plasma
+Orbit ainda precisa ser levado integralmente ao hardware e validado fisicamente.
+
+## 📱 Mobile / Device Gateway
+
+- cliente iOS: experimental;
+- Device Gateway LAN: experimental e desligado por padrão;
+- processamento cognitivo permanece no STAR Core;
+- ações remotas sensíveis continuam bloqueadas;
+- a porta do Gateway não deve ser exposta à internet.
+
+## 🖥️ PC
+
+A interface desktop V1.9 continua preservada:
 
 ```bat
 INICIAR_STAR.bat
@@ -290,35 +303,33 @@ ou:
 .\.venv\Scripts\python.exe main.py
 ```
 
-Ela permanece preservada enquanto a nova experiência Watch-first é desenvolvida.
-A nova versão principal para PC será construída depois que o shell do relógio estiver
-estável.
+O Operator atual ainda é parcial. Volume, mídia, screenshot, busca/abertura limitada e
+algumas ações existem; automação geral, escrita destrutiva e controle irrestrito do SO
+não são liberados sem a arquitetura completa de permissões.
 
-## STAR Device Gateway
+## Estrutura principal
 
-A ponte LAN permanece experimental e desligada por padrão.
-
-Para testes de dispositivos:
-
-```bat
-INICIAR_STAR_DEVICES.bat
+```text
+STAR/
+├── clients/                    # Watch, Android, iOS, Vision
+├── core/                       # Core, MIND, Evolution, conhecimento e engines
+├── database/                   # persistência única
+├── gui/                        # interface PC
+├── knowledge/
+│   ├── m_drives/               # nome oficial
+│   └── packs/                  # compatibilidade legada temporária
+├── modules/                    # ferramentas
+├── voice/                      # STT/TTS
+├── tests/
+├── docs/
+├── STAR_MANIFEST.json
+├── STAR_MIND_MANIFEST.json
+├── requirements.txt
+├── requirements-intelligence.txt
+└── main.py
 ```
 
-O Gateway possui pareamento local, token por dispositivo, runtime adaptativo e rate
-limits. Deve permanecer em rede privada; não exponha a porta experimental à Internet.
-
-## Offline-first
-
-A STAR mantém três níveis operacionais:
-
-- **LOCAL** — funções fundamentais no dispositivo/PC;
-- **LAN** — cooperação entre dispositivos locais;
-- **ONLINE** — internet expande capacidades quando autorizada ou por providers online estreitos e declarados.
-
-Internet não define a existência da STAR. Providers online específicos devem ser
-sob demanda, limitados ao seu domínio e documentados no Manifest.
-
-## Desenvolvimento
+## Testes e diagnóstico
 
 Antes de considerar uma atualização concluída:
 
@@ -327,29 +338,30 @@ python diagnostico.py
 python -m pytest -q tests
 ```
 
-O diagnóstico valida também os contratos mínimos de catálogo de voz e conversa,
-os limites da expansão curricular e distingue Knowledge Packs descobertos de entradas
-efetivamente carregadas.
-
-Além dos testes automáticos, interfaces, microfone, sensores e hardware precisam de
-validação física quando a mudança depender deles.
+Dependências opcionais não devem ser necessárias para o boot/teste base. Interfaces,
+microfone, câmera, sensores e hardware físico exigem validação real além do CI.
 
 Nunca versione `.env`, tokens, bancos pessoais, referências privadas de voz, modelos,
 caches, fotos pessoais ou arquivos temporários.
 
-## Estado atual
+## O que ainda não está concluído
 
-- **STAR Core/Foundation:** V1.9 stable;
-- **conhecimento factual endereçável legado:** 22,15M variações composicionais;
-- **currículo canônico:** 56 temas + 885 conceitos únicos = 941M variações curriculares on-demand;
-- **idiomas:** 6 locales de apresentação sobre uma fonte canônica única;
-- **voz:** 27.804 variações auditáveis de comandos no catálogo atual;
-- **conversa local:** 6.000 combinações auditáveis;
-- **clima contextual:** provider online sob demanda integrado ao Core;
-- **STAR Watch App:** V0.4 functional simulator + Plasma Orbit;
-- **STAR Watch Android transport:** V0.3 experimental;
-- **STAR Mobile iOS:** experimental;
-- **hardware STAR próprio:** conceito/futuro.
+Mesmo com as fundações novas, continuam futuros/parciais:
 
-A prioridade atual é transformar o STAR Watch V0.4 em um aplicativo de relógio sólido,
-rápido e coerente antes de iniciar a nova experiência principal de PC.
+- V2 MIND completo e seus critérios de release;
+- Model Registry completo e roteamento de modelos reais;
+- embeddings neurais/materialização no PC do usuário;
+- OCR até Tesseract/PyMuPDF serem instalados e testados localmente;
+- Knowledge Graph de todos os fatos/proveniências;
+- solvers CFD/FEA/SPICE e simulação científica de alta fidelidade;
+- Research Engine full-text/avaliação metodológica automatizada;
+- Operator geral e seguro;
+- scene/screen/spatial awareness semântico;
+- Guardian com sandbox, vault, autenticação, backup e rollback;
+- Scheduler/Attention/Agent autonomy ponta-a-ponta;
+- sync completo do ecossistema;
+- STAR WORLD 3D;
+- robótica física.
+
+Consulte `docs/MASTER_ROADMAP.md` e `docs/STAR_INTEGRATED_EVOLUTION_ALPHA.md` para a
+separação entre **estável, alpha, parcial e planejado**.
