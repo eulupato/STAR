@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 1,
+  "schema": 2,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": ["V2.0 MIND", "V2.1 Memory", "V2.2 Knowledge Graph", "partial V3 Knowledge", "partial V3.3 Scientific Engine"],
@@ -12,7 +12,13 @@
     "auditable artifacts instead of hidden chain-of-thought",
     "no autonomous code modification",
     "no invented certainty",
-    "provenance before growth counters"
+    "provenance before growth counters",
+    "model is not STAR",
+    "body is not STAR",
+    "thinking is not acting",
+    "curiosity is not authorization",
+    "inference is not fact",
+    "cognitive autonomy is not operational autonomy"
   ],
   "capabilities": [
     "reasoning",
@@ -31,6 +37,46 @@
     "multi_agent",
     "self_improvement"
   ],
+  "block_1_foundations": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/foundations.py",
+    "identity_source": "core/star_identity.py",
+    "integration": "core/star_core.py",
+    "cognitive_cycle": [
+      "PERCEBER",
+      "IDENTIFICAR",
+      "COMPREENDER",
+      "CONTEXTUALIZAR",
+      "RELACIONAR",
+      "PREVER",
+      "INTERPRETAR",
+      "DECIDIR",
+      "AGIR",
+      "OBSERVAR",
+      "APRENDER"
+    ],
+    "models": ["WORLD MODEL", "HUMAN MODEL", "SOCIAL MODEL", "SELF MODEL", "SITUATION MODEL"],
+    "inviolable_distinctions": [
+      "MODELO ≠ STAR",
+      "CORPO ≠ STAR",
+      "IA ≠ STAR",
+      "PENSAR ≠ AGIR",
+      "CURIOSIDADE ≠ AUTORIZAÇÃO",
+      "INFERÊNCIA ≠ FATO",
+      "AUTONOMIA COGNITIVA ≠ AUTONOMIA OPERACIONAL"
+    ],
+    "foundational_catalog": {
+      "canonical_areas": 20,
+      "lenses_per_area": 50,
+      "canonical_nodes": 1000,
+      "variants_per_node": 1000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand",
+      "prepopulated_fact_rows": 0,
+      "truthfulness_note": "1B are deterministic operational representations of principles, rules, states, limits and combinations; not 1B independently researched facts"
+    },
+    "operational_rule": "cognition never grants operational permission by itself"
+  },
   "cognitive_catalog": {
     "themes": 15,
     "areas_per_theme": 20,
