@@ -1,4 +1,5 @@
 from pathlib import Path
+import unicodedata
 
 from core.language_catalog import ExpressionCatalog
 from core.language_manager import LanguageManager
@@ -59,11 +60,11 @@ def test_seed_dictionary_works_without_network(tmp_path):
 
 def test_unicode_normalization_preserves_non_latin_scripts():
     assert normalize_term("日本語") == "日本語"
-    assert normalize_term("한국어") == "한국어"
+    # NFKD pode representar Hangul como Jamo separados; NFC prova que a forma
+    # normalizada continua canonicamente equivalente e não perde caracteres.
+    assert unicodedata.normalize("NFC", normalize_term("한국어")) == "한국어"
     assert normalize_term("العربية") == "العربية"
     assert normalize_term("Ἑλληνικὴ")
-    # Egyptian Hieroglyphs are Unicode letters and must not disappear from the
-    # local lexical index.
     assert "𓂀" in normalize_term("𓂀")
 
 
