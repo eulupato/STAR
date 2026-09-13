@@ -1,4 +1,5 @@
 from core.religion_magic_knowledge import ReligionMagicKnowledgeEngine
+from core.scientific_graph import ScientificGraphIndexer
 
 
 def test_cultural_engine_has_exact_5m_addressable_contents():
@@ -57,3 +58,18 @@ def test_generic_overviews_are_available():
     engine = ReligionMagicKnowledgeEngine()
     assert "100 tradições" in engine.answer("religiões")
     assert "25 campos" in engine.answer("magia")
+
+
+def test_cultural_graph_source_ids_are_stable():
+    source = "Database of Religious History (University of British Columbia)"
+    assert ScientificGraphIndexer.source_family_node_id(source) == ScientificGraphIndexer.source_family_node_id(source)
+    assert ScientificGraphIndexer.source_family_node_id(source).startswith("culture:source:")
+
+
+def test_create_star_reuses_same_cultural_engine_in_core_and_evolution():
+    from main import create_star
+
+    star = create_star()
+    assert star.religion_magic.stats()["total_addressable_contents"] == 5_000_000
+    assert star.evolution.cultural is star.religion_magic
+    assert "Xintoísmo" in star.process("história do xintoísmo")
