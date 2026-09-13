@@ -1,0 +1,7 @@
+# Capacidades opcionais. Não fazem parte do boot mínimo da STAR.
+# Embeddings neurais multilíngues locais
+sentence-transformers>=3,<6
+# Vetores sobre SQLite; pre-1.0, portanto mantido opcional e atrás de adaptador
+sqlite-vec>=0.1,<1
+# OCR integrado com Tesseract externo
+PyMuPDF>=1.24,<2
