@@ -10,6 +10,7 @@ class Executive:
         chemistry_knowledge=None,
         multidisciplinary_knowledge=None,
         knowledge_expansion=None,
+        curriculum_knowledge=None,
     ):
         self.model_manager = model_manager
         self.internal_knowledge = internal_knowledge
@@ -18,12 +19,21 @@ class Executive:
         self.chemistry_knowledge = chemistry_knowledge
         self.multidisciplinary_knowledge = multidisciplinary_knowledge
         self.knowledge_expansion = knowledge_expansion
+        self.curriculum_knowledge = curriculum_knowledge
 
     def execute(self, request, route):
         text = request.get("input", "")
 
         if self.internal_knowledge:
             answer = self.internal_knowledge.answer(text)
+            if answer:
+                return answer
+
+        # A expansão curricular só antecipa engines estáveis quando a consulta
+        # corresponde a um conceito específico e pede profundidade. Consultas
+        # comuns continuam preservando as prioridades legadas.
+        if self.curriculum_knowledge and self.curriculum_knowledge.prefers(text):
+            answer = self.curriculum_knowledge.answer(text)
             if answer:
                 return answer
 
@@ -50,6 +60,14 @@ class Executive:
 
         if self.multidisciplinary_knowledge:
             answer = self.multidisciplinary_knowledge.answer(text)
+            if answer:
+                return answer
+
+        # Fallback curricular: conceitos novos e específicos que não foram
+        # cobertos pelos engines anteriores continuam acessíveis sem duplicar
+        # a fonte canônica.
+        if self.curriculum_knowledge:
+            answer = self.curriculum_knowledge.answer(text)
             if answer:
                 return answer
 
