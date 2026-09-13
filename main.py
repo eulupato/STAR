@@ -15,7 +15,7 @@ from config import (
 )
 from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
-from core.knowledge_packs import KnowledgePackManager
+from core.m_drive_manager import MDriveManager
 from core.physics_knowledge_150k import PhysicsKnowledgeEngine
 from core.chemistry_knowledge_500k import ChemistryKnowledgeEngine
 from core.multidisciplinary_knowledge import MultidisciplinaryKnowledgeEngine
@@ -38,13 +38,17 @@ def create_star():
     multidisciplinary = MultidisciplinaryKnowledgeEngine()
     knowledge_plus = KnowledgeExpansion15MEngine()
     curriculum = CurriculumKnowledgeEngine()
-    packs = KnowledgePackManager(ROOT / "knowledge" / "packs", auto_removable=True)
+    mdrives = MDriveManager(
+        ROOT / "knowledge" / "m_drives",
+        legacy_root=ROOT / "knowledge" / "packs",
+        auto_removable=True,
+    )
     state = StarState()
     router = Router(internal_knowledge=knowledge)
     executive = Executive(
         model_manager=None,
         internal_knowledge=knowledge,
-        knowledge_packs=packs,
+        knowledge_packs=mdrives,
         physics_knowledge=physics,
         chemistry_knowledge=chemistry,
         multidisciplinary_knowledge=multidisciplinary,
@@ -61,7 +65,8 @@ def create_star():
     star.skills = SkillRegistry()
     star.tools = ToolRegistry()
     star.tools.register("math", safe_math, True, "Cálculo matemático offline")
-    star.packs = packs
+    star.mdrives = mdrives
+    star.packs = mdrives  # alias temporário para compatibilidade interna/externa V1.9
     star.physics = physics
     star.chemistry = chemistry
     star.multidisciplinary = multidisciplinary
@@ -102,14 +107,15 @@ def main():
     print(f"⭐ INICIALIZANDO STAR V{VERSION} — MODO OFFLINE-FIRST")
     print("=" * 60)
     star = create_star()
-    pack_stats = star.packs.stats()
-    storage_stats = star.packs.storage_stats()
+    mdrive_stats = star.mdrives.stats()
+    storage_stats = star.mdrives.storage_stats()
     physics_stats = star.physics.stats()
     chemistry_stats = star.chemistry.stats()
     multi_stats = star.multidisciplinary.stats()
     plus_stats = star.knowledge_plus.stats()
     curriculum_stats = star.curriculum.stats()
     mind_stats = star.mind.stats()
+    evolution_stats = star.evolution.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -149,10 +155,20 @@ def main():
         f"{mind_stats['support_contents_total']} conteúdos operacionais endereçáveis"
     )
     print("🧩 Skills: PREPARADAS")
-    print("🛠️ Ferramentas: ATIVAS (matemática offline + MIND experimental)")
-    print(f"📦 Knowledge Packs detectados: {pack_stats['packs']}")
-    print(f"💾 Packs locais: {storage_stats['local']} | removíveis: {storage_stats['removable']}")
-    print(f"📄 Entradas de conhecimento carregadas: {pack_stats['entries']}")
+    print("🛠️ Ferramentas: ATIVAS (matemática offline + MIND/Evolution alpha)")
+    print(f"💾 M.drives detectados: {mdrive_stats['mdrives']}")
+    print(
+        "💽 M.drives locais: "
+        f"{storage_stats['local']} | legados: {storage_stats['legacy']} | "
+        f"removíveis: {storage_stats['removable']}"
+    )
+    print(f"📄 Entradas M.drive carregadas: {mdrive_stats['entries']}")
+    print(
+        "🛡️ Guardian/Agent: "
+        f"Guardian={evolution_stats['guardian']['status']} | "
+        f"Goal Engine={evolution_stats['goal_engine']['status']} | "
+        f"RAG híbrido={evolution_stats['semantic_rag']['status']}"
+    )
     print("🤖 IA externa:", "ATIVA" if EXTERNAL_AI_ENABLED else "DESATIVADA")
     print("🖥️ Interface: ATIVA")
 
