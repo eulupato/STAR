@@ -1,18 +1,21 @@
 {
   "name": "STAR MIND",
-  "schema": 1,
+  "schema": 2,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
-  "roadmap_alignment": ["V2.0 MIND", "V2.1 Memory", "V2.2 Knowledge Graph", "partial V3 Knowledge", "partial V3.3 Scientific Engine"],
+  "roadmap_alignment": ["V2.0 MIND", "V2.1 Memory", "V2.2 Knowledge Graph", "partial V3 Knowledge", "partial V3.3 Scientific Engine", "partial V7 Guardian", "partial V8 Agent"],
   "principles": [
     "local-first",
     "one STAR Core",
     "same official SQLite database",
     "legacy routing preserved",
     "auditable artifacts instead of hidden chain-of-thought",
-    "no autonomous code modification",
+    "no autonomous sensitive action",
+    "no autonomous repository modification",
     "no invented certainty",
-    "provenance before growth counters"
+    "provenance before growth counters",
+    "derived indexes are rebuildable",
+    "optional heavy backends never define base startup"
   ],
   "capabilities": [
     "reasoning",
@@ -57,33 +60,116 @@
       "cognitive_evaluations",
       "cognitive_research_sources",
       "cognitive_facts",
-      "cognitive_growth_runs"
+      "cognitive_growth_runs",
+      "cognitive_goals",
+      "cognitive_goal_tasks",
+      "cognitive_goal_checkpoints",
+      "cognitive_chunk_embeddings",
+      "guardian_permissions",
+      "guardian_audit_log",
+      "guardian_action_claims",
+      "operator_files"
     ],
-    "document_search": "SQLite FTS5/BM25 when available; textual fallback otherwise"
+    "document_search": "SQLite FTS5/BM25 when available; textual fallback otherwise",
+    "parallel_database_created": false
+  },
+  "cognitive_runtime": {
+    "engine": "core/cognition_runtime.py",
+    "status": "alpha-local",
+    "working_context": true,
+    "salience": true,
+    "model_router": true,
+    "registered_engine_selection_only": true,
+    "automatic_external_model_discovery": false
   },
   "math": {
     "engine": "SymPy",
     "features": ["symbolic simplify", "equation solving", "derivatives", "integrals", "numeric evaluation"]
   },
   "simulation": {
-    "features": ["projectile", "exponential dynamics", "Monte Carlo", "scalar RK4"]
+    "base_engine": "core/labs.py",
+    "advanced_engine": "core/scientific_simulation.py",
+    "features": [
+      "projectile",
+      "exponential dynamics",
+      "Monte Carlo",
+      "scalar RK4",
+      "vector RK4",
+      "two-body orbit 2D",
+      "nonlinear damped pendulum",
+      "heat equation 1D",
+      "wave equation 1D",
+      "RC circuit"
+    ],
+    "validation_guards": ["orbit energy drift", "heat explicit stability", "wave CFL"],
+    "high_fidelity_cfd_fea_spice_numerical_relativity": false
   },
   "code_lab": {
     "status": "restricted-local",
     "isolated_python_flags": ["-I", "-S"],
     "os_grade_sandbox": false,
-    "note": "untrusted code still belongs to future Guardian/Sandbox"
+    "note": "untrusted code still requires future OS-grade Guardian/Sandbox"
   },
   "rag": {
     "formats": ["txt", "md", "csv", "json", "py", "rst", "pdf"],
-    "pdf_engine": "pypdf",
-    "ocr": false,
-    "note": "image-only/scanned PDFs require a future OCR pipeline"
+    "source_of_truth": "existing cognitive document tables + FTS5/BM25",
+    "plain_pdf_engine": "pypdf",
+    "hybrid_semantic_engine": "core/semantic_rag.py",
+    "deterministic_hash_embedding_fallback": true,
+    "sentence_transformers_optional": true,
+    "sqlite_vec_optional": true,
+    "ocr_optional": "PyMuPDF + external Tesseract",
+    "ocr_selective": true,
+    "heavy_models_loaded_at_startup": false
+  },
+  "knowledge_graph": {
+    "store": "existing knowledge_nodes + knowledge_edges",
+    "curriculum_indexer": "core/scientific_graph.py",
+    "canonical_themes": 56,
+    "canonical_concepts": 885,
+    "taxonomy_derived_relations": true,
+    "invented_causal_relations": false,
+    "materialization": "explicit/on-demand"
   },
   "research": {
-    "provider": "Crossref REST API",
+    "engine": "core/research_hub.py",
+    "providers": ["Crossref", "OpenAlex", "arXiv", "PubMed/NCBI"],
     "network_default": false,
-    "scope": "scholarly metadata search; general autonomous web research remains future/partial"
+    "deduplication": "DOI > URL > normalized title",
+    "full_text_download": false,
+    "scope": "scholarly discovery/metadata; methodological evidence evaluation remains a separate verification step"
+  },
+  "goal_engine": {
+    "engine": "core/goal_engine.py",
+    "status": "alpha-local",
+    "persistent_goals": true,
+    "task_dependencies": true,
+    "durable_checkpoints": true,
+    "idempotent_handler_execution": true,
+    "autonomous_sensitive_actions": false
+  },
+  "guardian": {
+    "engine": "core/guardian.py",
+    "status": "alpha-local",
+    "default_deny_unknown": true,
+    "audit_log": true,
+    "confirmation_policy": true,
+    "idempotent_claims": true,
+    "os_grade_sandbox": false,
+    "encrypted_secrets_vault": false
+  },
+  "operator": {
+    "file_index": "core/operator_index.py",
+    "status": "alpha-read-only",
+    "explicit_indexing": true,
+    "background_scan": false,
+    "file_writes_or_deletes": false
+  },
+  "senses": {
+    "observation_contract": "core/senses.py",
+    "fusion_buffer": true,
+    "semantic_scene_understanding": false,
+    "multimodal_semantic_fusion": false
   },
   "user_model": {
     "policy": "explicit and auditable",
