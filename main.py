@@ -20,6 +20,7 @@ from core.physics_knowledge_150k import PhysicsKnowledgeEngine
 from core.chemistry_knowledge_500k import ChemistryKnowledgeEngine
 from core.multidisciplinary_knowledge import MultidisciplinaryKnowledgeEngine
 from core.knowledge_expansion_15m import KnowledgeExpansion15MEngine
+from core.curriculum_knowledge import CurriculumKnowledgeEngine
 from core.router import Router
 from core.skills import SkillRegistry
 from core.star_core import StarCore
@@ -36,6 +37,7 @@ def create_star():
     chemistry = ChemistryKnowledgeEngine()
     multidisciplinary = MultidisciplinaryKnowledgeEngine()
     knowledge_plus = KnowledgeExpansion15MEngine()
+    curriculum = CurriculumKnowledgeEngine()
     packs = KnowledgePackManager(ROOT / "knowledge" / "packs", auto_removable=True)
     state = StarState()
     router = Router(internal_knowledge=knowledge)
@@ -47,6 +49,7 @@ def create_star():
         chemistry_knowledge=chemistry,
         multidisciplinary_knowledge=multidisciplinary,
         knowledge_expansion=knowledge_plus,
+        curriculum_knowledge=curriculum,
     )
     star = StarCore(
         router=router,
@@ -63,6 +66,7 @@ def create_star():
     star.chemistry = chemistry
     star.multidisciplinary = multidisciplinary
     star.knowledge_plus = knowledge_plus
+    star.curriculum = curriculum
     return star
 
 
@@ -104,6 +108,7 @@ def main():
     chemistry_stats = star.chemistry.stats()
     multi_stats = star.multidisciplinary.stats()
     plus_stats = star.knowledge_plus.stats()
+    curriculum_stats = star.curriculum.stats()
     mind_stats = star.mind.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
@@ -129,6 +134,13 @@ def main():
         f"+{plus_stats['added_content_variations_per_domain']} por domínio | "
         f"+{plus_stats['added_content_variations']} novos | "
         f"{plus_stats['combined_content_variations']} conteúdos de conhecimento combinados"
+    )
+    print(
+        "🧬 Currículo canônico: "
+        f"{curriculum_stats['themes']} temas | "
+        f"{curriculum_stats['unique_concepts']} conceitos únicos | "
+        f"{curriculum_stats['deduplicated_mentions']} menções duplicadas consolidadas | "
+        f"{curriculum_stats['total_new_addressable_contents']} conteúdos endereçáveis"
     )
     print(
         "🧠 STAR MIND alpha: "
