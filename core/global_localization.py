@@ -41,18 +41,22 @@ def _row(pt: str, en_us: str, en_gb: str, es: str, it: str, fr: str) -> dict[str
 # Textos fixos de UI/estado são traduzidos deterministicamente, mesmo quando
 # nenhum modelo neural estiver instalado. Textos livres continuam pelo pipeline.
 STATIC_TEXTS = (
+    _row("System for Thought, Analysis and Response", "System for Thought, Analysis and Response", "System for Thought, Analysis and Response", "System for Thought, Analysis and Response", "System for Thought, Analysis and Response", "System for Thought, Analysis and Response"),
     _row("INICIAR", "START", "START", "INICIAR", "AVVIA", "DÉMARRER"),
     _row("CONFIGURAÇÕES", "SETTINGS", "SETTINGS", "AJUSTES", "IMPOSTAZIONI", "PARAMÈTRES"),
     _row("SAIR", "EXIT", "EXIT", "SALIR", "ESCI", "QUITTER"),
     _row("CHAT", "CHAT", "CHAT", "CHAT", "CHAT", "CHAT"),
     _row("MENU", "MENU", "MENU", "MENÚ", "MENU", "MENU"),
     _row("ILHAS", "ISLANDS", "ISLANDS", "ISLAS", "ISOLE", "ÎLES"),
+    _row("SISTEMA", "SYSTEM", "SYSTEM", "SISTEMA", "SISTEMA", "SYSTÈME"),
+    _row("Você", "You", "You", "Tú", "Tu", "Vous"),
     _row("Pergunte algo à STAR...", "Ask STAR something...", "Ask STAR something...", "Pregúntale algo a STAR...", "Chiedi qualcosa a STAR...", "Demandez quelque chose à STAR..."),
     _row("ONLINE", "ONLINE", "ONLINE", "EN LÍNEA", "ONLINE", "EN LIGNE"),
     _row("OFFLINE", "OFFLINE", "OFFLINE", "SIN CONEXIÓN", "OFFLINE", "HORS LIGNE"),
     _row("OUVINDO", "LISTENING", "LISTENING", "ESCUCHANDO", "IN ASCOLTO", "ÉCOUTE"),
     _row("PROCESSANDO", "PROCESSING", "PROCESSING", "PROCESANDO", "ELABORAZIONE", "TRAITEMENT"),
     _row("TRANSCRIVENDO", "TRANSCRIBING", "TRANSCRIBING", "TRANSCRIBIENDO", "TRASCRIZIONE", "TRANSCRIPTION"),
+    _row("FALANDO", "SPEAKING", "SPEAKING", "HABLANDO", "PARLANDO", "PAROLE"),
     _row("PRONTA", "READY", "READY", "LISTA", "PRONTA", "PRÊTE"),
     _row("PENSANDO", "THINKING", "THINKING", "PENSANDO", "PENSANDO", "RÉFLEXION"),
     _row("RESPONDENDO", "RESPONDING", "RESPONDING", "RESPONDIENDO", "RISPONDENDO", "RÉPONSE"),
@@ -68,6 +72,20 @@ STATIC_TEXTS = (
     _row("CLIMA", "WEATHER", "WEATHER", "CLIMA", "METEO", "MÉTÉO"),
     _row("CONFIG", "SETTINGS", "SETTINGS", "AJUSTES", "IMPOSTAZIONI", "PARAMÈTRES"),
     _row("IDIOMA", "LANGUAGE", "LANGUAGE", "IDIOMA", "LINGUA", "LANGUE"),
+    _row("MODO DE FUNCIONAMENTO", "OPERATING MODE", "OPERATING MODE", "MODO DE FUNCIONAMIENTO", "MODALITÀ DI FUNZIONAMENTO", "MODE DE FONCTIONNEMENT"),
+    _row("🎙️ VOZ DA STAR", "🎙️ STAR VOICE", "🎙️ STAR VOICE", "🎙️ VOZ DE STAR", "🎙️ VOCE DI STAR", "🎙️ VOIX DE STAR"),
+    _row("⚡ CONVERSA RÁPIDA", "⚡ FAST CONVERSATION", "⚡ FAST CONVERSATION", "⚡ CONVERSACIÓN RÁPIDA", "⚡ CONVERSAZIONE RAPIDA", "⚡ CONVERSATION RAPIDE"),
+    _row("⭐ VOZ OFICIAL", "⭐ OFFICIAL VOICE", "⭐ OFFICIAL VOICE", "⭐ VOZ OFICIAL", "⭐ VOCE UFFICIALE", "⭐ VOIX OFFICIELLE"),
+    _row("TESTAR VOZ OFICIAL", "TEST OFFICIAL VOICE", "TEST OFFICIAL VOICE", "PROBAR VOZ OFICIAL", "TESTA VOCE UFFICIALE", "TESTER LA VOIX OFFICIELLE"),
+    _row("Pronto para testar.", "Ready to test.", "Ready to test.", "Listo para probar.", "Pronto per il test.", "Prêt pour le test."),
+    _row("Versão", "Version", "Version", "Versión", "Versione", "Version"),
+    _row("Conhecimento local", "Local knowledge", "Local knowledge", "Conocimiento local", "Conoscenza locale", "Connaissance locale"),
+    _row("Modo de voz", "Voice mode", "Voice mode", "Modo de voz", "Modalità voce", "Mode vocal"),
+    _row("Reconhecimento local", "Local recognition", "Local recognition", "Reconocimiento local", "Riconoscimento locale", "Reconnaissance locale"),
+    _row("ATIVO", "ACTIVE", "ACTIVE", "ACTIVO", "ATTIVO", "ACTIF"),
+    _row("PRONTO", "READY", "READY", "LISTO", "PRONTO", "PRÊT"),
+    _row("INSTALAÇÃO PENDENTE", "INSTALLATION PENDING", "INSTALLATION PENDING", "INSTALACIÓN PENDIENTE", "INSTALLAZIONE IN SOSPESO", "INSTALLATION EN ATTENTE"),
+    _row("VOLTAR AO CHAT", "BACK TO CHAT", "BACK TO CHAT", "VOLVER AL CHAT", "TORNA ALLA CHAT", "RETOUR AU CHAT"),
     _row("TOQUE PARA FALAR", "TAP TO SPEAK", "TAP TO SPEAK", "TOCA PARA HABLAR", "TOCCA PER PARLARE", "TOUCHEZ POUR PARLER"),
     _row("SEM SENSOR", "NO SENSOR", "NO SENSOR", "SIN SENSOR", "NESSUN SENSORE", "AUCUN CAPTEUR"),
     _row("SENSOR OFF", "SENSOR OFF", "SENSOR OFF", "SENSOR APAGADO", "SENSORE OFF", "CAPTEUR OFF"),
@@ -209,13 +227,26 @@ _PROTECTED_PATTERNS = (
 )
 
 
+def _alpha_id(index: int) -> str:
+    """Gera identificador somente com letras para não colidir com regex numérica."""
+    value = int(index)
+    chars: list[str] = []
+    while True:
+        value, remainder = divmod(value, 26)
+        chars.append(chr(ord("A") + remainder))
+        if value == 0:
+            break
+        value -= 1
+    return "".join(reversed(chars))
+
+
 def protect_invariants(text: str) -> tuple[str, dict[str, str]]:
     """Substitui trechos que não podem mudar por placeholders estáveis."""
     value = str(text)
     mapping: dict[str, str] = {}
 
     def replace(match: re.Match) -> str:
-        token = f"__STARPROTECTED{len(mapping):04d}__"
+        token = f"__STARPROTECTED{_alpha_id(len(mapping))}__"
         mapping[token] = match.group(0)
         return token
 
