@@ -21,21 +21,14 @@ class StarCore:
         self.internal_knowledge = internal_knowledge
         self.tools = None
         self.skills = None
-        # Compatibilidade de atributo para integrações antigas. O nome público
-        # passou a ser M.drives; nenhuma segunda fonte de verdade é criada.
         self.packs = None
 
         self.weather = WeatherService()
         self.conversation = ConversationEngine(self.weather)
         self.agents = AgentManager(weather_provider=self.weather)
         self.language = LanguageManager()
-
-        # STAR MIND V2 alpha. Usa o mesmo SQLite oficial e só intercepta pedidos
-        # cognitivos explícitos, preservando o roteamento estável da Foundation.
         self.mind = CognitiveSuite()
 
-        # Evolução integrada. Reutiliza as mesmas instâncias entregues ao
-        # Executive para cultura e M.drives, evitando scanners/sistemas paralelos.
         cultural = getattr(self.executive, "religion_magic_knowledge", None)
         mdrive_manager = getattr(self.executive, "knowledge_packs", None)
         self.evolution = IntegratedEvolutionSuite(
@@ -43,6 +36,10 @@ class StarCore:
             cultural_knowledge=cultural,
             mdrive_manager=mdrive_manager,
         )
+        # Interfaces oficiais compartilhadas; não criam sistemas paralelos.
+        self.people = self.evolution.people
+        self.cure = self.evolution.cure
+        self.web = self.evolution.web
 
         self.last_intent = None
         self.user_name = None
@@ -76,6 +73,16 @@ class StarCore:
 
     def _process_portuguese(self, user_input, allow_actions=True):
         request_start = time.perf_counter()
+        normalized_early = " ".join(str(user_input or "").casefold().strip().split())
+
+        if normalized_early in {"modo online", "ativar internet", "ativar modo online", "ficar online", "internet on"}:
+            self.network_enabled = True
+            return "🌐 Modo ONLINE ativado. A internet será usada apenas por capacidades que declaram necessidade de rede."
+        if normalized_early in {"modo offline", "desativar internet", "desativar modo online", "ficar offline", "internet off"}:
+            self.network_enabled = False
+            return "🔒 Modo OFFLINE ativado. A STAR continuará usando somente recursos e conhecimento locais."
+        if normalized_early in {"status internet", "status online", "rede"}:
+            return "🌐 ONLINE autorizado." if self.network_enabled else "🔒 OFFLINE — rede externa desativada."
 
         thematic = parse_thematic_voice(user_input)
         if thematic:
@@ -151,18 +158,14 @@ class StarCore:
 
         normalized = request["input"].strip().lower()
         if (
-            normalized
-            in {"qual e o significado", "qual é o significado", "e o significado", "o significado"}
+            normalized in {"qual e o significado", "qual é o significado", "e o significado", "o significado"}
             and self.last_intent in {"meaning", "full_name", "name"}
         ):
             return self.internal_knowledge.answer("o que significa star")
         if normalized in {"qual meu nome", "qual e meu nome", "qual é meu nome"} and self.user_name:
             return f"Você me disse que seu nome é {self.user_name}. ⭐"
 
-        conversation_response = self.conversation.respond(
-            request["input"],
-            user_name=self.user_name,
-        )
+        conversation_response = self.conversation.respond(request["input"], user_name=self.user_name)
         if conversation_response:
             self.last_intent = "conversation"
             return conversation_response
@@ -172,12 +175,22 @@ class StarCore:
         self.last_intent = route.get("response_type")
         route_time = time.perf_counter() - route_start
         response = self.executive.execute(request=request, route=route)
-        total_time = time.perf_counter() - request_start
 
-        print(
-            f"🧭 Rota: {route['response_type'] or 'local'} | "
-            f"{total_time:.3f}s (router {route_time:.3f}s)"
-        )
+        # Fallback web só acontece quando todos os engines locais declararam que
+        # não têm resposta confiável. Em offline, o mesmo componente pode usar
+        # somente páginas/evidências já aprendidas e armazenadas localmente.
+        unknown = str(response).startswith("Ainda não tenho uma resposta confiável")
+        if unknown:
+            try:
+                learned = self.web.answer(request["input"], network_enabled=self.network_enabled, auto_learn=True)
+                if learned:
+                    response = learned
+                    self.last_intent = "web_knowledge" if self.network_enabled else "learned_local_cache"
+            except (OSError, RuntimeError, ValueError, TimeoutError) as exc:
+                print(f"⚠️ Web Knowledge indisponível: {exc}")
+
+        total_time = time.perf_counter() - request_start
+        print(f"🧭 Rota: {route['response_type'] or 'local'} | {total_time:.3f}s (router {route_time:.3f}s)")
         return response
 
     def _get_identity(self):
