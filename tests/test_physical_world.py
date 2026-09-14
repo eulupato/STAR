@@ -218,7 +218,7 @@ def test_physical_canonical_knowledge_uses_block2_gate_and_block3_storage():
     )
     assert item["namespace"] == "B04"
     assert item["canonical_claim_id"] == canonical["record_id"]
-    categories = {(f["facet_type"], f["facet_value"]) for f in item["facets"]}
+    categories = {(f["facet_type"], f["value"]) for f in item["facets"]}
     assert ("category", "physical_world") in categories
     assert ("category", "mass") in categories
 
