@@ -14,8 +14,10 @@ import re
 from typing import Callable
 
 from core.cognitive_catalog import CognitiveContentCatalog, THEME_ORDER
+from core.epistemics import EpistemicFoundation
 from core.labs import CodeLab, DocumentRAG, MathLab, ResearchAgent, SimulationLab
 from database.cognitive_store import CognitiveStore
+from database.epistemic_store import EpistemicStore
 
 
 def _clean(text: str) -> str:
@@ -194,18 +196,55 @@ class CognitiveSuite:
     CAPABILITIES = ("reasoning", "planning", "memory", "knowledge_graph", "scientific_reasoning", "mathematics", "simulation", "coding", "verification", "document_rag", "research", "projects", "user_model", "multi_agent", "self_improvement")
 
     def __init__(self, store: CognitiveStore | None = None):
-        self.store = store or CognitiveStore(); self.catalog = CognitiveContentCatalog(); self.reasoning = ReasoningEngine(); self.planner = Planner(); self.metacognition = MetacognitionEngine(); self.memory = CognitiveMemory(self.store); self.graph = KnowledgeGraph(self.store); self.science = ScientificReasoner(); self.math = MathLab(); self.simulation = SimulationLab(); self.code = CodeLab(); self.verifier = TruthVerifier(); self.rag = DocumentRAG(self.store); self.research = ResearchAgent(self.store); self.projects = ProjectManager(self.store); self.user_model = UserModel(self.store); self.agents = MultiAgentOrchestrator(); self.self_improvement = SelfImprovementEvaluator(self.store); self.growth = DailyKnowledgeGrowth(self.store)
-        self.agents.register("reasoning", self.reasoning.analyze); self.agents.register("planning", self.planner.plan); self.agents.register("research_plan", self.research.research_plan)
+        base_store = store or CognitiveStore()
+        self.store = EpistemicStore(base_store)
+        self.catalog = CognitiveContentCatalog()
+        self.reasoning = ReasoningEngine()
+        self.planner = Planner()
+        self.metacognition = MetacognitionEngine()
+        self.memory = CognitiveMemory(self.store)
+        self.graph = KnowledgeGraph(self.store)
+        self.science = ScientificReasoner()
+        self.math = MathLab()
+        self.simulation = SimulationLab()
+        self.code = CodeLab()
+        self.verifier = TruthVerifier()
+        self.rag = DocumentRAG(self.store)
+        self.research = ResearchAgent(self.store)
+        self.projects = ProjectManager(self.store)
+        self.user_model = UserModel(self.store)
+        self.agents = MultiAgentOrchestrator()
+        self.self_improvement = SelfImprovementEvaluator(self.store)
+        self.epistemics = EpistemicFoundation(self.store)
+        self.growth = DailyKnowledgeGrowth(self.store)
+        self.agents.register("reasoning", self.reasoning.analyze)
+        self.agents.register("planning", self.planner.plan)
+        self.agents.register("research_plan", self.research.research_plan)
 
     def stats(self) -> dict:
         catalog = self.catalog.stats()
-        return {"status": "experimental-v2", "capabilities": len(self.CAPABILITIES), "capability_keys": list(self.CAPABILITIES), "support_contents_per_capability": catalog["contents_per_theme"], "support_contents_total": catalog["total_content_variations"], "canonical_nodes_total": catalog["themes"] * catalog["canonical_nodes_per_theme"], "store": self.store.stats(), "math": self.math.stats(), "registered_agents": list(self.agents.available()), "autonomous_code_modification": False}
+        return {
+            "status": "experimental-v2",
+            "capabilities": len(self.CAPABILITIES),
+            "capability_keys": list(self.CAPABILITIES),
+            "support_contents_per_capability": catalog["contents_per_theme"],
+            "support_contents_total": catalog["total_content_variations"],
+            "canonical_nodes_total": catalog["themes"] * catalog["canonical_nodes_per_theme"],
+            "store": self.store.stats(),
+            "epistemics": self.epistemics.stats(),
+            "math": self.math.stats(),
+            "registered_agents": list(self.agents.available()),
+            "autonomous_code_modification": False,
+        }
 
     def handle(self, text: str, *, network_enabled: bool = False) -> str | None:
         raw = _clean(text); low = raw.lower()
         if not raw: return None
+        epistemic_action = self.epistemics.handle(raw)
+        if epistemic_action:
+            return epistemic_action
         if low in {"status mind", "status da mind", "status cognitivo", "status da mente"}:
-            s = self.stats(); return (f"🧠 STAR MIND: {s['capabilities']} capacidades cognitivas | {s['support_contents_total']} conteúdos operacionais endereçáveis | FTS5={'ATIVO' if s['store']['fts5_available'] else 'FALLBACK'} | SymPy={'ATIVO' if s['math']['sympy_available'] else 'INDISPONÍVEL'}.")
+            s = self.stats(); return (f"🧠 STAR MIND: {s['capabilities']} capacidades cognitivas | {s['support_contents_total']} conteúdos operacionais endereçáveis | Epistemics=ATIVO | FTS5={'ATIVO' if s['store']['fts5_available'] else 'FALLBACK'} | SymPy={'ATIVO' if s['math']['sympy_available'] else 'INDISPONÍVEL'}.")
         m = re.match(r"^(?:star[, ]+)?(?:planeje|planejar|crie um plano para)\s+(.+)$", raw, re.I)
         if m: return self._format_plan(self.planner.plan(m.group(1)))
         m = re.match(r"^(?:star[, ]+)?(?:raciocine sobre|analise estruturadamente|raciocínio sobre|raciocinio sobre)\s+(.+)$", raw, re.I)
