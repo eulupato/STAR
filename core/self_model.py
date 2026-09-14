@@ -861,16 +861,16 @@ class SelfModel:
         }
 
     def knowledge_snapshot(self) -> dict:
-        namespaces = []
-        for index in range(1, 13):
-            key = f"B{index:02d}"
-            item = self.knowledge.store.get_namespace(key)
-            if item:
-                namespaces.append({
-                    "namespace": key,
-                    "logical_capacity": item.get("logical_capacity"),
-                    "registered": True,
-                })
+        # Consulta a fonte oficial dinamicamente. Evita ranges hardcoded que ficam
+        # obsoletos conforme novos blocos registram namespaces no BLOCO 3.
+        namespaces = [
+            {
+                "namespace": item["namespace"],
+                "logical_capacity": item.get("logical_capacity"),
+                "registered": True,
+            }
+            for item in self.knowledge.store.list_namespaces()
+        ]
         return {
             "registered_namespaces": namespaces,
             "canonical_gate": "BLOCO 2 CANONICAL fact -> BLOCO 3 promotion",

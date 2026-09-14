@@ -1380,6 +1380,57 @@ Escala B14:
 Com B14, B01–B14 oferecem 14B de endereços lógicos independentes. Este bloco
 fortalece a fundação da MIND V2.0, mas não declara V2.0 completa.
 
+
+### BLOCO 15 — Cinco Modelos Internos
+
+O BLOCO 15 integra os cinco modelos conceituais que já existem no BLOCO 1:
+**WORLD MODEL, HUMAN MODEL, SOCIAL MODEL, SELF MODEL e SITUATION MODEL**. A
+implementação central é `core/internal_models.py`, mas os frames continuam sendo
+exatamente `FoundationSuite.models` (`CognitiveModels`); não são criados cinco
+modelos paralelos.
+
+Cada modelo funciona como uma **visão referencial** sobre fontes já existentes:
+
+```text
+WORLD MODEL      -> B04 + B05 + B11
+HUMAN MODEL      -> B06 + B07 + B08 + B10 + B13
+SOCIAL MODEL     -> B08 + B09 + B10 + B13
+SELF MODEL       -> B12 + B13 + B14
+SITUATION MODEL  -> WORLD + HUMAN + SOCIAL + SELF + B12/B13/B14
+```
+
+O mesmo Knowledge Graph conecta as visões. O B15 registra referências e relações,
+não cópias indiscriminadas dos datasets. `record()` e `set_context()` delegam ao
+`CognitiveModels` original do B01, então uma atualização via B15 aparece no mesmo
+frame visto pelo B01.
+
+O SITUATION MODEL é o ponto de cooperação do momento atual. Ele recebe somente um
+contexto bounded: input/objetivo atuais, até 16 entidades, até 16 evidências, até
+8 referências recentes de working memory, resumo de atenção/saliência e uma visão
+do estado/permissões do Self Model. A situação permanece **temporária e revisável**
+e nunca concede autorização operacional.
+
+Cada modelo usa **10 áreas × 5 aspectos × 10 lentes = 500 nós canônicos**. Cada nó
+cruza 10 classes epistêmicas × 10 escopos temporais × 10 contextos × 10 relações ×
+5 níveis de confiança × 4 níveis de saliência × 10 modos de atualização =
+**2.000.000 de variações**.
+
+Portanto:
+- WORLD MODEL: 500 × 2M = **1B**;
+- HUMAN MODEL: **1B**;
+- SOCIAL MODEL: **1B**;
+- SELF MODEL: **1B**;
+- SITUATION MODEL: **1B**;
+- BLOCO 15 total = **5B** de representações lógicas endereçáveis sob demanda.
+
+IDs independentes: `WORLD-B15-*`, `HUMAN-B15-*`, `SOCIAL-B15-*`, `SELF-B15-*` e
+`SITUATION-B15-*`, todos de `0000000001` a `1000000000` em seu próprio subespaço.
+
+Com B01–B14 (14B) + os cinco subespaços do B15 (5B), a arquitetura integrada passa
+a oferecer **19B de endereços lógicos**. Isso não significa 19B de fatos ou linhas
+materializadas. O BLOCO 15 fortalece a fundação dos cinco modelos da MIND, mas não
+declara V2.0 completa e não altera o marco oficial V1.9 FINAL → Watch-first → V2.0.
+
 ### V2.1
 Memory Architecture.
 
