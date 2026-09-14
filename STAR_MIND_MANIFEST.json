@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 16,
+  "schema": 17,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": [
@@ -76,7 +76,11 @@
     "WORLD, HUMAN, SOCIAL, SELF and SITUATION models are cooperating views of one STAR and reuse BLOCO 1 CognitiveModels instead of creating parallel frames",
     "internal models reference shared knowledge, memory and state by provenance/relations instead of indiscriminately copying source datasets",
     "SITUATION MODEL integrates the current bounded context and remains temporary, revisable and non-authorizing",
-    "each BLOCO 15 model has 1B logical address capacity while the five-model block has 5B total logical capacity on-demand"
+    "each BLOCO 15 model has 1B logical address capacity while the five-model block has 5B total logical capacity on-demand",
+    "social inference remains hypothesis/context and never becomes fact merely from behavior or social signals",
+    "intention, deception, lie, secrecy, trust and reputation preserve alternative explanations and uncertainty",
+    "functional empathy supports perspective-taking but is not mind reading",
+    "trust, reputation, persuasion, urgency or social salience never grant operational permission"
   ],
   "capabilities": [
     "reasoning",
@@ -265,7 +269,8 @@
         "B12",
         "B13",
         "B14",
-        "B15"
+        "B15",
+        "B16"
       ],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
@@ -1379,5 +1384,74 @@
     "rejected_records_count_as_new": false,
     "deterministic_variants_count_as_new_facts": false,
     "epistemic_registration": "accepted/valid records are idempotently mirrored into the epistemic ledger as DISCOVERED, without changing legacy growth counts"
+  },
+  "block_16_social_cognition": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/social_cognition.py",
+    "integration": "core/star_core.py",
+    "namespace": "B16",
+    "logical_capacity": 1000000000,
+    "requested_topics": [
+      "theory of mind",
+      "perspective",
+      "expectation",
+      "intention",
+      "deception",
+      "lie",
+      "secret",
+      "trust",
+      "reputation",
+      "cooperation",
+      "competition",
+      "negotiation",
+      "persuasion",
+      "manipulation",
+      "responsibility",
+      "functional empathy",
+      "relationships"
+    ],
+    "reuse": {
+      "psychology_social_cognition": "BLOCO 7 HumanPsychologyFoundations",
+      "society_culture": "BLOCO 9 SocietyCultureFoundations",
+      "social_memory": "BLOCO 13 MemoryContinuity",
+      "attention_selection": "BLOCO 14 AttentionSalience",
+      "social_situation_models": "BLOCO 15 existing SOCIAL/SITUATION MODEL views",
+      "knowledge_graph": "existing knowledge_nodes/knowledge_edges",
+      "parallel_social_model_created": false,
+      "mind_reading_engine_created": false,
+      "new_persistence_table_created": false
+    },
+    "interpretation_policy": {
+      "social_inference_is_fact": false,
+      "isolated_signal_proves_intention": false,
+      "deception_signal_proves_lie": false,
+      "lie_requires_belief_and_intent_evidence": true,
+      "reputation_is_fact": false,
+      "trust_grants_permission": false,
+      "empathy_is_mind_reading": false,
+      "manipulation_analysis_provides_exploitation_tactics": false,
+      "operational_authorization": false
+    },
+    "social_cognition_catalog": {
+      "domains": 10,
+      "branches": 50,
+      "lenses_per_branch": 10,
+      "canonical_nodes": 500,
+      "variants_per_node": 2000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand",
+      "prepopulated_social_situations": 0,
+      "truthfulness_note": "1B are addressable social interpretations and hypotheses, not 1B proven intentions, lies, reputations or personal profiles"
+    },
+    "variant_matrix": {
+      "perspective": 10,
+      "intention_hypothesis": 10,
+      "context": 10,
+      "evidence": 10,
+      "relationship": 10,
+      "temporal_scope": 10,
+      "interpretation_mode": 2,
+      "combinations_per_node": 2000000
+    }
   }
 }

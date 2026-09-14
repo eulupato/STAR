@@ -3,6 +3,7 @@ import time
 from core.agents import AgentManager
 from core.attention_salience import AttentionSalience
 from core.internal_models import IntegratedInternalModels
+from core.social_cognition import SocialCognition
 from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
 from core.everyday_technology import EverydayTechnologyFoundations
@@ -188,6 +189,19 @@ class StarCore:
         )
         self.mind.internal_models = self.internal_models
 
+        # BLOCO 16: interpretação/perspectiva social especializada sobre B07/B09
+        # e os SOCIAL/SITUATION MODEL do B15. Mantém hipóteses alternativas;
+        # intenção, mentira, confiança e reputação nunca viram certeza automática.
+        self.social_cognition = SocialCognition(
+            self.knowledge,
+            human_psychology=self.human_psychology,
+            society_culture=self.society_culture,
+            internal_models=self.internal_models,
+            memory_continuity=self.memory_continuity,
+            attention_salience=self.attention_salience,
+        )
+        self.mind.social_cognition = self.social_cognition
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -299,6 +313,11 @@ class StarCore:
         if internal_models_action:
             self.last_intent = "internal_models"
             return internal_models_action
+
+        social_cognition_action = self.social_cognition.handle(user_input)
+        if social_cognition_action:
+            self.last_intent = "social_cognition"
+            return social_cognition_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
