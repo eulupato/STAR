@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 3,
+  "schema": 4,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": ["V2.0 MIND", "V2.1 Memory", "V2.2 Knowledge Graph", "partial V3 Knowledge", "partial V3.3 Scientific Engine"],
@@ -20,7 +20,9 @@
     "inference is not fact",
     "cognitive autonomy is not operational autonomy",
     "knowledge keeps provenance, evidence, confidence, uncertainty and temporal validity",
-    "canonical status requires evidence and remains revisable"
+    "canonical status requires evidence and remains revisable",
+    "canonical knowledge is grounded in canonical epistemic claims",
+    "indexes and cache accelerate access but are never sources of truth"
   ],
   "capabilities": [
     "reasoning",
@@ -130,6 +132,76 @@
       "truthfulness_note": "1B is an operational traceability space, not 1B independently researched facts or preloaded database rows"
     }
   },
+  "block_3_universal_knowledge": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/universal_knowledge.py",
+    "persistence_extension": "database/universal_knowledge_store.py",
+    "integration": "core/star_core.py",
+    "database": "star.db",
+    "pipeline": [
+      "CANONICAL KNOWLEDGE",
+      "CLAIMS",
+      "EVIDENCE",
+      "KNOWLEDGE GRAPH",
+      "SEMANTIC RELATIONS",
+      "INDEXES",
+      "CACHE",
+      "STAR"
+    ],
+    "components": [
+      "concepts",
+      "entities",
+      "aliases",
+      "relations",
+      "properties",
+      "categories",
+      "taxonomies",
+      "subtopics",
+      "sources",
+      "evidence",
+      "contexts",
+      "events",
+      "rules",
+      "exceptions",
+      "temporality",
+      "provenance",
+      "cross_links"
+    ],
+    "canonical_policy": "a universal canonical object requires a BLOCO 2 claim in CANONICAL state and never promotes DISCOVERED/QUARANTINED/VERIFIED knowledge silently",
+    "reuse": {
+      "claims_and_evidence": "BLOCO 2 epistemic ledger",
+      "knowledge_graph": "existing knowledge_nodes/knowledge_edges",
+      "identity_and_core": "existing STAR Core",
+      "parallel_graph_created": false,
+      "parallel_database_created": false
+    },
+    "indexing": {
+      "exact": ["canonical normalized label", "alias", "facet"],
+      "full_text": "SQLite FTS5/BM25 when available",
+      "fallback": "indexed/textual SQLite lookup",
+      "cache": "bounded in-memory LRU/TTL with invalidation on writes",
+      "cache_is_source_of_truth": false
+    },
+    "deduplication": "stable identity from namespace + knowledge type + normalized canonical label; duplicate canonical registrations reuse the same object and link additional claims",
+    "namespace_capacity": {
+      "per_namespace_addressable_contents": 1000000000,
+      "independent_namespaces": true,
+      "current_namespaces": ["B01", "B02", "B03"],
+      "future_blocks_can_register_without_schema_change": true,
+      "id_storage": "TEXT",
+      "materialization": "on-demand",
+      "truthfulness_note": "each 1B is logical capacity per block namespace, not a billion preloaded rows; current B01-B03 registry therefore represents 3B logical addresses with only materialized knowledge persisted"
+    },
+    "block_3_catalog": {
+      "canonical_areas": 20,
+      "lenses_per_area": 50,
+      "canonical_nodes": 1000,
+      "variants_per_node": 1000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand",
+      "prepopulated_knowledge_rows": 0
+    }
+  },
   "cognitive_catalog": {
     "themes": 15,
     "areas_per_theme": 20,
@@ -161,9 +233,16 @@
       "epistemic_records",
       "epistemic_evidence",
       "epistemic_relations",
-      "epistemic_revisions"
+      "epistemic_revisions",
+      "universal_namespaces",
+      "universal_knowledge",
+      "universal_aliases",
+      "universal_claim_links",
+      "universal_facets",
+      "universal_events"
     ],
-    "document_search": "SQLite FTS5/BM25 when available; textual fallback otherwise"
+    "document_search": "SQLite FTS5/BM25 when available; textual fallback otherwise",
+    "universal_search": "canonical/alias/facet indexes + SQLite FTS5/BM25 when available + bounded invalidatable cache"
   },
   "math": {
     "engine": "SymPy",
