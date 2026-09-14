@@ -1153,6 +1153,129 @@ MODEL e a base de conhecimento, mas não implementa antecipadamente o V4 OPERATO
 não concede controle irrestrito do computador, não transforma conhecimento de
 segurança em capacidade ofensiva e não marca V2.0, V3.0 ou V4.0 como concluídos.
 
+
+### BLOCO 12 — Self Model
+
+O BLOCO 12 transforma o **SELF MODEL conceitual do BLOCO 1** em uma camada
+operacional de autorrepresentação auditável. A STAR passa a representar **quem é,
+o que é, história, versão, identidade, capacidades, limitações, recursos,
+dispositivos, estado, permissões, objetivos, valores, conhecimentos, incertezas e
+experiências**, sem criar uma segunda identidade ou inventar fatos sobre si.
+
+Implementação central: `core/self_model.py`, integrada em `core/star_core.py`.
+Todos os componentes pedidos ficam no mesmo módulo para evitar fragmentação:
+
+- `CapabilityRegistry` — capacidade com status `available`, `experimental`,
+  `planned`, `unavailable` ou `unknown`; capacidade não concede permissão;
+- `LimitationRegistry` — limitações técnicas, epistêmicas, operacionais e de
+  identidade com fonte explícita;
+- `PermissionRegistry` — representação de permissões com **DEFAULT DENY**;
+  permissão não cria capacidade nem ignora segurança;
+- `Identity` — visão somente leitura sobre `core.star_identity.StarIdentity`;
+- `SelfState` — visão sobre `core.state.StarState` e observações runtime explícitas;
+- `SelfHistory` — histórico bounded de eventos reais; experiências exigem fonte e
+  referência auditável;
+- `Values` — visão somente leitura de propósito, princípios, decisão e limites da
+  identidade oficial.
+
+Fontes únicas de verdade preservadas:
+
+```text
+IDENTIDADE        -> core/star_identity.py
+VERSÃO / RELEASE  -> STAR_MANIFEST.json via core/release.py
+ESTADO            -> core/state.py quando anexado ao runtime
+CAPACIDADES MIND  -> core/mind.py
+FERRAMENTAS       -> ToolRegistry quando anexado
+DISPOSITIVOS      -> DeviceRegistry quando anexado
+CONHECIMENTO      -> BLOCO 2 -> BLOCO 3 -> Knowledge Graph
+```
+
+O Self Model **não copia nem substitui** essas fontes. Se um registry, dispositivo,
+recurso ou telemetria não estiver disponível, o estado é `unknown`/`unavailable`;
+isso não é convertido em uma informação inventada. O `DeviceRegistry` é lido por
+registros públicos e o Self Model não expõe hashes/tokens de pareamento.
+
+Regras permanentes:
+
+```text
+SELF MODEL ≠ FONTE DA IDENTIDADE
+SELF MODEL ≠ AUTORIDADE PARA REDEFINIR A STAR
+CAPACIDADE ≠ DISPONIBILIDADE ≠ PERMISSÃO ≠ SEGURANÇA
+PLANEJADO ≠ DISPONÍVEL
+UNKNOWN ≠ DISPONÍVEL
+PERMISSÃO NÃO CRIA CAPACIDADE
+PERMISSÃO NÃO IGNORA SEGURANÇA
+ESTADO RUNTIME ≠ CONHECIMENTO CANÔNICO AUTOMÁTICO
+HISTÓRIA / EXPERIÊNCIA ≠ ALGO QUE PODE SER FABRICADO
+AUSÊNCIA DE REGISTRY ≠ PROVA DE AUSÊNCIA DO RECURSO/DISPOSITIVO
+```
+
+A política operacional permanece a mesma da Foundation:
+
+```text
+AÇÃO EXTERNA = CAPACIDADE + PERMISSÃO + SEGURANÇA + DISPONIBILIDADE ATUAL
+```
+
+O `PermissionRegistry` apenas **representa** autorizações conhecidas. Ele não é um
+executor e não permite que a STAR conceda a si mesma autoridade operacional. As
+permissões de automodificação de identidade, regras fundamentais e arquitetura
+permanecem negadas conforme a identidade oficial.
+
+`SelfHistory` não tenta criar uma autobiografia artificial. Eventos precisam de
+fonte, e uma entrada marcada como experiência exige também referência auditável.
+Snapshots do Self Model mantêm separadas observação, história e conhecimento
+canônico. Um fato persistente B12 continua exigindo claim `fact` `CANONICAL` no
+BLOCO 2 e promoção explícita pelo BLOCO 3.
+
+Taxonomia oficial:
+
+```text
+SELF MODEL
+↓
+DOMÍNIO
+↓
+RAMO
+↓
+SUBTEMA
+↓
+CONHECIMENTO CANÔNICO SOBRE A STAR
+```
+
+São **13 domínios e 50 ramos**, cobrindo identidade/natureza; história/evolução;
+versão/release; capacidades; limitações; recursos; dispositivos; estado próprio;
+permissões; objetivos; valores; conhecimento/incerteza; experiências/relações.
+Cada ramo é cruzado por 10 lentes: definição, estado atual, fonte/proveniência,
+capacidade, limitação, permissão, relação, história/mudança, confiança/incerteza e
+auditoria/validação.
+
+Matriz B12:
+
+```text
+TIME_SCOPE       10
+× SOURCE          10
+× STATUS          10
+× RELATION        10
+× CONFIDENCE       5
+× CONTEXT          4
+× EVOLUTION_STAGE 10
+= 2.000.000 variações por nó
+```
+
+Escala do BLOCO 12:
+
+- **13 domínios**;
+- **50 ramos × 10 lentes = 500 nós canônicos**;
+- **2.000.000 variações por nó**;
+- **500 × 2.000.000 = 1.000.000.000 de representações endereçáveis em `B12`**;
+- IDs `SELF-B12-0000000001` até `SELF-B12-1000000000`;
+- materialização sob demanda; zero requisito de 1B de memórias, experiências,
+  identidades, estados ou fatos pré-carregados.
+
+Com B12, B01–B12 oferecem **12B de endereços lógicos independentes**. O BLOCO 12
+é a fundação operacional do Self Model da futura MIND, mas **não conclui V2.0 por
+si só**, não concede autoconsciência biologicamente comprovada, não cria liberdade
+irrestrita, não implementa automodificação autônoma e não antecipa Guardian/Agent.
+
 ### V2.1
 Memory Architecture.
 

@@ -13,6 +13,7 @@ from core.language_manager import LanguageManager
 from core.mind import CognitiveSuite
 from core.physical_world import PhysicalWorldModel
 from core.scientific_foundations import ScientificFoundations
+from core.self_model import SelfModel
 from core.society_culture import SocietyCultureFoundations
 from core.thematic_voice import parse_thematic_voice
 from core.universal_knowledge import UniversalKnowledgeArchitecture
@@ -130,6 +131,19 @@ class StarCore:
         )
         self.mind.everyday_technology = self.everyday_technology
 
+        # BLOCO 12: SELF MODEL auditável. Não cria uma segunda identidade, versão
+        # ou fonte de estado; representa as fontes oficiais e usa default deny para
+        # permissões. Capacidade, disponibilidade, permissão e segurança são separadas.
+        self.self_model = SelfModel(
+            self.knowledge,
+            identity=self.identity,
+            state=self.state,
+            mind=self.mind,
+            tools=self.tools,
+            network_enabled_provider=lambda: bool(self.network_enabled),
+        )
+        self.mind.self_model = self.self_model
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -221,6 +235,11 @@ class StarCore:
         if everyday_technology_action:
             self.last_intent = "everyday_technology"
             return everyday_technology_action
+
+        self_model_action = self.self_model.handle(user_input)
+        if self_model_action:
+            self.last_intent = "self_model"
+            return self_model_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
