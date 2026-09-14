@@ -4,6 +4,7 @@ from core.agents import AgentManager
 from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
 from core.foundations import FoundationSuite
+from core.human_contexts import HumanContextFoundations
 from core.human_life import HumanLifeFoundations
 from core.human_psychology import HumanPsychologyFoundations
 from core.language_communication import LanguageCommunicationFoundations
@@ -105,6 +106,18 @@ class StarCore:
         )
         self.mind.society_culture = self.society_culture
 
+        # BLOCO 10: contexto humano situado. Reusa B06-B09 e cruza pessoa, idade,
+        # ambiente, relação, necessidade, risco, norma, cultura e contexto sem
+        # converter idade/deficiência/papel em capacidade ou autorização automática.
+        self.human_contexts = HumanContextFoundations(
+            self.knowledge,
+            human_life=self.human_life,
+            human_psychology=self.human_psychology,
+            language_communication=self.language_communication,
+            society_culture=self.society_culture,
+        )
+        self.mind.human_contexts = self.human_contexts
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -186,6 +199,11 @@ class StarCore:
         if society_culture_action:
             self.last_intent = "society_culture"
             return society_culture_action
+
+        human_context_action = self.human_contexts.handle(user_input)
+        if human_context_action:
+            self.last_intent = "human_contexts"
+            return human_context_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:

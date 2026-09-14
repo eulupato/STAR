@@ -1,9 +1,15 @@
 {
   "name": "STAR MIND",
-  "schema": 10,
+  "schema": 11,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
-  "roadmap_alignment": ["V2.0 MIND", "V2.1 Memory", "V2.2 Knowledge Graph", "partial V3 Knowledge", "partial V3.3 Scientific Engine"],
+  "roadmap_alignment": [
+    "V2.0 MIND",
+    "V2.1 Memory",
+    "V2.2 Knowledge Graph",
+    "partial V3 Knowledge",
+    "partial V3.3 Scientific Engine"
+  ],
   "principles": [
     "local-first",
     "one STAR Core",
@@ -45,7 +51,11 @@
     "group membership never determines an individual's trait, belief, behavior or intention",
     "political description does not imply endorsement and contested social claims preserve competing perspectives and evidence",
     "religious belief, mythology and law preserve their own categories plus historical, regional and jurisdictional context",
-    "BLOCO 9 reuses multidisciplinary History, Geography, Psychology/Sociology and Philosophy instead of duplicating them"
+    "BLOCO 9 reuses multidisciplinary History, Geography, Psychology/Sociology and Philosophy instead of duplicating them",
+    "age, disability, role or environment never determine capacity, consent, privacy or responsibility by themselves",
+    "human-context interpretation preserves accessibility, supported autonomy, boundaries and uncertainty",
+    "crisis or emergency raises safety salience but never grants unrestricted operational authorization",
+    "BLOCO 10 reuses BLOCO 6, 7, 8 and 9 instead of duplicating human development, psychology, language or society/culture"
   ],
   "capabilities": [
     "reasoning",
@@ -82,7 +92,13 @@
       "OBSERVAR",
       "APRENDER"
     ],
-    "models": ["WORLD MODEL", "HUMAN MODEL", "SOCIAL MODEL", "SELF MODEL", "SITUATION MODEL"],
+    "models": [
+      "WORLD MODEL",
+      "HUMAN MODEL",
+      "SOCIAL MODEL",
+      "SELF MODEL",
+      "SITUATION MODEL"
+    ],
     "inviolable_distinctions": [
       "MODELO ≠ STAR",
       "CORPO ≠ STAR",
@@ -199,7 +215,11 @@
       "parallel_database_created": false
     },
     "indexing": {
-      "exact": ["canonical normalized label", "alias", "facet"],
+      "exact": [
+        "canonical normalized label",
+        "alias",
+        "facet"
+      ],
       "full_text": "SQLite FTS5/BM25 when available",
       "fallback": "indexed/textual SQLite lookup",
       "cache": "bounded in-memory LRU/TTL with invalidation on writes",
@@ -209,11 +229,22 @@
     "namespace_capacity": {
       "per_namespace_addressable_contents": 1000000000,
       "independent_namespaces": true,
-      "current_namespaces": ["B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09"],
+      "current_namespaces": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B07",
+        "B08",
+        "B09",
+        "B10"
+      ],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
       "materialization": "on-demand",
-      "truthfulness_note": "each 1B is logical capacity per block namespace, not a billion preloaded rows; integrated B01-B09 therefore represent 9B logical addresses with only materialized knowledge persisted"
+      "truthfulness_note": "each 1B is logical capacity per block namespace, not a billion preloaded rows; integrated B01-B10 therefore represent 10B logical addresses with only materialized knowledge persisted"
     },
     "block_3_catalog": {
       "canonical_areas": 20,
@@ -275,7 +306,16 @@
       "causality",
       "prediction"
     ],
-    "support_topics": ["energy", "deformation", "stability", "buoyancy", "flow", "contact", "containment", "risk"],
+    "support_topics": [
+      "energy",
+      "deformation",
+      "stability",
+      "buoyancy",
+      "flow",
+      "contact",
+      "containment",
+      "risk"
+    ],
     "reuse": {
       "canonical_knowledge": "BLOCO 3 UniversalKnowledgeArchitecture",
       "claims_evidence_provenance": "BLOCO 2 epistemic ledger",
@@ -534,9 +574,40 @@
     "integration": "core/star_core.py",
     "namespace": "B08",
     "database": "star.db through BLOCO 3 for materialized canonical knowledge",
-    "requested_languages": ["português", "inglês", "espanhol", "francês", "italiano", "alemão", "mandarim", "japonês"],
+    "requested_languages": [
+      "português",
+      "inglês",
+      "espanhol",
+      "francês",
+      "italiano",
+      "alemão",
+      "mandarim",
+      "japonês"
+    ],
     "future_languages": "extensible; future languages are knowledge/runtime additions, not silently claimed as already operational",
-    "requested_topics": ["gramática", "sintaxe", "semântica", "pragmática", "ortografia", "pontuação", "gírias", "dialetos", "regionalismos", "internetês", "linguagem formal", "linguagem informal", "ironia", "sarcasmo", "humor", "metáfora", "narrativa", "comunicação indireta", "gestos", "voz", "silêncio"],
+    "requested_topics": [
+      "gramática",
+      "sintaxe",
+      "semântica",
+      "pragmática",
+      "ortografia",
+      "pontuação",
+      "gírias",
+      "dialetos",
+      "regionalismos",
+      "internetês",
+      "linguagem formal",
+      "linguagem informal",
+      "ironia",
+      "sarcasmo",
+      "humor",
+      "metáfora",
+      "narrativa",
+      "comunicação indireta",
+      "gestos",
+      "voz",
+      "silêncio"
+    ],
     "reuse": {
       "canonical_knowledge": "BLOCO 3 UniversalKnowledgeArchitecture",
       "claims_evidence_provenance": "BLOCO 2 epistemic ledger",
@@ -550,8 +621,23 @@
       "parallel_graph_created": false
     },
     "runtime_truthfulness": {
-      "knowledge_supported_now": ["Português", "Inglês", "Espanhol", "Francês", "Italiano", "Alemão", "Mandarim", "Japonês"],
-      "operational_locale_families_current": ["Português", "Inglês", "Espanhol", "Francês", "Italiano"],
+      "knowledge_supported_now": [
+        "Português",
+        "Inglês",
+        "Espanhol",
+        "Francês",
+        "Italiano",
+        "Alemão",
+        "Mandarim",
+        "Japonês"
+      ],
+      "operational_locale_families_current": [
+        "Português",
+        "Inglês",
+        "Espanhol",
+        "Francês",
+        "Italiano"
+      ],
       "german_operational_runtime_claimed": false,
       "mandarin_operational_runtime_claimed": false,
       "japanese_operational_runtime_claimed": false,
@@ -601,7 +687,35 @@
     "integration": "core/star_core.py",
     "namespace": "B09",
     "database": "star.db through BLOCO 3 for materialized canonical knowledge",
-    "requested_topics": ["antropologia", "sociologia", "história", "geografia", "política", "economia", "direito", "ética", "filosofia", "religião", "mitologia", "arte", "literatura", "mídia", "educação", "trabalho", "organizações", "dinheiro", "propriedade", "tradições", "costumes", "relações", "família", "amizade", "sociedade", "classes", "instituições"],
+    "requested_topics": [
+      "antropologia",
+      "sociologia",
+      "história",
+      "geografia",
+      "política",
+      "economia",
+      "direito",
+      "ética",
+      "filosofia",
+      "religião",
+      "mitologia",
+      "arte",
+      "literatura",
+      "mídia",
+      "educação",
+      "trabalho",
+      "organizações",
+      "dinheiro",
+      "propriedade",
+      "tradições",
+      "costumes",
+      "relações",
+      "família",
+      "amizade",
+      "sociedade",
+      "classes",
+      "instituições"
+    ],
     "coverage_scope": "societies, eras, regions, systems, concepts, relations and subtopics through deterministic addressable schemas; not exhaustive preloaded claims about every human group",
     "reuse": {
       "canonical_knowledge": "BLOCO 3 UniversalKnowledgeArchitecture",
@@ -653,6 +767,86 @@
       "truthfulness_note": "1B are deterministic addressable sociocultural representations across society, era, region, system, relation and perspective; not 1B independent facts, group profiles or universal claims"
     }
   },
+  "block_10_human_contexts": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/human_contexts.py",
+    "integration": "core/star_core.py",
+    "namespace": "B10",
+    "database": "star.db through BLOCO 3 for materialized canonical knowledge",
+    "requested_topics": [
+      "bebês",
+      "crianças",
+      "adolescentes",
+      "adultos",
+      "idosos",
+      "pessoas com deficiência",
+      "diferentes capacidades",
+      "família",
+      "escola",
+      "trabalho",
+      "espaço público",
+      "espaço privado",
+      "crise",
+      "emergência",
+      "animais",
+      "toque",
+      "distância social",
+      "privacidade",
+      "autonomia",
+      "responsabilidade"
+    ],
+    "reuse": {
+      "canonical_knowledge": "BLOCO 3 UniversalKnowledgeArchitecture",
+      "claims_evidence_provenance": "BLOCO 2 epistemic ledger",
+      "knowledge_graph": "existing knowledge_nodes/knowledge_edges",
+      "human_life": "BLOCO 6 HumanLifeFoundations",
+      "human_psychology": "BLOCO 7 HumanPsychologyFoundations",
+      "language_communication": "BLOCO 8 LanguageCommunicationFoundations",
+      "society_culture": "BLOCO 9 SocietyCultureFoundations",
+      "parallel_context_database_created": false,
+      "parallel_context_graph_created": false
+    },
+    "knowledge_graph_taxonomy": "Contextos Humanos Específicos -> domínio -> ramo -> subtema; root contextualizes B06-B09 roots in the same shared graph",
+    "canonical_policy": "contextual knowledge may persist only after the BLOCO 2 CANONICAL fact gate and BLOCO 3 promotion; situational inference never becomes action authorization automatically",
+    "interpretation_policy": {
+      "age_is_automatic_capacity": false,
+      "disability_is_inability": false,
+      "support_need_is_fixed_from_label": false,
+      "public_space_eliminates_privacy": false,
+      "private_space_eliminates_safety_rules": false,
+      "touch_is_automatically_permitted": false,
+      "social_distance_is_universal_constant": false,
+      "emergency_cancels_autonomy_or_privacy": false,
+      "animal_behavior_is_certain_from_category": false,
+      "contextual_inference_is_operational_authorization": false,
+      "consent_and_boundary_context_required": true,
+      "accessibility_and_supported_autonomy": true,
+      "rule": "IDADE, DEFICIÊNCIA, PAPEL OU AMBIENTE NÃO DETERMINAM SOZINHOS CAPACIDADE, NECESSIDADE, CONSENTIMENTO, PRIVACIDADE OU RESPONSABILIDADE"
+    },
+    "variant_matrix": {
+      "person": 10,
+      "age": 5,
+      "environment": 5,
+      "relation": 5,
+      "need": 4,
+      "risk": 4,
+      "norm": 4,
+      "culture": 5,
+      "context": 5,
+      "combinations_per_node": 2000000
+    },
+    "human_context_catalog": {
+      "domains": 13,
+      "branches": 50,
+      "lenses_per_branch": 10,
+      "canonical_nodes": 500,
+      "variants_per_node": 2000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand",
+      "prepopulated_knowledge_rows": 0,
+      "truthfulness_note": "1B are deterministic addressable human-context representations across person, age, environment, relation, need, risk, norm, culture and context; not 1B personal profiles, diagnoses or universal rules"
+    }
+  },
   "cognitive_catalog": {
     "themes": 15,
     "areas_per_theme": 20,
@@ -699,23 +893,46 @@
     "human_life_foundations": "no new table; canonical B06 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and physiological needs remain non-diagnostic without automatic personal health profiles",
     "human_psychology_foundations": "no new table; canonical B07 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and behavior interpretation remains inferential/non-diagnostic without automatic psychological profiles",
     "language_communication_foundations": "no new table; canonical B08 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and operational translation/localization continues through the existing LanguageManager",
-    "society_culture_foundations": "no new table; canonical B09 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and multidisciplinary social references remain non-canonical until the existing B02/B03 gate is satisfied"
+    "society_culture_foundations": "no new table; canonical B09 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and multidisciplinary social references remain non-canonical until the existing B02/B03 gate is satisfied",
+    "human_context_foundations": "no new table; canonical B10 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and contextual interpretation remains inferential without automatic capacity judgments or action authorization"
   },
   "math": {
     "engine": "SymPy",
-    "features": ["symbolic simplify", "equation solving", "derivatives", "integrals", "numeric evaluation"]
+    "features": [
+      "symbolic simplify",
+      "equation solving",
+      "derivatives",
+      "integrals",
+      "numeric evaluation"
+    ]
   },
   "simulation": {
-    "features": ["projectile", "exponential dynamics", "Monte Carlo", "scalar RK4"]
+    "features": [
+      "projectile",
+      "exponential dynamics",
+      "Monte Carlo",
+      "scalar RK4"
+    ]
   },
   "code_lab": {
     "status": "restricted-local",
-    "isolated_python_flags": ["-I", "-S"],
+    "isolated_python_flags": [
+      "-I",
+      "-S"
+    ],
     "os_grade_sandbox": false,
     "note": "untrusted code still belongs to future Guardian/Sandbox"
   },
   "rag": {
-    "formats": ["txt", "md", "csv", "json", "py", "rst", "pdf"],
+    "formats": [
+      "txt",
+      "md",
+      "csv",
+      "json",
+      "py",
+      "rst",
+      "pdf"
+    ],
     "pdf_engine": "pypdf",
     "ocr": false,
     "note": "image-only/scanned PDFs require a future OCR pipeline"
