@@ -1336,6 +1336,50 @@ fundação integrada da futura **V2.1 Memory Architecture**, mas não declara V2
 completa: políticas maduras de retenção/esquecimento, indexação semântica avançada,
 embeddings e manutenção de memória em grande escala continuam como evolução futura.
 
+
+### BLOCO 14 — Working Memory, Attention e Salience
+
+O BLOCO 14 adiciona seleção cognitiva de relevância sobre a working memory do
+BLOCO 13 e sobre o `StarState` já existente. Não cria uma segunda working memory,
+um segundo estado interno ou uma tabela de atenção. A implementação central é
+`core/attention_salience.py`.
+
+A arquitetura cobre **atenção, saliência, prioridade, objetivos ativos, entidades
+ativas, contexto recente, hipóteses, resultados temporários, riscos e urgência**.
+Objetivos, entidades, hipóteses e resultados temporários são papéis dentro do mesmo
+`WorkingMemoryBuffer` bounded do B13. `attention`, `focus`, `cognitive_load` e
+`energy` são observados em `core.state.StarState`.
+
+O motor de seleção recebe somente uma janela limitada de candidatos, calcula
+relevância e devolve `top-k`. Ele nunca percorre ou carrega o espaço lógico de 1B
+de conteúdos de uma vez. O score combina prioridade explícita, saliência,
+relevância para objetivos e entidades, recência, risco, urgência e confiança.
+Risco/urgência podem elevar a ordem de análise, mas **não concedem permissão nem
+autorização operacional**.
+
+Regras permanentes:
+
+```text
+SALIÊNCIA ≠ VERDADE
+PRIORIDADE ≠ PERMISSÃO
+URGÊNCIA ≠ AUTORIZAÇÃO
+RISCO PODE ELEVAR ATENÇÃO, MAS NÃO IGNORA SEGURANÇA
+SELEÇÃO = INFERÊNCIA COGNITIVA TRANSITÓRIA
+1B DISPONÍVEIS ≠ 1B CARREGADOS SIMULTANEAMENTE
+```
+
+Escala B14:
+- 10 domínios × 5 ramos = 50 ramos;
+- 50 × 10 lentes = 500 nós canônicos;
+- 10 fontes × 10 alinhamentos × 10 recências × 10 riscos × 5 urgências ×
+  4 confianças × 10 estados de atenção = 2.000.000 variações por nó;
+- 500 × 2.000.000 = **1.000.000.000** representações endereçáveis em B14;
+- IDs `ATTN-B14-0000000001` até `ATTN-B14-1000000000`;
+- materialização sob demanda e seleção bounded/top-k.
+
+Com B14, B01–B14 oferecem 14B de endereços lógicos independentes. Este bloco
+fortalece a fundação da MIND V2.0, mas não declara V2.0 completa.
+
 ### V2.1
 Memory Architecture.
 
