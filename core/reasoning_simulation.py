@@ -85,7 +85,7 @@ _BRANCHES = {
         ("minimal_change", "Mudança contrafactual mínima", "intervenção;uma variável;baseline;consequência;comparação"),
         ("alternative_world", "Mundo alternativo", "hipótese;premissa alterada;cenário;resultado;separação"),
         ("counterfactual_causality", "Causalidade contrafactual", "se não;necessidade;suficiência;causa;limites"),
-        ("what_if", "Raciocínio e se", "e se;hipótese;alternativa;consequência;incerteza"),
+        ("what_if", "Raciocínio e se / contrafactuais", "contrafactuais;e se;hipótese;alternativa;consequência;incerteza"),
         ("counterfactual_limits", "Limites contrafactuais", "não observado;modelo;assunção;incerteza;história preservada"),
     ),
     "simulation": (
