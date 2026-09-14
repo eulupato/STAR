@@ -6,6 +6,7 @@ from core.conversation import ConversationEngine
 from core.foundations import FoundationSuite
 from core.language_manager import LanguageManager
 from core.mind import CognitiveSuite
+from core.physical_world import PhysicalWorldModel
 from core.thematic_voice import parse_thematic_voice
 from core.universal_knowledge import UniversalKnowledgeArchitecture
 from core.weather import WeatherService
@@ -45,6 +46,12 @@ class StarCore:
             self.mind.graph,
         )
         self.mind.knowledge = self.knowledge
+
+        # BLOCO 4: world model físico compartilhado. Conhecimento canônico usa
+        # BLOCO 3/B02; objetos de cena são transitórios e não viram fatos por
+        # simples observação. A base científica de Física existente é reutilizada.
+        self.physical_world = PhysicalWorldModel(self.knowledge)
+        self.mind.physical_world = self.physical_world
 
         self.last_intent = None
         self.user_name = None
@@ -97,6 +104,11 @@ class StarCore:
         if foundation_action:
             self.last_intent = "foundations"
             return foundation_action
+
+        physical_action = self.physical_world.handle(user_input)
+        if physical_action:
+            self.last_intent = "physical_world"
+            return physical_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
