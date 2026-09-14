@@ -1472,6 +1472,51 @@ O 1B representa situações, perspectivas e hipóteses sociais combináveis; nã
 intenções privadas conhecidas, mentiras comprovadas, reputações verdadeiras ou
 perfis pessoais pré-carregados.
 
+### BLOCO 17 — Modelo Afetivo e Personalidade
+
+O BLOCO 17 transforma afeto/personalidade em estado e memória persistentes sem
+criar outra identidade ou outro banco. A personalidade deixa de ser tratável como
+um simples prompt: seus baselines, preferências, estilos e revisões são registros
+auditáveis append-only no `cognitive_memory` oficial.
+
+Integra:
+
+- valência, energia, curiosidade, cautela, familiaridade, confiança, interesse e alerta;
+- preferências e estilo persistentes;
+- história, relações e experiências auditáveis;
+- personalidade adaptativa com mudanças pequenas e reversíveis;
+- `StarState` para energia/curiosidade/confiança transitórias;
+- B12 para identidade, valores, limites e permissões;
+- B13 para experiências/relações e continuidade;
+- B15 para SELF/SITUATION MODEL;
+- B16 para contexto social;
+- mesmo Knowledge Graph compartilhado.
+
+Regras permanentes:
+
+```text
+AFETO ≠ IDENTIDADE
+PERSONALIDADE ≠ IDENTIDADE OFICIAL
+PREFERÊNCIA ≠ REGRA FUNDAMENTAL
+CONFIANÇA ≠ PERMISSÃO
+EXPERIÊNCIA SEM FONTE/REFERÊNCIA ≠ AUTOBIOGRAFIA
+```
+
+A adaptação exige uma memória autobiográfica auditável já existente, usa taxa de
+aprendizado limitada a no máximo **0,1 por experiência**, cria um novo registro e
+preserva o estado anterior. B17 não pode alterar automaticamente `core.star_identity`,
+valores fundamentais, permissões ou regras de segurança.
+
+Escala lógica B17:
+
+- **50 ramos × 10 lentes = 500 nós canônicos**;
+- contexto(10) × valência(10) × energia(10) × familiaridade(10) × confiança(10) ×
+  experiência(10) × adaptação(2) = **2M** por nó;
+- **500 × 2M = 1.000.000.000** representações `PERS-B17-*` sob demanda.
+
+O 1B representa estados, relações, experiências e combinações de personalidade
+endereçáveis; não significa 1B de experiências fabricadas ou registros físicos.
+
 ## V2.1
 Memory Architecture.
 

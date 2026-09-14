@@ -215,6 +215,42 @@ class CognitiveStore:
             """), {"id": int(memory_id)}).mappings().first()
         return None if row is None else {**dict(row), "metadata": _load(row["metadata_json"])}
 
+    def memory_by_key(self, memory_key: str, *, kind: str | None = None) -> dict | None:
+        key = str(memory_key or "").strip()
+        if not key:
+            raise ValueError("memory_key vazio")
+        params = {"key": key}
+        kind_clause = ""
+        if kind is not None:
+            params["kind"] = str(kind)
+            kind_clause = " AND kind=:kind"
+        with engine.connect() as conn:
+            row = conn.execute(text(f"""
+                SELECT id, kind, memory_key, content, metadata_json, importance, created_at, updated_at
+                FROM cognitive_memory
+                WHERE memory_key=:key{kind_clause}
+                ORDER BY id DESC LIMIT 1
+            """), params).mappings().first()
+        return None if row is None else {**dict(row), "metadata": _load(row["metadata_json"])}
+
+    def memory_history(self, memory_key: str, *, kind: str | None = None, limit: int = 50) -> list[dict]:
+        key = str(memory_key or "").strip()
+        if not key:
+            raise ValueError("memory_key vazio")
+        params = {"key": key, "limit": max(1, min(int(limit), 500))}
+        kind_clause = ""
+        if kind is not None:
+            params["kind"] = str(kind)
+            kind_clause = " AND kind=:kind"
+        with engine.connect() as conn:
+            rows = conn.execute(text(f"""
+                SELECT id, kind, memory_key, content, metadata_json, importance, created_at, updated_at
+                FROM cognitive_memory
+                WHERE memory_key=:key{kind_clause}
+                ORDER BY id DESC LIMIT :limit
+            """), params).mappings().all()
+        return [{**dict(row), "metadata": _load(row["metadata_json"])} for row in rows]
+
     def memory_counts(self) -> dict:
         with engine.connect() as conn:
             rows = conn.execute(text("""
