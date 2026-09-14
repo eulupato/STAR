@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 18,
+  "schema": 19,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": [
@@ -84,7 +84,11 @@
     "affect and adaptive personality remain distinct from the official STAR identity and fundamental values",
     "persistent personality is represented in audited memory/history rather than existing only as a prompt",
     "personality adaptation is bounded, append-only and linked to auditable experiences; previous states remain recoverable",
-    "preferences, style, confidence, familiarity and affect never grant operational permission"
+    "preferences, style, confidence, familiarity and affect never grant operational permission",
+    "derived conclusions remain inference/hypothesis until independently verified and never rewrite source facts",
+    "simulation and counterfactual worlds remain separate from observations and historical memory",
+    "prediction preserves uncertainty and prediction error preserves both predicted and observed values",
+    "reasoning over large knowledge spaces uses bounded attention/context selection rather than loading all addressable contents"
   ],
   "capabilities": [
     "reasoning",
@@ -275,7 +279,8 @@
         "B14",
         "B15",
         "B16",
-        "B17"
+        "B17",
+        "B18"
       ],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
@@ -1525,6 +1530,70 @@
       "confidence_state": 10,
       "experience_state": 10,
       "adaptation_mode": 2,
+      "combinations_per_node": 2000000
+    }
+  },
+  "block_18_reasoning_simulation": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/reasoning_simulation.py",
+    "integration": "core/star_core.py",
+    "namespace": "B18",
+    "logical_capacity": 1000000000,
+    "requested_components": [
+      "causality",
+      "analogy",
+      "abstraction",
+      "generalization",
+      "exceptions",
+      "counterfactuals",
+      "simulation",
+      "prediction",
+      "prediction error",
+      "risk",
+      "consequences",
+      "reversibility"
+    ],
+    "reuse": {
+      "reasoning_engine": "existing CognitiveSuite.reasoning",
+      "simulation_lab": "existing CognitiveSuite.simulation",
+      "truth_verifier": "existing CognitiveSuite.verifier",
+      "memory": "B13 working memory",
+      "attention": "B14 bounded selection",
+      "models": "B15 internal models",
+      "social": "B16 social cognition",
+      "personality": "B17 affective personality",
+      "new_reasoning_engine_created": false,
+      "new_simulation_lab_created": false,
+      "new_table_created": false
+    },
+    "epistemic_policy": {
+      "inference_is_fact": false,
+      "simulation_is_observation": false,
+      "prediction_is_certainty": false,
+      "counterfactual_is_history": false,
+      "derived_conclusion_mutates_original_facts": false,
+      "canonical_promotion_without_b2_gate": false,
+      "operational_authorization": false
+    },
+    "catalog": {
+      "domains": 10,
+      "branches": 50,
+      "lenses_per_branch": 10,
+      "canonical_nodes": 500,
+      "variants_per_node": 2000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand",
+      "prepopulated_conclusions": 0,
+      "truthfulness_note": "1B are addressable reasoning contexts and representations, not 1B independently proven conclusions"
+    },
+    "variant_matrix": {
+      "context": 10,
+      "evidence_mode": 10,
+      "scale": 10,
+      "uncertainty": 10,
+      "time_horizon": 10,
+      "source_block": 10,
+      "reasoning_mode": 2,
       "combinations_per_node": 2000000
     }
   }

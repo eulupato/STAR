@@ -1517,6 +1517,37 @@ Escala lógica B17:
 O 1B representa estados, relações, experiências e combinações de personalidade
 endereçáveis; não significa 1B de experiências fabricadas ou registros físicos.
 
+### BLOCO 18 — Raciocínio, Causalidade e Simulação
+
+O BLOCO 18 coordena o `ReasoningEngine`, `SimulationLab` e `TruthVerifier` já
+existentes no MIND; não cria motores paralelos. Ele cruza conhecimento de vários
+blocos por seleção bounded do B14 e usa working memory B13 para conclusões derivadas.
+
+Inclui causalidade, analogia, abstração, generalização, exceções, contrafactuais,
+simulação, previsão, prediction error, risco, consequências e reversibilidade.
+
+```text
+INFERÊNCIA ≠ FATO
+SIMULAÇÃO ≠ OBSERVAÇÃO
+PREVISÃO ≠ CERTEZA
+CONTRAFACTUAL ≠ HISTÓRIA REAL
+CONCLUSÃO DERIVADA NÃO REESCREVE PREMISSAS
+```
+
+Contrafactuais e simulações recebem cópias dos estados/premissas e mantêm o mundo
+hipotético separado do baseline. Conclusões novas entram por padrão na working
+memory como `inference`; promoção canônica continua exigindo o gate B02/B03.
+
+A consulta de grandes espaços usa B14: **1B disponível ≠ 1B carregado**.
+
+Escala lógica B18:
+- **50 ramos × 10 lentes = 500 nós canônicos**;
+- contexto(10) × evidência(10) × escala(10) × incerteza(10) × tempo(10) × fonte(10) × modo(2) = **2M** por nó;
+- **500 × 2M = 1.000.000.000** representações `RSN-B18-*` sob demanda.
+
+O 1B representa contextos de raciocínio/simulação combináveis, não conclusões
+independentes já comprovadas ou materializadas.
+
 ## V2.1
 Memory Architecture.
 

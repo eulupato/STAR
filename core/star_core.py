@@ -3,6 +3,7 @@ import time
 from core.agents import AgentManager
 from core.attention_salience import AttentionSalience
 from core.affective_personality import AffectivePersonality
+from core.reasoning_simulation import ReasoningSimulation
 from core.internal_models import IntegratedInternalModels
 from core.social_cognition import SocialCognition
 from core.commands import strip_wake_word
@@ -216,6 +217,22 @@ class StarCore:
         )
         self.mind.affective_personality = self.affective_personality
 
+        # BLOCO 18: coordenação causal/raciocínio/simulação sobre os componentes
+        # já existentes do MIND. Conclusões derivadas permanecem inferências e
+        # fatos/evidências originais nunca são reescritos por simulação.
+        self.reasoning_simulation = ReasoningSimulation(
+            self.knowledge,
+            reasoning=self.mind.reasoning,
+            simulation=self.mind.simulation,
+            verifier=self.mind.verifier,
+            memory_continuity=self.memory_continuity,
+            attention_salience=self.attention_salience,
+            internal_models=self.internal_models,
+            social_cognition=self.social_cognition,
+            affective_personality=self.affective_personality,
+        )
+        self.mind.reasoning_simulation = self.reasoning_simulation
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -337,6 +354,11 @@ class StarCore:
         if personality_action:
             self.last_intent = "affective_personality"
             return personality_action
+
+        reasoning_simulation_action = self.reasoning_simulation.handle(user_input)
+        if reasoning_simulation_action:
+            self.last_intent = "reasoning_simulation"
+            return reasoning_simulation_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
