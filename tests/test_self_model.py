@@ -233,6 +233,10 @@ def test_self_model_devices_and_resources_never_invent_unattached_state_or_expos
     resources = block.resources_snapshot()
     assert resources["hardware_telemetry"] == "unknown"
     assert block.uncertainties_snapshot()
+    knowledge = block.knowledge_snapshot()
+    assert knowledge["registered_namespaces"]
+    assert all(item["registered"] is True for item in knowledge["registered_namespaces"])
+    assert all("materialized" not in item for item in knowledge["registered_namespaces"])
 
     class FakeRegistry:
         def __init__(self):

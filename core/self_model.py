@@ -839,7 +839,7 @@ class SelfModel:
             return {"status": "unknown", "enabled": None, "source": "network provider not attached"}
         try:
             enabled = bool(self.network_enabled_provider())
-        except Exception as exc:  # representation must fail closed, not grant network
+        except (AttributeError, RuntimeError, TypeError, ValueError) as exc:
             return {"status": "unknown", "enabled": None, "source": f"network provider error: {type(exc).__name__}"}
         return {"status": "observed", "enabled": enabled, "source": "STAR Core network_enabled"}
 
@@ -869,7 +869,7 @@ class SelfModel:
                 namespaces.append({
                     "namespace": key,
                     "logical_capacity": item.get("logical_capacity"),
-                    "materialized": True,
+                    "registered": True,
                 })
         return {
             "registered_namespaces": namespaces,
