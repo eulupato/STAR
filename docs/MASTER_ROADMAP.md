@@ -286,10 +286,10 @@ Escala do BLOCO 3:
 - **1.000.000.000 de representações endereçáveis em `B03`**;
 - materialização sob demanda; zero requisito de 1B de linhas físicas.
 
-A arquitetura usa namespaces independentes com IDs textuais. `B01`, `B02`, `B03`
-e `B04` registram cada um capacidade lógica própria de **1B**; blocos futuros podem
-registrar novos namespaces de 1B sem alteração de schema ou colisão de IDs. Apenas
-conhecimento efetivamente materializado ocupa disco, RAM, índices e cache.
+A arquitetura usa namespaces independentes com IDs textuais. `B01`, `B02`, `B03`,
+`B04` e `B05` registram cada um capacidade lógica própria de **1B**; blocos futuros
+podem registrar novos namespaces de 1B sem alteração de schema ou colisão de IDs.
+Apenas conhecimento efetivamente materializado ocupa disco, RAM, índices e cache.
 
 Embeddings locais, Biblioteca completa, Knowledge Packs V2 e o restante da busca
 universal madura continuam pertencendo ao V3.0; o BLOCO 3 apenas estabelece a
@@ -364,6 +364,124 @@ B01–B04 oferecem **4B de endereços lógicos independentes**, mas apenas dados
 realmente materializados ocupam armazenamento. Sensores futuros do V5 poderão
 alimentar observações do world model; robótica futura do V10 poderá consumi-lo,
 sem que este bloco antecipe esses sistemas.
+
+### BLOCO 5 — Fundamentos Científicos
+
+O BLOCO 5 estabelece uma camada científica comum para a STAR, cobrindo profundamente
+**lógica, matemática, estatística, método científico, física, química, biologia,
+geologia, astronomia, climatologia, ecologia, fauna e flora**, com suas vertentes,
+subvertentes e conexões interdisciplinares. É uma fundação experimental integrada
+entre MIND e KNOWLEDGE e **não significa que o Scientific Engine completo do V3.0
+esteja concluído**.
+
+Implementação central: `core/scientific_foundations.py`, integrada em
+`core/star_core.py`. O bloco não cria outro banco, outro ledger, outro Knowledge
+Graph nem um segundo Scientific Engine. Ele reutiliza:
+
+- BLOCO 2 para proveniência, evidências, confiança, incerteza e estado epistêmico;
+- BLOCO 3 para conhecimento canônico, deduplicação, busca, índices e cache;
+- `knowledge_nodes`/`knowledge_edges` como único Knowledge Graph;
+- `CognitiveSuite.science` como `ScientificReasoner` existente;
+- `core.physics_knowledge_150k.py` como referência especializada de Física;
+- `core.chemistry_knowledge_500k.py` como referência especializada de Química;
+- `core.multidisciplinary_knowledge.py` para lógica, matemática, estatística,
+  biologia e domínios terrestres/biológicos compatíveis;
+- `core.curriculum_knowledge.py` como referência científica curricular ampla.
+
+Todos esses provedores são carregados sob demanda. Consultar um provedor não
+transforma sua resposta em conhecimento canônico. Para persistir como conhecimento
+científico oficial no namespace `B05`, o claim precisa seguir o gate do BLOCO 2 e
+chegar como `CANONICAL` ao BLOCO 3.
+
+Taxonomia científica:
+
+```text
+CIÊNCIA
+↓
+DOMÍNIO
+↓
+RAMO
+↓
+SUBRAMO
+↓
+CONHECIMENTO CANÔNICO
+```
+
+Essa taxonomia é materializada somente quando necessária e usa o mesmo Knowledge
+Graph da MIND. Relações científicas, ligações interdisciplinares e conhecimentos
+canônicos B05 permanecem no grafo compartilhado; não existe grafo científico
+paralelo.
+
+O catálogo B05 possui **50 ramos científicos**. Entre suas subvertentes estão,
+sem limitar a expansão futura: lógica formal, teoria da prova/modelos e inferência;
+álgebra, geometria, topologia, cálculo, análise, matemática discreta, equações
+diferenciais, métodos numéricos e otimização; probabilidade, estatística inferencial,
+Bayes, regressão, desenho experimental e causalidade; raciocínio científico,
+metrologia, reprodutibilidade e ética; mecânica, termodinâmica, fluidos, ondas,
+óptica, eletromagnetismo, relatividade, quântica, nuclear e partículas; química
+geral, físico-química, orgânica, inorgânica, analítica, bioquímica, materiais e
+ambiental; biologia molecular/celular, genética, evolução, fisiologia, microbiologia,
+imunologia e biotecnologia; mineralogia, petrologia, geoquímica, tectônica,
+sismologia, vulcanologia, estratigrafia e paleontologia; astronomia planetária,
+estelar, galáctica, observacional e cosmologia; sistema climático, paleoclima,
+variabilidade e mudança climática; ecologia de populações, comunidades,
+ecossistemas, paisagens e conservação; diversidade, anatomia, fisiologia,
+comportamento e conservação animal; diversidade, anatomia, fisiologia, reprodução,
+evolução, ecologia e conservação vegetal.
+
+Cada ramo é cruzado por 20 lentes científicas:
+
+- conceitos;
+- leis;
+- teorias;
+- fórmulas;
+- equações;
+- experimentos;
+- propriedades;
+- unidades;
+- constantes;
+- relações;
+- descobertas;
+- métodos;
+- evidências;
+- exceções;
+- aplicações;
+- problemas;
+- soluções;
+- subdisciplinas;
+- história científica;
+- fronteira científica.
+
+Regras científicas permanentes do bloco:
+
+- fato, hipótese, modelo, teoria, inferência e especulação não são equivalentes;
+- teorias/modelos permanecem revisáveis e devem declarar domínio de validade;
+- fórmulas/equações quantitativas preservam símbolos, unidades, hipóteses e análise
+  dimensional quando aplicável;
+- medições preservam incerteza, calibração e rastreabilidade;
+- evidências preservam origem, independência, força e possibilidade de refutação;
+- resultados de fronteira permanecem separados de consenso estabelecido;
+- experimentos preservam variáveis, controles, protocolo, medição e replicação;
+- nenhuma referência científica local é promovida automaticamente a `CANONICAL`.
+
+Escala do BLOCO 5:
+
+- **13 domínios solicitados**;
+- **50 ramos × 20 lentes = 1.000 nós canônicos**;
+- cada nó combina **10 profundidades × 10 contextos de método × 10 modos de
+  evidência × 10 representações × 10 contextos de aplicação × 10 verificações =
+  1.000.000 de variações**;
+- **1.000 × 1.000.000 = 1.000.000.000 de representações científicas
+  endereçáveis em `B05`**;
+- IDs `SCI-B05-0000000001` até `SCI-B05-1000000000`;
+- materialização sob demanda; zero requisito de 1B de fatos independentes,
+  arquivos ou linhas pré-carregadas.
+
+Com B05, B01–B05 oferecem **5B de endereços lógicos independentes**, enquanto
+somente conhecimento realmente materializado ocupa disco, índices e RAM. A
+Biblioteca científica completa, ingestão documental madura, embeddings locais,
+busca científica universal e o Scientific Engine expandido continuam pertencendo
+ao V3.0.
 
 ### V2.1
 Memory Architecture.
