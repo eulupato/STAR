@@ -5,9 +5,9 @@ foi aprendido, quais evidências sustentam ou contestam uma afirmação, qual a
 confiança, incerteza e validade temporal, e como revisões e contradições alteram
 o estado do conhecimento.
 
-A persistência usa exclusivamente o ``CognitiveStore``/``star.db`` oficial.
-O catálogo de 1B é um espaço lógico materializado sob demanda; não representa
-1B de fatos pré-carregados nem 1B de linhas no banco.
+A persistência usa exclusivamente o ``CognitiveStore``/``star.db`` oficial por
+meio de ``EpistemicStore``. O catálogo de 1B é um espaço lógico materializado
+sob demanda; não representa 1B de fatos pré-carregados nem 1B de linhas no banco.
 """
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from typing import Any
 
 from core.cognitive_catalog import CONTEXTS, FAMILIES, LENSES, STYLES
 from database.cognitive_store import CognitiveStore
+from database.epistemic_store import EpistemicStore
 
 
 EPISTEMIC_KINDS = (
@@ -199,8 +200,7 @@ class EpistemicContentCatalog:
         absolute = int(match.group(1))
         if not 1 <= absolute <= EPISTEMIC_ADDRESSABLE_CONTENTS:
             return None
-        zero = absolute - 1
-        return divmod(zero, EPISTEMIC_VARIANTS_PER_NODE)
+        return divmod(absolute - 1, EPISTEMIC_VARIANTS_PER_NODE)
 
     def get_variant(self, identifier: str) -> dict | None:
         indexes = self._indexes(identifier)
@@ -243,8 +243,8 @@ class EpistemicContentCatalog:
 class EpistemicFoundation:
     """Ledger e regras epistêmicas usando o mesmo armazenamento cognitivo oficial."""
 
-    def __init__(self, store: CognitiveStore | None = None):
-        self.store = store or CognitiveStore()
+    def __init__(self, store: CognitiveStore | EpistemicStore | None = None):
+        self.store = store if isinstance(store, EpistemicStore) else EpistemicStore(store)
         self.catalog = EpistemicContentCatalog()
 
     @staticmethod
@@ -301,11 +301,12 @@ class EpistemicFoundation:
         origin_ref = _clean(origin_ref)
         if not origin_type or not origin_ref:
             raise ValueError("todo conhecimento descoberto exige origem explícita")
+        if source_id and self.store.get_epistemic_source(source_id) is None:
+            raise ValueError("source_id não registrado")
         confidence = _clamp(confidence)
         uncertainty = _clamp(1.0 - confidence if uncertainty is None else uncertainty)
-        record_id = self.stable_record_id(content)
         return self.store.create_epistemic_record(
-            record_id,
+            self.stable_record_id(content),
             content,
             epistemic_kind=epistemic_kind,
             lifecycle_state="DISCOVERED",
@@ -339,7 +340,8 @@ class EpistemicFoundation:
             raise ValueError(f"tipo de evidência inválido: {evidence_type}")
         if stance not in EVIDENCE_STANCES:
             raise ValueError(f"stance inválido: {stance}")
-        if self.store.get_epistemic_record(record_id) is None:
+        record = self.store.get_epistemic_record(record_id)
+        if record is None:
             raise KeyError(record_id)
         if reliability is None and source_id:
             source = self.store.get_epistemic_source(source_id)
@@ -357,6 +359,13 @@ class EpistemicFoundation:
         )
         if recalculate:
             self.recalculate_confidence(record_id)
+        if stance == "refute" and record["lifecycle_state"] in {"VERIFIED", "CANONICAL"}:
+            self.transition(
+                record_id,
+                "QUARANTINED",
+                reason="nova evidência refutadora exige revisão",
+                actor="epistemic-engine",
+            )
         return evidence
 
     def recalculate_confidence(self, record_id: str) -> dict:
@@ -444,8 +453,42 @@ class EpistemicFoundation:
         for record_id in (first_record_id, second_record_id):
             record = self.store.get_epistemic_record(record_id)
             if record and record["lifecycle_state"] in {"VERIFIED", "CANONICAL"}:
-                self.transition(record_id, "QUARANTINED", reason="contradição aberta detectada", actor="epistemic-engine")
+                self.transition(
+                    record_id,
+                    "QUARANTINED",
+                    reason="contradição aberta detectada",
+                    actor="epistemic-engine",
+                )
         return relation
+
+    def resolve_contradiction(
+        self,
+        first_record_id: str,
+        second_record_id: str,
+        *,
+        resolution: str,
+        actor: str = "system",
+    ) -> dict:
+        relation = self.relate(
+            first_record_id,
+            second_record_id,
+            "contradicts",
+            metadata={
+                "resolution": "resolved",
+                "resolution_note": _clean(resolution),
+                "resolved_by": actor,
+                "resolved_at": _now(),
+            },
+        )
+        return relation
+
+    def _open_contradictions(self, record_id: str) -> list[dict]:
+        return [
+            item
+            for item in self.store.epistemic_relations(record_id)
+            if item["relation"] == "contradicts"
+            and item["metadata"].get("resolution", "open") != "resolved"
+        ]
 
     def temporal_status(self, record_or_id: str | dict, *, as_of: str | None = None) -> dict:
         record = self.store.get_epistemic_record(record_or_id) if isinstance(record_or_id, str) else record_or_id
@@ -480,7 +523,6 @@ class EpistemicFoundation:
         if record is None:
             raise KeyError(record_id)
         evidence = self.store.epistemic_evidence(record_id)
-        relations = self.store.epistemic_relations(record_id)
         temporal = self.temporal_status(record)
         reasons = []
         if record["lifecycle_state"] != "VERIFIED":
@@ -499,7 +541,7 @@ class EpistemicFoundation:
             reasons.append("incerteza acima de 0.60")
         if temporal["state"] in {"expired", "stale", "not_yet_valid"}:
             reasons.append(f"validade temporal incompatível: {temporal['state']}")
-        if any(item["relation"] == "contradicts" and item["metadata"].get("resolution", "open") != "resolved" for item in relations):
+        if self._open_contradictions(record_id):
             reasons.append("contradição aberta")
         return {"record_id": record_id, "ready": not reasons, "reasons": reasons}
 
@@ -522,8 +564,11 @@ class EpistemicFoundation:
             return record
         if new_state not in STATE_TRANSITIONS[old_state]:
             raise ValueError(f"transição epistêmica inválida: {old_state} -> {new_state}")
-        if new_state == "VERIFIED" and not self.store.epistemic_evidence(record_id):
-            raise ValueError("VERIFIED exige ao menos uma evidência rastreável")
+        if new_state == "VERIFIED":
+            if not self.store.epistemic_evidence(record_id):
+                raise ValueError("VERIFIED exige ao menos uma evidência rastreável")
+            if self._open_contradictions(record_id):
+                raise ValueError("VERIFIED bloqueado enquanto houver contradição aberta")
         if new_state == "CANONICAL":
             readiness = self.canonical_readiness(record_id)
             if not readiness["ready"]:
@@ -556,12 +601,33 @@ class EpistemicFoundation:
         unknown = set(changes) - allowed
         if unknown:
             raise ValueError("campos de revisão inválidos: " + ", ".join(sorted(unknown)))
+        record = self.store.get_epistemic_record(record_id)
+        if record is None:
+            raise KeyError(record_id)
         normalized = dict(changes)
         if "epistemic_kind" in normalized and normalized["epistemic_kind"] not in EPISTEMIC_KINDS:
             raise ValueError("tipo epistêmico inválido")
         for field in ("confidence", "uncertainty"):
             if field in normalized:
                 normalized[field] = _clamp(normalized[field])
+        material_fields = {
+            "epistemic_kind",
+            "origin_type",
+            "origin_ref",
+            "origin_source_id",
+            "confidence",
+            "uncertainty",
+            "valid_from",
+            "valid_until",
+            "stale_after",
+        }
+        if record["lifecycle_state"] == "CANONICAL" and material_fields.intersection(normalized):
+            self.transition(
+                record_id,
+                "QUARANTINED",
+                reason="revisão material de conhecimento canônico",
+                actor=actor,
+            )
         return self.store.update_epistemic_record(
             record_id,
             normalized,
@@ -592,7 +658,7 @@ class EpistemicFoundation:
             record["epistemic_kind"] != "fact"
             or float(record["confidence"]) < 0.99
             or float(record["uncertainty"]) > 0.01
-            or bool(contradictions)
+            or bool(self._open_contradictions(record_id))
             or record["lifecycle_state"] not in {"VERIFIED", "CANONICAL"}
             or temporal["is_outdated"]
         )
@@ -618,14 +684,12 @@ class EpistemicFoundation:
         }
 
     def stats(self) -> dict:
-        persisted = self.store.epistemic_stats()
-        catalog = self.catalog.stats()
         return {
             "status": "experimental-integrated",
             "lifecycle_states": list(LIFECYCLE_STATES),
             "epistemic_kinds": list(EPISTEMIC_KINDS),
-            "catalog": catalog,
-            "persisted": persisted,
+            "catalog": self.catalog.stats(),
+            "persisted": self.store.epistemic_stats(),
         }
 
     def handle(self, text: str) -> str | None:
@@ -643,7 +707,11 @@ class EpistemicFoundation:
         item = self.catalog.get_variant(raw.upper())
         if item:
             return f"🔎 {item['id']} — {item['area_label']} / {item['lens_label']}\n{item['prompt']}"
-        match = re.fullmatch(r"(?:rastreie|rastrear|trace|epistemic status|status epistemico de|status epistêmico de)\s+(KNOW-[A-F0-9]{20})", raw, re.I)
+        match = re.fullmatch(
+            r"(?:rastreie|rastrear|trace|epistemic status|status epistemico de|status epistêmico de)\s+(KNOW-[A-F0-9]{20})",
+            raw,
+            re.I,
+        )
         if match:
             try:
                 trace = self.trace(match.group(1).upper())
