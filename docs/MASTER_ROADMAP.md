@@ -287,7 +287,7 @@ Escala do BLOCO 3:
 - materialização sob demanda; zero requisito de 1B de linhas físicas.
 
 A arquitetura usa namespaces independentes com IDs textuais. `B01`, `B02`, `B03`,
-`B04`, `B05`, `B06`, `B07` e `B08` registram cada um capacidade lógica própria de
+`B04`, `B05`, `B06`, `B07`, `B08` e `B09` registram cada um capacidade lógica própria de
 **1B**; blocos futuros podem registrar novos namespaces de 1B sem alteração de
 schema ou colisão de IDs. Apenas conhecimento efetivamente materializado ocupa
 disco, RAM, índices e cache.
@@ -823,6 +823,150 @@ conhecimento realmente materializado ocupa disco, índices e RAM. O BLOCO 8 ampl
 a base de linguagem/comunicação e integra conhecimento ao runtime atual, mas não
 marca o futuro Language Engine completo, tradução offline universal, EXPRESSION
 madura ou V2.0 como concluídos; esses sistemas continuam em seus marcos próprios.
+
+### BLOCO 9 — Sociedade e Cultura
+
+O BLOCO 9 organiza uma camada social e cultural geral para a STAR, cobrindo
+**antropologia, sociologia, história, geografia, política, economia, direito, ética,
+filosofia, religião, mitologia, arte, literatura, mídia, educação, trabalho,
+organizações, dinheiro, propriedade, tradições, costumes, relações, família,
+amizade, sociedade, classes e instituições**. A arquitetura permite comparar
+sociedades, épocas, regiões, sistemas, conceitos, relações e subtemas sem pressupor
+que uma sociedade ou cultura seja homogênea, estática ou universal.
+
+Implementação central: `core/society_culture.py`, integrada em
+`core/star_core.py`. O BLOCO 9 reutiliza:
+
+- BLOCO 2 para proveniência, evidência, confiança, incerteza e estado epistêmico;
+- BLOCO 3 para conhecimento canônico, deduplicação, busca, índices e cache;
+- `knowledge_nodes`/`knowledge_edges` como único Knowledge Graph;
+- BLOCO 7 como contexto psicológico humano, sem reduzir sociedade a psicologia;
+- BLOCO 8 como contexto linguístico/comunicacional, sem reduzir cultura a idioma;
+- `core.multidisciplinary_knowledge.py` para as bases já existentes de História,
+  Geografia, Psicologia/Sociologia e Filosofia, carregadas sob demanda;
+- o mesmo `star.db`, sem tabela, banco, grafo ou Social Engine paralelo.
+
+A reutilização multidisciplinar é somente referência: uma resposta já existente de
+História, Geografia, Sociologia ou Filosofia **não vira automaticamente conhecimento
+canônico B09**. Conhecimento persistente em `B09` continua exigindo claim `fact`
+`CANONICAL` no BLOCO 2 e promoção explícita pelo BLOCO 3.
+
+Taxonomia oficial:
+
+```text
+SOCIEDADE E CULTURA
+↓
+DOMÍNIO
+↓
+RAMO
+↓
+SUBTEMA
+↓
+CONHECIMENTO CANÔNICO GERAL
+```
+
+A raiz B09 é ligada às raízes de Mente Humana/Psicologia (B07) e Linguagem e
+Comunicação (B08) como relações contextuais. Essas conexões não fundem os blocos:
+comportamento individual, linguagem e estrutura social continuam conceitos
+separados, relacionados pelo mesmo Knowledge Graph.
+
+Os 13 domínios e 50 ramos cobrem profundamente:
+
+- antropologia cultural/social, etnografia, parentesco, reciprocidade, rituais,
+  costumes, tradições, cultura material, tecnologia, produção e consumo;
+- sociologia, estrutura social, papéis, status, socialização, identidade,
+  instituições, ação coletiva e movimentos sociais;
+- períodos e processos históricos, continuidade/ruptura, causalidade,
+  historiografia, memória, fontes, arqueologia, história global, rotas, impérios,
+  diásporas, colonização e circulação;
+- geografia humana, política, econômica e cultural, território, fronteiras,
+  população, mobilidade, urbanização, regiões e paisagens;
+- sistemas políticos, Estado, governo, administração, poder, autoridade,
+  legitimidade, cidadania, políticas públicas, diplomacia, cooperação e conflito;
+- sistemas econômicos, produção, distribuição, dinheiro, moeda, crédito, bancos,
+  preços, finanças, propriedade, posse, bens comuns, terra, recursos, trabalho,
+  salários, renda e relações trabalhistas;
+- sistemas jurídicos, direitos, deveres, garantias, tribunais, procedimentos,
+  precedentes, direito costumeiro, pluralismo jurídico e conflitos normativos;
+- ética, moral, virtude, dever, consequências, responsabilidade, justiça,
+  liberdade, igualdade, filosofia política/social, epistemologia e visões de mundo;
+- religiões, tradições religiosas, crenças, doutrinas, rituais, instituições,
+  textos, secularização, mitologias, cosmologias, deuses, heróis e símbolos;
+- artes visuais, arquitetura, música, teatro, dança, performance, literatura,
+  poesia, romance, oralidade, mídia, imprensa, rádio, televisão, cinema, internet,
+  plataformas, cultura popular e indústrias culturais;
+- educação, escolas, universidades, currículos, alfabetização, trabalho,
+  profissões, ofícios, organizações, burocracias, hierarquias, empresas, sindicatos
+  e mercados profissionais;
+- família, parentesco, casamento, descendência, cuidado, herança, amizade,
+  confiança, reciprocidade, redes, comunidades, vizinhanças e associações;
+- classes, estratificação, riqueza, renda, mobilidade, desigualdade, poder,
+  privilégio, exclusão e mudança institucional/social.
+
+Cada ramo é cruzado por 20 lentes: conceito; origens/história; estrutura;
+atores/agência; instituições; normas/valores; práticas/costumes; cultura material;
+economia/recursos; poder/governança; direito/regras; relações/redes;
+geografia/região; tempo/mudança; comparação; evidências/fontes;
+perspectivas/debates; classes/desigualdades; impactos/experiência; limites/contexto.
+
+Regras permanentes de interpretação:
+
+```text
+SOCIEDADE / CULTURA ≠ ESSÊNCIA FIXA OU HOMOGÊNEA
+GRUPO ≠ TRAÇO INDIVIDUAL
+PRESENTE ≠ PADRÃO UNIVERSAL PARA TODA ÉPOCA
+DESCRIÇÃO POLÍTICA ≠ ENDOSSO
+CRENÇA RELIGIOSA ≠ FATO EMPÍRICO POR PADRÃO
+MITOLOGIA ≠ HIERARQUIA DE RELIGIÕES
+DIREITO ≠ REGRA SEM ÉPOCA OU JURISDIÇÃO
+AFIRMAÇÃO CONTESTADA → EXIGE FONTES E PERSPECTIVAS CONCORRENTES
+```
+
+`contextualize_social_statement` produz `inference` contextual, nunca uma conclusão
+universal automática. Ele exige, quando relevantes, definição da sociedade/grupo,
+época, região, sistema, perspectiva, diversidade interna, distinção entre norma e
+prática, análise de autoria/interesses/silêncios das fontes e separação entre
+descrição empírica e julgamento normativo.
+
+Matriz social-cultural:
+
+```text
+SOCIEDADE     10
+× ÉPOCA       10
+× REGIÃO      10
+× SISTEMA     10
+× RELAÇÃO     10
+× PERSPECTIVA 10
+= 1.000.000 variações por nó
+```
+
+Os eixos incluem comunidades locais, Estados, impérios, diásporas, sociedades
+indígenas, agrárias, industriais e pós-industriais; da pré-história ao presente e
+comparações de longa duração; regiões africanas, asiáticas, europeias, americanas,
+do Oriente Médio/Norte da África, Oceania/Pacífico, Ártico e contextos globais;
+sistemas de parentesco, políticos, econômicos, jurídicos, religiosos,
+educacionais, trabalhistas, de estratificação e mídia; relações de cooperação,
+conflito, troca, autoridade, parentesco, amizade, competição, solidariedade,
+dependência e negociação; e perspectivas êmicas, éticas, históricas, comparativas,
+institucionais, materiais, simbólicas, econômicas, jurídico-normativas e críticas.
+
+Escala do BLOCO 9:
+
+- **13 domínios**;
+- **50 ramos × 20 lentes = 1.000 nós canônicos**;
+- cada nó possui **10 sociedades × 10 épocas × 10 regiões × 10 sistemas ×
+  10 relações × 10 perspectivas = 1.000.000 de variações**;
+- **1.000 × 1.000.000 = 1.000.000.000 de representações endereçáveis em `B09`**;
+- IDs `SOC-B09-0000000001` até `SOC-B09-1000000000`;
+- materialização sob demanda; zero requisito de 1B de fatos independentes sobre
+  grupos, perfis culturais, arquivos ou linhas pré-carregadas.
+
+Com B09, B01–B09 oferecem **9B de endereços lógicos independentes**. Somente
+conhecimento realmente materializado ocupa disco, índices e RAM. O BLOCO 9 amplia
+o SOCIAL MODEL e a base universal de conhecimento, mas não cria um sistema de
+opinião política da STAR, não declara leis atuais sem fonte/época/jurisdição, não
+substitui pesquisa histórica/antropológica e não marca V2.0, V3.0 ou futuros
+sistemas sociais online como concluídos.
 
 ### V2.1
 Memory Architecture.

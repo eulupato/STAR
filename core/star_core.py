@@ -11,6 +11,7 @@ from core.language_manager import LanguageManager
 from core.mind import CognitiveSuite
 from core.physical_world import PhysicalWorldModel
 from core.scientific_foundations import ScientificFoundations
+from core.society_culture import SocietyCultureFoundations
 from core.thematic_voice import parse_thematic_voice
 from core.universal_knowledge import UniversalKnowledgeArchitecture
 from core.weather import WeatherService
@@ -94,6 +95,16 @@ class StarCore:
         )
         self.mind.language_communication = self.language_communication
 
+        # BLOCO 9: sociedade e cultura. Integra História, Geografia, Sociologia e
+        # Filosofia já existentes como referências e amplia a taxonomia social
+        # sobre o mesmo B02/B03/Knowledge Graph, sem banco ou grafo paralelo.
+        self.society_culture = SocietyCultureFoundations(
+            self.knowledge,
+            human_psychology=self.human_psychology,
+            language_communication=self.language_communication,
+        )
+        self.mind.society_culture = self.society_culture
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -170,6 +181,11 @@ class StarCore:
         if language_communication_action:
             self.last_intent = "language_communication"
             return language_communication_action
+
+        society_culture_action = self.society_culture.handle(user_input)
+        if society_culture_action:
+            self.last_intent = "society_culture"
+            return society_culture_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
