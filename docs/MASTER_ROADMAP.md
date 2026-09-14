@@ -1548,6 +1548,54 @@ Escala lógica B18:
 O 1B representa contextos de raciocínio/simulação combináveis, não conclusões
 independentes já comprovadas ou materializadas.
 
+### BLOCO 19 — Planejamento e Tomada de Decisão
+
+O BLOCO 19 evolui o `CognitiveSuite.planner` existente; não cria `PlannerV2` ou
+outro motor de planejamento. Ele coordena o pipeline auditável:
+
+```text
+OBJETIVO
+→ ESTADO ATUAL
+→ ESTADO DESEJADO
+→ OBSTÁCULOS
+→ OPÇÕES
+→ SIMULAÇÃO
+→ RISCO
+→ PLANO
+→ DECISÃO
+→ VERIFICAÇÃO
+```
+
+Integra B13 para memória de trabalho/decisão, B14 para contexto bounded, B15 para
+modelos internos, B18 para simulação/risco e o `OperationalBoundary` do B01.
+
+Regras permanentes:
+
+```text
+PLANO ≠ AÇÃO
+DECISÃO COGNITIVA ≠ EXECUÇÃO
+RECOMENDAÇÃO ≠ PERMISSÃO
+PRIORIDADE ≠ PERMISSÃO
+RISCO ≠ PERMISSÃO
+```
+
+B19 nunca executa a opção escolhida. Mesmo quando `permission + capability +
+safety_ok` tornam uma intenção elegível no `OperationalBoundary`, a resposta do
+B19 continua `execution_performed=False`; execução pertence a uma camada separada.
+
+Decisões persistentes usam o `cognitive_memory` oficial com `kind=decision` e
+referência auditável, preservando B13 sem adicionar um 11º tipo central ao catálogo
+de memória. O Knowledge Graph compartilhado relaciona registros de decisão.
+
+Escala lógica B19:
+
+- **50 ramos × 10 lentes = 500 nós canônicos**;
+- contexto(10) × restrição(10) × incerteza(10) × tempo(10) × risco(10) × fonte(10) × modo(2) = **2M** por nó;
+- **500 × 2M = 1.000.000.000** representações `PLAN-B19-*` sob demanda.
+
+O 1B representa contextos, relações e estados de planejamento endereçáveis; não
+significa 1B de planos pré-calculados, decisões materializadas ou ações autorizadas.
+
 ## V2.1
 Memory Architecture.
 

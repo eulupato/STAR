@@ -4,6 +4,7 @@ from core.agents import AgentManager
 from core.attention_salience import AttentionSalience
 from core.affective_personality import AffectivePersonality
 from core.reasoning_simulation import ReasoningSimulation
+from core.planning_decision import PlanningDecision
 from core.internal_models import IntegratedInternalModels
 from core.social_cognition import SocialCognition
 from core.commands import strip_wake_word
@@ -233,6 +234,20 @@ class StarCore:
         )
         self.mind.reasoning_simulation = self.reasoning_simulation
 
+        # BLOCO 19: evolução integrada do Planner oficial. Coordena estado,
+        # opções, B18 simulação/risco, B14 contexto bounded e B01 boundary.
+        # Planejamento e decisão nunca executam ações automaticamente.
+        self.planning_decision = PlanningDecision(
+            self.knowledge,
+            planner=self.mind.planner,
+            reasoning_simulation=self.reasoning_simulation,
+            memory_continuity=self.memory_continuity,
+            attention_salience=self.attention_salience,
+            internal_models=self.internal_models,
+            operational_boundary=self.foundations.boundary,
+        )
+        self.mind.planning_decision = self.planning_decision
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -359,6 +374,11 @@ class StarCore:
         if reasoning_simulation_action:
             self.last_intent = "reasoning_simulation"
             return reasoning_simulation_action
+
+        planning_decision_action = self.planning_decision.handle(user_input)
+        if planning_decision_action:
+            self.last_intent = "planning_decision"
+            return planning_decision_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
