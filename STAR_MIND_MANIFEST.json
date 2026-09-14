@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 13,
+  "schema": 14,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": [
@@ -63,7 +63,12 @@
     "identity remains sourced from core.star_identity.py and release/version remains sourced from STAR_MANIFEST.json",
     "capability, availability, permission and safety are distinct; operational permissions use default deny unless explicitly represented",
     "self history and experiences require auditable sources and are never fabricated to fill gaps",
-    "unknown or unavailable self-state, device, resource and capability information remains explicit instead of being invented"
+    "unknown or unavailable self-state, device, resource and capability information remains explicit instead of being invented",
+    "memory is contextual evidence and never becomes fact merely because it was stored or recalled",
+    "working memory is bounded and transient by default; persistence requires an explicit memory write",
+    "memory consolidation preserves source memories and records derivation instead of silently overwriting history",
+    "autobiographical memory and experiences require auditable source/reference and are never fabricated for continuity",
+    "people memory does not infer sensitive attributes automatically and memory retrieval never grants operational authorization"
   ],
   "capabilities": [
     "reasoning",
@@ -249,12 +254,13 @@
         "B09",
         "B10",
         "B11",
-        "B12"
+        "B12",
+        "B13"
       ],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
       "materialization": "on-demand",
-      "truthfulness_note": "each 1B is logical capacity per block namespace, not a billion preloaded rows; integrated B01-B12 therefore represent 12B logical addresses with only materialized knowledge persisted"
+      "truthfulness_note": "each 1B is logical capacity per block namespace, not a billion preloaded rows; integrated B01-B13 therefore represent 13B logical addresses with only materialized knowledge persisted"
     },
     "block_3_catalog": {
       "canonical_areas": 20,
@@ -1035,6 +1041,77 @@
       "truthfulness_note": "1B are deterministic addressable self representations across time, source, status, relation, confidence, context and evolution; not 1B fabricated memories, experiences, identities or system states"
     }
   },
+  "block_13_memory_continuity": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/memory_continuity.py",
+    "integration": "core/star_core.py",
+    "namespace": "B13",
+    "database": "same star.db through existing cognitive_memory plus BLOCO 3 for canonical memory knowledge",
+    "memory_types": [
+      "working memory",
+      "episodic memory",
+      "semantic memory",
+      "conversation memory",
+      "project memory",
+      "people memory",
+      "object memory",
+      "social memory",
+      "autobiographical memory",
+      "temporal memory"
+    ],
+    "memory_dimensions": [
+      "events",
+      "entities",
+      "dates",
+      "relations",
+      "locations",
+      "importance",
+      "context",
+      "experience",
+      "sources",
+      "meaning"
+    ],
+    "reuse": {
+      "persistent_memory": "existing cognitive_memory table via CognitiveMemory/CognitiveStore",
+      "working_memory": "bounded transient WorkingMemoryBuffer",
+      "knowledge_graph": "existing knowledge_nodes/knowledge_edges",
+      "projects": "existing CognitiveSuite.projects",
+      "self_history": "BLOCO 12 SelfHistory when explicitly imported",
+      "canonical_knowledge": "BLOCO 2 -> BLOCO 3",
+      "parallel_database_created": false,
+      "parallel_graph_created": false
+    },
+    "continuity_policy": {
+      "working_memory_persistent_by_default": false,
+      "memory_equals_fact": false,
+      "retrieval_equals_truth": false,
+      "consolidation_overwrites_sources": false,
+      "autobiographical_experience_may_be_fabricated": false,
+      "autobiographical_experience_requires_reference": true,
+      "memory_grants_operational_authorization": false
+    },
+    "memory_catalog": {
+      "memory_types": 10,
+      "branches": 50,
+      "lenses_per_branch": 10,
+      "canonical_nodes": 500,
+      "variants_per_node": 2000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand",
+      "prepopulated_memory_rows": 0,
+      "truthfulness_note": "1B are deterministic addressable memory/context/retrieval/consolidation representations, not 1B fabricated memories or physical database rows"
+    },
+    "variant_matrix": {
+      "retention_scope": 10,
+      "retrieval_mode": 10,
+      "relation_mode": 10,
+      "temporal_scope": 10,
+      "source_quality": 5,
+      "context_scope": 4,
+      "consolidation_stage": 10,
+      "combinations_per_node": 2000000
+    }
+  },
   "cognitive_catalog": {
     "themes": 15,
     "areas_per_theme": 20,
@@ -1084,7 +1161,8 @@
     "society_culture_foundations": "no new table; canonical B09 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and multidisciplinary social references remain non-canonical until the existing B02/B03 gate is satisfied",
     "human_context_foundations": "no new table; canonical B10 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and contextual interpretation remains inferential without automatic capacity judgments or action authorization",
     "everyday_technology_foundations": "no new table; canonical B11 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and situational technical interpretation does not imply live state, access or operational authorization",
-    "self_model": "no new table; canonical B12 self knowledge persists through universal_knowledge and the shared Knowledge Graph; runtime Capability/Limitation/Permission registries, Self State views and bounded Self History remain non-canonical unless explicitly promoted through B02/B03"
+    "self_model": "no new table; canonical B12 self knowledge persists through universal_knowledge and the shared Knowledge Graph; runtime Capability/Limitation/Permission registries, Self State views and bounded Self History remain non-canonical unless explicitly promoted through B02/B03",
+    "memory_continuity": "no parallel memory database/table; B13 extends the existing cognitive_memory store, uses a bounded transient working buffer, and stores memory relations/consolidation provenance in the shared Knowledge Graph; canonical memory knowledge still requires B02/B03"
   },
   "math": {
     "engine": "SymPy",

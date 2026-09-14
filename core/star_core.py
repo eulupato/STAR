@@ -10,6 +10,7 @@ from core.human_life import HumanLifeFoundations
 from core.human_psychology import HumanPsychologyFoundations
 from core.language_communication import LanguageCommunicationFoundations
 from core.language_manager import LanguageManager
+from core.memory_continuity import MemoryContinuity
 from core.mind import CognitiveSuite
 from core.physical_world import PhysicalWorldModel
 from core.scientific_foundations import ScientificFoundations
@@ -144,6 +145,18 @@ class StarCore:
         )
         self.mind.self_model = self.self_model
 
+        # BLOCO 13: memória e continuidade. Evolui CognitiveMemory/cognitive_memory
+        # e usa o mesmo Knowledge Graph; working memory é bounded/transitória e
+        # autobiografia só aceita fontes/referências auditáveis.
+        self.memory_continuity = MemoryContinuity(
+            self.knowledge,
+            memory=self.mind.memory,
+            graph=self.mind.graph,
+            projects=self.mind.projects,
+            self_model=self.self_model,
+        )
+        self.mind.memory_continuity = self.memory_continuity
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -240,6 +253,11 @@ class StarCore:
         if self_model_action:
             self.last_intent = "self_model"
             return self_model_action
+
+        memory_action = self.memory_continuity.handle(user_input)
+        if memory_action:
+            self.last_intent = "memory_continuity"
+            return memory_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:

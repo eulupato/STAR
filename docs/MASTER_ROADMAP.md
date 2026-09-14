@@ -1276,6 +1276,66 @@ Com B12, B01–B12 oferecem **12B de endereços lógicos independentes**. O BLOC
 si só**, não concede autoconsciência biologicamente comprovada, não cria liberdade
 irrestrita, não implementa automodificação autônoma e não antecipa Guardian/Agent.
 
+
+### BLOCO 13 — Memória e Continuidade
+
+O BLOCO 13 transforma a capacidade de memória já presente na MIND em uma
+arquitetura integrada de continuidade, sem criar `memory_v2`, outro banco ou um
+grafo paralelo. A base persistente continua sendo `cognitive_memory` no mesmo
+`star.db`; relações, entidades, locais, datas e derivações de consolidação usam o
+Knowledge Graph oficial. A implementação central é `core/memory_continuity.py`.
+
+São integrados dez tipos: **working, episodic, semantic, conversation, project,
+people, object, social, autobiographical e temporal memory**. Eventos, entidades,
+datas, relações, locais, importância, contexto, experiência, fontes e significado
+permanecem explícitos como dimensões da memória.
+
+Working memory é um buffer pequeno e bounded, transitório por padrão. Guardar algo
+na working memory **não** materializa automaticamente uma linha persistente. A
+persistência exige escrita explícita. Memórias de longo prazo reutilizam
+`CognitiveMemory`/`CognitiveStore`; `social` e `autobiographical` passam a ser tipos
+válidos do mesmo store em vez de sistemas separados.
+
+Consolidação cria uma nova memória derivada e registra `derived_from` no grafo. As
+memórias de origem permanecem intactas. Recuperar uma memória não a transforma em
+fato: memória, observação, conhecimento canônico e inferência continuam separados.
+Conhecimento canônico sobre memória continua exigindo claim `CANONICAL` no BLOCO 2
+e promoção pelo BLOCO 3.
+
+A memória autobiográfica preserva a regra do BLOCO 12: experiências da STAR exigem
+**fonte + referência auditável**. O B13 pode importar explicitamente eventos do
+`SelfHistory`, mas não fabrica uma autobiografia para preencher lacunas. People
+memory não infere atributos sensíveis automaticamente, e nenhuma lembrança concede
+autorização operacional.
+
+Taxonomia:
+
+```text
+MEMÓRIA E CONTINUIDADE
+↓
+TIPO DE MEMÓRIA
+↓
+RAMO
+↓
+EVENTO / ENTIDADE / TEMPO / RELAÇÃO / LOCAL / IMPORTÂNCIA / CONTEXTO / EXPERIÊNCIA / FONTE / SIGNIFICADO
+```
+
+Escala B13:
+
+- **10 tipos × 5 ramos = 50 ramos**;
+- **50 ramos × 10 lentes = 500 nós canônicos**;
+- por nó: **10 retenções × 10 modos de recuperação × 10 modos de relação × 10
+  escopos temporais × 5 qualidades de fonte × 4 contextos × 10 estágios de
+  consolidação = 2.000.000 de variações**;
+- **500 × 2.000.000 = 1.000.000.000 de representações endereçáveis em `B13`**;
+- IDs `MEM-B13-0000000001` até `MEM-B13-1000000000`;
+- materialização sob demanda; zero requisito de 1B de lembranças ou linhas físicas.
+
+Com B13, B01–B13 oferecem **13B de endereços lógicos independentes**. O bloco é a
+fundação integrada da futura **V2.1 Memory Architecture**, mas não declara V2.1
+completa: políticas maduras de retenção/esquecimento, indexação semântica avançada,
+embeddings e manutenção de memória em grande escala continuam como evolução futura.
+
 ### V2.1
 Memory Architecture.
 
