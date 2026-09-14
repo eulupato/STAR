@@ -287,7 +287,7 @@ Escala do BLOCO 3:
 - materialização sob demanda; zero requisito de 1B de linhas físicas.
 
 A arquitetura usa namespaces independentes com IDs textuais. `B01`, `B02`, `B03`,
-`B04`, `B05`, `B06`, `B07`, `B08` e `B09` registram cada um capacidade lógica própria de
+`B04`, `B05`, `B06`, `B07`, `B08`, `B09` e `B10` registram cada um capacidade lógica própria de
 **1B**; blocos futuros podem registrar novos namespaces de 1B sem alteração de
 schema ou colisão de IDs. Apenas conhecimento efetivamente materializado ocupa
 disco, RAM, índices e cache.
@@ -967,6 +967,105 @@ o SOCIAL MODEL e a base universal de conhecimento, mas não cria um sistema de
 opinião política da STAR, não declara leis atuais sem fonte/época/jurisdição, não
 substitui pesquisa histórica/antropológica e não marca V2.0, V3.0 ou futuros
 sistemas sociais online como concluídos.
+
+### BLOCO 10 — Contextos Humanos Específicos
+
+O BLOCO 10 cria a camada que interpreta **situações humanas específicas** sem
+duplicar desenvolvimento humano, psicologia, linguagem ou sociedade/cultura. Ele
+cruza explicitamente **pessoa, idade, ambiente, relação, necessidade, risco, norma,
+cultura e contexto**, preservando capacidades reais, acessibilidade, autonomia,
+privacidade, consentimento, responsabilidade, incerteza e limites operacionais.
+
+Implementação central: `core/human_contexts.py`, integrada em
+`core/star_core.py`. O bloco reutiliza o mesmo BLOCO 2/BLOCO 3, `star.db` e
+Knowledge Graph e conecta sua raiz às taxonomias B06, B07, B08 e B09. Assim:
+
+- B06 fornece vida, desenvolvimento, corpo e necessidades humanas;
+- B07 fornece psicologia, relações, comportamento e desenvolvimento contextual;
+- B08 fornece comunicação, linguagem, gestos e interpretação comunicativa;
+- B09 fornece família, escola, trabalho, normas, cultura, direito e instituições;
+- B10 apenas organiza a leitura **situada** desses elementos, sem criar banco,
+  tabela, grafo, perfil pessoal ou engine paralelo.
+
+A cobertura inclui bebês, crianças, adolescentes, adultos, idosos, pessoas com
+deficiência, diferentes capacidades, família, escola, trabalho, espaço público,
+espaço privado, crise, emergência, animais, toque, distância social, privacidade,
+autonomia e responsabilidade. Os 13 domínios e 50 ramos também cobrem
+acessibilidade, adaptações, decisão apoiada, consentimento/assentimento, limites
+pessoais, dever de cuidado, supervisão, salvaguardas, animais de serviço,
+assistência física, confidencialidade e negociação de necessidades concorrentes.
+
+Regras permanentes:
+
+```text
+IDADE ≠ CAPACIDADE AUTOMÁTICA
+DEFICIÊNCIA ≠ INCAPACIDADE
+RÓTULO ≠ NECESSIDADE FIXA DE SUPORTE
+ESPAÇO PÚBLICO ≠ AUSÊNCIA DE PRIVACIDADE
+ESPAÇO PRIVADO ≠ AUSÊNCIA DE REGRAS DE SEGURANÇA
+TOQUE ≠ PERMISSÃO AUTOMÁTICA
+DISTÂNCIA SOCIAL ≠ CONSTANTE UNIVERSAL
+EMERGÊNCIA ≠ CANCELAMENTO AUTOMÁTICO DE AUTONOMIA OU PRIVACIDADE
+CATEGORIA DE ANIMAL ≠ COMPORTAMENTO INDIVIDUAL CERTO
+INFERÊNCIA CONTEXTUAL ≠ AUTORIZAÇÃO OPERACIONAL
+```
+
+`contextualize_human_situation(...)` retorna apenas uma inferência contextual. Ele
+expõe dimensões ausentes e exige considerar capacidades reais, desenvolvimento,
+barreiras/acessibilidade, relação e assimetria de poder, necessidades declaradas e
+observadas, risco/urgência, normas aplicáveis, cultura, consentimento/assentimento,
+privacidade e responsabilidade. Em crise ou emergência, segurança ganha saliência,
+mas a STAR não converte isso em permissão irrestrita para agir.
+
+Taxonomia oficial:
+
+```text
+CONTEXTOS HUMANOS ESPECÍFICOS
+↓
+DOMÍNIO
+↓
+RAMO
+↓
+SUBTEMA
+↓
+CONHECIMENTO CANÔNICO GERAL
+```
+
+Conhecimento persistente B10 continua exigindo um claim `fact` já `CANONICAL` no
+BLOCO 2 e promoção explícita pelo BLOCO 3. Observações de situação, idade,
+deficiência, comportamento, urgência, necessidade ou papel social não são
+canonizadas automaticamente como fatos pessoais.
+
+Matriz contextual:
+
+```text
+PESSOA       10
+× IDADE        5
+× AMBIENTE     5
+× RELAÇÃO      5
+× NECESSIDADE  4
+× RISCO        4
+× NORMA        4
+× CULTURA      5
+× CONTEXTO     5
+= 2.000.000 variações por nó
+```
+
+Escala do BLOCO 10:
+
+- **13 domínios**;
+- **50 ramos × 10 lentes = 500 nós canônicos**;
+- **2.000.000 variações por nó** usando exatamente as nove dimensões solicitadas;
+- **500 × 2.000.000 = 1.000.000.000 de representações endereçáveis em `B10`**;
+- IDs `CTX-B10-0000000001` até `CTX-B10-1000000000`;
+- materialização sob demanda; zero requisito de 1B de perfis, diagnósticos, regras
+  universais, arquivos ou linhas pré-carregadas.
+
+Com B10, B01–B10 oferecem **10B de endereços lógicos independentes**. Somente
+conhecimento realmente materializado ocupa disco, índices e RAM. O bloco amplia o
+HUMAN MODEL/SITUATION MODEL, mas não cria perfil pessoal automático, não substitui
+políticas legais/institucionais reais, não antecipa autonomia operacional e não
+marca V2.0, V3.0, Guardian ou Agent como concluídos.
 
 ### V2.1
 Memory Architecture.
