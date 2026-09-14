@@ -115,8 +115,8 @@ HUMAN_LIFE_BRANCHES = (
     HumanLifeBranch("metabolism_homeostasis", "thermoregulation_energy_balance", "Termorregulação e balanço energético", _subs(
         "temperatura corporal;produção de calor;perda de calor;metabolismo basal;balanço energético;termogênese"
     )),
-    HumanLifeBranch("metabolism_homeostasis", "feedback_homeostasis", "Homeostase e feedback", _subs(
-        "homeostase;feedback negativo;feedback positivo;set points;controle fisiológico;compensação;integração neuroendócrina"
+    HumanLifeBranch("metabolism_homeostasis", "feedback_homeostasis", "Fisiologia, homeostase e feedback", _subs(
+        "fisiologia;homeostase;feedback negativo;feedback positivo;set points;controle fisiológico;compensação;integração neuroendócrina"
     )),
 
     # Evolução e adaptação — 3
