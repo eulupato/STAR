@@ -206,6 +206,97 @@ pesquisados, arquivos ou linhas pré-carregadas**. Somente conhecimentos realmen
 descobertos/materializados ocupam o SQLite e recebem proveniência, evidências,
 relações e histórico persistentes.
 
+### BLOCO 3 — Arquitetura Universal do Conhecimento
+
+O BLOCO 3 organiza a camada universal que conecta conhecimento canônico,
+claims/evidências, grafo, relações semânticas, índices e cache sem criar sistemas
+paralelos. Ele é uma fundação experimental compartilhada entre MIND e KNOWLEDGE e
+**não significa que V2.2 ou V3.0 estejam concluídos**.
+
+Pipeline oficial:
+
+```text
+CANONICAL KNOWLEDGE
+↓
+CLAIMS
+↓
+EVIDENCE
+↓
+KNOWLEDGE GRAPH
+↓
+SEMANTIC RELATIONS
+↓
+INDEXES
+↓
+CACHE
+↓
+STAR
+```
+
+Fontes de verdade e reutilização:
+
+- `CANONICAL KNOWLEDGE`: `core/universal_knowledge.py`;
+- `CLAIMS` e `EVIDENCE`: ledger epistêmico do BLOCO 2;
+- `KNOWLEDGE GRAPH` e `SEMANTIC RELATIONS`: tabelas existentes
+  `knowledge_nodes`/`knowledge_edges`;
+- persistência/indexação adicional: `database/universal_knowledge_store.py` no
+  mesmo `star.db`;
+- integração com a STAR: `core/star_core.py`;
+- cache: memória limitada LRU/TTL, descartável e nunca fonte de verdade.
+
+Um objeto universal só pode entrar como `CANONICAL KNOWLEDGE` se seu claim
+principal já estiver em estado `CANONICAL` no BLOCO 2. `DISCOVERED`,
+`QUARANTINED` ou `VERIFIED` nunca são promovidos silenciosamente pelo BLOCO 3.
+
+A camada universal organiza:
+
+- conceitos e entidades;
+- aliases normalizados e aliases localizados;
+- propriedades;
+- categorias, subtemas e contextos como facetas indexáveis;
+- taxonomias sobre arestas do Knowledge Graph;
+- eventos temporais;
+- regras e exceções;
+- fontes/evidências por referência aos registros do BLOCO 2;
+- temporalidade e proveniência;
+- claims adicionais com papéis `supporting`, `corroborating`, `contextual`,
+  `exception` ou `historical`;
+- relações semânticas e cross-links interdomínio.
+
+Deduplicação usa identidade estável composta por **namespace + tipo de conhecimento
++ rótulo canônico normalizado**. Registrar novamente a mesma identidade reutiliza
+o objeto existente e liga claims adicionais em vez de gerar duplicação. Claims
+retraídos só podem permanecer como histórico explícito.
+
+Consulta e atualização:
+
+- lookup exato por rótulo canônico normalizado;
+- lookup indexado por aliases;
+- filtros indexados por facetas;
+- SQLite FTS5/BM25 quando disponível;
+- fallback textual SQLite quando FTS5 não estiver disponível;
+- cache LRU/TTL com invalidação em qualquer escrita relevante;
+- atualizações de metadados incrementam revisão e geram eventos auditáveis;
+- taxonomias/cross-links invalidam o cache e permanecem no grafo compartilhado.
+
+Escala do BLOCO 3:
+
+- **20 áreas × 50 lentes = 1.000 nós canônicos**;
+- **1.000.000 combinações por nó**;
+- **1.000.000.000 de representações endereçáveis em `B03`**;
+- materialização sob demanda; zero requisito de 1B de linhas físicas.
+
+A arquitetura usa namespaces independentes com IDs textuais. `B01`, `B02` e
+`B03` registram cada um capacidade lógica própria de **1B**; blocos futuros podem
+registrar novos namespaces de 1B sem alteração de schema ou colisão de IDs. Assim,
+a soma de namespaces pode ultrapassar 1B sem transformar o SQLite em um banco
+pré-populado gigantesco. Apenas conhecimento efetivamente materializado ocupa
+disco, RAM, índices e cache.
+
+Embeddings locais, Biblioteca completa, Knowledge Packs V2 e o restante da busca
+universal madura continuam pertencendo ao V3.0; o BLOCO 3 apenas estabelece a
+arquitetura central limpa sobre a qual esses sistemas poderão crescer.
+
 ### V2.1
 Memory Architecture.
 
