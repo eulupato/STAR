@@ -529,16 +529,52 @@ class PlanningDecision:
         decision = deepcopy(artifact.get("decision") or {})
         if not goal or not decision.get("selected_option"):
             raise ValueError("artefato de decisão inválido")
-        return self.memory_continuity.remember(
+        content = f"Decisão B19: {goal} -> {decision.get('selected_label')}"
+        metadata = {
+            "block": "B19",
+            "source": _clean(source),
+            "reference": _clean(reference),
+            "goal": goal,
+            "decision": decision,
+            "verification": deepcopy(artifact.get("verification") or {}),
+            "meaning": "registro auditável de decisão cognitiva; não prova execução",
+            "execution_performed": False,
+            "operational_authorization": False,
+            "canonical_knowledge": False,
+        }
+        memory_id = self.memory_continuity.memory.remember(
             "decision",
-            f"Decisão B19: {goal} -> {decision.get('selected_label')}",
-            source=_clean(source),
-            reference=_clean(reference),
+            content,
+            key=f"b19:decision:{_norm(goal)}",
+            metadata=metadata,
             importance=_clamp(importance),
-            context={"goal": goal, "decision": decision, "verification": deepcopy(artifact.get("verification") or {})},
-            meaning="registro auditável de decisão cognitiva; não prova execução",
-            metadata={"block": "B19", "execution_performed": False, "operational_authorization": False},
         )
+        record = self.memory_continuity.memory.store.memory_by_id(memory_id)
+        if record is None:
+            raise RuntimeError("decisão B19 persistida não pôde ser relida")
+        root = self.graph.add_entity(
+            "planning_decision_taxonomy",
+            "PLANEJAMENTO E TOMADA DE DECISÃO",
+            node_id=self.TAXONOMY_ROOT_ID,
+            data={"block": "B19", "automatic_execution": False},
+        )
+        node_id = f"PLANNING-DECISION-{memory_id:010d}"
+        self.graph.add_entity(
+            "planning_decision",
+            content[:160],
+            node_id=node_id,
+            data={"block": "B19", "memory_id": memory_id, "reference": _clean(reference), "execution_performed": False},
+        )
+        self.graph.relate(root, node_id, "has_recorded_decision", metadata={"block": "B19"})
+        return {
+            "memory_id": memory_id,
+            "memory_node_id": node_id,
+            "kind": "decision",
+            "persistent": True,
+            "record": record,
+            "execution_performed": False,
+            "operational_authorization": False,
+        }
 
     def materialize_taxonomy(self, stage: str | None = None) -> dict:
         stage_key = _norm(stage) if stage else None

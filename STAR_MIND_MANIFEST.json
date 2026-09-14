@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 19,
+  "schema": 20,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": [
@@ -88,7 +88,11 @@
     "derived conclusions remain inference/hypothesis until independently verified and never rewrite source facts",
     "simulation and counterfactual worlds remain separate from observations and historical memory",
     "prediction preserves uncertainty and prediction error preserves both predicted and observed values",
-    "reasoning over large knowledge spaces uses bounded attention/context selection rather than loading all addressable contents"
+    "reasoning over large knowledge spaces uses bounded attention/context selection rather than loading all addressable contents",
+    "planning and cognitive decision remain distinct from operational execution",
+    "recommendation, priority, simulation and selected option never grant permission",
+    "B19 reuses the official CognitiveSuite planner and B18 simulation/risk instead of creating parallel engines",
+    "large planning spaces are handled through bounded context/option selection rather than loading all logical contents"
   ],
   "capabilities": [
     "reasoning",
@@ -280,7 +284,8 @@
         "B15",
         "B16",
         "B17",
-        "B18"
+        "B18",
+        "B19"
       ],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
@@ -1594,6 +1599,67 @@
       "time_horizon": 10,
       "source_block": 10,
       "reasoning_mode": 2,
+      "combinations_per_node": 2000000
+    }
+  },
+  "block_19_planning_decision": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/planning_decision.py",
+    "integration": "core/star_core.py",
+    "namespace": "B19",
+    "logical_capacity": 1000000000,
+    "pipeline": [
+      "GOAL",
+      "CURRENT_STATE",
+      "DESIRED_STATE",
+      "OBSTACLES",
+      "OPTIONS",
+      "SIMULATION",
+      "RISK",
+      "PLAN",
+      "DECISION",
+      "VERIFICATION"
+    ],
+    "reuse": {
+      "planner": "existing CognitiveSuite.planner",
+      "reasoning_simulation": "B18 ReasoningSimulation",
+      "memory": "B13 cognitive_memory/working memory",
+      "attention": "B14 bounded selection",
+      "models": "B15 internal models",
+      "operational_boundary": "B01 FoundationSuite.boundary",
+      "new_planner_created": false,
+      "new_table_created": false,
+      "new_database_created": false
+    },
+    "execution_policy": {
+      "planning_is_execution": false,
+      "decision_is_execution": false,
+      "recommendation_is_permission": false,
+      "automatic_execution": false,
+      "permission_required": true,
+      "capability_required": true,
+      "safety_required": true,
+      "B19_performs_execution": false
+    },
+    "catalog": {
+      "stages": 10,
+      "branches": 50,
+      "lenses_per_branch": 10,
+      "canonical_nodes": 500,
+      "variants_per_node": 2000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand",
+      "prepopulated_plans": 0,
+      "truthfulness_note": "1B are addressable planning contexts/representations, not 1B precomputed plans, decisions or executable actions"
+    },
+    "variant_matrix": {
+      "context": 10,
+      "constraint_mode": 10,
+      "uncertainty": 10,
+      "time_horizon": 10,
+      "risk_level": 10,
+      "source_space": 10,
+      "planning_mode": 2,
       "combinations_per_node": 2000000
     }
   }
