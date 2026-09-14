@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 8,
+  "schema": 9,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": ["V2.0 MIND", "V2.1 Memory", "V2.2 Knowledge Graph", "partial V3 Knowledge", "partial V3.3 Scientific Engine"],
@@ -36,7 +36,11 @@
     "psychological knowledge never turns an isolated behavior into diagnosis, stable trait, intention or certainty",
     "expressions and social signals remain context-dependent observations rather than mind-reading evidence",
     "BLOCO 7 preserves alternative interpretations, exceptions and uncertainty",
-    "BLOCO 7 does not automatically create personal psychological profiles or mental-disorder labels"
+    "BLOCO 7 does not automatically create personal psychological profiles or mental-disorder labels",
+    "linguistic knowledge is distinct from operational locale and translation support",
+    "form, gesture, voice, pause or silence alone never proves a unique meaning or intention",
+    "irony, sarcasm, humor and indirect communication remain context-dependent interpretations",
+    "BLOCO 8 reuses the official LanguageManager instead of creating a parallel translation runtime"
   ],
   "capabilities": [
     "reasoning",
@@ -200,11 +204,11 @@
     "namespace_capacity": {
       "per_namespace_addressable_contents": 1000000000,
       "independent_namespaces": true,
-      "current_namespaces": ["B01", "B02", "B03", "B04", "B05", "B06", "B07"],
+      "current_namespaces": ["B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08"],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
       "materialization": "on-demand",
-      "truthfulness_note": "each 1B is logical capacity per block namespace, not a billion preloaded rows; integrated B01-B07 therefore represent 7B logical addresses with only materialized knowledge persisted"
+      "truthfulness_note": "each 1B is logical capacity per block namespace, not a billion preloaded rows; integrated B01-B08 therefore represent 8B logical addresses with only materialized knowledge persisted"
     },
     "block_3_catalog": {
       "canonical_areas": 20,
@@ -519,6 +523,73 @@
       "truthfulness_note": "1B are deterministic addressable representations across psychological topics, contexts, perspectives, evidence modes, timescales, confidence bands and representations; not 1B diagnoses, personal profiles, inferred intentions or independently researched facts"
     }
   },
+  "block_8_language_communication": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/language_communication.py",
+    "integration": "core/star_core.py",
+    "namespace": "B08",
+    "database": "star.db through BLOCO 3 for materialized canonical knowledge",
+    "requested_languages": ["português", "inglês", "espanhol", "francês", "italiano", "alemão", "mandarim", "japonês"],
+    "future_languages": "extensible; future languages are knowledge/runtime additions, not silently claimed as already operational",
+    "requested_topics": ["gramática", "sintaxe", "semântica", "pragmática", "ortografia", "pontuação", "gírias", "dialetos", "regionalismos", "internetês", "linguagem formal", "linguagem informal", "ironia", "sarcasmo", "humor", "metáfora", "narrativa", "comunicação indireta", "gestos", "voz", "silêncio"],
+    "reuse": {
+      "canonical_knowledge": "BLOCO 3 UniversalKnowledgeArchitecture",
+      "claims_evidence_provenance": "BLOCO 2 epistemic ledger",
+      "knowledge_graph": "existing knowledge_nodes/knowledge_edges",
+      "psychological_context": "BLOCO 7 HumanPsychologyFoundations linked for communication context without reducing language to psychology",
+      "runtime_language_manager": "existing core.language_manager.LanguageManager",
+      "localization": "existing core.global_localization",
+      "pragmatic_expression_catalog": "existing core.language_catalog.ExpressionCatalog",
+      "parallel_translation_runtime_created": false,
+      "parallel_database_created": false,
+      "parallel_graph_created": false
+    },
+    "runtime_truthfulness": {
+      "knowledge_supported_now": ["Português", "Inglês", "Espanhol", "Francês", "Italiano", "Alemão", "Mandarim", "Japonês"],
+      "operational_locale_families_current": ["Português", "Inglês", "Espanhol", "Francês", "Italiano"],
+      "german_operational_runtime_claimed": false,
+      "mandarin_operational_runtime_claimed": false,
+      "japanese_operational_runtime_claimed": false,
+      "rule": "linguistic knowledge in B08 does not imply complete UI/translation/runtime support"
+    },
+    "knowledge_graph_taxonomy": "Linguagem e Comunicação -> domínio -> ramo -> subtema; root is related to BLOCO 7 psychology context and canonical B08 knowledge is linked to its branch in the same shared graph",
+    "canonical_policy": "general linguistic/communication knowledge may persist only after the BLOCO 2 CANONICAL fact gate and BLOCO 3 promotion; translated surfaces, gestures, prosody, silence and inferred intentions are never auto-canonicalized as unique meanings or personal intent facts",
+    "interpretation_policy": {
+      "surface_form_is_single_meaning": false,
+      "expression_is_certain_intention": false,
+      "gesture_is_certain_intention": false,
+      "prosody_is_certain_intention": false,
+      "silence_is_certain_intention": false,
+      "irony_sarcasm_requires_context": true,
+      "cultural_context_required": true,
+      "alternative_interpretations_required": true,
+      "automatic_mind_reading": false,
+      "rule": "FORMA OU SINAL ISOLADO ≠ SIGNIFICADO ÚNICO, INTENÇÃO OU CERTEZA"
+    },
+    "variant_matrix": {
+      "language": 10,
+      "dialect": 5,
+      "context": 5,
+      "intention": 5,
+      "register": 4,
+      "culture": 4,
+      "meaning": 5,
+      "structure": 5,
+      "situation": 2,
+      "combinations_per_node": 1000000
+    },
+    "language_communication_catalog": {
+      "domains": 13,
+      "branches": 50,
+      "lenses_per_branch": 20,
+      "canonical_nodes": 1000,
+      "variants_per_node": 1000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand",
+      "prepopulated_knowledge_rows": 0,
+      "truthfulness_note": "1B are deterministic addressable representations across language, dialect, context, intention, register, culture, meaning, structure and situation; not 1B independent translations, utterances or researched facts"
+    }
+  },
   "cognitive_catalog": {
     "themes": 15,
     "areas_per_theme": 20,
@@ -563,7 +634,8 @@
     "physical_world_scene": "transient in-memory state; no new persistence table and no automatic promotion to canonical knowledge",
     "scientific_foundations": "no new table; canonical science persists through universal_knowledge and science taxonomy/relations use the existing knowledge graph",
     "human_life_foundations": "no new table; canonical B06 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and physiological needs remain non-diagnostic without automatic personal health profiles",
-    "human_psychology_foundations": "no new table; canonical B07 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and behavior interpretation remains inferential/non-diagnostic without automatic psychological profiles"
+    "human_psychology_foundations": "no new table; canonical B07 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and behavior interpretation remains inferential/non-diagnostic without automatic psychological profiles",
+    "language_communication_foundations": "no new table; canonical B08 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and operational translation/localization continues through the existing LanguageManager"
   },
   "math": {
     "engine": "SymPy",
