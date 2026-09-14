@@ -2,6 +2,7 @@ import time
 
 from core.agents import AgentManager
 from core.attention_salience import AttentionSalience
+from core.affective_personality import AffectivePersonality
 from core.internal_models import IntegratedInternalModels
 from core.social_cognition import SocialCognition
 from core.commands import strip_wake_word
@@ -202,6 +203,19 @@ class StarCore:
         )
         self.mind.social_cognition = self.social_cognition
 
+        # BLOCO 17: afeto e personalidade persistente. Estados transitórios
+        # continuam no StarState; baselines/preferências ficam no cognitive_memory
+        # existente. Identidade, valores e permissões continuam sob autoridade B12.
+        self.affective_personality = AffectivePersonality(
+            self.knowledge,
+            state=self.state,
+            memory_continuity=self.memory_continuity,
+            self_model=self.self_model,
+            internal_models=self.internal_models,
+            social_cognition=self.social_cognition,
+        )
+        self.mind.affective_personality = self.affective_personality
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -318,6 +332,11 @@ class StarCore:
         if social_cognition_action:
             self.last_intent = "social_cognition"
             return social_cognition_action
+
+        personality_action = self.affective_personality.handle(user_input)
+        if personality_action:
+            self.last_intent = "affective_personality"
+            return personality_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:

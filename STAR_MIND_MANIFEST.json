@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 17,
+  "schema": 18,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": [
@@ -80,7 +80,11 @@
     "social inference remains hypothesis/context and never becomes fact merely from behavior or social signals",
     "intention, deception, lie, secrecy, trust and reputation preserve alternative explanations and uncertainty",
     "functional empathy supports perspective-taking but is not mind reading",
-    "trust, reputation, persuasion, urgency or social salience never grant operational permission"
+    "trust, reputation, persuasion, urgency or social salience never grant operational permission",
+    "affect and adaptive personality remain distinct from the official STAR identity and fundamental values",
+    "persistent personality is represented in audited memory/history rather than existing only as a prompt",
+    "personality adaptation is bounded, append-only and linked to auditable experiences; previous states remain recoverable",
+    "preferences, style, confidence, familiarity and affect never grant operational permission"
   ],
   "capabilities": [
     "reasoning",
@@ -270,7 +274,8 @@
         "B13",
         "B14",
         "B15",
-        "B16"
+        "B16",
+        "B17"
       ],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
@@ -1451,6 +1456,75 @@
       "relationship": 10,
       "temporal_scope": 10,
       "interpretation_mode": 2,
+      "combinations_per_node": 2000000
+    }
+  },
+  "block_17_affective_personality": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/affective_personality.py",
+    "integration": "core/star_core.py",
+    "namespace": "B17",
+    "logical_capacity": 1000000000,
+    "requested_components": [
+      "valence",
+      "energy",
+      "curiosity",
+      "caution",
+      "familiarity",
+      "confidence",
+      "interest",
+      "alert",
+      "preferences",
+      "style",
+      "history",
+      "relationships",
+      "experiences",
+      "adaptive personality"
+    ],
+    "persistence": {
+      "store": "existing cognitive_memory",
+      "lookup": "memory_key + latest/history accessors on CognitiveStore",
+      "append_only_history": true,
+      "new_table_created": false,
+      "new_database_created": false,
+      "prompt_only": false
+    },
+    "reuse": {
+      "transient_energy_curiosity_confidence": "existing core.state.StarState",
+      "experiences_relationships": "BLOCO 13 MemoryContinuity",
+      "identity_values_limits_permissions": "BLOCO 12 SelfModel/core.star_identity",
+      "self_and_situation_views": "BLOCO 15 IntegratedInternalModels",
+      "social_context": "BLOCO 16 SocialCognition",
+      "knowledge_graph": "existing knowledge_nodes/knowledge_edges"
+    },
+    "adaptation_policy": {
+      "max_learning_rate_per_experience": 0.1,
+      "auditable_experience_required": true,
+      "identity_mutation": false,
+      "fundamental_values_mutation": false,
+      "permission_mutation": false,
+      "source_memory_preserved": true,
+      "operational_authorization": false
+    },
+    "catalog": {
+      "domains": 10,
+      "branches": 50,
+      "lenses_per_branch": 10,
+      "canonical_nodes": 500,
+      "variants_per_node": 2000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand",
+      "prepopulated_personality_states": 0,
+      "truthfulness_note": "1B are addressable affect/personality representations, not 1B fabricated experiences or physically stored personality rows"
+    },
+    "variant_matrix": {
+      "context": 10,
+      "valence_state": 10,
+      "energy_state": 10,
+      "familiarity_state": 10,
+      "confidence_state": 10,
+      "experience_state": 10,
+      "adaptation_mode": 2,
       "combinations_per_node": 2000000
     }
   }
