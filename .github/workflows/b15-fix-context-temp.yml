@@ -1,0 +1,30 @@
+name: B15FixContextTemp
+
+on: [push]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/feat/bloco15-cinco-modelos-internos'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/bloco15-cinco-modelos-internos
+          fetch-depth: 0
+      - name: Apply context fix
+        run: python tools/_b15_fix_context_temp.py
+      - name: Commit fix
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No context fix changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add core/internal_models.py
+          git commit -m "fix(models): avoid situation context self collision"
+          git push origin HEAD:feat/bloco15-cinco-modelos-internos
