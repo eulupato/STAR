@@ -287,10 +287,10 @@ Escala do BLOCO 3:
 - materialização sob demanda; zero requisito de 1B de linhas físicas.
 
 A arquitetura usa namespaces independentes com IDs textuais. `B01`, `B02`, `B03`,
-`B04`, `B05`, `B06` e `B07` registram cada um capacidade lógica própria de **1B**;
-blocos futuros podem registrar novos namespaces de 1B sem alteração de schema ou
-colisão de IDs. Apenas conhecimento efetivamente materializado ocupa disco, RAM,
-índices e cache.
+`B04`, `B05`, `B06`, `B07` e `B08` registram cada um capacidade lógica própria de
+**1B**; blocos futuros podem registrar novos namespaces de 1B sem alteração de
+schema ou colisão de IDs. Apenas conhecimento efetivamente materializado ocupa
+disco, RAM, índices e cache.
 
 Embeddings locais, Biblioteca completa, Knowledge Packs V2 e o restante da busca
 universal madura continuam pertencendo ao V3.0; o BLOCO 3 apenas estabelece a
@@ -689,6 +689,140 @@ conhecimento realmente materializado ocupa disco, índices e RAM. O BLOCO 7 ampl
 o HUMAN MODEL e a base de conhecimento geral, mas não substitui avaliação clínica,
 não antecipa um sistema de saúde mental e não altera os marcos futuros de Cura,
 permissões, privacidade ou segurança.
+
+### BLOCO 8 — Linguagem e Comunicação
+
+O BLOCO 8 organiza conhecimento linguístico e comunicacional geral da STAR. Ele
+cobre **português, inglês, espanhol, francês, italiano, alemão, mandarim e japonês**,
+com uma posição explícita para idiomas adicionais no futuro. A camada representa
+conhecimento sobre linguagem e comunicação; ela **não substitui nem duplica o
+runtime de idiomas/tradução já existente** e não declara como operacionais locales
+que ainda não estão prontos no runtime.
+
+Implementação central: `core/language_communication.py`, integrada em
+`core/star_core.py`. O BLOCO 8 reutiliza:
+
+- BLOCO 2 para proveniência, evidência, confiança, incerteza e distinção entre
+  observação, inferência e fato;
+- BLOCO 3 para conhecimento canônico, deduplicação, busca, índices e cache;
+- `knowledge_nodes`/`knowledge_edges` como único Knowledge Graph;
+- BLOCO 7 como contexto psicológico/comunicacional, sem reduzir linguagem a
+  psicologia nem usar teoria da mente como leitura automática de intenção;
+- `core.language_manager.LanguageManager` como runtime oficial de idioma ativo e
+  tradução da superfície;
+- `core.global_localization` como localização/tradução operacional já existente;
+- `core.language_catalog.ExpressionCatalog` como catálogo pragmático/contextual
+  existente;
+- o mesmo `star.db`, sem tabela, banco ou grafo específico do BLOCO 8.
+
+Há uma separação permanente entre **conhecer um idioma** e **ter suporte operacional
+completo para aquele locale**. Atualmente o runtime oficial possui superfícies para
+Português, Inglês (US/UK), Espanhol, Italiano e Francês. Alemão, Mandarim e Japonês
+entram no conhecimento B08 agora, mas **não são marcados como tradução/interface
+operacional completa** até que o runtime oficial realmente os suporte. A posição
+`future_language_extension` permite acrescentar novos idiomas sem alterar o contrato
+de escala nem criar uma segunda arquitetura linguística.
+
+Taxonomia oficial:
+
+```text
+LINGUAGEM E COMUNICAÇÃO
+↓
+DOMÍNIO
+↓
+RAMO
+↓
+SUBTEMA
+↓
+CONHECIMENTO CANÔNICO GERAL
+```
+
+A raiz B08 é ligada à taxonomia de Mente Humana e Psicologia do BLOCO 7 como
+relação contextual. Conhecimento B08 persistente só pode ser materializado quando
+seu claim geral já é `CANONICAL` no BLOCO 2 e é promovido explicitamente pelo
+BLOCO 3. Traduções de superfície, expressões, gestos, prosódia, pausas, silêncio ou
+intenções inferidas nunca são canonizados automaticamente como um significado
+único ou fato pessoal.
+
+Os 13 domínios e 50 ramos cobrem, entre outros:
+
+- fonética, fonologia, sistemas de escrita, morfologia, léxico e formação de
+  palavras;
+- classes gramaticais, sintagmas, sintaxe, concordância, regência, ordem de
+  palavras, gramática normativa/descritiva e variação gramatical;
+- semântica lexical e composicional, pragmática, atos de fala, implicatura,
+  pressuposição, referência, dêixis, anáfora e ambiguidade;
+- ortografia, acentuação, pontuação, coesão, coerência e convenções de escrita;
+- linguagem formal e informal, gírias, dialetos, regionalismos, sotaques,
+  alternância de código e repertórios multilíngues;
+- ironia, sarcasmo, humor, metáfora, metonímia, hipérbole, expressões idiomáticas e
+  outras formas não literais;
+- narrativa, voz narrativa, ponto de vista, discurso, estrutura informacional,
+  conversação, turnos e reparo;
+- comunicação indireta, polidez, mitigação, subtexto, mal-entendidos e limites de
+  inferência de intenção;
+- gestos, olhar, postura, distância interpessoal e comunicação multimodal;
+- voz, prosódia, entonação, ritmo, volume, velocidade, fluência, hesitações,
+  pausas e silêncio;
+- internetês, abreviações, emojis, memes, reações e conversação em plataformas
+  digitais;
+- sociolinguística, cultura, identidade linguística, mudança linguística e
+  comunicação intercultural;
+- tradução, equivalência semântica/pragmática, comparação entre idiomas,
+  multilinguismo e extensão futura.
+
+Cada ramo é cruzado por 20 lentes: conceito, forma, função, gramática, sintaxe,
+semântica, pragmática, ortografia/pontuação, variação, registro, cultura, intenção,
+contexto, significado, estrutura, situação, evidência/interpretação,
+exceções/limites, contraste entre idiomas e aplicação comunicativa.
+
+Regra permanente de interpretação:
+
+```text
+FORMA OU SINAL ISOLADO ≠ SIGNIFICADO ÚNICO
+EXPRESSÃO ≠ INTENÇÃO CERTA
+GESTO ≠ INTENÇÃO CERTA
+PROSÓDIA ≠ INTENÇÃO CERTA
+SILÊNCIO ≠ INTENÇÃO CERTA
+IRONIA / SARCASMO / HUMOR → EXIGEM CONTEXTO
+```
+
+O método `interpret_communication` produz `inference` com certeza
+`underdetermined`, múltiplas leituras possíveis e contexto ausente explícito. Ele
+pode considerar leitura literal, significado pragmático, linguagem figurada,
+ironia/sarcasmo, humor, comunicação indireta, ambiguidade e variação dialetal ou
+cultural, mas não transforma qualquer sinal isolado em prova de intenção.
+
+Matriz de variação solicitada:
+
+```text
+IDIOMA        10
+× DIALETO      5
+× CONTEXTO     5
+× INTENÇÃO     5
+× REGISTRO     4
+× CULTURA      4
+× SIGNIFICADO  5
+× ESTRUTURA    5
+× SITUAÇÃO     2
+= 1.000.000 variações por nó
+```
+
+Escala do BLOCO 8:
+
+- **13 domínios**;
+- **50 ramos × 20 lentes = 1.000 nós canônicos**;
+- **1.000.000 variações por nó** usando exatamente as nove dimensões pedidas;
+- **1.000 × 1.000.000 = 1.000.000.000 de representações endereçáveis em `B08`**;
+- IDs `LANG-B08-0000000001` até `LANG-B08-1000000000`;
+- materialização sob demanda; zero requisito de 1B de traduções, frases, arquivos,
+  linhas ou fatos independentes pré-carregados.
+
+Com B08, B01–B08 oferecem **8B de endereços lógicos independentes**. Somente
+conhecimento realmente materializado ocupa disco, índices e RAM. O BLOCO 8 amplia
+a base de linguagem/comunicação e integra conhecimento ao runtime atual, mas não
+marca o futuro Language Engine completo, tradução offline universal, EXPRESSION
+madura ou V2.0 como concluídos; esses sistemas continuam em seus marcos próprios.
 
 ### V2.1
 Memory Architecture.
