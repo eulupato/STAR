@@ -1,0 +1,250 @@
+name: B10 docs updater temporary
+
+on:
+  push:
+    branches:
+      - feat/bloco10-contextos-humanos
+    paths:
+      - .github/workflows/b10-docs-temp.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update-b10-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/bloco10-contextos-humanos
+          fetch-depth: 0
+      - name: Update manifest and roadmap
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest_path = Path('STAR_MIND_MANIFEST.json')
+          data = json.loads(manifest_path.read_text(encoding='utf-8'))
+          data['schema'] = 11
+
+          principles = data['principles']
+          additions = [
+              'age, disability, role or environment never determine capacity, consent, privacy or responsibility by themselves',
+              'human-context interpretation preserves accessibility, supported autonomy, boundaries and uncertainty',
+              'crisis or emergency raises safety salience but never grants unrestricted operational authorization',
+              'BLOCO 10 reuses BLOCO 6, 7, 8 and 9 instead of duplicating human development, psychology, language or society/culture',
+          ]
+          for item in additions:
+              if item not in principles:
+                  principles.append(item)
+
+          ns = data['block_3_universal_knowledge']['namespace_capacity']
+          if 'B10' not in ns['current_namespaces']:
+              ns['current_namespaces'].append('B10')
+          ns['truthfulness_note'] = (
+              'each 1B is logical capacity per block namespace, not a billion preloaded rows; '
+              'integrated B01-B10 therefore represent 10B logical addresses with only materialized knowledge persisted'
+          )
+
+          block10 = {
+              'status': 'experimental-integrated',
+              'source_of_truth': 'core/human_contexts.py',
+              'integration': 'core/star_core.py',
+              'namespace': 'B10',
+              'database': 'star.db through BLOCO 3 for materialized canonical knowledge',
+              'requested_topics': [
+                  'bebês', 'crianças', 'adolescentes', 'adultos', 'idosos', 'pessoas com deficiência',
+                  'diferentes capacidades', 'família', 'escola', 'trabalho', 'espaço público', 'espaço privado',
+                  'crise', 'emergência', 'animais', 'toque', 'distância social', 'privacidade', 'autonomia', 'responsabilidade'
+              ],
+              'reuse': {
+                  'canonical_knowledge': 'BLOCO 3 UniversalKnowledgeArchitecture',
+                  'claims_evidence_provenance': 'BLOCO 2 epistemic ledger',
+                  'knowledge_graph': 'existing knowledge_nodes/knowledge_edges',
+                  'human_life': 'BLOCO 6 HumanLifeFoundations',
+                  'human_psychology': 'BLOCO 7 HumanPsychologyFoundations',
+                  'language_communication': 'BLOCO 8 LanguageCommunicationFoundations',
+                  'society_culture': 'BLOCO 9 SocietyCultureFoundations',
+                  'parallel_context_database_created': False,
+                  'parallel_context_graph_created': False,
+              },
+              'knowledge_graph_taxonomy': 'Contextos Humanos Específicos -> domínio -> ramo -> subtema; root contextualizes B06-B09 roots in the same shared graph',
+              'canonical_policy': 'contextual knowledge may persist only after the BLOCO 2 CANONICAL fact gate and BLOCO 3 promotion; situational inference never becomes action authorization automatically',
+              'interpretation_policy': {
+                  'age_is_automatic_capacity': False,
+                  'disability_is_inability': False,
+                  'support_need_is_fixed_from_label': False,
+                  'public_space_eliminates_privacy': False,
+                  'private_space_eliminates_safety_rules': False,
+                  'touch_is_automatically_permitted': False,
+                  'social_distance_is_universal_constant': False,
+                  'emergency_cancels_autonomy_or_privacy': False,
+                  'animal_behavior_is_certain_from_category': False,
+                  'contextual_inference_is_operational_authorization': False,
+                  'consent_and_boundary_context_required': True,
+                  'accessibility_and_supported_autonomy': True,
+                  'rule': 'IDADE, DEFICIÊNCIA, PAPEL OU AMBIENTE NÃO DETERMINAM SOZINHOS CAPACIDADE, NECESSIDADE, CONSENTIMENTO, PRIVACIDADE OU RESPONSABILIDADE',
+              },
+              'variant_matrix': {
+                  'person': 10, 'age': 5, 'environment': 5, 'relation': 5, 'need': 4,
+                  'risk': 4, 'norm': 4, 'culture': 5, 'context': 5, 'combinations_per_node': 2000000,
+              },
+              'human_context_catalog': {
+                  'domains': 13,
+                  'branches': 50,
+                  'lenses_per_branch': 10,
+                  'canonical_nodes': 500,
+                  'variants_per_node': 2000000,
+                  'addressable_contents': 1000000000,
+                  'materialization': 'on-demand',
+                  'prepopulated_knowledge_rows': 0,
+                  'truthfulness_note': '1B are deterministic addressable human-context representations across person, age, environment, relation, need, risk, norm, culture and context; not 1B personal profiles, diagnoses or universal rules',
+              },
+          }
+
+          rebuilt = {}
+          inserted = False
+          for key, value in data.items():
+              if key == 'cognitive_catalog' and not inserted:
+                  rebuilt['block_10_human_contexts'] = block10
+                  inserted = True
+              rebuilt[key] = value
+          if not inserted:
+              rebuilt['block_10_human_contexts'] = block10
+
+          persistence = rebuilt.get('persistence', {})
+          persistence['human_context_foundations'] = (
+              'no new table; canonical B10 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, '
+              'and contextual interpretation remains inferential without automatic capacity judgments or action authorization'
+          )
+          manifest_path.write_text(json.dumps(rebuilt, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          roadmap_path = Path('docs/MASTER_ROADMAP.md')
+          roadmap = roadmap_path.read_text(encoding='utf-8')
+          roadmap = roadmap.replace(
+              '`B04`, `B05`, `B06`, `B07`, `B08` e `B09` registram cada um capacidade lógica própria de',
+              '`B04`, `B05`, `B06`, `B07`, `B08`, `B09` e `B10` registram cada um capacidade lógica própria de',
+          )
+
+          block_text = r'''
+### BLOCO 10 — Contextos Humanos Específicos
+
+O BLOCO 10 cria a camada que interpreta **situações humanas específicas** sem
+duplicar desenvolvimento humano, psicologia, linguagem ou sociedade/cultura. Ele
+cruza explicitamente **pessoa, idade, ambiente, relação, necessidade, risco, norma,
+cultura e contexto**, preservando capacidades reais, acessibilidade, autonomia,
+privacidade, consentimento, responsabilidade, incerteza e limites operacionais.
+
+Implementação central: `core/human_contexts.py`, integrada em
+`core/star_core.py`. O bloco reutiliza o mesmo BLOCO 2/BLOCO 3, `star.db` e
+Knowledge Graph e conecta sua raiz às taxonomias B06, B07, B08 e B09. Assim:
+
+- B06 fornece vida, desenvolvimento, corpo e necessidades humanas;
+- B07 fornece psicologia, relações, comportamento e desenvolvimento contextual;
+- B08 fornece comunicação, linguagem, gestos e interpretação comunicativa;
+- B09 fornece família, escola, trabalho, normas, cultura, direito e instituições;
+- B10 apenas organiza a leitura **situada** desses elementos, sem criar banco,
+  tabela, grafo, perfil pessoal ou engine paralelo.
+
+A cobertura inclui bebês, crianças, adolescentes, adultos, idosos, pessoas com
+deficiência, diferentes capacidades, família, escola, trabalho, espaço público,
+espaço privado, crise, emergência, animais, toque, distância social, privacidade,
+autonomia e responsabilidade. Os 13 domínios e 50 ramos também cobrem
+acessibilidade, adaptações, decisão apoiada, consentimento/assentimento, limites
+pessoais, dever de cuidado, supervisão, salvaguardas, animais de serviço,
+assistência física, confidencialidade e negociação de necessidades concorrentes.
+
+Regras permanentes:
+
+```text
+IDADE ≠ CAPACIDADE AUTOMÁTICA
+DEFICIÊNCIA ≠ INCAPACIDADE
+RÓTULO ≠ NECESSIDADE FIXA DE SUPORTE
+ESPAÇO PÚBLICO ≠ AUSÊNCIA DE PRIVACIDADE
+ESPAÇO PRIVADO ≠ AUSÊNCIA DE REGRAS DE SEGURANÇA
+TOQUE ≠ PERMISSÃO AUTOMÁTICA
+DISTÂNCIA SOCIAL ≠ CONSTANTE UNIVERSAL
+EMERGÊNCIA ≠ CANCELAMENTO AUTOMÁTICO DE AUTONOMIA OU PRIVACIDADE
+CATEGORIA DE ANIMAL ≠ COMPORTAMENTO INDIVIDUAL CERTO
+INFERÊNCIA CONTEXTUAL ≠ AUTORIZAÇÃO OPERACIONAL
+```
+
+`contextualize_human_situation(...)` retorna apenas uma inferência contextual. Ele
+expõe dimensões ausentes e exige considerar capacidades reais, desenvolvimento,
+barreiras/acessibilidade, relação e assimetria de poder, necessidades declaradas e
+observadas, risco/urgência, normas aplicáveis, cultura, consentimento/assentimento,
+privacidade e responsabilidade. Em crise ou emergência, segurança ganha saliência,
+mas a STAR não converte isso em permissão irrestrita para agir.
+
+Taxonomia oficial:
+
+```text
+CONTEXTOS HUMANOS ESPECÍFICOS
+↓
+DOMÍNIO
+↓
+RAMO
+↓
+SUBTEMA
+↓
+CONHECIMENTO CANÔNICO GERAL
+```
+
+Conhecimento persistente B10 continua exigindo um claim `fact` já `CANONICAL` no
+BLOCO 2 e promoção explícita pelo BLOCO 3. Observações de situação, idade,
+deficiência, comportamento, urgência, necessidade ou papel social não são
+canonizadas automaticamente como fatos pessoais.
+
+Matriz contextual:
+
+```text
+PESSOA       10
+× IDADE        5
+× AMBIENTE     5
+× RELAÇÃO      5
+× NECESSIDADE  4
+× RISCO        4
+× NORMA        4
+× CULTURA      5
+× CONTEXTO     5
+= 2.000.000 variações por nó
+```
+
+Escala do BLOCO 10:
+
+- **13 domínios**;
+- **50 ramos × 10 lentes = 500 nós canônicos**;
+- **2.000.000 variações por nó** usando exatamente as nove dimensões solicitadas;
+- **500 × 2.000.000 = 1.000.000.000 de representações endereçáveis em `B10`**;
+- IDs `CTX-B10-0000000001` até `CTX-B10-1000000000`;
+- materialização sob demanda; zero requisito de 1B de perfis, diagnósticos, regras
+  universais, arquivos ou linhas pré-carregadas.
+
+Com B10, B01–B10 oferecem **10B de endereços lógicos independentes**. Somente
+conhecimento realmente materializado ocupa disco, índices e RAM. O bloco amplia o
+HUMAN MODEL/SITUATION MODEL, mas não cria perfil pessoal automático, não substitui
+políticas legais/institucionais reais, não antecipa autonomia operacional e não
+marca V2.0, V3.0, Guardian ou Agent como concluídos.
+
+'''
+          marker = '\n### V2.1\n'
+          if '### BLOCO 10 — Contextos Humanos Específicos' not in roadmap:
+              if marker not in roadmap:
+                  raise SystemExit('marcador V2.1 não encontrado no roadmap')
+              roadmap = roadmap.replace(marker, '\n' + block_text + '### V2.1\n', 1)
+          roadmap_path.write_text(roadmap, encoding='utf-8')
+          PY
+      - name: Commit documentation
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No documentation changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add STAR_MIND_MANIFEST.json docs/MASTER_ROADMAP.md
+          git commit -m "docs(mind): register B10 human contexts"
+          git push origin HEAD:feat/bloco10-contextos-humanos
