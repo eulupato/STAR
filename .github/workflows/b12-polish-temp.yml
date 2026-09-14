@@ -1,0 +1,29 @@
+name: B12PolishTemp
+
+on: [push]
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - name: Apply B12 polish
+        run: python tools/_b12_polish_temp.py
+      - name: Commit polish
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No B12 polish changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add core/self_model.py tests/test_self_model.py
+          git commit -m "fix(self): preserve registered vs materialized truth"
+          git push origin HEAD:${{ github.ref_name }}
