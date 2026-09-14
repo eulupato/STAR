@@ -1,0 +1,30 @@
+name: B14UpdateTemp
+
+on: [push]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/feat/bloco14-attention-salience'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/bloco14-attention-salience
+          fetch-depth: 0
+      - name: Apply B14 integration
+        run: python tools/_b14_update_temp.py
+      - name: Commit integration
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No B14 integration changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add core/star_core.py STAR_MIND_MANIFEST.json docs/MASTER_ROADMAP.md
+          git commit -m "feat(attention): integrate B14 attention salience with STAR Core"
+          git push origin HEAD:feat/bloco14-attention-salience
