@@ -85,7 +85,7 @@ class MetacognitionEngine:
 
 
 class CognitiveMemory:
-    KINDS = {"working", "episodic", "semantic", "conversation", "project", "decision", "error", "temporal", "people", "object", "preference"}
+    KINDS = {"working", "episodic", "semantic", "conversation", "project", "decision", "error", "temporal", "people", "object", "social", "autobiographical", "preference"}
     def __init__(self, store: CognitiveStore): self.store = store
     def remember(self, kind: str, content: str, **kwargs) -> int:
         if kind not in self.KINDS: raise ValueError("tipo de memória inválido")

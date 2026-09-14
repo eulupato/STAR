@@ -207,6 +207,25 @@ class CognitiveStore:
             rows = conn.execute(sql, params).mappings().all()
         return [{**dict(row), "metadata": _load(row["metadata_json"])} for row in rows]
 
+    def memory_by_id(self, memory_id: int) -> dict | None:
+        with engine.connect() as conn:
+            row = conn.execute(text("""
+                SELECT id, kind, memory_key, content, metadata_json, importance, created_at, updated_at
+                FROM cognitive_memory WHERE id=:id
+            """), {"id": int(memory_id)}).mappings().first()
+        return None if row is None else {**dict(row), "metadata": _load(row["metadata_json"])}
+
+    def memory_counts(self) -> dict:
+        with engine.connect() as conn:
+            rows = conn.execute(text("""
+                SELECT kind, COUNT(*) AS count
+                FROM cognitive_memory
+                GROUP BY kind
+                ORDER BY kind
+            """)).mappings().all()
+        by_kind = {str(row["kind"]): int(row["count"]) for row in rows}
+        return {"total": sum(by_kind.values()), "by_kind": by_kind}
+
     def upsert_node(self, node_id: str, node_type: str, label: str, *, data=None, confidence: float = 1.0):
         now = _now()
         with engine.begin() as conn:
