@@ -143,6 +143,69 @@ Regra operacional permanente: cognição, curiosidade, inferência, previsão ou
 planejamento nunca concedem sozinhos autorização para uma ação externa. Ação
 requer capacidade + segurança + permissão operacional apropriada.
 
+### BLOCO 2 — Fundação epistêmica
+
+O BLOCO 2 define como a STAR sabe **o que sabe, como sabe, de onde veio, quando
+aprendeu, qual fonte sustenta, quais evidências existem, quanta confiança e
+incerteza existem, se a informação pode estar errada ou desatualizada, se há
+versões conflitantes e qual é seu tipo epistêmico**.
+
+A implementação central é `core/epistemics.py`. A persistência é uma extensão
+incremental em `database/epistemic_store.py`, sempre sobre o mesmo `star.db` e o
+mesmo `CognitiveStore`; não existe banco ou memória epistêmica paralela.
+
+Cada registro epistêmico pode manter:
+
+- conteúdo e ID estável;
+- tipo: `fact`, `hypothesis`, `inference`, `opinion`, `fiction`, `simulation`,
+  `unknown`, `observation`, `declared_information` ou `memory`;
+- origem e referência de proveniência;
+- fonte com tipo, título, confiabilidade e fundamento da confiabilidade;
+- data de aprendizado;
+- confiança e incerteza calibráveis;
+- validade inicial/final, prazo de obsolescência e última verificação;
+- múltiplas evidências de suporte, refutação ou contexto;
+- relações com outros conhecimentos, inclusive contradição e supersessão;
+- histórico auditável de revisões e transições.
+
+Estados oficiais:
+
+```text
+DISCOVERED
+QUARANTINED
+VERIFIED
+CANONICAL
+SUPERSEDED
+RETRACTED
+```
+
+Esses estados formam uma máquina de estados explícita. `VERIFIED` exige evidência
+rastreável. `CANONICAL` não significa verdade absoluta: exige registro `fact` em
+estado `VERIFIED`, proveniência explícita, evidência de suporte, confiança mínima,
+incerteza aceitável, validade temporal compatível e ausência de contradição aberta.
+Um registro canônico continua revisável, pode voltar à quarentena, ser substituído
+ou retraído.
+
+Contradições não são apagadas silenciosamente. Conhecimentos incompatíveis podem
+ser relacionados por `contradicts`; se já estavam `VERIFIED` ou `CANONICAL`, são
+movidos para `QUARANTINED` até revisão. Versões posteriores podem usar
+`supersedes`/`superseded_by`, preservando a história anterior.
+
+A ingestão diária existente continua usando os mesmos contadores e regras de
+deduplicação. Registros válidos de crescimento passam também a ser registrados de
+forma idempotente no ledger epistêmico como `DISCOVERED`, sem serem promovidos
+automaticamente a `VERIFIED` ou `CANONICAL`.
+
+O catálogo do BLOCO 2 possui **1.000 nós canônicos × 1.000.000 combinações =
+1.000.000.000 de representações epistêmicas endereçáveis**, materializadas sob
+demanda. As combinações cobrem área, lente, família cognitiva, estilo, contexto,
+tipo epistêmico, faixa de confiabilidade da fonte e faixa de incerteza.
+
+Assim como no BLOCO 1, **1B é capacidade/endereço lógico, não 1B de fatos
+pesquisados, arquivos ou linhas pré-carregadas**. Somente conhecimentos realmente
+descobertos/materializados ocupam o SQLite e recebem proveniência, evidências,
+relações e histórico persistentes.
+
 ### V2.1
 Memory Architecture.
 
