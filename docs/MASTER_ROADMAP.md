@@ -286,16 +286,84 @@ Escala do BLOCO 3:
 - **1.000.000.000 de representações endereçáveis em `B03`**;
 - materialização sob demanda; zero requisito de 1B de linhas físicas.
 
-A arquitetura usa namespaces independentes com IDs textuais. `B01`, `B02` e
-`B03` registram cada um capacidade lógica própria de **1B**; blocos futuros podem
-registrar novos namespaces de 1B sem alteração de schema ou colisão de IDs. Assim,
-a soma de namespaces pode ultrapassar 1B sem transformar o SQLite em um banco
-pré-populado gigantesco. Apenas conhecimento efetivamente materializado ocupa
-disco, RAM, índices e cache.
+A arquitetura usa namespaces independentes com IDs textuais. `B01`, `B02`, `B03`
+e `B04` registram cada um capacidade lógica própria de **1B**; blocos futuros podem
+registrar novos namespaces de 1B sem alteração de schema ou colisão de IDs. Apenas
+conhecimento efetivamente materializado ocupa disco, RAM, índices e cache.
 
 Embeddings locais, Biblioteca completa, Knowledge Packs V2 e o restante da busca
 universal madura continuam pertencendo ao V3.0; o BLOCO 3 apenas estabelece a
 arquitetura central limpa sobre a qual esses sistemas poderão crescer.
+
+### BLOCO 4 — Modelo Físico Fundamental do Mundo
+
+O BLOCO 4 especializa o `WORLD MODEL` para representar matéria, objetos, espaço,
+propriedades físicas, interações, permanência de objetos, affordances, causalidade
+e previsão. É uma camada experimental integrada sobre os BLOCO 2 e 3; **não
+significa que V5 SENSES ou V10 EMBODIED estejam concluídos**.
+
+Implementação central: `core/physical_world.py`, integrada em `core/star_core.py`.
+Ela reutiliza `UniversalKnowledgeArchitecture` e, portanto, o mesmo `star.db`, o
+mesmo ledger epistêmico e o mesmo Knowledge Graph. Nenhum banco, grafo ou catálogo
+científico paralelo é criado.
+
+Os temas centrais cobrem explicitamente matéria, objetos, superfícies, espaço,
+volume, massa, peso, densidade, forma, tamanho, distância, posição, direção,
+orientação, movimento, velocidade, aceleração, força, equilíbrio, gravidade,
+impacto, colisão, atrito, pressão, temperatura, calor, frio, som, luz, sombra,
+reflexão, eletricidade, magnetismo, líquidos, gases, sólidos, permanência de
+objetos, affordances, materiais, tempo, causalidade e previsão. Para fechar os
+modelos causais também há energia, deformação, estabilidade, flutuabilidade,
+fluxo, contato, contenção e risco físico.
+
+O bloco separa três camadas:
+
+1. **Conhecimento físico canônico** — só é materializado no namespace `B04` pelo
+   BLOCO 3 quando o claim principal já é `CANONICAL` no BLOCO 2.
+2. **Estado físico observado** — objetos de cena permanecem em um world model
+   transitório; observar algo não o transforma automaticamente em conhecimento
+   canônico persistente.
+3. **Inferência física** — affordances e previsões causais qualitativas são
+   marcadas como `inference`, preservam incerteza, exigem medição/modelo científico
+   para previsão quantitativa e nunca concedem autorização operacional.
+
+Permanência de objetos segue regras conservadoras: perder observação não significa
+deixar de existir; um objeto ocluído continua representado com confiança de estado
+reduzida até evidência explícita de remoção, destruição ou transformação; posição
+e estado não observados não são inventados.
+
+A Física científica existente é reutilizada sob demanda por
+`core.physics_knowledge_150k.py`. Fórmulas, fontes e tópicos científicos não são
+copiados para o BLOCO 4. Isso mantém a base científica como referência e o world
+model como camada de interpretação física do ambiente.
+
+Matriz fundamental:
+
+```text
+OBJETO
+× MATERIAL
+× PROPRIEDADE
+× ESTADO
+× AMBIENTE
+× AÇÃO
+× CONSEQUÊNCIA
+× RISCO
+```
+
+Escala do BLOCO 4:
+
+- **50 temas × 10 subtemas = 500 nós canônicos**;
+- por nó: **10 objetos × 10 materiais × 10 propriedades × 5 estados × 5 ambientes
+  × 5 ações × 4 consequências × 4 riscos = 2.000.000 combinações**;
+- **500 × 2.000.000 = 1.000.000.000 de representações endereçáveis em `B04`**;
+- materialização sob demanda; zero requisito de 1B de linhas, arquivos ou fatos
+  independentes pesquisados.
+
+O namespace B04 é compatível com a arquitetura universal do BLOCO 3. Somados,
+B01–B04 oferecem **4B de endereços lógicos independentes**, mas apenas dados
+realmente materializados ocupam armazenamento. Sensores futuros do V5 poderão
+alimentar observações do world model; robótica futura do V10 poderá consumi-lo,
+sem que este bloco antecipe esses sistemas.
 
 ### V2.1
 Memory Architecture.
