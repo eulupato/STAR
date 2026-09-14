@@ -483,7 +483,7 @@ class IntegratedInternalModels:
                 "hypotheses": len(attention_snapshot.get("hypotheses") or ()),
                 "last_selection": deepcopy(attention_snapshot.get("last_selection")),
             },
-            "self": self_snapshot,
+            "self_state": self_snapshot,
             "source_models": ("world_model", "human_model", "social_model", "self_model"),
             "temporary": True,
             "operational_authorization": False,
