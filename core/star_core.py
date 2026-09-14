@@ -2,6 +2,7 @@ import time
 
 from core.agents import AgentManager
 from core.attention_salience import AttentionSalience
+from core.internal_models import IntegratedInternalModels
 from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
 from core.everyday_technology import EverydayTechnologyFoundations
@@ -168,6 +169,25 @@ class StarCore:
         )
         self.mind.attention_salience = self.attention_salience
 
+        # BLOCO 15: integra os cinco CognitiveModels já existentes no B01. Não
+        # cria frames paralelos; cada modelo referencia as fontes especializadas
+        # e coopera via SITUATION MODEL sobre o mesmo Knowledge Graph.
+        self.internal_models = IntegratedInternalModels(
+            self.knowledge,
+            foundation_models=self.foundations.models,
+            physical_world=self.physical_world,
+            human_life=self.human_life,
+            human_psychology=self.human_psychology,
+            language_communication=self.language_communication,
+            society_culture=self.society_culture,
+            human_contexts=self.human_contexts,
+            everyday_technology=self.everyday_technology,
+            self_model=self.self_model,
+            memory_continuity=self.memory_continuity,
+            attention_salience=self.attention_salience,
+        )
+        self.mind.internal_models = self.internal_models
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -274,6 +294,11 @@ class StarCore:
         if attention_action:
             self.last_intent = "attention_salience"
             return attention_action
+
+        internal_models_action = self.internal_models.handle(user_input)
+        if internal_models_action:
+            self.last_intent = "internal_models"
+            return internal_models_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:

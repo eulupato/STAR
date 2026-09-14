@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 15,
+  "schema": 16,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": [
@@ -72,7 +72,11 @@
     "attention and salience rank what to analyze first but do not determine truth or operational authority",
     "BLOCO 14 reuses BLOCO 13 working memory and core.state.StarState instead of creating parallel attention state",
     "candidate selection is bounded/top-k and never requires loading the billion-address logical space simultaneously",
-    "risk and urgency may raise cognitive priority but never grant permission or bypass safety"
+    "risk and urgency may raise cognitive priority but never grant permission or bypass safety",
+    "WORLD, HUMAN, SOCIAL, SELF and SITUATION models are cooperating views of one STAR and reuse BLOCO 1 CognitiveModels instead of creating parallel frames",
+    "internal models reference shared knowledge, memory and state by provenance/relations instead of indiscriminately copying source datasets",
+    "SITUATION MODEL integrates the current bounded context and remains temporary, revisable and non-authorizing",
+    "each BLOCO 15 model has 1B logical address capacity while the five-model block has 5B total logical capacity on-demand"
   ],
   "capabilities": [
     "reasoning",
@@ -260,12 +264,13 @@
         "B11",
         "B12",
         "B13",
-        "B14"
+        "B14",
+        "B15"
       ],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
       "materialization": "on-demand",
-      "truthfulness_note": "each 1B is logical capacity per block namespace, not a billion preloaded rows; integrated B01-B14 therefore represent 14B logical addresses with only materialized knowledge persisted"
+      "truthfulness_note": "B01-B14 each expose a 1B logical block space (14B total); B15 exposes five 1B model subspaces (5B); therefore the integrated architecture represents 19B logical addresses, never 19B preloaded rows/facts"
     },
     "block_3_catalog": {
       "canonical_areas": 20,
@@ -1175,6 +1180,88 @@
       "combinations_per_node": 2000000
     }
   },
+  "block_15_internal_models": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/internal_models.py coordinating core.foundations.CognitiveModels",
+    "integration": "core/star_core.py",
+    "namespace": "B15",
+    "logical_capacity": 5000000000,
+    "models": {
+      "WORLD MODEL": 1000000000,
+      "HUMAN MODEL": 1000000000,
+      "SOCIAL MODEL": 1000000000,
+      "SELF MODEL": 1000000000,
+      "SITUATION MODEL": 1000000000
+    },
+    "reuse": {
+      "model_frames": "BLOCO 1 CognitiveModels (exact same object)",
+      "world_sources": [
+        "B04 PhysicalWorldModel",
+        "B05 ScientificFoundations",
+        "B11 EverydayTechnologyFoundations"
+      ],
+      "human_sources": [
+        "B06 HumanLife",
+        "B07 HumanPsychology",
+        "B08 LanguageCommunication",
+        "B10 HumanContext",
+        "B13 Memory"
+      ],
+      "social_sources": [
+        "B08 LanguageCommunication",
+        "B09 SocietyCulture",
+        "B10 HumanContext",
+        "B13 Social Memory"
+      ],
+      "self_sources": [
+        "B12 SelfModel",
+        "B13 MemoryContinuity",
+        "B14 AttentionSalience"
+      ],
+      "situation_sources": [
+        "B01 CognitiveModels.situation",
+        "B12 state/permissions",
+        "B13 recent memory",
+        "B14 attention/salience"
+      ],
+      "knowledge_graph": "existing knowledge_nodes/knowledge_edges",
+      "parallel_models_created": false,
+      "source_datasets_copied": false,
+      "new_persistence_table_created": false
+    },
+    "cooperation": "SITUATION MODEL receives bounded references/context from WORLD, HUMAN, SOCIAL and SELF plus B13/B14; all remain parts of one STAR",
+    "model_catalog": {
+      "models": 5,
+      "areas_per_model": 10,
+      "aspects_per_area": 5,
+      "lenses_per_aspect": 10,
+      "canonical_nodes_per_model": 500,
+      "variants_per_node": 2000000,
+      "addressable_per_model": 1000000000,
+      "total_addressable": 5000000000,
+      "materialization": "on-demand",
+      "prepopulated_model_rows": 0,
+      "truthfulness_note": "5B are virtual model representations over shared sources; not 5B copied facts, memories or database rows"
+    },
+    "variant_matrix": {
+      "epistemic_class": 10,
+      "temporal_scope": 10,
+      "context_scope": 10,
+      "relation_mode": 10,
+      "confidence": 5,
+      "salience": 4,
+      "update_mode": 10,
+      "combinations_per_node": 2000000
+    },
+    "policy": {
+      "model_is_star": false,
+      "parallel_models_created": false,
+      "copies_source_knowledge": false,
+      "situation_is_temporary_and_revisable": true,
+      "self_model_redefines_identity": false,
+      "operational_authorization": false
+    }
+  },
   "cognitive_catalog": {
     "themes": 15,
     "areas_per_theme": 20,
@@ -1226,7 +1313,8 @@
     "everyday_technology_foundations": "no new table; canonical B11 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and situational technical interpretation does not imply live state, access or operational authorization",
     "self_model": "no new table; canonical B12 self knowledge persists through universal_knowledge and the shared Knowledge Graph; runtime Capability/Limitation/Permission registries, Self State views and bounded Self History remain non-canonical unless explicitly promoted through B02/B03",
     "memory_continuity": "no parallel memory database/table; B13 extends the existing cognitive_memory store, uses a bounded transient working buffer, and stores memory relations/consolidation provenance in the shared Knowledge Graph; canonical memory knowledge still requires B02/B03",
-    "attention_salience": "no new table; B14 state is bounded/transient, reuses B13 working memory and StarState, and uses the shared Knowledge Graph only for taxonomy/relations"
+    "attention_salience": "no new table; B14 state is bounded/transient, reuses B13 working memory and StarState, and uses the shared Knowledge Graph only for taxonomy/relations",
+    "internal_models": "no new table or duplicated model store; B15 delegates runtime frames to B01 CognitiveModels, references B04-B14 sources and uses the shared Knowledge Graph for taxonomy/relations"
   },
   "math": {
     "engine": "SymPy",
