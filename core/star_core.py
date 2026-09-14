@@ -1,6 +1,7 @@
 import time
 
 from core.agents import AgentManager
+from core.attention_salience import AttentionSalience
 from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
 from core.everyday_technology import EverydayTechnologyFoundations
@@ -157,6 +158,16 @@ class StarCore:
         )
         self.mind.memory_continuity = self.memory_continuity
 
+        # BLOCO 14: atenção/saliência sobre a working memory do B13 e o StarState
+        # oficial. Seleção é bounded e nunca concede autorização operacional.
+        self.attention_salience = AttentionSalience(
+            self.knowledge,
+            memory_continuity=self.memory_continuity,
+            state=self.state,
+            self_model=self.self_model,
+        )
+        self.mind.attention_salience = self.attention_salience
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -258,6 +269,11 @@ class StarCore:
         if memory_action:
             self.last_intent = "memory_continuity"
             return memory_action
+
+        attention_action = self.attention_salience.handle(user_input)
+        if attention_action:
+            self.last_intent = "attention_salience"
+            return attention_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:

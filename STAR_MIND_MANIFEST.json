@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 14,
+  "schema": 15,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": [
@@ -68,7 +68,11 @@
     "working memory is bounded and transient by default; persistence requires an explicit memory write",
     "memory consolidation preserves source memories and records derivation instead of silently overwriting history",
     "autobiographical memory and experiences require auditable source/reference and are never fabricated for continuity",
-    "people memory does not infer sensitive attributes automatically and memory retrieval never grants operational authorization"
+    "people memory does not infer sensitive attributes automatically and memory retrieval never grants operational authorization",
+    "attention and salience rank what to analyze first but do not determine truth or operational authority",
+    "BLOCO 14 reuses BLOCO 13 working memory and core.state.StarState instead of creating parallel attention state",
+    "candidate selection is bounded/top-k and never requires loading the billion-address logical space simultaneously",
+    "risk and urgency may raise cognitive priority but never grant permission or bypass safety"
   ],
   "capabilities": [
     "reasoning",
@@ -255,12 +259,13 @@
         "B10",
         "B11",
         "B12",
-        "B13"
+        "B13",
+        "B14"
       ],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
       "materialization": "on-demand",
-      "truthfulness_note": "each 1B is logical capacity per block namespace, not a billion preloaded rows; integrated B01-B13 therefore represent 13B logical addresses with only materialized knowledge persisted"
+      "truthfulness_note": "each 1B is logical capacity per block namespace, not a billion preloaded rows; integrated B01-B14 therefore represent 14B logical addresses with only materialized knowledge persisted"
     },
     "block_3_catalog": {
       "canonical_areas": 20,
@@ -1112,6 +1117,64 @@
       "combinations_per_node": 2000000
     }
   },
+  "block_14_attention_salience": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/attention_salience.py",
+    "integration": "core/star_core.py",
+    "namespace": "B14",
+    "requested_topics": [
+      "attention",
+      "salience",
+      "priority",
+      "active goals",
+      "active entities",
+      "recent context",
+      "hypotheses",
+      "temporary results",
+      "risks",
+      "urgency"
+    ],
+    "reuse": {
+      "working_memory": "BLOCO 13 WorkingMemoryBuffer",
+      "attention_state": "core.state.StarState",
+      "self_objectives": "BLOCO 12 when relevant",
+      "knowledge_graph": "existing knowledge_nodes/knowledge_edges",
+      "parallel_working_memory_created": false,
+      "parallel_state_created": false,
+      "new_persistence_table_created": false
+    },
+    "selection_policy": {
+      "bounded_candidate_window": true,
+      "loads_all_available_contents": false,
+      "selection_is_fact": false,
+      "selection_is_operational_authorization": false,
+      "salience_grants_permission": false,
+      "risk_grants_permission": false,
+      "urgency_grants_permission": false,
+      "risk_may_raise_attention": true
+    },
+    "attention_catalog": {
+      "domains": 10,
+      "branches": 50,
+      "lenses_per_branch": 10,
+      "canonical_nodes": 500,
+      "variants_per_node": 2000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand",
+      "preloaded_candidates": 0,
+      "truthfulness_note": "1B are deterministic addressable attention/salience states, not 1B simultaneously loaded candidates"
+    },
+    "variant_matrix": {
+      "candidate_source": 10,
+      "goal_alignment": 10,
+      "recency": 10,
+      "risk": 10,
+      "urgency": 5,
+      "confidence": 4,
+      "attention_state": 10,
+      "combinations_per_node": 2000000
+    }
+  },
   "cognitive_catalog": {
     "themes": 15,
     "areas_per_theme": 20,
@@ -1162,7 +1225,8 @@
     "human_context_foundations": "no new table; canonical B10 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and contextual interpretation remains inferential without automatic capacity judgments or action authorization",
     "everyday_technology_foundations": "no new table; canonical B11 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and situational technical interpretation does not imply live state, access or operational authorization",
     "self_model": "no new table; canonical B12 self knowledge persists through universal_knowledge and the shared Knowledge Graph; runtime Capability/Limitation/Permission registries, Self State views and bounded Self History remain non-canonical unless explicitly promoted through B02/B03",
-    "memory_continuity": "no parallel memory database/table; B13 extends the existing cognitive_memory store, uses a bounded transient working buffer, and stores memory relations/consolidation provenance in the shared Knowledge Graph; canonical memory knowledge still requires B02/B03"
+    "memory_continuity": "no parallel memory database/table; B13 extends the existing cognitive_memory store, uses a bounded transient working buffer, and stores memory relations/consolidation provenance in the shared Knowledge Graph; canonical memory knowledge still requires B02/B03",
+    "attention_salience": "no new table; B14 state is bounded/transient, reuses B13 working memory and StarState, and uses the shared Knowledge Graph only for taxonomy/relations"
   },
   "math": {
     "engine": "SymPy",
