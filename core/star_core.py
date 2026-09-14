@@ -7,6 +7,7 @@ from core.foundations import FoundationSuite
 from core.language_manager import LanguageManager
 from core.mind import CognitiveSuite
 from core.physical_world import PhysicalWorldModel
+from core.scientific_foundations import ScientificFoundations
 from core.thematic_voice import parse_thematic_voice
 from core.universal_knowledge import UniversalKnowledgeArchitecture
 from core.weather import WeatherService
@@ -52,6 +53,15 @@ class StarCore:
         # simples observação. A base científica de Física existente é reutilizada.
         self.physical_world = PhysicalWorldModel(self.knowledge)
         self.mind.physical_world = self.physical_world
+
+        # BLOCO 5: fundamentos científicos sobre o mesmo conhecimento universal,
+        # ledger epistêmico e Knowledge Graph. Reutiliza o ScientificReasoner e
+        # os provedores locais existentes em vez de criar outro Scientific Engine.
+        self.scientific_foundations = ScientificFoundations(
+            self.knowledge,
+            reasoner=self.mind.science,
+        )
+        self.mind.scientific_foundations = self.scientific_foundations
 
         self.last_intent = None
         self.user_name = None
@@ -109,6 +119,11 @@ class StarCore:
         if physical_action:
             self.last_intent = "physical_world"
             return physical_action
+
+        scientific_action = self.scientific_foundations.handle(user_input)
+        if scientific_action:
+            self.last_intent = "scientific_foundations"
+            return scientific_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
