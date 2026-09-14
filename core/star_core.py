@@ -7,6 +7,7 @@ from core.foundations import FoundationSuite
 from core.language_manager import LanguageManager
 from core.mind import CognitiveSuite
 from core.thematic_voice import parse_thematic_voice
+from core.universal_knowledge import UniversalKnowledgeArchitecture
 from core.weather import WeatherService
 
 
@@ -35,6 +36,15 @@ class StarCore:
         # STAR MIND V2 alpha. Usa o mesmo SQLite oficial e só intercepta pedidos
         # cognitivos explícitos, preservando o roteamento estável da Foundation.
         self.mind = CognitiveSuite()
+
+        # BLOCO 3: organiza conhecimento canônico sobre o ledger epistêmico e o
+        # Knowledge Graph já existentes. Não cria outro banco, outro grafo ou
+        # outra identidade. A referência também fica exposta na MIND para reuso.
+        self.knowledge = UniversalKnowledgeArchitecture(
+            self.mind.epistemics,
+            self.mind.graph,
+        )
+        self.mind.knowledge = self.knowledge
 
         self.last_intent = None
         self.user_name = None
@@ -87,6 +97,11 @@ class StarCore:
         if foundation_action:
             self.last_intent = "foundations"
             return foundation_action
+
+        knowledge_action = self.knowledge.handle(user_input)
+        if knowledge_action:
+            self.last_intent = "universal_knowledge"
+            return knowledge_action
 
         try:
             mind_action = self.mind.handle(user_input, network_enabled=self.network_enabled)
