@@ -130,7 +130,7 @@ SOCIAL_COGNITION_BRANCHES = (
     SocialCognitionBranch("functional_empathy", "empathy_limits", "Limites da empatia", _subs("empatia não é leitura mental;projeção;viés;diferenças individuais")),
     SocialCognitionBranch("functional_empathy", "repair_response", "Resposta e reparação", _subs("escuta;validação;esclarecimento;reparação;feedback")),
 
-    SocialCognitionBranch("relationships_context", "relationship_history", "Histórico de relação", _subs("interações;confiança;conflito;cooperação;mudança;memória social")),
+    SocialCognitionBranch("relationships_context", "relationship_history", "Histórico de relações", _subs("relações;interações;confiança;conflito;cooperação;mudança;memória social")),
     SocialCognitionBranch("relationships_context", "relationship_roles", "Papéis na relação", _subs("papel;expectativa;limite;responsabilidade;assimetria")),
     SocialCognitionBranch("relationships_context", "relationship_boundaries", "Limites relacionais", _subs("consentimento;privacidade;escopo;distância;revogação")),
     SocialCognitionBranch("relationships_context", "social_context", "Contexto social", _subs("grupo;instituição;cultura;norma;situação;ambiente")),
