@@ -6,6 +6,7 @@ from core.conversation import ConversationEngine
 from core.foundations import FoundationSuite
 from core.human_life import HumanLifeFoundations
 from core.human_psychology import HumanPsychologyFoundations
+from core.language_communication import LanguageCommunicationFoundations
 from core.language_manager import LanguageManager
 from core.mind import CognitiveSuite
 from core.physical_world import PhysicalWorldModel
@@ -83,6 +84,16 @@ class StarCore:
         )
         self.mind.human_psychology = self.human_psychology
 
+        # BLOCO 8: conhecimento de linguagem e comunicação. Reutiliza o mesmo
+        # LanguageManager operacional e o mesmo B02/B03/Knowledge Graph; conhecer
+        # um idioma não implica que seu locale/tradutor operacional esteja pronto.
+        self.language_communication = LanguageCommunicationFoundations(
+            self.knowledge,
+            language_manager=self.language,
+            human_psychology=self.human_psychology,
+        )
+        self.mind.language_communication = self.language_communication
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -154,6 +165,11 @@ class StarCore:
         if psychology_action:
             self.last_intent = "human_psychology"
             return psychology_action
+
+        language_communication_action = self.language_communication.handle(user_input)
+        if language_communication_action:
+            self.last_intent = "language_communication"
+            return language_communication_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
