@@ -5,6 +5,7 @@ from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
 from core.foundations import FoundationSuite
 from core.human_life import HumanLifeFoundations
+from core.human_psychology import HumanPsychologyFoundations
 from core.language_manager import LanguageManager
 from core.mind import CognitiveSuite
 from core.physical_world import PhysicalWorldModel
@@ -73,6 +74,15 @@ class StarCore:
         )
         self.mind.human_life = self.human_life
 
+        # BLOCO 7: mente humana e psicologia como camada interpretativa geral.
+        # Compartilha B02/B03/Knowledge Graph e a base biológica do B06, sem
+        # diagnóstico, perfil psicológico ou leitura de intenção automática.
+        self.human_psychology = HumanPsychologyFoundations(
+            self.knowledge,
+            human_life=self.human_life,
+        )
+        self.mind.human_psychology = self.human_psychology
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -139,6 +149,11 @@ class StarCore:
         if human_life_action:
             self.last_intent = "human_life"
             return human_life_action
+
+        psychology_action = self.human_psychology.handle(user_input)
+        if psychology_action:
+            self.last_intent = "human_psychology"
+            return psychology_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:

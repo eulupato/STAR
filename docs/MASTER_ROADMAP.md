@@ -287,10 +287,10 @@ Escala do BLOCO 3:
 - materialização sob demanda; zero requisito de 1B de linhas físicas.
 
 A arquitetura usa namespaces independentes com IDs textuais. `B01`, `B02`, `B03`,
-`B04`, `B05` e `B06` registram cada um capacidade lógica própria de **1B**; blocos
-futuros podem registrar novos namespaces de 1B sem alteração de schema ou colisão
-de IDs. Apenas conhecimento efetivamente materializado ocupa disco, RAM, índices e
-cache.
+`B04`, `B05`, `B06` e `B07` registram cada um capacidade lógica própria de **1B**;
+blocos futuros podem registrar novos namespaces de 1B sem alteração de schema ou
+colisão de IDs. Apenas conhecimento efetivamente materializado ocupa disco, RAM,
+índices e cache.
 
 Embeddings locais, Biblioteca completa, Knowledge Packs V2 e o restante da busca
 universal madura continuam pertencendo ao V3.0; o BLOCO 3 apenas estabelece a
@@ -585,6 +585,110 @@ somente conhecimento efetivamente materializado ocupa disco, índices e RAM. O
 Scientific Engine completo continua no V3.0; sistemas futuros de saúde, Cura,
 permissões e segurança continuam em seus marcos próprios e não são marcados como
 concluídos por este bloco.
+
+### BLOCO 7 — Mente Humana e Psicologia
+
+O BLOCO 7 organiza conhecimento psicológico e comportamental geral sobre percepção,
+atenção, memória humana, aprendizagem, motivação, emoções, personalidade, cognição,
+hábitos, decisões, vieses, trauma, estresse, luto, identidade, autoestima,
+comportamento, expressões, intenção, teoria da mente e relações psicológicas. É uma
+camada experimental integrada sobre os BLOCO 2, 3 e 6; **não cria diagnóstico
+psicológico automático, leitura mental, perfil clínico ou certeza de intenção**.
+
+Implementação central: `core/human_psychology.py`, integrada em
+`core/star_core.py`. O BLOCO 7 reutiliza:
+
+- BLOCO 2 para proveniência, evidência, confiança, incerteza e distinção entre
+  observação, inferência e fato;
+- BLOCO 3 para conhecimento canônico, deduplicação, busca, índices e cache;
+- `knowledge_nodes`/`knowledge_edges` como único Knowledge Graph;
+- BLOCO 6 como contexto biológico e corporal, sem reduzir fenômenos psicológicos a
+  uma única causa biológica;
+- `core.multidisciplinary_knowledge.py` como referência educacional já existente de
+  Psicologia e Sociologia, carregada sob demanda;
+- o mesmo `star.db`, sem tabela específica de perfil psicológico ou prontuário.
+
+Taxonomia oficial:
+
+```text
+MENTE HUMANA E PSICOLOGIA
+↓
+DOMÍNIO
+↓
+RAMO
+↓
+SUBTEMA
+↓
+CONHECIMENTO CANÔNICO GERAL
+```
+
+A raiz B07 é ligada à taxonomia de vida/corpo do BLOCO 6 por relações contextuais,
+mas permanece uma camada própria. Conhecimento B07 persistente só pode ser
+materializado quando seu claim geral já é `CANONICAL` no BLOCO 2 e é promovido
+explicitamente pelo BLOCO 3. Observações sobre uma pessoa, expressões faciais,
+comportamentos, respostas de provedores ou intenções inferidas nunca são
+canonizados automaticamente como fatos pessoais.
+
+Os 13 domínios do bloco organizam 50 ramos sobre:
+
+- percepção sensorial, organização perceptiva, atenção seletiva/sustentada e
+  limites da atenção;
+- sistemas de memória, codificação/recuperação, aprendizagem e aquisição de
+  habilidades;
+- motivação, necessidades psicológicas, hábitos, metas e persistência;
+- processos emocionais, teorias da emoção, regulação e expressão;
+- personalidade, autoconceito, identidade, autoestima e mudança ao longo da vida;
+- cognição, julgamento, tomada de decisão, heurísticas, vieses, erros de raciocínio
+  e efeitos de enquadramento/contexto;
+- estresse, trauma, luto, resiliência, coping e recuperação;
+- comportamento observável, expressões não verbais, intenção e limites da
+  inferência comportamental;
+- teoria da mente, percepção social, empatia, tomada de perspectiva e atribuição;
+- apego, relações interpessoais, comunicação, grupos e pertencimento;
+- desenvolvimento ao longo da vida, socialização, família, cultura e ambiente;
+- métodos de pesquisa psicológica, psicometria, causalidade, replicabilidade e
+  limites de interpretação;
+- necessidades psicológicas, adaptação, flexibilidade e bem-estar geral.
+
+Cada ramo é cruzado por 20 lentes: conceito, componentes, mecanismo,
+desenvolvimento, contexto, cultura, diferenças individuais, evidências, medição,
+possibilidades, interpretações alternativas, exceções, vieses, comportamento,
+expressões, intenção, relações, aplicações não clínicas, limites e fronteira/debate.
+
+Regra permanente de interpretação:
+
+```text
+COMPORTAMENTO ISOLADO ≠ DIAGNÓSTICO
+COMPORTAMENTO ISOLADO ≠ TRAÇO ESTÁVEL
+EXPRESSÃO ≠ INTENÇÃO
+INFERÊNCIA DE INTENÇÃO ≠ CERTEZA
+UMA OBSERVAÇÃO ≠ PADRÃO
+```
+
+O método `interpret_behavior` produz apenas `inference` com certeza
+`underdetermined`, múltiplas possibilidades, interpretações alternativas,
+exceções e contexto ausente. Mesmo comportamento repetido exige análise
+longitudinal e não vira automaticamente diagnóstico, personalidade ou intenção.
+O bloco não cria candidatos automáticos de transtorno, não atribui traço de
+personalidade por observação isolada e não cria perfil psicológico pessoal.
+
+Escala do BLOCO 7:
+
+- **13 domínios**;
+- **50 ramos × 20 lentes = 1.000 nós canônicos**;
+- cada nó combina **10 contextos × 10 perspectivas × 10 modos de evidência ×
+  10 escalas temporais × 10 faixas de confiança × 10 representações =
+  1.000.000 de variações**;
+- **1.000 × 1.000.000 = 1.000.000.000 de representações endereçáveis em `B07`**;
+- IDs `PSY-B07-0000000001` até `PSY-B07-1000000000`;
+- materialização sob demanda; zero requisito de 1B de diagnósticos, perfis,
+  intenções inferidas, arquivos, linhas ou fatos independentes pré-carregados.
+
+Com B07, B01–B07 oferecem **7B de endereços lógicos independentes**. Somente
+conhecimento realmente materializado ocupa disco, índices e RAM. O BLOCO 7 amplia
+o HUMAN MODEL e a base de conhecimento geral, mas não substitui avaliação clínica,
+não antecipa um sistema de saúde mental e não altera os marcos futuros de Cura,
+permissões, privacidade ou segurança.
 
 ### V2.1
 Memory Architecture.

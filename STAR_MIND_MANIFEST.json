@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 7,
+  "schema": 8,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": ["V2.0 MIND", "V2.1 Memory", "V2.2 Knowledge Graph", "partial V3 Knowledge", "partial V3.3 Scientific Engine"],
@@ -32,7 +32,11 @@
     "scientific taxonomies and relations reuse the official Knowledge Graph instead of creating a parallel graph",
     "biological and human-body knowledge never becomes automatic diagnosis",
     "body signals and physiological needs are context and are not silently converted into disease labels",
-    "BLOCO 6 does not automatically select treatments or create personal health profiles"
+    "BLOCO 6 does not automatically select treatments or create personal health profiles",
+    "psychological knowledge never turns an isolated behavior into diagnosis, stable trait, intention or certainty",
+    "expressions and social signals remain context-dependent observations rather than mind-reading evidence",
+    "BLOCO 7 preserves alternative interpretations, exceptions and uncertainty",
+    "BLOCO 7 does not automatically create personal psychological profiles or mental-disorder labels"
   ],
   "capabilities": [
     "reasoning",
@@ -196,11 +200,11 @@
     "namespace_capacity": {
       "per_namespace_addressable_contents": 1000000000,
       "independent_namespaces": true,
-      "current_namespaces": ["B01", "B02", "B03", "B04", "B05", "B06"],
+      "current_namespaces": ["B01", "B02", "B03", "B04", "B05", "B06", "B07"],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
       "materialization": "on-demand",
-      "truthfulness_note": "each 1B is logical capacity per block namespace, not a billion preloaded rows; integrated B01-B06 therefore represent 6B logical addresses with only materialized knowledge persisted"
+      "truthfulness_note": "each 1B is logical capacity per block namespace, not a billion preloaded rows; integrated B01-B07 therefore represent 7B logical addresses with only materialized knowledge persisted"
     },
     "block_3_catalog": {
       "canonical_areas": 20,
@@ -450,6 +454,71 @@
       "truthfulness_note": "1B are deterministic addressable representations of general life, body, physiology and human-needs knowledge; not 1B independent medical facts, diagnoses or personal health records"
     }
   },
+  "block_7_human_psychology": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/human_psychology.py",
+    "integration": "core/star_core.py",
+    "namespace": "B07",
+    "database": "star.db through BLOCO 3 for materialized canonical knowledge",
+    "requested_topics": [
+      "percepção",
+      "atenção",
+      "memória humana",
+      "aprendizagem",
+      "motivação",
+      "emoções",
+      "personalidade",
+      "cognição",
+      "hábitos",
+      "decisões",
+      "vieses",
+      "trauma",
+      "estresse",
+      "luto",
+      "identidade",
+      "autoestima",
+      "comportamento",
+      "expressões",
+      "intenção",
+      "teoria da mente",
+      "relações psicológicas"
+    ],
+    "reuse": {
+      "biological_context": "BLOCO 6 HumanLifeFoundations linked without reducing psychology to biology",
+      "educational_psychology_reference": "core.multidisciplinary_knowledge / psychology_sociology loaded lazily",
+      "canonical_knowledge": "BLOCO 3 UniversalKnowledgeArchitecture",
+      "claims_evidence_provenance": "BLOCO 2 epistemic ledger",
+      "knowledge_graph": "existing knowledge_nodes/knowledge_edges",
+      "parallel_clinical_engine_created": false,
+      "parallel_database_created": false,
+      "parallel_graph_created": false
+    },
+    "knowledge_graph_taxonomy": "Mente Humana e Psicologia -> domínio -> ramo -> subtema; root is related to BLOCO 6 human-life taxonomy and canonical B07 knowledge is linked to its branch in the same shared graph",
+    "canonical_policy": "general psychology knowledge may persist only after the BLOCO 2 CANONICAL fact gate and BLOCO 3 promotion; observations, expressions, provider answers and inferred intentions are never auto-canonicalized as facts about a person",
+    "interpretation_policy": {
+      "isolated_behavior_is_diagnosis": false,
+      "isolated_behavior_is_stable_trait": false,
+      "expression_is_intention": false,
+      "inferred_intention_is_certainty": false,
+      "automatic_mental_disorder_inference": false,
+      "automatic_personality_label": false,
+      "personal_psychological_profile_created": false,
+      "single_observation_is_pattern": false,
+      "rule": "COMPORTAMENTO ISOLADO ≠ DIAGNÓSTICO, TRAÇO ESTÁVEL, INTENÇÃO OU CERTEZA"
+    },
+    "behavior_interpretation": "returns epistemic inference with underdetermined certainty, multiple plausible interpretations, exceptions, missing context and no diagnosis/personality/intention conclusion",
+    "psychology_catalog": {
+      "domains": 13,
+      "branches": 50,
+      "lenses_per_branch": 20,
+      "canonical_nodes": 1000,
+      "variants_per_node": 1000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand",
+      "prepopulated_knowledge_rows": 0,
+      "truthfulness_note": "1B are deterministic addressable representations across psychological topics, contexts, perspectives, evidence modes, timescales, confidence bands and representations; not 1B diagnoses, personal profiles, inferred intentions or independently researched facts"
+    }
+  },
   "cognitive_catalog": {
     "themes": 15,
     "areas_per_theme": 20,
@@ -493,7 +562,8 @@
     "universal_search": "canonical/alias/facet indexes + SQLite FTS5/BM25 when available + bounded invalidatable cache",
     "physical_world_scene": "transient in-memory state; no new persistence table and no automatic promotion to canonical knowledge",
     "scientific_foundations": "no new table; canonical science persists through universal_knowledge and science taxonomy/relations use the existing knowledge graph",
-    "human_life_foundations": "no new table; canonical B06 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and physiological needs remain non-diagnostic without automatic personal health profiles"
+    "human_life_foundations": "no new table; canonical B06 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and physiological needs remain non-diagnostic without automatic personal health profiles",
+    "human_psychology_foundations": "no new table; canonical B07 knowledge persists through universal_knowledge, taxonomy/relations use the shared Knowledge Graph, and behavior interpretation remains inferential/non-diagnostic without automatic psychological profiles"
   },
   "math": {
     "engine": "SymPy",
