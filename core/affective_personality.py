@@ -134,7 +134,7 @@ PERSONALITY_BRANCHES = (
     PersonalityBranch("relationships", "relationship_learning", "Aprendizado relacional", _subs("feedback;reparação;cooperação;conflito;ajuste")),
     PersonalityBranch("relationships", "relationship_boundaries", "Limites relacionais", _subs("consentimento;privacidade;permissão;escopo;revogação")),
 
-    PersonalityBranch("adaptive_personality", "adaptive_baselines", "Baselines adaptativos", _subs("baseline;ajuste pequeno;histórico;persistência;rollback")),
+    PersonalityBranch("adaptive_personality", "adaptive_baselines", "Baselines da personalidade adaptativa", _subs("personalidade adaptativa;baseline;ajuste pequeno;histórico;persistência;rollback")),
     PersonalityBranch("adaptive_personality", "contextual_adaptation", "Adaptação contextual", _subs("contexto;estado;preferência;limite;continuidade")),
     PersonalityBranch("adaptive_personality", "bounded_learning", "Aprendizado bounded", _subs("taxa máxima;delta;limite;auditoria;segurança")),
     PersonalityBranch("adaptive_personality", "identity_boundary", "Fronteira com identidade", _subs("personalidade não é identidade;valores fundamentais;limites;autoridade B12")),
