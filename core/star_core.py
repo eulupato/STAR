@@ -4,6 +4,7 @@ from core.agents import AgentManager
 from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
 from core.foundations import FoundationSuite
+from core.human_life import HumanLifeFoundations
 from core.language_manager import LanguageManager
 from core.mind import CognitiveSuite
 from core.physical_world import PhysicalWorldModel
@@ -62,6 +63,15 @@ class StarCore:
             reasoner=self.mind.science,
         )
         self.mind.scientific_foundations = self.scientific_foundations
+
+        # BLOCO 6: vida, corpo e necessidades humanas como especialização da
+        # ciência existente. Usa o mesmo B02/B03/Knowledge Graph e nunca converte
+        # sinais, necessidades ou conhecimento geral em diagnóstico automático.
+        self.human_life = HumanLifeFoundations(
+            self.knowledge,
+            scientific_foundations=self.scientific_foundations,
+        )
+        self.mind.human_life = self.human_life
 
         self.last_intent = None
         self.user_name = None
@@ -124,6 +134,11 @@ class StarCore:
         if scientific_action:
             self.last_intent = "scientific_foundations"
             return scientific_action
+
+        human_life_action = self.human_life.handle(user_input)
+        if human_life_action:
+            self.last_intent = "human_life"
+            return human_life_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:

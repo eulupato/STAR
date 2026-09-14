@@ -69,7 +69,7 @@ Foundation: primeiro estabiliza shell, voz, comandos, providers e integração n
 depois porta a experiência validada para o Watch real. Ela não substitui nem pula
 o V2.0 MIND.
 
-Esses itens não significam que V5 SENSES, V8 AGENT ou V9 ECOSYSTEM estão
+Esses itens não significam que V5 SENSES, V8 AGENT ou V9 ECOSYSTEM estejam
 concluídos. O Gateway apenas entrega entradas ao Core atual; visão, Goal Engine,
 Device Manager completo, Offline-first Sync e permissões avançadas continuam em
 seus marcos originais.
@@ -287,9 +287,10 @@ Escala do BLOCO 3:
 - materialização sob demanda; zero requisito de 1B de linhas físicas.
 
 A arquitetura usa namespaces independentes com IDs textuais. `B01`, `B02`, `B03`,
-`B04` e `B05` registram cada um capacidade lógica própria de **1B**; blocos futuros
-podem registrar novos namespaces de 1B sem alteração de schema ou colisão de IDs.
-Apenas conhecimento efetivamente materializado ocupa disco, RAM, índices e cache.
+`B04`, `B05` e `B06` registram cada um capacidade lógica própria de **1B**; blocos
+futuros podem registrar novos namespaces de 1B sem alteração de schema ou colisão
+de IDs. Apenas conhecimento efetivamente materializado ocupa disco, RAM, índices e
+cache.
 
 Embeddings locais, Biblioteca completa, Knowledge Packs V2 e o restante da busca
 universal madura continuam pertencendo ao V3.0; o BLOCO 3 apenas estabelece a
@@ -482,6 +483,108 @@ somente conhecimento realmente materializado ocupa disco, índices e RAM. A
 Biblioteca científica completa, ingestão documental madura, embeddings locais,
 busca científica universal e o Scientific Engine expandido continuam pertencendo
 ao V3.0.
+
+### BLOCO 6 — Vida, Corpo e Necessidades Humanas
+
+O BLOCO 6 especializa a fundação científica para representar **vida, organização
+biológica, corpo humano, sistemas fisiológicos e necessidades humanas**. É uma
+camada experimental integrada sobre os BLOCO 2, 3 e 5 e **não cria um Health
+Engine, sistema clínico ou diagnóstico médico automático**.
+
+Implementação central: `core/human_life.py`, integrada em `core/star_core.py`. O
+BLOCO 6 reutiliza:
+
+- BLOCO 5 como fundação científica, principalmente sua Biologia e referências
+  científicas locais carregadas sob demanda;
+- BLOCO 2 para proveniência, evidências, confiança, incerteza e estado epistêmico;
+- BLOCO 3 para conhecimento canônico, deduplicação, busca, índices e cache;
+- `knowledge_nodes`/`knowledge_edges` como único Knowledge Graph;
+- o mesmo `star.db`, sem nova tabela específica de saúde ou corpo humano.
+
+A taxonomia oficial é:
+
+```text
+VIDA, CORPO E NECESSIDADES HUMANAS
+↓
+DOMÍNIO
+↓
+RAMO
+↓
+SUBTEMA
+↓
+CONHECIMENTO CANÔNICO GERAL
+```
+
+A raiz B06 também é ligada à Biologia do BLOCO 5 no mesmo grafo, preservando a
+relação de especialização sem duplicar a ciência de base. O catálogo cobre 13
+domínios estruturais e 50 ramos, incluindo profundamente:
+
+- vida, organismos, biomoléculas, genes e níveis de organização;
+- células, transporte, sinalização, ciclo celular, tecidos, órgãos e sistemas;
+- metabolismo, fluidos, eletrólitos, equilíbrio ácido-base, termorregulação,
+  fisiologia, homeostase e feedback;
+- evolução humana, variação, adaptação, aclimatação e plasticidade;
+- anatomia axial/apendicular, linguagem anatômica, histologia e visualização;
+- coração, circulação, vasos, sangue, pulmões, ventilação e trocas gasosas;
+- digestão, absorção, fígado, pâncreas, microbioma, macronutrientes,
+  micronutrientes e hidratação;
+- músculos, contração, ossos, articulações, movimento, postura, biomecânica e pele;
+- sistema nervoso, cérebro, medula, nervos, sistema autônomo, visão, audição,
+  equilíbrio, somatossensação e dor;
+- sistema imunológico, imunidade inata/adaptativa, inflamação, sistema linfático,
+  reparo, sistema endócrino, hormônios e regulação hormonal;
+- reprodução, gametogênese, gestação, desenvolvimento, puberdade, maturação,
+  envelhecimento e senescência;
+- sono, ritmos circadianos, fome, sede, saciedade, fadiga, esforço, recuperação e
+  necessidades humanas fundamentais;
+- higiene pessoal, higiene oral, higiene alimentar/ambiental, prevenção básica de
+  transmissão e consciência corporal não diagnóstica.
+
+Cada ramo é cruzado por 20 lentes: conceito, estrutura, função, mecanismo,
+metabolismo, regulação, sinalização, medição, variação biológica, desenvolvimento,
+evolução/adaptação, entradas/saídas, interação entre sistemas, evidências,
+limites/exceções, necessidades humanas, nutrição/hidratação, manutenção/higiene,
+relações de Knowledge Graph e fronteira científica.
+
+Regra permanente de segurança:
+
+```text
+CONHECIMENTO BIOLÓGICO ≠ DIAGNÓSTICO AUTOMÁTICO
+SINAL CORPORAL ≠ DOENÇA
+NECESSIDADE FISIOLÓGICA ≠ DIAGNÓSTICO
+CONTEXTO GERAL ≠ PERFIL PESSOAL DE SAÚDE
+```
+
+Consequentemente:
+
+- dor, fadiga, fome, sede, sono e outros sinais podem ser contextualizados como
+  fenômenos fisiológicos gerais, mas não geram automaticamente candidatos de
+  doença;
+- o BLOCO 6 não escolhe tratamento automaticamente;
+- o BLOCO 6 não cria perfil pessoal de saúde por inferência;
+- respostas de provedores científicos não são canonizadas automaticamente;
+- conhecimento B06 persistente exige um claim `fact` já `CANONICAL` no BLOCO 2 e
+  a promoção explícita pelo BLOCO 3;
+- dados pessoais de saúde, caso sejam usados no futuro, exigem camada própria,
+  permissões, privacidade, auditoria e regras adequadas; isso não é antecipado aqui.
+
+Escala do BLOCO 6:
+
+- **13 domínios**;
+- **50 ramos × 20 lentes = 1.000 nós canônicos**;
+- cada nó combina **10 profundidades × 10 escalas biológicas × 10 contextos
+  fisiológicos × 10 fases da vida × 10 modos de evidência × 10 representações =
+  1.000.000 de variações**;
+- **1.000 × 1.000.000 = 1.000.000.000 de representações endereçáveis em `B06`**;
+- IDs `LIFE-B06-0000000001` até `LIFE-B06-1000000000`;
+- materialização sob demanda; zero requisito de 1B de diagnósticos, prontuários,
+  fatos médicos independentes, arquivos ou linhas pré-carregadas.
+
+Com B06, B01–B06 oferecem **6B de endereços lógicos independentes**, enquanto
+somente conhecimento efetivamente materializado ocupa disco, índices e RAM. O
+Scientific Engine completo continua no V3.0; sistemas futuros de saúde, Cura,
+permissões e segurança continuam em seus marcos próprios e não são marcados como
+concluídos por este bloco.
 
 ### V2.1
 Memory Architecture.
