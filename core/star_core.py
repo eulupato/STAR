@@ -3,6 +3,7 @@ import time
 from core.agents import AgentManager
 from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
+from core.everyday_technology import EverydayTechnologyFoundations
 from core.foundations import FoundationSuite
 from core.human_contexts import HumanContextFoundations
 from core.human_life import HumanLifeFoundations
@@ -118,6 +119,17 @@ class StarCore:
         )
         self.mind.human_contexts = self.human_contexts
 
+        # BLOCO 11: mundo cotidiano e tecnológico. Relaciona objetos, sistemas,
+        # funções, usos, riscos, estados e contextos sobre B04/B05/B10 e as bases
+        # multidisciplinares existentes, sem criar outro motor técnico ou banco.
+        self.everyday_technology = EverydayTechnologyFoundations(
+            self.knowledge,
+            physical_world=self.physical_world,
+            scientific_foundations=self.scientific_foundations,
+            human_contexts=self.human_contexts,
+        )
+        self.mind.everyday_technology = self.everyday_technology
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -204,6 +216,11 @@ class StarCore:
         if human_context_action:
             self.last_intent = "human_contexts"
             return human_context_action
+
+        everyday_technology_action = self.everyday_technology.handle(user_input)
+        if everyday_technology_action:
+            self.last_intent = "everyday_technology"
+            return everyday_technology_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
