@@ -286,10 +286,7 @@ Escala do BLOCO 3:
 - **1.000.000.000 de representações endereçáveis em `B03`**;
 - materialização sob demanda; zero requisito de 1B de linhas físicas.
 
-A arquitetura usa namespaces independentes com IDs textuais. `B01`, `B02`, `B03`,
-`B04`, `B05`, `B06`, `B07`, `B08`, `B09` e `B10` registram cada um capacidade lógica própria de
-**1B**; blocos futuros podem registrar novos namespaces de 1B sem alteração de
-schema ou colisão de IDs. Apenas conhecimento efetivamente materializado ocupa
+A arquitetura usa namespaces independentes com IDs textuais. `B01` até `B16` usam a mesma arquitetura de namespaces lógicos conforme cada bloco integrado; B15 expõe cinco subespaços de 1B sobre fontes compartilhadas. Novos blocos podem continuar crescendo sem materializar bilhões de linhas ou criar schemas paralelos. Apenas conhecimento efetivamente materializado ocupa
 disco, RAM, índices e cache.
 
 Embeddings locais, Biblioteca completa, Knowledge Packs V2 e o restante da busca
@@ -1431,7 +1428,51 @@ a oferecer **19B de endereços lógicos**. Isso não significa 19B de fatos ou l
 materializadas. O BLOCO 15 fortalece a fundação dos cinco modelos da MIND, mas não
 declara V2.0 completa e não altera o marco oficial V1.9 FINAL → Watch-first → V2.0.
 
-### V2.1
+#### BLOCO 16 — Interpretação, Perspectiva e Cognição Social
+
+O BLOCO 16 especializa a cognição social já existente sem criar outro SOCIAL
+MODEL. Ele reutiliza B07 (psicologia/teoria da mente), B09 (sociedade/cultura),
+B13 (memória social), B14 (atenção/saliência) e os SOCIAL/SITUATION MODEL do B15.
+
+Cobertura central:
+
+- teoria da mente, perspectiva e expectativa;
+- intenção como hipótese, nunca leitura mental automática;
+- engano, mentira, segredo e assimetria de informação;
+- confiança e reputação contextuais e revisáveis;
+- cooperação, competição, negociação e coordenação;
+- persuasão/influência e detecção protetiva de manipulação;
+- responsabilidade, agência e prestação de contas;
+- empatia funcional e tomada de perspectiva;
+- relações, papéis, limites, consentimento e mudança relacional.
+
+Regras permanentes:
+
+```text
+INFERÊNCIA SOCIAL ≠ FATO
+INTENÇÃO ≠ CERTEZA
+SINAL DE ENGANO ≠ PROVA DE MENTIRA
+REPUTAÇÃO ≠ FATO
+CONFIANÇA ≠ PERMISSÃO
+EMPATIA ≠ LEITURA MENTAL
+```
+
+Manipulação é modelada para reconhecimento, contexto, risco, autonomia e proteção;
+o BLOCO 16 não transforma esse conhecimento em um catálogo operacional de técnicas
+de exploração social.
+
+Escala lógica B16:
+
+- **50 ramos × 10 lentes = 500 nós canônicos**;
+- perspectiva(10) × hipótese de intenção(10) × contexto(10) × evidência(10) ×
+  relação(10) × tempo(10) × interpretação primária/alternativa(2) = **2M** por nó;
+- **500 × 2M = 1.000.000.000** representações `SOC-B16-*` endereçáveis sob demanda.
+
+O 1B representa situações, perspectivas e hipóteses sociais combináveis; não 1B de
+intenções privadas conhecidas, mentiras comprovadas, reputações verdadeiras ou
+perfis pessoais pré-carregados.
+
+## V2.1
 Memory Architecture.
 
 ### V2.2
