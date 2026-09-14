@@ -1,0 +1,27 @@
+name: B18FixCounterfactualsTemp
+
+on: [push]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/feat/bloco18-raciocinio-simulacao'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/bloco18-raciocinio-simulacao
+          fetch-depth: 0
+      - name: Apply taxonomy fix
+        run: python tools/_b18_fix_counterfactuals_temp.py
+      - name: Commit fix
+        shell: bash
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add core/reasoning_simulation.py
+          git commit -m "fix(reasoning): cover counterfactuals explicitly"
+          git push origin HEAD:feat/bloco18-raciocinio-simulacao
