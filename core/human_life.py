@@ -79,8 +79,10 @@ DOMAIN_LABELS = {
 
 
 HUMAN_LIFE_BRANCHES = (
-    HumanLifeBranch("life_foundations", "life_organization", "Organização da vida", _subs(
-        "vida;organismos;níveis de organização biológica;células;tecidos;órgãos;sistemas;organismo integrado"
+    # Fundamentos da vida — 3
+    HumanLifeBranch("life_foundations", "life_organization", "Organização da vida e integração do organismo", _subs(
+        "vida;organismos;níveis de organização biológica;células;tecidos;órgãos;sistemas;organismo integrado;"
+        "sistemas corporais;comunicação entre sistemas;homeostase;respostas integradas;ambiente interno"
     )),
     HumanLifeBranch("life_foundations", "biomolecules_cellular_basis", "Base molecular e celular da vida", _subs(
         "água;íons;carboidratos;lipídios;proteínas;ácidos nucleicos;ATP;membranas;organelas"
@@ -88,10 +90,8 @@ HUMAN_LIFE_BRANCHES = (
     HumanLifeBranch("life_foundations", "genes_information", "Informação biológica e expressão gênica", _subs(
         "DNA;RNA;genes;cromossomos;replicação;transcrição;tradução;regulação gênica"
     )),
-    HumanLifeBranch("life_foundations", "organism_integration", "Integração do organismo", _subs(
-        "órgãos;sistemas corporais;comunicação entre sistemas;homeostase;respostas integradas;ambiente interno"
-    )),
 
+    # Células, tecidos, órgãos e sistemas — 4
     HumanLifeBranch("cells_tissues", "cell_structure_function", "Estrutura e função celular", _subs(
         "membrana plasmática;citoplasma;núcleo;mitocôndrias;ribossomos;retículo endoplasmático;Golgi;lisossomos;citoesqueleto"
     )),
@@ -105,6 +105,7 @@ HUMAN_LIFE_BRANCHES = (
         "órgãos;unidades funcionais;vascularização;inervação;integração anatômica;integração fisiológica"
     )),
 
+    # Metabolismo e homeostase — 4
     HumanLifeBranch("metabolism_homeostasis", "energy_metabolism", "Metabolismo energético", _subs(
         "metabolismo;catabolismo;anabolismo;enzimas;ATP;glicólise;ciclo do ácido cítrico;fosforilação oxidativa;metabolismo de lipídios;metabolismo de aminoácidos"
     )),
@@ -118,6 +119,7 @@ HUMAN_LIFE_BRANCHES = (
         "homeostase;feedback negativo;feedback positivo;set points;controle fisiológico;compensação;integração neuroendócrina"
     )),
 
+    # Evolução e adaptação — 3
     HumanLifeBranch("evolution_adaptation", "human_evolution", "Evolução humana e ancestralidade", _subs(
         "evolução;seleção natural;deriva genética;ancestralidade humana;hominínios;genética de populações;filogenia"
     )),
@@ -128,8 +130,10 @@ HUMAN_LIFE_BRANCHES = (
         "variação biológica;diversidade genética;crescimento;maturação;reprodução;senescência;trade-offs de história de vida"
     )),
 
-    HumanLifeBranch("anatomy", "anatomical_language", "Organização e linguagem anatômica", _subs(
-        "posição anatômica;planos anatômicos;eixos;regiões corporais;cavidades;termos direcionais;superfície corporal"
+    # Anatomia — 3
+    HumanLifeBranch("anatomy", "anatomical_language", "Organização, linguagem e visualização anatômica", _subs(
+        "posição anatômica;planos anatômicos;eixos;regiões corporais;cavidades;termos direcionais;superfície corporal;"
+        "histologia;microscopia;anatomia seccional;imagem anatômica;relações espaciais;variação anatômica normal"
     )),
     HumanLifeBranch("anatomy", "axial_anatomy", "Anatomia axial", _subs(
         "cabeça;pescoço;tórax;abdome;pelve;coluna;órgãos torácicos;órgãos abdominais"
@@ -137,10 +141,8 @@ HUMAN_LIFE_BRANCHES = (
     HumanLifeBranch("anatomy", "appendicular_anatomy", "Anatomia dos membros", _subs(
         "cintura escapular;membro superior;mão;cintura pélvica;membro inferior;pé;relações neurovasculares"
     )),
-    HumanLifeBranch("anatomy", "histology_imaging", "Histologia e visualização anatômica", _subs(
-        "histologia;microscopia;anatomia seccional;imagem anatômica;relações espaciais;variação anatômica normal"
-    )),
 
+    # Cardiovascular e respiratório — 4
     HumanLifeBranch("cardiorespiratory", "cardiovascular_system", "Sistema cardiovascular", _subs(
         "coração;vasos sanguíneos;artérias;veias;capilares;sangue;circulação pulmonar;circulação sistêmica"
     )),
@@ -154,6 +156,7 @@ HUMAN_LIFE_BRANCHES = (
         "oxigênio;dióxido de carbono;difusão alveolar;hemoglobina;transporte de gases;controle respiratório;relação ventilação-perfusão"
     )),
 
+    # Digestão e nutrição — 4
     HumanLifeBranch("digestive_nutrition", "digestive_system", "Sistema digestório", _subs(
         "boca;saliva;esôfago;estômago;intestino delgado;intestino grosso;fígado;vesícula biliar;pâncreas;digestão"
     )),
@@ -167,6 +170,7 @@ HUMAN_LIFE_BRANCHES = (
         "vitaminas;minerais;eletrólitos;água;hidratação;necessidades nutricionais;biodisponibilidade"
     )),
 
+    # Musculoesquelético e pele — 4
     HumanLifeBranch("musculoskeletal_skin", "muscle_system", "Músculos e contração", _subs(
         "músculos;músculo esquelético;músculo liso;músculo cardíaco;sarcômero;contração;força muscular;fadiga muscular"
     )),
@@ -180,6 +184,7 @@ HUMAN_LIFE_BRANCHES = (
         "pele;epiderme;derme;tecido subcutâneo;pelos;unhas;glândulas sudoríparas;barreira cutânea;termorregulação;sensibilidade"
     )),
 
+    # Sistema nervoso e sentidos — 6
     HumanLifeBranch("nervous_sensory", "nervous_system", "Sistema nervoso", _subs(
         "sistema nervoso central;sistema nervoso periférico;neurônios;glia;sinapses;potencial de ação;neurotransmissores"
     )),
@@ -199,6 +204,7 @@ HUMAN_LIFE_BRANCHES = (
         "tato;pressão;temperatura;propriocepção;nocicepção;dor;modulação da dor;vias somatossensoriais"
     )),
 
+    # Imunidade e endocrinologia — 4
     HumanLifeBranch("immune_endocrine", "immune_system", "Sistema imunológico", _subs(
         "sistema imunológico;imunidade inata;imunidade adaptativa;linfócitos;anticorpos;antígenos;memória imunológica"
     )),
@@ -212,22 +218,22 @@ HUMAN_LIFE_BRANCHES = (
         "eixos hormonais;feedback endócrino;ritmos circadianos;cortisol;insulina;glucagon;hormônios tireoidianos;hormônios sexuais"
     )),
 
+    # Reprodução, desenvolvimento e envelhecimento — 4
     HumanLifeBranch("reproduction_development_aging", "reproduction", "Reprodução humana", _subs(
         "reprodução;gametogênese;ovulação;ciclo reprodutivo;espermatogênese;fertilização;função reprodutiva"
     )),
     HumanLifeBranch("reproduction_development_aging", "embryology_pregnancy", "Embriologia e gestação", _subs(
         "fecundação;implantação;embrião;feto;placenta;desenvolvimento pré-natal;gestação;parto"
     )),
-    HumanLifeBranch("reproduction_development_aging", "growth_development", "Crescimento e desenvolvimento humano", _subs(
-        "desenvolvimento;infância;crescimento físico;desenvolvimento neural;desenvolvimento motor;maturação"
-    )),
-    HumanLifeBranch("reproduction_development_aging", "puberty_maturation", "Puberdade e maturação", _subs(
-        "puberdade;maturação sexual;mudanças hormonais;crescimento puberal;características sexuais;desenvolvimento corporal"
+    HumanLifeBranch("reproduction_development_aging", "growth_development", "Crescimento, desenvolvimento e maturação", _subs(
+        "desenvolvimento;infância;crescimento físico;desenvolvimento neural;desenvolvimento motor;maturação;puberdade;"
+        "maturação sexual;mudanças hormonais;crescimento puberal;características sexuais;desenvolvimento corporal"
     )),
     HumanLifeBranch("reproduction_development_aging", "aging", "Envelhecimento e senescência", _subs(
         "envelhecimento;senescência;mudanças celulares;mudanças fisiológicas;reserva funcional;plasticidade ao longo da vida;longevidade"
     )),
 
+    # Necessidades humanas, sono e fadiga — 4
     HumanLifeBranch("needs_sleep_fatigue", "sleep_circadian", "Sono e ritmos circadianos", _subs(
         "sono;vigília;ritmo circadiano;arquitetura do sono;sono REM;sono não REM;pressão homeostática do sono;recuperação"
     )),
@@ -241,13 +247,12 @@ HUMAN_LIFE_BRANCHES = (
         "necessidades humanas;respiração;água;alimentação;sono;termorregulação;eliminação;movimento;repouso;segurança;conforto;interação social"
     )),
 
+    # Higiene e prevenção básica — 3
     HumanLifeBranch("hygiene_prevention", "personal_hygiene", "Higiene pessoal", _subs(
         "higiene;mãos;pele;banho;higiene oral;dentes;cabelos;unhas;roupas;rotinas de limpeza"
     )),
-    HumanLifeBranch("hygiene_prevention", "food_environment_hygiene", "Higiene alimentar e ambiental", _subs(
-        "higiene dos alimentos;água segura;armazenamento de alimentos;limpeza de superfícies;saneamento;ventilação;ambiente"
-    )),
-    HumanLifeBranch("hygiene_prevention", "infection_prevention", "Prevenção básica de transmissão", _subs(
+    HumanLifeBranch("hygiene_prevention", "food_environment_hygiene", "Higiene alimentar, ambiental e prevenção de transmissão", _subs(
+        "higiene dos alimentos;água segura;armazenamento de alimentos;limpeza de superfícies;saneamento;ventilação;ambiente;"
         "lavagem de mãos;etiqueta respiratória;barreiras;limpeza;desinfecção;vacinação como conceito imunológico;cadeia de transmissão"
     )),
     HumanLifeBranch("hygiene_prevention", "body_awareness_non_diagnostic", "Consciência corporal não diagnóstica", _subs(
@@ -569,7 +574,6 @@ class HumanLifeFoundations:
             "human_life_taxonomy", "Vida, Corpo e Necessidades Humanas", node_id=self.TAXONOMY_ROOT_ID,
             data={"block": "B06", "diagnostic": False, "source_of_truth": "core/human_life.py"},
         )
-        # B06 especializa a Biologia do BLOCO 5, se a taxonomia científica estiver presente.
         science_biology = "SCI-DOM-BIOLOGY"
         self.graph.add_entity(
             "science_domain", "Biologia", node_id=science_biology,
@@ -791,8 +795,7 @@ class HumanLifeFoundations:
 
         need = re.match(r"^(?:necessidade humana|contextualizar necessidade)\s+(.+)$", raw, re.I)
         if need:
-            key = need.group(1).strip()
-            result = self.contextualize_need(key)
+            result = self.contextualize_need(need.group(1).strip())
             return (
                 f"🧬 {result['label'].title()}: {result['physiological_role']}. "
                 "Isto é contexto fisiológico geral e não diagnóstico."
