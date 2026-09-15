@@ -13,6 +13,7 @@ from config import (
     EXTERNAL_AI_ENABLED,
     VERSION,
 )
+from core.cognitive_integration import CognitiveIntegration
 from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
@@ -58,6 +59,14 @@ def create_star():
         identity=identity,
         internal_knowledge=knowledge,
     )
+
+    # Integração cognitiva sobre a STAR já construída. Não cria outro Brain,
+    # memória, planner ou personalidade: conecta o Router/Executive ao B12-B24.
+    cognition = CognitiveIntegration(star)
+    star.cognitive_integration = cognition
+    router.cognitive_integration = cognition
+    executive.cognitive_integration = cognition
+
     star.skills = SkillRegistry()
     star.tools = ToolRegistry()
     star.tools.register("math", safe_math, True, "Cálculo matemático offline")
@@ -148,6 +157,7 @@ def main():
         f"{mind_stats['canonical_nodes_total']} nós cognitivos | "
         f"{mind_stats['support_contents_total']} conteúdos operacionais endereçáveis"
     )
+    print("🔄 Cognição integrada: FAST/DELIBERATIVE + posição cognitiva")
     print("🧩 Skills: PREPARADAS")
     print("🛠️ Ferramentas: ATIVAS (matemática offline + MIND experimental)")
     print(f"📦 Knowledge Packs detectados: {pack_stats['packs']}")
