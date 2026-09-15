@@ -280,11 +280,12 @@ def test_continuity_keeps_same_identity_opinion_across_multiple_interactions():
     )
     positions = [
         integration.build_position({"input": "Filme Z é horrível."}, {}),
-        integration.build_position({"input": "Eu continuo achando Filme Z ruim."}, {}),
+        integration.build_position({"input": "Filme Z é ruim."}, {}),
         integration.build_position({"input": "Qual sua opinião sobre Filme Z?"}, {}),
     ]
     assert all(position["star_opinion"]["position"] == "positivo" for position in positions)
     assert positions[0]["disagreement"]["active"] is True
+    assert positions[1]["disagreement"]["active"] is True
     assert integration.opinion("filme z")["confidence"] == 0.78
 
 
