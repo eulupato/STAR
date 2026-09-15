@@ -41,6 +41,8 @@ def _now() -> str:
 
 
 def _unique(values: Iterable[Any], *, limit: int = 64) -> tuple[str, ...]:
+    if isinstance(values, (str, bytes)):
+        values = (values,)
     out: list[str] = []
     for value in values:
         item = _clean(value)
@@ -610,6 +612,7 @@ class MultimodalPerception:
                 "urgency": fusion.get("urgency", 0.0),
                 "confidence": fusion.get("confidence", 0.5),
                 "entities": entities,
+                "sensor_fusion": True,
                 "metadata": deepcopy(fusion),
             })
             if len(candidates) >= limit:
