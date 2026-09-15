@@ -406,6 +406,7 @@ class MindLoop:
         goal = _clean(goal)
         current = deepcopy(dict(current_state or {}))
         desired = deepcopy(dict(desired_state or {}))
+        option_list = deepcopy(list(options or ())[:32])
         limit = max(4, min(int(active_limit), min(self.global_workspace.max_active, 32)))
         stages: dict[str, Any] = {}
 
@@ -480,7 +481,7 @@ class MindLoop:
         stages["interpretacao"] = interpretation
 
         # 9 — SIMULAÇÃO: baseline/alteração hipotética, nunca observação.
-        first_option = next(iter(list(options or ())[:1]), None)
+        first_option = option_list[0] if option_list else None
         changes = deepcopy(first_option.get("changes") or {}) if isinstance(first_option, dict) else {}
         simulation = self.reasoning_simulation.simulate_state(current, changes, assumptions=["B24 bounded cycle simulation"])
         stages["simulacao"] = simulation
@@ -526,7 +527,7 @@ class MindLoop:
                 current_state=current,
                 desired_state=desired,
                 obstacles=obstacles,
-                options=options,
+                options=option_list,
                 constraints=constraints,
                 context_candidates=active,
                 context_limit=min(8, limit),

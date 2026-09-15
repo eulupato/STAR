@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 24,
+  "schema": 25,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": [
@@ -108,7 +108,11 @@
     "Global Cognitive Workspace keeps a bounded active set rather than loading the logical knowledge space",
     "B23 integrates Perception/Salience/Attention/Memory/Knowledge/Language/Planning/Executive/Self/Situation by reference",
     "workspace activation and broadcast never execute actions or grant permissions",
-    "perception remains explicitly unavailable until a real provider is attached"
+    "perception remains explicitly unavailable until a real provider is attached",
+    "B24 Mind Loop orchestrates existing cognition instead of duplicating memory, models, reasoning or planning",
+    "each Mind Loop cycle retrieves only bounded active context through B23/B14 rather than scanning logical 1B spaces",
+    "the ACTION stage evaluates operational eligibility but never executes tools or devices",
+    "RESULT/EXPERIENCE/LEARNING require observed and auditable input; the loop never fabricates outcomes to complete a cycle"
   ],
   "capabilities": [
     "reasoning",
@@ -305,7 +309,8 @@
         "B20",
         "B21",
         "B22",
-        "B23"
+        "B23",
+        "B24"
       ],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
@@ -1848,6 +1853,65 @@
       "active_index": "workspace-only"
     },
     "perception_status_before_B25": "provider optional/unavailable; no fabricated sensing",
+    "catalog": {
+      "domains": 10,
+      "branches": 50,
+      "lenses_per_branch": 10,
+      "canonical_nodes": 500,
+      "variants_per_node": 2000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand"
+    }
+  },
+  "block_24_mind_loop": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/mind_loop.py",
+    "integration": "core/star_core.py",
+    "namespace": "B24",
+    "logical_capacity": 1000000000,
+    "stages": [
+      "PERCEBER",
+      "CONTEXTO",
+      "WORKING MEMORY",
+      "SALIÊNCIA",
+      "MEMÓRIA",
+      "CONHECIMENTO",
+      "MODELOS",
+      "INTERPRETAÇÃO",
+      "SIMULAÇÃO",
+      "METACOGNIÇÃO",
+      "JULGAMENTO",
+      "DECISÃO",
+      "AÇÃO",
+      "RESULTADO",
+      "EXPERIÊNCIA",
+      "APRENDIZADO",
+      "ATUALIZAÇÃO"
+    ],
+    "retrieval": {
+      "workspace": "B23 bounded active set",
+      "attention": "B14 top-k",
+      "memory": "B13 limit",
+      "knowledge": "B03 indexed limit"
+    },
+    "reuses": [
+      "B13",
+      "B14",
+      "B15",
+      "B18",
+      "B19",
+      "B20",
+      "B21",
+      "B22",
+      "B23",
+      "B01 OperationalBoundary"
+    ],
+    "safety": {
+      "automatic_execution": false,
+      "fabricated_result": false,
+      "unaudited_experience": false,
+      "automatic_code_modification": false
+    },
     "catalog": {
       "domains": 10,
       "branches": 50,

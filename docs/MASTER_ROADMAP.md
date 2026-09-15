@@ -1678,6 +1678,28 @@ SALIÊNCIA/PRIORIDADE ≠ PERMISSÃO
 Escala lógica: 500 nós × 2M = **1B** `GWS-B23-*` sob demanda, enquanto a janela
 de runtime mantém no máximo 64 itens (32 por padrão).
 
+### BLOCO 24 — Mind Loop
+
+B24 orquestra o ciclo cognitivo explícito da STAR reutilizando os sistemas já
+existentes, sem criar memória/modelos/planner/executor paralelos:
+
+```text
+PERCEBER → CONTEXTO → WORKING MEMORY → SALIÊNCIA → MEMÓRIA → CONHECIMENTO
+→ MODELOS → INTERPRETAÇÃO → SIMULAÇÃO → METACOGNIÇÃO → JULGAMENTO → DECISÃO
+→ AÇÃO → RESULTADO → EXPERIÊNCIA → APRENDIZADO → ATUALIZAÇÃO
+```
+
+A recuperação é bounded: B23/B14 selecionam o conjunto ativo, B13/B03 são
+consultados com limites pequenos e os espaços lógicos de 1B dos blocos anteriores
+nunca são varridos/carregados integralmente em um ciclo.
+
+A etapa **AÇÃO** somente avalia `OperationalBoundary`; B24 não executa ferramentas
+ou dispositivos. RESULTADO só existe se observado/fornecido e EXPERIÊNCIA exige
+fonte + referência auditável. Sem resultado real, aprendizado/atualização não são
+inventados.
+
+Escala B24: 500 nós × 2M = **1B** `LOOP-B24-*` sob demanda.
+
 ## V2.1
 Memory Architecture.
 
