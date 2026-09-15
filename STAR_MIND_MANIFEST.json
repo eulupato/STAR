@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 23,
+  "schema": 24,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": [
@@ -104,7 +104,11 @@
     "knowledge integration means updating model relations and active representations, not merely storing or copying data",
     "B22 reuses the five B15 model frames and shared knowledge graph; no parallel world/human/social/self/situation models",
     "noncanonical knowledge never becomes a model fact silently and SELF integration cannot redefine identity or permissions",
-    "Situation Model integration remains temporary/revisable and preserves the original knowledge item and provenance"
+    "Situation Model integration remains temporary/revisable and preserves the original knowledge item and provenance",
+    "Global Cognitive Workspace keeps a bounded active set rather than loading the logical knowledge space",
+    "B23 integrates Perception/Salience/Attention/Memory/Knowledge/Language/Planning/Executive/Self/Situation by reference",
+    "workspace activation and broadcast never execute actions or grant permissions",
+    "perception remains explicitly unavailable until a real provider is attached"
   ],
   "capabilities": [
     "reasoning",
@@ -300,7 +304,8 @@
         "B19",
         "B20",
         "B21",
-        "B22"
+        "B22",
+        "B23"
       ],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
@@ -1802,6 +1807,47 @@
       "self_grants_permissions": false,
       "situation_temporary": true
     },
+    "catalog": {
+      "domains": 10,
+      "branches": 50,
+      "lenses_per_branch": 10,
+      "canonical_nodes": 500,
+      "variants_per_node": 2000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand"
+    }
+  },
+  "block_23_global_cognitive_workspace": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/global_workspace.py",
+    "integration": "core/star_core.py",
+    "namespace": "B23",
+    "logical_capacity": 1000000000,
+    "components": [
+      "Perception",
+      "Salience",
+      "Attention",
+      "Memory",
+      "Knowledge",
+      "Language",
+      "Planning",
+      "Executive",
+      "Self",
+      "Situation Model"
+    ],
+    "active_window": {
+      "bounded": true,
+      "default_max": 32,
+      "hard_max": 64,
+      "persistent": false
+    },
+    "retrieval": {
+      "memory": "B13 bounded recall",
+      "knowledge": "B03 indexed query/cache",
+      "selection": "B14 top-k salience",
+      "active_index": "workspace-only"
+    },
+    "perception_status_before_B25": "provider optional/unavailable; no fabricated sensing",
     "catalog": {
       "domains": 10,
       "branches": 50,

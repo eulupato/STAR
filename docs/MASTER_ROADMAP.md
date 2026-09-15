@@ -1659,6 +1659,25 @@ CONHECIMENTO NOVO PODE REVISAR MODELOS ≠ REDEFINIR A STAR
 Escala: 50 ramos × 10 lentes = 500 nós; 2M de contextos por nó =
 **1.000.000.000** representações `KINT-B22-*` sob demanda.
 
+### BLOCO 23 — Global Cognitive Workspace
+
+B23 cria uma janela cognitiva **bounded**, não outro banco. Perception, Salience,
+Attention, Memory, Knowledge, Language, Planning, Executive, Self e Situation Model
+competem por um conjunto ativo pequeno selecionado pelo B14. B03/B13 são consultados
+com top-k limitado e o índice do workspace cobre somente os itens ativos.
+
+Antes do B25, Perception fica explicitamente `unavailable` salvo quando observações
+são fornecidas por um provider real/externo; nenhum sensor é inventado.
+
+```text
+WORKSPACE ATIVO ≠ CONHECIMENTO TOTAL
+SELECIONAR ≠ EXECUTAR
+SALIÊNCIA/PRIORIDADE ≠ PERMISSÃO
+```
+
+Escala lógica: 500 nós × 2M = **1B** `GWS-B23-*` sob demanda, enquanto a janela
+de runtime mantém no máximo 64 itens (32 por padrão).
+
 ## V2.1
 Memory Architecture.
 
