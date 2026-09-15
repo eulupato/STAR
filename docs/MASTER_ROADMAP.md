@@ -1700,6 +1700,28 @@ inventados.
 
 Escala B24: 500 nós × 2M = **1B** `LOOP-B24-*` sob demanda.
 
+### BLOCO 25 — Percepção Multimodal
+
+B25 integra visão, áudio, voz, tela, localização, sensores, movimento, objetos,
+pessoas, ambiente e tempo em uma camada perceptiva comum com **Sensor Fusion**.
+A arquitetura reutiliza as referências existentes (`modules.vision`,
+`voice.audio_input`, `voice.manager` e captura de tela manual), mas não inicia
+câmera, microfone, screenshot, localização ou sensores automaticamente.
+Modalidades sem provider real permanecem `unavailable`; provider conectado sem
+observação fica `idle`.
+
+Observações preservam fonte, referência, timestamp, confiança, features, objetos,
+pessoas, eventos, sons, movimentos, ambiente e localização. Sensor Fusion opera
+sobre uma janela bounded, relaciona sinais por co-observação/entidades, preserva
+contradições e produz `inference`, nunca fato canônico automático.
+
+B25 alimenta B23 e B24 por `workspace_observations()` side-effect free; esses
+consumidores nunca fazem polling silencioso de hardware. Coleta de providers é
+explícita e requer permissão informada ao método.
+
+Escala lógica: 500 nós × 2M = **1B** `PER-B25-*` sob demanda; buffers de runtime
+são pequenos (128 observações / 64 fusões por padrão), sem banco de sensores paralelo.
+
 ## V2.1
 Memory Architecture.
 

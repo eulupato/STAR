@@ -346,8 +346,15 @@ class MindLoop:
             items = [deepcopy(item) for item in list(explicit)[:16] if isinstance(item, dict)]
             return {"status": "provided", "items": items, "provider_available": self.perception_provider is not None, "fabricated": False}
         if self.perception_provider is not None and hasattr(self.perception_provider, "workspace_observations"):
-            items = self.perception_provider.workspace_observations(limit=16)
-            return {"status": "provider", "items": deepcopy(list(items or ()))[:16], "provider_available": True, "fabricated": False}
+            items = deepcopy(list(self.perception_provider.workspace_observations(limit=16) or ()))[:16]
+            available = bool(items)
+            checker = getattr(self.perception_provider, "workspace_available", None)
+            if callable(checker):
+                try:
+                    available = bool(checker())
+                except (RuntimeError, TypeError, AttributeError):
+                    available = bool(items)
+            return {"status": "provider" if items else "idle", "items": items, "provider_available": available, "fabricated": False}
         return {"status": "unavailable", "items": [], "provider_available": False, "fabricated": False}
 
     @staticmethod

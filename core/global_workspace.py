@@ -92,8 +92,16 @@ class GlobalCognitiveWorkspace:
     @staticmethod
     def _candidate(content,source,**kw):
         return {"content":_clean(content),"source":_clean(source),"importance":_clamp(kw.get("importance",.5)),"risk":_clamp(kw.get("risk",0)),"urgency":_clamp(kw.get("urgency",0)),"confidence":_clamp(kw.get("confidence",.5)),"entities":tuple(kw.get("entities") or ()),"metadata":deepcopy(kw.get("metadata") or {})}
+    def _perception_status(self):
+        provider=self.perception_provider
+        if provider is None:return "unavailable"
+        checker=getattr(provider,"workspace_available",None)
+        if callable(checker):
+            try:return "available" if bool(checker()) else "idle"
+            except (RuntimeError,TypeError,AttributeError):return "unknown"
+        return "available"
     def component_status(self):
-        return {"perception":"available" if self.perception_provider is not None else "unavailable","salience":"available","attention":"available","memory":"available","knowledge":"available","language":"available" if self.language else "unavailable","planning":"available" if self.planning else "unavailable","executive":"available" if self.executive else "unavailable","self":"available" if self.self_model else "unavailable","situation":"available" if self.internal_models else "unavailable"}
+        return {"perception":self._perception_status(),"salience":"available","attention":"available","memory":"available","knowledge":"available","language":"available" if self.language else "unavailable","planning":"available" if self.planning else "unavailable","executive":"available" if self.executive else "unavailable","self":"available" if self.self_model else "unavailable","situation":"available" if self.internal_models else "unavailable"}
     def retrieve(self,query:str,*,memory_limit:int=8,knowledge_limit:int=8)->list[dict]:
         query=_clean(query);out=[]
         if query:
