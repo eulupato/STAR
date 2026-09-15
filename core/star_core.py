@@ -22,6 +22,7 @@ from core.learning_evolution import LearningEvolution
 from core.memory_continuity import MemoryContinuity
 from core.metacognition import Metacognition
 from core.mind_loop import MindLoop
+from core.multimodal_perception import MultimodalPerception
 from core.mind import CognitiveSuite
 from core.physical_world import PhysicalWorldModel
 from core.scientific_foundations import ScientificFoundations
@@ -332,6 +333,15 @@ class StarCore:
         )
         self.mind.mind_loop = self.mind_loop
 
+        # BLOCO 25: Percepção Multimodal + Sensor Fusion. Reutiliza as referências
+        # existentes de visão/áudio/voz/tela, mas não inicia nenhum sensor. Dados só
+        # entram explicitamente ou por coleta autorizada; B23/B24 consomem o buffer
+        # perceptivo bounded sem polling silencioso.
+        self.multimodal_perception = MultimodalPerception(self.knowledge)
+        self.global_workspace.attach_perception(self.multimodal_perception)
+        self.mind_loop.attach_perception(self.multimodal_perception)
+        self.mind.multimodal_perception = self.multimodal_perception
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -488,6 +498,11 @@ class StarCore:
         if mind_loop_action:
             self.last_intent = "mind_loop"
             return mind_loop_action
+
+        perception_action = self.multimodal_perception.handle(user_input)
+        if perception_action:
+            self.last_intent = "multimodal_perception"
+            return perception_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
