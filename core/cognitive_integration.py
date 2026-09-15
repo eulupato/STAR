@@ -8,7 +8,8 @@ Princípios:
 - informação do usuário não vira crença/opinião da STAR automaticamente;
 - FAST PATH evita o ciclo profundo quando ele não agrega valor;
 - DELIBERATIVE PATH reutiliza o MindLoop B24 e seus componentes oficiais;
-- opinião persistente usa o mesmo ``cognitive_memory`` já utilizado pelo B17;
+- opinião persistente usa o mesmo ``cognitive_memory`` já utilizado pela STAR,
+  mas com ``kind=opinion`` separado de ``preference``;
 - pensar/decidir não executa ferramentas nem concede permissões;
 - a expressão é derivada da posição cognitiva, não de falas específicas por input.
 """
@@ -99,7 +100,7 @@ class CognitiveIntegration:
     """Ponte fina entre o pipeline estável e a cognição já existente."""
 
     SCHEMA = "star.cognitive_position.v1"
-    OPINION_PREFIX = "cognitive_opinion::"
+    OPINION_KEY_PREFIX = "star.opinion"
 
     def __init__(self, star):
         self.star = star
@@ -145,22 +146,31 @@ class CognitiveIntegration:
         return "information_or_conversation"
 
     # ------------------------------------------------------------------
-    # Opiniões persistentes sobre o store oficial do B17
+    # Opiniões persistentes no store oficial, separadas de preferências
     # ------------------------------------------------------------------
     @classmethod
-    def _opinion_name(cls, topic: str) -> str:
-        return f"{cls.OPINION_PREFIX}{_slug(topic)}"
+    def _opinion_key(cls, topic: str) -> str:
+        return f"{cls.OPINION_KEY_PREFIX}.{_slug(topic)}"
+
+    def _opinion_store(self):
+        """Retorna o CognitiveStore/EpistemicStore já usado pelo B13/B17."""
+        cognitive_memory = getattr(self.memory, "memory", None)
+        store = getattr(cognitive_memory, "store", None)
+        if store is None:
+            raise RuntimeError("store cognitivo oficial indisponível")
+        return store
 
     def opinion(self, topic: str) -> dict | None:
         if not _clean(topic):
             return None
-        item = self.personality.preference(self._opinion_name(topic))
-        if not item:
+        record = self._opinion_store().memory_by_key(self._opinion_key(topic), kind="opinion")
+        if not record:
             return None
-        value = deepcopy(item.get("value"))
+        metadata = record.get("metadata") or {}
+        value = deepcopy(metadata.get("value"))
         if not isinstance(value, dict) or value.get("epistemic_kind") != "opinion":
             return None
-        value["record"] = item.get("record")
+        value["record"] = record
         return value
 
     def record_opinion(
@@ -181,8 +191,13 @@ class CognitiveIntegration:
     ) -> dict:
         topic = _clean(topic)
         position = _clean(position)
+        source = _clean(source)
+        reference = _clean(reference)
         if not topic or not position:
             raise ValueError("opinião requer tema e posição")
+        if not source or not reference:
+            raise ValueError("opinião persistente requer fonte e referência auditáveis")
+
         previous = self.opinion(topic)
         previous_record = (previous or {}).get("record") or {}
         value = {
@@ -202,14 +217,28 @@ class CognitiveIntegration:
             "user_claim_is_source_of_star_opinion": False,
             "fact": False,
         }
-        stored = self.personality.set_preference(
-            self._opinion_name(topic),
-            value,
-            source=source,
-            reference=reference,
-            confidence=confidence,
+        metadata = {
+            "block": "COGNITIVE-INTEGRATION",
+            "epistemic_kind": "opinion",
+            "value": deepcopy(value),
+            "source": source,
+            "reference": reference,
+            "confidence": _clamp(confidence),
+            "identity_mutation": False,
+            "fundamental_values_mutation": False,
+            "permission_mutation": False,
+            "preference_kind": False,
+        }
+        store = self._opinion_store()
+        memory_id = store.remember(
+            "opinion",
+            f"{topic}: {position}",
+            key=self._opinion_key(topic),
+            metadata=metadata,
+            importance=0.7,
         )
-        return {**value, "memory_id": stored.get("memory_id"), "history_preserved": True}
+        record = store.memory_by_id(memory_id)
+        return {**value, "memory_id": memory_id, "record": record, "history_preserved": True}
 
     def revise_opinion(self, topic: str, position: str, **kwargs) -> dict:
         if self.opinion(topic) is None:
