@@ -116,8 +116,17 @@ class GlobalCognitiveWorkspace:
             if len(pool)>=self.attention_salience.max_candidates:break
             if isinstance(raw,dict):pool.append(self._candidate(raw.get("content") or raw.get("label"),raw.get("source") or "candidate",importance=raw.get("importance",.5),risk=raw.get("risk",0),urgency=raw.get("urgency",0),confidence=raw.get("confidence",.5),entities=raw.get("entities"),metadata=raw.get("metadata")))
         selected=self.attention_salience.select_relevant(iter(pool),limit=limit)
-        self._active=deepcopy(selected.get("selected") or [])[:limit];self._reindex()
-        return {"active":deepcopy(self._active),"active_count":len(self._active),"max_active":self.max_active,"bounded":True,"candidate_pool_count":len(pool),"truncated":selected.get("truncated",False),"component_status":self.component_status(),"workspace_is_persistent_memory":False,"execution_performed":False,"operational_authorization":False}
+        active=[]
+        for scored in selected.get("selected") or []:
+            candidate=deepcopy(scored.get("candidate") or {})
+            if not candidate:
+                continue
+            candidate["attention_score"]=scored.get("score")
+            candidate["attention_components"]=deepcopy(scored.get("components") or {})
+            candidate["selection_is_inference"]=True
+            active.append(candidate)
+        self._active=active[:limit];self._reindex()
+        return {"active":deepcopy(self._active),"active_count":len(self._active),"max_active":self.max_active,"bounded":True,"candidate_pool_count":len(pool),"truncated":selected.get("input_truncated",False),"component_status":self.component_status(),"workspace_is_persistent_memory":False,"execution_performed":False,"operational_authorization":False}
     def _reindex(self):
         idx={}
         for i,item in enumerate(self._active):
