@@ -23,6 +23,8 @@ from core.memory_continuity import MemoryContinuity
 from core.metacognition import Metacognition
 from core.mind_loop import MindLoop
 from core.multimodal_perception import MultimodalPerception
+from core.people_entities import PeopleEntities
+from core.body_proprioception import BodyProprioception
 from core.mind import CognitiveSuite
 from core.physical_world import PhysicalWorldModel
 from core.scientific_foundations import ScientificFoundations
@@ -341,6 +343,26 @@ class StarCore:
         self.global_workspace.attach_perception(self.multimodal_perception)
         self.mind_loop.attach_perception(self.multimodal_perception)
 
+        # BLOCO 26: pessoas persistem como entidades do grafo compartilhado e
+        # memórias B13. Reconhecimento permanece hipótese; autenticação é separada.
+        self.people_entities = PeopleEntities(
+            self.knowledge,
+            memory_continuity=self.memory_continuity,
+            social_cognition=self.social_cognition,
+            perception=self.multimodal_perception,
+        )
+        self.mind.people_entities = self.people_entities
+
+        # BLOCO 27: corpo/propriocepção como endpoint da STAR. Estado sensorial
+        # alimenta B25; comandos só atravessam boundary e não são atuados aqui.
+        self.body_proprioception = BodyProprioception(
+            self.knowledge,
+            physical_world=self.physical_world,
+            perception=self.multimodal_perception,
+            operational_boundary=self.foundations.boundary,
+        )
+        self.mind.body_proprioception = self.body_proprioception
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -502,6 +524,16 @@ class StarCore:
         if perception_action:
             self.last_intent = "multimodal_perception"
             return perception_action
+
+        people_action = self.people_entities.handle(user_input)
+        if people_action:
+            self.last_intent = "people_entities"
+            return people_action
+
+        body_action = self.body_proprioception.handle(user_input)
+        if body_action:
+            self.last_intent = "body_proprioception"
+            return body_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
