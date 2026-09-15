@@ -21,6 +21,7 @@ from core.language_manager import LanguageManager
 from core.learning_evolution import LearningEvolution
 from core.memory_continuity import MemoryContinuity
 from core.metacognition import Metacognition
+from core.mind_loop import MindLoop
 from core.mind import CognitiveSuite
 from core.physical_world import PhysicalWorldModel
 from core.scientific_foundations import ScientificFoundations
@@ -310,6 +311,27 @@ class StarCore:
         )
         self.mind.global_workspace = self.global_workspace
 
+        # BLOCO 24: Mind Loop. Orquestra B13-B23 em 17 etapas com recuperação
+        # bounded. A etapa AÇÃO avalia apenas a fronteira operacional; nenhuma
+        # ferramenta/dispositivo é executado pelo loop e resultados não observados
+        # nunca viram experiências inventadas.
+        self.mind_loop = MindLoop(
+            self.knowledge,
+            global_workspace=self.global_workspace,
+            memory_continuity=self.memory_continuity,
+            attention_salience=self.attention_salience,
+            internal_models=self.internal_models,
+            reasoning_simulation=self.reasoning_simulation,
+            metacognition=self.metacognition,
+            planning_decision=self.planning_decision,
+            learning_evolution=self.learning_evolution,
+            knowledge_integration=self.knowledge_integration,
+            operational_boundary=self.foundations.boundary,
+            social_cognition=self.social_cognition,
+            perception_provider=None,
+        )
+        self.mind.mind_loop = self.mind_loop
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -461,6 +483,11 @@ class StarCore:
         if workspace_action:
             self.last_intent = "global_workspace"
             return workspace_action
+
+        mind_loop_action = self.mind_loop.handle(user_input)
+        if mind_loop_action:
+            self.last_intent = "mind_loop"
+            return mind_loop_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
