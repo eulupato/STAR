@@ -15,6 +15,7 @@ from core.human_contexts import HumanContextFoundations
 from core.human_life import HumanLifeFoundations
 from core.human_psychology import HumanPsychologyFoundations
 from core.language_communication import LanguageCommunicationFoundations
+from core.knowledge_integration import KnowledgeIntegrationEngine
 from core.language_manager import LanguageManager
 from core.learning_evolution import LearningEvolution
 from core.memory_continuity import MemoryContinuity
@@ -278,6 +279,19 @@ class StarCore:
         )
         self.mind.learning_evolution = self.learning_evolution
 
+        # BLOCO 22: integração ativa do conhecimento nos mesmos cinco modelos B15.
+        # Relações, expectativas, previsões, interpretações, contexto e julgamentos
+        # são atualizados por referência, sem copiar datasets ou redefinir identidade.
+        self.knowledge_integration = KnowledgeIntegrationEngine(
+            self.knowledge,
+            internal_models=self.internal_models,
+            metacognition=self.metacognition,
+            learning_evolution=self.learning_evolution,
+            reasoning_simulation=self.reasoning_simulation,
+            attention_salience=self.attention_salience,
+        )
+        self.mind.knowledge_integration = self.knowledge_integration
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -419,6 +433,11 @@ class StarCore:
         if learning_action:
             self.last_intent = "learning_evolution"
             return learning_action
+
+        integration_action = self.knowledge_integration.handle(user_input)
+        if integration_action:
+            self.last_intent = "knowledge_integration"
+            return integration_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:

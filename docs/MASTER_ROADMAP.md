@@ -1639,6 +1639,26 @@ EVOLUIR ≠ AUTOEDITAR IRRESTRITAMENTE O CÓDIGO CENTRAL
 Escala: 50 ramos × 10 lentes = 500 nós; 2M de combinações por nó =
 **1.000.000.000** representações `LEARN-B21-*` sob demanda.
 
+### BLOCO 22 — Knowledge Integration Engine
+
+B22 fecha a diferença entre **armazenar** e **integrar** conhecimento. Ele reutiliza
+o B03/Knowledge Graph e os mesmos cinco frames B15 para atualizar por referência:
+relações, expectativas, previsões, interpretações, contexto e julgamentos.
+
+Conhecimento não canônico permanece observação/inferência/hipótese. `facts` só
+recebe material explicitamente canônico com proveniência; o SELF MODEL não aceita
+este bloco como autoridade para redefinir identidade, valores ou permissões.
+SITUATION MODEL recebe atualizações temporárias e revisáveis.
+
+```text
+INTEGRAR ≠ COPIAR
+ARMAZENAR ≠ INTEGRAR
+CONHECIMENTO NOVO PODE REVISAR MODELOS ≠ REDEFINIR A STAR
+```
+
+Escala: 50 ramos × 10 lentes = 500 nós; 2M de contextos por nó =
+**1.000.000.000** representações `KINT-B22-*` sob demanda.
+
 ## V2.1
 Memory Architecture.
 

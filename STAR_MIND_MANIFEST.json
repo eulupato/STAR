@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 22,
+  "schema": 23,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": [
@@ -100,7 +100,11 @@
     "continuous learning preserves source, reference, confidence, consistency and previous versions",
     "experience and generalization remain revisable and do not become canonical facts automatically",
     "B21 may adapt memory, strategy and bounded personality state but has no unrestricted authority to modify central code",
-    "prediction error drives review without rewriting predicted or observed history"
+    "prediction error drives review without rewriting predicted or observed history",
+    "knowledge integration means updating model relations and active representations, not merely storing or copying data",
+    "B22 reuses the five B15 model frames and shared knowledge graph; no parallel world/human/social/self/situation models",
+    "noncanonical knowledge never becomes a model fact silently and SELF integration cannot redefine identity or permissions",
+    "Situation Model integration remains temporary/revisable and preserves the original knowledge item and provenance"
   ],
   "capabilities": [
     "reasoning",
@@ -295,7 +299,8 @@
         "B18",
         "B19",
         "B20",
-        "B21"
+        "B21",
+        "B22"
       ],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
@@ -1749,6 +1754,53 @@
       "unrestricted_self_modification": false,
       "revision_erases_source": false,
       "canonical_promotion_without_b2_b3": false
+    },
+    "catalog": {
+      "domains": 10,
+      "branches": 50,
+      "lenses_per_branch": 10,
+      "canonical_nodes": 500,
+      "variants_per_node": 2000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand"
+    }
+  },
+  "block_22_knowledge_integration": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/knowledge_integration.py",
+    "integration": "core/star_core.py",
+    "namespace": "B22",
+    "logical_capacity": 1000000000,
+    "effects": [
+      "relations",
+      "expectations",
+      "predictions",
+      "interpretations",
+      "context",
+      "judgments",
+      "World Model",
+      "Human Model",
+      "Social Model",
+      "Self Model",
+      "Situation Model"
+    ],
+    "reuse": {
+      "knowledge": "B03",
+      "models": "B15 same frames",
+      "metacognition": "B20",
+      "learning": "B21",
+      "reasoning": "B18",
+      "graph": "shared",
+      "new_models": false,
+      "new_database": false
+    },
+    "policy": {
+      "storage_alone_is_integration": false,
+      "copies_source_datasets": false,
+      "noncanonical_becomes_fact": false,
+      "self_redefines_identity": false,
+      "self_grants_permissions": false,
+      "situation_temporary": true
     },
     "catalog": {
       "domains": 10,
