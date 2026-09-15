@@ -16,6 +16,7 @@ from core.human_life import HumanLifeFoundations
 from core.human_psychology import HumanPsychologyFoundations
 from core.language_communication import LanguageCommunicationFoundations
 from core.language_manager import LanguageManager
+from core.learning_evolution import LearningEvolution
 from core.memory_continuity import MemoryContinuity
 from core.metacognition import Metacognition
 from core.mind import CognitiveSuite
@@ -264,6 +265,19 @@ class StarCore:
         )
         self.mind.metacognition_layer = self.metacognition
 
+        # BLOCO 21: aprendizagem/evolução sobre memória, personalidade,
+        # prediction error e metacognição existentes. Nunca autoedita o core.
+        self.learning_evolution = LearningEvolution(
+            self.knowledge,
+            memory_continuity=self.memory_continuity,
+            reasoning_simulation=self.reasoning_simulation,
+            metacognition=self.metacognition,
+            affective_personality=self.affective_personality,
+            self_improvement=self.mind.self_improvement,
+            attention_salience=self.attention_salience,
+        )
+        self.mind.learning_evolution = self.learning_evolution
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -400,6 +414,11 @@ class StarCore:
         if metacognition_action:
             self.last_intent = "metacognition"
             return metacognition_action
+
+        learning_action = self.learning_evolution.handle(user_input)
+        if learning_action:
+            self.last_intent = "learning_evolution"
+            return learning_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
