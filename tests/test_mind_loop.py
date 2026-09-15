@@ -262,3 +262,27 @@ def test_attached_perception_provider_is_consumed_only_through_bounded_buffer():
     assert result["stages"]["perceber"]["status"] == "provider"
     assert len(result["stages"]["perceber"]["items"]) <= 16
     assert result["active_count"] <= 8
+
+
+def test_b25_provider_flows_into_b24_perceive_context_and_workspace():
+    from core.multimodal_perception import MultimodalPerception
+
+    loop, _mind, knowledge, *_ = _stack(max_active=8)
+    perception = MultimodalPerception(knowledge)
+    perception.ingest(
+        "vision",
+        {"content": "red object moving", "confidence": 0.9, "importance": 0.8, "entities": ["object"]},
+        source="unit-vision",
+    )
+    perception.ingest(
+        "movement",
+        {"content": "red object moving", "confidence": 0.7, "importance": 0.8, "entities": ["object"]},
+        source="unit-motion",
+    )
+    loop.attach_perception(perception)
+    result = loop.run_cycle("what is moving?", active_limit=8)
+    assert result["stages"]["perceber"]["status"] == "provider"
+    assert result["stages"]["perceber"]["items"][0]["cross_modal"] is True
+    assert any(item.get("source") == "perception" for item in result["stages"]["contexto"]["workspace"]["active"])
+    assert result["bounded_retrieval"] is True
+    assert result["execution_performed"] is False
