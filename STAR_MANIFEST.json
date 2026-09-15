@@ -373,7 +373,37 @@
       "title": "STAR", "pair": "PAREAR", "send": "ENVIAR", "speak": "FALAR",
       "stop_and_send": "ENVIAR ÁUDIO", "camera": "VISÃO", "search": "BUSCA",
       "health": "SAÚDE", "gps": "GPS", "people": "PEOPLE", "measure": "MEDIR",
-      "media": "MÍDIA", "weather": "CLIMA", "language": "IDIOMA", "settings": "AJUSTES"
+      "media": "MÍDIA", "weather": "CLIMA", "language": "IDIOMA", "settings": "CONFIG"
+    },
+    "features": {
+      "text": true,
+      "voice_input": true,
+      "spoken_reply": true,
+      "camera_transport": true,
+      "vision_analysis": false,
+      "health_transport": false,
+      "location_transport": false,
+      "ring_navigation": true,
+      "ring_press": true,
+      "people_local_store": true,
+      "measure_provider": "simulated-until-hardware",
+      "core_weather_context": true,
+      "language_selection": true,
+      "offline_dictionary_lookup": true,
+      "contextual_translation": true,
+      "remote_pc_actions": false
+    },
+    "profiles": {
+      "phone": {
+        "layout": "comfortable", "show_connection_fields": true,
+        "show_response_transcript": true, "preferred_columns": 1
+      },
+      "watch": {
+        "layout": "circular-shell", "shape": "circle", "show_connection_fields": false,
+        "show_response_transcript": true, "preferred_columns": 1,
+        "home_style": "plasma-core-ring", "visual_style": "plasma-orbit",
+        "screens": ["home", "voice", "search", "health", "gps", "vision", "people", "measure", "media", "weather", "language", "settings"]
+      }
     }
   }
 }
