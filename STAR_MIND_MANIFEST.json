@@ -1,6 +1,6 @@
 {
   "name": "STAR MIND",
-  "schema": 20,
+  "schema": 21,
   "status": "experimental-alpha",
   "host_release": "STAR V1.9 stable",
   "roadmap_alignment": [
@@ -92,7 +92,11 @@
     "planning and cognitive decision remain distinct from operational execution",
     "recommendation, priority, simulation and selected option never grant permission",
     "B19 reuses the official CognitiveSuite planner and B18 simulation/risk instead of creating parallel engines",
-    "large planning spaces are handled through bounded context/option selection rather than loading all logical contents"
+    "large planning spaces are handled through bounded context/option selection rather than loading all logical contents",
+    "metacognition distinguishes knowledge, belief, inference and unknown states instead of collapsing them",
+    "confidence scores do not become truth and contradictions remain visible until reviewed",
+    "need for research never grants network permission and need for questioning does not automatically block best-effort reasoning",
+    "B20 reuses CognitiveSuite.metacognition and bounded B14 attention rather than creating a parallel metacognitive engine"
   ],
   "capabilities": [
     "reasoning",
@@ -285,7 +289,8 @@
         "B16",
         "B17",
         "B18",
-        "B19"
+        "B19",
+        "B20"
       ],
       "future_blocks_can_register_without_schema_change": true,
       "id_storage": "TEXT",
@@ -1661,6 +1666,53 @@
       "source_space": 10,
       "planning_mode": 2,
       "combinations_per_node": 2000000
+    }
+  },
+  "block_20_metacognition": {
+    "status": "experimental-integrated",
+    "source_of_truth": "core/metacognition.py",
+    "integration": "core/star_core.py",
+    "namespace": "B20",
+    "logical_capacity": 1000000000,
+    "evaluates": [
+      "known",
+      "unknown",
+      "belief",
+      "inference",
+      "confidence",
+      "source",
+      "contradictions",
+      "research_need",
+      "question_need",
+      "review_need"
+    ],
+    "reuse": {
+      "metacognition": "existing CognitiveSuite.metacognition",
+      "verification": "CognitiveSuite.verifier",
+      "memory": "B13",
+      "attention": "B14 bounded selection",
+      "reasoning": "B18",
+      "planning": "B19",
+      "new_engine_created": false,
+      "new_database_created": false
+    },
+    "policy": {
+      "belief_is_fact": false,
+      "inference_is_fact": false,
+      "confidence_is_truth": false,
+      "contradictions_erased": false,
+      "research_need_grants_network_permission": false,
+      "operational_authorization": false
+    },
+    "catalog": {
+      "domains": 10,
+      "branches": 50,
+      "lenses_per_branch": 10,
+      "canonical_nodes": 500,
+      "variants_per_node": 2000000,
+      "addressable_contents": 1000000000,
+      "materialization": "on-demand",
+      "truthfulness_note": "1B are addressable metacognitive contexts, not precomputed self-assessments"
     }
   }
 }

@@ -1596,6 +1596,31 @@ Escala lógica B19:
 O 1B representa contextos, relações e estados de planejamento endereçáveis; não
 significa 1B de planos pré-calculados, decisões materializadas ou ações autorizadas.
 
+### BLOCO 20 — Metacognição
+
+O BLOCO 20 coordena o `CognitiveSuite.metacognition` já existente com B13 memória,
+B14 atenção, B18 raciocínio, B19 planejamento e o verificador oficial. Não cria
+um segundo motor metacognitivo.
+
+A STAR passa a representar explicitamente o que sabe, não sabe, acredita,
+inferiu, qual confiança possui, quais fontes sustentam a avaliação, contradições
+e quando precisa pesquisar, perguntar ou revisar.
+
+Regras permanentes:
+
+```text
+SABER ≠ ACREDITAR ≠ INFERIR
+CONFIANÇA ≠ VERDADE
+CONTRADIÇÃO ≠ APAGAMENTO SILENCIOSO
+NECESSIDADE DE PESQUISA ≠ PERMISSÃO DE REDE
+```
+
+A seleção de contexto é bounded via B14; portanto a arquitetura pode endereçar
+1B de contextos metacognitivos sem carregar ou varrer o espaço inteiro.
+
+Escala lógica B20: 50 ramos × 10 lentes = 500 nós; sete eixos somam 2M por nó;
+500 × 2M = **1.000.000.000** representações `META-B20-*` sob demanda.
+
 ## V2.1
 Memory Architecture.
 

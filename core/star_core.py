@@ -17,6 +17,7 @@ from core.human_psychology import HumanPsychologyFoundations
 from core.language_communication import LanguageCommunicationFoundations
 from core.language_manager import LanguageManager
 from core.memory_continuity import MemoryContinuity
+from core.metacognition import Metacognition
 from core.mind import CognitiveSuite
 from core.physical_world import PhysicalWorldModel
 from core.scientific_foundations import ScientificFoundations
@@ -248,6 +249,21 @@ class StarCore:
         )
         self.mind.planning_decision = self.planning_decision
 
+        # BLOCO 20: metacognição sobre o MetacognitionEngine existente. Avalia
+        # conhecimento, crenças, inferências, confiança, fontes, contradições e
+        # necessidade de pesquisar/perguntar/revisar com contexto bounded.
+        self.metacognition = Metacognition(
+            self.knowledge,
+            base_engine=self.mind.metacognition,
+            verifier=self.mind.verifier,
+            memory_continuity=self.memory_continuity,
+            attention_salience=self.attention_salience,
+            reasoning_simulation=self.reasoning_simulation,
+            planning_decision=self.planning_decision,
+            self_model=self.self_model,
+        )
+        self.mind.metacognition_layer = self.metacognition
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -379,6 +395,11 @@ class StarCore:
         if planning_decision_action:
             self.last_intent = "planning_decision"
             return planning_decision_action
+
+        metacognition_action = self.metacognition.handle(user_input)
+        if metacognition_action:
+            self.last_intent = "metacognition"
+            return metacognition_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
