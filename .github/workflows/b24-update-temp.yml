@@ -1,0 +1,22 @@
+name: B24UpdateTemp
+on: [push]
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/feat/bloco24-mind-loop'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/bloco24-mind-loop
+          fetch-depth: 0
+      - run: python tools/_b24_update_temp.py
+      - shell: bash
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add core/mind_loop.py core/star_core.py STAR_MIND_MANIFEST.json docs/MASTER_ROADMAP.md
+          git commit -m "feat(mind): integrate B24 Mind Loop with STAR Core"
+          git push origin HEAD:feat/bloco24-mind-loop
