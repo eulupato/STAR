@@ -21,11 +21,11 @@ O modelo de linguagem, quando futuramente utilizado, continua sendo ferramenta. 
 | Sistema existente | Responsabilidade preservada | Integração nesta atualização |
 | --- | --- | --- |
 | `StarIdentity` / B12 | identidade, princípios e limites | fornece valores estáveis; não é reescrita |
-| `MemoryContinuity` / B13 | memória persistente + working memory bounded | recupera contexto e guarda somente a posição ativa de forma transitória |
+| `MemoryContinuity` / B13 | memória persistente + working memory bounded | recupera contexto, persiste opiniões tipadas no store oficial e guarda a posição ativa de forma transitória |
 | `AttentionSalience` / B14 | seleção relevante | reutilizada pelo Mind Loop |
 | `IntegratedInternalModels` / B15 | WORLD/HUMAN/SOCIAL/SELF/SITUATION | reutilizados pelo Mind Loop |
 | `SocialCognition` / B16 | contexto social e hipóteses de intenção | confiança social continua separada de permissão |
-| `AffectivePersonality` / B17 | afeto, personalidade e preferências persistentes | também guarda opiniões como um tipo explícito de preferência estruturada, preservando histórico |
+| `AffectivePersonality` / B17 | afeto, personalidade e preferências persistentes | fornece estado e preferências; opiniões permanecem uma categoria distinta |
 | `ReasoningSimulation` / B18 | raciocínio e simulação | reutilizado no caminho deliberativo |
 | `PlanningDecision` / B19 | alternativas e decisão | continua sem executar ações |
 | `Metacognition` / B20 | confiança, fontes, lacunas, pesquisa/pergunta | alimenta a posição cognitiva |
@@ -104,7 +104,9 @@ A posição ativa é armazenada apenas na working memory B13 com `persistent=Fal
 
 Uma afirmação do usuário é classificada como `information_received` e nunca se transforma automaticamente em crença ou opinião da STAR.
 
-Opiniões persistentes são armazenadas por meio do store já utilizado pelo B17, com:
+Opiniões persistentes usam a tabela `cognitive_memory` já existente, mas são gravadas com `kind="opinion"`, separadas de `kind="preference"`. Isso mantém a fonte de verdade única sem colapsar categorias cognitivas diferentes.
+
+Cada opinião pode carregar:
 
 - tema;
 - posição;
@@ -125,6 +127,7 @@ A integração preserva explicitamente:
 
 ```text
 AFETO ≠ IDENTIDADE
+PREFERÊNCIA ≠ OPINIÃO
 PREFERÊNCIA ≠ PERMISSÃO
 OPINIÃO ≠ FATO
 CONFIANÇA ≠ VERDADE
@@ -172,14 +175,15 @@ Isso permite medir a evolução cognitiva sem aceitar regressão de fluidez às 
 2. DELIBERATIVE para opinião e decisão;
 3. usuário não sobrescreve opinião da STAR;
 4. discordância independente;
-5. argumento novo não causa revisão automática;
-6. revisão explícita e auditável preserva histórico;
-7. avaliação estética com contexto insuficiente pergunta em vez de inventar percepção;
-8. estado afetivo muda tom sem mudar a opinião/fato;
-9. Router expõe FAST/DELIBERATIVE sem Brain paralelo;
-10. Executive usa posição cognitiva antes do fallback genérico;
-11. continuidade de opinião em múltiplas interações;
-12. métricas e posição ativa permanecem bounded/transitórias.
+5. opinião é persistida como `opinion`, não `preference`;
+6. argumento novo não causa revisão automática;
+7. revisão explícita e auditável preserva histórico;
+8. avaliação estética com contexto insuficiente pergunta em vez de inventar percepção;
+9. estado afetivo muda tom sem mudar a opinião/fato;
+10. Router expõe FAST/DELIBERATIVE sem Brain paralelo;
+11. Executive usa posição cognitiva antes do fallback genérico;
+12. continuidade de opinião em múltiplas interações;
+13. métricas e posição ativa permanecem bounded/transitórias.
 
 ## Limites atuais
 
