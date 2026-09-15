@@ -1621,6 +1621,24 @@ A seleção de contexto é bounded via B14; portanto a arquitetura pode endereç
 Escala lógica B20: 50 ramos × 10 lentes = 500 nós; sete eixos somam 2M por nó;
 500 × 2M = **1.000.000.000** representações `META-B20-*` sob demanda.
 
+### BLOCO 21 — Aprendizagem e Evolução Cognitiva
+
+B21 integra aprendizado por experiência, generalização, prediction error, revisão,
+consolidação, adaptação, evolução e desenvolvimento cognitivo sobre B13/B17/B18/B20.
+O `SelfImprovementEvaluator` existente mede e recomenda; não aplica patches.
+
+Toda aprendizagem preserva origem, referência, confiança, consistência e histórico.
+Revisões criam novas versões/relações e não apagam silenciosamente registros antigos.
+Generalizações permanecem inferências até passarem pelos gates epistêmicos B02/B03.
+
+```text
+APRENDER ≠ REESCREVER A HISTÓRIA
+EVOLUIR ≠ AUTOEDITAR IRRESTRITAMENTE O CÓDIGO CENTRAL
+```
+
+Escala: 50 ramos × 10 lentes = 500 nós; 2M de combinações por nó =
+**1.000.000.000** representações `LEARN-B21-*` sob demanda.
+
 ## V2.1
 Memory Architecture.
 
