@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from copy import deepcopy
+
 from core.cognitive_integration import CognitiveIntegration
 from core.executive import Executive
 from core.router import Router
@@ -15,9 +17,46 @@ class FakeWorkingMemory:
         return item
 
 
+class FakeCognitiveStore:
+    def __init__(self):
+        self.records = []
+        self._next_id = 1
+
+    def remember(self, kind, content, *, key=None, metadata=None, importance=0.5):
+        record = {
+            "id": self._next_id,
+            "kind": kind,
+            "memory_key": key,
+            "content": content,
+            "metadata": deepcopy(metadata or {}),
+            "importance": float(importance),
+        }
+        self._next_id += 1
+        self.records.append(record)
+        return record["id"]
+
+    def memory_by_key(self, key, *, kind=None):
+        for record in reversed(self.records):
+            if record["memory_key"] == key and (kind is None or record["kind"] == kind):
+                return deepcopy(record)
+        return None
+
+    def memory_by_id(self, memory_id):
+        for record in self.records:
+            if record["id"] == memory_id:
+                return deepcopy(record)
+        return None
+
+
+class FakeCognitiveMemory:
+    def __init__(self):
+        self.store = FakeCognitiveStore()
+
+
 class FakeMemoryContinuity:
     def __init__(self):
         self.working = FakeWorkingMemory()
+        self.memory = FakeCognitiveMemory()
         self.items = []
 
     def recall(self, query, limit=6):
@@ -28,7 +67,6 @@ class FakeMemoryContinuity:
 class FakePersonality:
     def __init__(self):
         self.preferences = {}
-        self.history = []
         self.affect = {
             "valence": 0.1,
             "energy": 0.8,
@@ -40,31 +78,9 @@ class FakePersonality:
             "alert": 0.3,
             "context": "conversation",
         }
-        self._next_id = 1
 
     def current_state(self):
         return dict(self.affect)
-
-    def preference(self, name):
-        record = self.preferences.get(name)
-        if record is None:
-            return None
-        return {"name": name, "value": record["value"], "record": dict(record)}
-
-    def set_preference(self, name, value, *, source, reference, confidence=1.0):
-        memory_id = self._next_id
-        self._next_id += 1
-        record = {
-            "id": memory_id,
-            "name": name,
-            "value": value,
-            "source": source,
-            "reference": reference,
-            "confidence": confidence,
-        }
-        self.preferences[name] = record
-        self.history.append(record)
-        return {"memory_id": memory_id, "record": record}
 
 
 class FakeMindLoop:
@@ -166,6 +182,22 @@ def test_user_opinion_never_overwrites_star_opinion_and_disagreement_is_possible
     assert "A ideia central me interessa" in response
 
 
+def test_opinion_is_stored_as_opinion_not_preference():
+    integration, star = _integration()
+    saved = integration.record_opinion(
+        "filme independente",
+        "positivo",
+        confidence=0.72,
+        source="unit-test",
+        reference="test://opinion/separation",
+    )
+    records = star.memory_continuity.memory.store.records
+    assert saved["record"]["kind"] == "opinion"
+    assert records[-1]["kind"] == "opinion"
+    assert records[-1]["metadata"]["preference_kind"] is False
+    assert star.affective_personality.preferences == {}
+
+
 def test_argument_from_user_is_information_not_automatic_opinion_revision():
     integration, star = _integration()
     first = integration.record_opinion(
@@ -182,7 +214,7 @@ def test_argument_from_user_is_information_not_automatic_opinion_revision():
     current = integration.opinion("filme x")
     assert current["position"] == "positivo"
     assert current["record"]["id"] == first["memory_id"]
-    assert len(star.affective_personality.history) == 1
+    assert len(star.memory_continuity.memory.store.records) == 1
 
 
 def test_opinion_revision_is_explicit_auditable_and_preserves_history():
@@ -203,9 +235,11 @@ def test_opinion_revision_is_explicit_auditable_and_preserves_history():
         reference="evidence://b",
         reason="evidência nova e verificável",
     )
+    records = star.memory_continuity.memory.store.records
     assert second["revision_of_memory_id"] == first["memory_id"]
     assert second["history_preserved"] is True
-    assert len(star.affective_personality.history) == 2
+    assert len(records) == 2
+    assert all(record["kind"] == "opinion" for record in records)
     assert integration.opinion("tema")["position"] == "mista"
 
 
