@@ -11,6 +11,7 @@ from core.commands import strip_wake_word
 from core.conversation import ConversationEngine
 from core.everyday_technology import EverydayTechnologyFoundations
 from core.foundations import FoundationSuite
+from core.global_workspace import GlobalCognitiveWorkspace
 from core.human_contexts import HumanContextFoundations
 from core.human_life import HumanLifeFoundations
 from core.human_psychology import HumanPsychologyFoundations
@@ -292,6 +293,23 @@ class StarCore:
         )
         self.mind.knowledge_integration = self.knowledge_integration
 
+        # BLOCO 23: Global Cognitive Workspace bounded. Não é memória persistente;
+        # reúne apenas candidatos ativos de atenção/memória/conhecimento/linguagem/
+        # planejamento/executive/self/situation. Perception será acoplada no B25.
+        self.global_workspace = GlobalCognitiveWorkspace(
+            self.knowledge,
+            attention_salience=self.attention_salience,
+            memory_continuity=self.memory_continuity,
+            language=self.language_communication,
+            planning=self.planning_decision,
+            executive=self.executive,
+            self_model=self.self_model,
+            internal_models=self.internal_models,
+            knowledge_integration=self.knowledge_integration,
+            perception_provider=None,
+        )
+        self.mind.global_workspace = self.global_workspace
+
         self.last_intent = None
         self.user_name = None
         self.network_enabled = False
@@ -438,6 +456,11 @@ class StarCore:
         if integration_action:
             self.last_intent = "knowledge_integration"
             return integration_action
+
+        workspace_action = self.global_workspace.handle(user_input)
+        if workspace_action:
+            self.last_intent = "global_workspace"
+            return workspace_action
 
         knowledge_action = self.knowledge.handle(user_input)
         if knowledge_action:
