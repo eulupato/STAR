@@ -32,8 +32,22 @@ def _norm(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", " ", text).strip()
 
 
+def _canonical_topic(value: Any) -> str:
+    """Normaliza somente bordas linguísticas, sem tentar inferir o assunto."""
+    text = _norm(value)
+    previous = None
+    while text and text != previous:
+        previous = text
+        text = re.sub(
+            r"^(?:sobre|do|da|dos|das|de|no|na|nos|nas|o|a|os|as|um|uma)\s+",
+            "",
+            text,
+        ).strip()
+    return text
+
+
 def _slug(value: Any) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", _norm(value)).strip("_")[:120]
+    return re.sub(r"[^a-z0-9]+", "_", _canonical_topic(value)).strip("_")[:120]
 
 
 def _clamp(value: float) -> float:
@@ -419,15 +433,16 @@ class CognitiveIntegration:
             norm,
         )
         if copula:
-            return _clean(copula.group(1))[:160]
+            return _canonical_topic(copula.group(1))[:160]
         cleaned = norm
         for hint in sorted(OPINION_REQUEST_HINTS, key=len, reverse=True):
             cleaned = cleaned.replace(hint, " ")
         cleaned = re.sub(r"\b(star|voce|você|eu|me|minha|meu|sobre|disso|disto|acha|opiniao)\b", " ", cleaned)
         cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        cleaned = _canonical_topic(cleaned)
         if intent == "decision_support" and not cleaned:
             return "decisão atual"
-        return (cleaned or raw)[:160]
+        return (cleaned or _canonical_topic(raw) or raw)[:160]
 
     @staticmethod
     def _missing_context(text: str, intent: str) -> tuple[str, ...]:
