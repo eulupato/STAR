@@ -1,0 +1,30 @@
+name: B20UpdateTemp
+
+on: [push]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/feat/bloco20-metacognicao'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/bloco20-metacognicao
+          fetch-depth: 0
+      - name: Apply B20 integration
+        run: python tools/_b20_update_temp.py
+      - name: Commit integration
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No B20 integration changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add core/star_core.py STAR_MIND_MANIFEST.json docs/MASTER_ROADMAP.md
+          git commit -m "feat(metacognition): integrate B20 with STAR Core"
+          git push origin HEAD:feat/bloco20-metacognicao
