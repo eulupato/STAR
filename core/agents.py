@@ -51,11 +51,17 @@ AGENT_SPECS = (
 
 
 class AgentManager:
-    """Despacha somente capacidades já suportadas e mantém limites do roadmap."""
+    """Despacha somente capacidades já suportadas e mantém limites operacionais."""
 
-    def __init__(self, weather_provider: WeatherService | None = None):
+    def __init__(self, weather_provider: WeatherService | None = None, autonomy_limits=None):
         self._specs = {spec.name: spec for spec in AGENT_SPECS}
         self.weather = weather_provider or WeatherService()
+        self.autonomy_limits = autonomy_limits
+        self.system_handlers = []
+
+    def attach_system_handlers(self, *handlers) -> None:
+        """Expõe camadas integradas leves sem criar outro router/agent manager."""
+        self.system_handlers = [handler for handler in handlers if handler is not None and hasattr(handler, "handle")]
 
     def list(self) -> dict:
         return {name: asdict(spec) for name, spec in self._specs.items()}
@@ -72,54 +78,95 @@ class AgentManager:
         )
 
     def dispatch(self, text: str, *, network_enabled: bool = False, remote: bool = False) -> str | None:
+        # Camadas cognitivas integradas podem responder status/IDs próprios. Isso
+        # reaproveita o dispatcher atual e evita criar um novo roteador paralelo.
+        for handler in tuple(self.system_handlers):
+            response = handler.handle(text)
+            if response is not None:
+                return response
+
         match = match_command(text)
         if match is None:
             return None
+
+        # BLOCO 33: toda execução operacional conhecida passa pela mesma fronteira
+        # B01. Read-only continua leve; write/network/confirm exigem o gate.
+        if self.autonomy_limits is not None:
+            gate = self.autonomy_limits.gate_command(
+                text,
+                local_permission=not remote,
+                network_enabled=network_enabled,
+            )
+            if gate and gate.get("operational_execution") and not gate.get("can_proceed"):
+                return gate.get("message") or "A ação permanece bloqueada pela fronteira de autonomia."
+
         if remote and not match.remote_safe:
             return (
                 "Esse comando é reconhecido, mas exige confirmação local. "
-                "A STAR não executa ações sensíveis pelo Watch enquanto o "
-                "Permission Manager ainda não estiver implementado."
+                "A STAR não executa ações sensíveis remotamente sem autorização apropriada."
             )
         return self._execute(match, network_enabled=network_enabled)
 
     def _execute(self, match: CommandMatch, *, network_enabled: bool) -> str:
         from modules import computer_control as computer
 
-        if match.intent == "agents_status": return self.summary()
+        if match.intent == "agents_status":
+            return self.summary()
         if match.intent == "commands_status":
             total = command_count() + THEMATIC_VOICE_VARIATIONS
-            return (f"Tenho {total} variações auditáveis de comandos de voz: {command_count()} operacionais da Foundation + {THEMATIC_VOICE_VARIATIONS} temáticas de estudo, geradas por intents/slots e combinações sob demanda em vez de milhões de if/else.")
+            return (
+                f"Tenho {total} variações auditáveis de comandos de voz: {command_count()} "
+                f"operacionais da Foundation + {THEMATIC_VOICE_VARIATIONS} temáticas de estudo, "
+                "geradas por intents/slots e combinações sob demanda em vez de milhões de if/else."
+            )
         if match.intent == "command_variables":
-            variables = command_variables(); names = ", ".join(sorted(variables))
-            return (f"Os comandos operacionais aceitam {len(variables)} famílias de variáveis/slots: {names}. O catálogo temático aceita matéria, tema livre, profundidade, formato, contexto e intenção de estudo.")
-        if match.intent == "time": return computer.local_time()
-        if match.intent == "date": return computer.local_date()
+            variables = command_variables()
+            names = ", ".join(sorted(variables))
+            return (
+                f"Os comandos operacionais aceitam {len(variables)} famílias de variáveis/slots: {names}. "
+                "O catálogo temático aceita matéria, tema livre, profundidade, formato, contexto e intenção de estudo."
+            )
+        if match.intent == "time":
+            return computer.local_time()
+        if match.intent == "date":
+            return computer.local_date()
         if match.intent == "weather_current":
             snapshot = self.weather.current(match.slots.get("location"))
-            if snapshot is None: return "Não consegui obter o clima atual agora. Posso tentar novamente quando houver conexão e localização disponível."
+            if snapshot is None:
+                return "Não consegui obter o clima atual agora. Posso tentar novamente quando houver conexão e localização disponível."
             return format_weather(snapshot)
-        if match.intent == "volume_up": return computer.volume_up()
-        if match.intent == "volume_down": return computer.volume_down()
-        if match.intent == "volume_mute": return computer.volume_mute()
-        if match.intent == "media_toggle": return computer.media_play_pause()
-        if match.intent == "media_next": return computer.media_next()
-        if match.intent == "media_previous": return computer.media_previous()
-        if match.intent == "screenshot": return computer.take_screenshot()
+        if match.intent == "volume_up":
+            return computer.volume_up()
+        if match.intent == "volume_down":
+            return computer.volume_down()
+        if match.intent == "volume_mute":
+            return computer.volume_mute()
+        if match.intent == "media_toggle":
+            return computer.media_play_pause()
+        if match.intent == "media_next":
+            return computer.media_next()
+        if match.intent == "media_previous":
+            return computer.media_previous()
+        if match.intent == "screenshot":
+            return computer.take_screenshot()
         if match.intent == "find_file":
             hits = computer.find_files(match.slots["query"])
-            if not hits: return "Não encontrei arquivos com esse nome."
+            if not hits:
+                return "Não encontrei arquivos com esse nome."
             return "Encontrei: " + "; ".join(str(path) for path in hits)
         if match.intent == "open_app":
             target = match.slots["target"]
-            if target in {"browser", "spotify", "discord"} and not network_enabled: return computer.network_required_message()
+            if target in {"browser", "spotify", "discord"} and not network_enabled:
+                return computer.network_required_message()
             return computer.open_app(target)
         if match.intent == "spotify_search":
-            if not network_enabled: return computer.network_required_message()
+            if not network_enabled:
+                return computer.network_required_message()
             return computer.spotify_search(match.slots["query"])
         if match.intent == "web_search":
-            if not network_enabled: return computer.network_required_message()
+            if not network_enabled:
+                return computer.network_required_message()
             return computer.web_search(match.slots["query"])
         if match.intent in {"close_app", "lock_pc"}:
-            return "Eu reconheço esse comando, mas ele exige confirmação. A execução ficará bloqueada até o Permission Manager da STAR."
+            return "Eu reconheço esse comando, mas ele exige confirmação e autorização operacional apropriada."
         return "Comando reconhecido, mas esta capacidade ainda não está disponível."
