@@ -115,12 +115,12 @@ class AgentManager:
         if command in self.PERCEPTION_STATUS_COMMANDS:
             if runtime is None:
                 return "O runtime perceptivo B25 não está conectado nesta sessão."
-            status = runtime.status(probe=False)
+            status = runtime.status()
             vision = status.get("vision") or {}
             return (
                 "Percepção B25 ativa. "
                 f"OpenCV={'sim' if vision.get('opencv') else 'opcional/ausente'}; "
-                f"VLM local={vision.get('semantic_model') or 'não sondado/ausente'}; "
+                f"VLM local={vision.get('semantic_model') or 'não instalado/indisponível'}; "
                 "tela e áudio são capturados somente sob pedido local explícito; "
                 "reconhecimento não autentica."
             )
