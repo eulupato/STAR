@@ -88,6 +88,8 @@ def test_b32_maintenance_is_bounded_and_non_destructive_by_default():
     assert report["bounded"] is True
     assert report["automatic_source_deletion"] is False
     assert report["automatic_alias_merge"] is False
+    assert report["automatic_archive"] is False
+    assert report["automatic_reindex"] is False
     assert memory.memory_record(first["memory_id"]) is not None
     assert memory.memory_record(second["memory_id"]) is not None
 
@@ -107,6 +109,52 @@ def test_b32_consolidation_reuses_b13_and_preserves_sources():
     assert set(result["consolidated_from"]) == {a["memory_id"], b["memory_id"]}
     assert memory.memory_record(a["memory_id"]) is not None
     assert memory.memory_record(b["memory_id"]) is not None
+
+
+def test_b32_compression_archives_logically_and_restores_without_data_loss():
+    maintenance, _, _, memory = _maintenance_stack()
+    token = uuid.uuid4().hex
+    a = memory.remember("episodic", f"compression event a {token}", source="test", reference="a")
+    b = memory.remember("episodic", f"compression event b {token}", source="test", reference="b")
+    ids = [a["memory_id"], b["memory_id"]]
+
+    result = maintenance.compress_memories(
+        ids,
+        f"compressed summary {token}",
+        source="test",
+        reference="compression-case",
+        archive_sources=True,
+    )
+    assert result["source_memories_preserved"] is True
+    assert result["sources_logically_archived"] is True
+    assert result["archive"]["physical_deletion"] is False
+    assert result["archive"]["archived"] == 2
+    for memory_id in ids:
+        record = memory.memory_record(memory_id)
+        assert record is not None
+        assert record["metadata"]["b32_archive"]["reason"].startswith("compressed into memory")
+
+    restored = maintenance.restore_archived_memories(ids)
+    assert restored["restored"] == 2
+    assert restored["history_preserved"] is True
+    for memory_id in ids:
+        record = memory.memory_record(memory_id)
+        assert record is not None
+        assert "b32_archive" not in record["metadata"]
+        assert record["metadata"]["b32_archive_history"]
+
+
+def test_b32_reorganization_only_touches_materialized_state_and_reindex_is_explicit():
+    maintenance, _, _, _ = _maintenance_stack()
+    plan = maintenance.reorganization_plan(limit=10)
+    assert plan["logical_capacity_scanned"] is False
+    assert plan["materialized_rows_only"] is True
+    assert plan["reindex_is_explicit"] is True
+
+    dry_run = maintenance.rebuild_search_index(apply=False)
+    assert dry_run["applied"] is False
+    if dry_run["available"]:
+        assert dry_run["requires_explicit_apply"] is True
 
 
 def test_b32_confidence_recalibration_is_evidence_based_and_auditable():
