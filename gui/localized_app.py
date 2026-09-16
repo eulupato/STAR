@@ -1,16 +1,20 @@
 """Camada de localização da GUI principal da STAR.
 
-Reutiliza ``StarApp`` integralmente e altera somente superfícies textuais. A lógica
-de chat, voz, memória, navegação, ilhas e closet permanece na classe estável.
+Reutiliza ``StarApp`` integralmente e altera somente superfícies textuais e a
+ponte de anexos visuais para o runtime perceptivo oficial B25. A lógica de chat,
+voz, memória, navegação, ilhas e closet permanece na classe estável.
 """
 from __future__ import annotations
 
+from pathlib import Path
+import threading
 import tkinter as tk
+from tkinter import filedialog
 
 from gui.app import StarApp
 
 
-_UI_PREFIXES = ("◈ ", "🟢 ", "🔴 ", "⚡ ", "⭐ ", "🎙️ ", "🎤 ", "🔊 ")
+_UI_PREFIXES = ("◈ ", "🟢 ", "🔴 ", "⚡ ", "⭐ ", "🎙️ ", "🎤 ", "🔊 ", "🖼️ ")
 
 
 def localize_ui_text(manager, text: str) -> str:
@@ -19,9 +23,6 @@ def localize_ui_text(manager, text: str) -> str:
     if not value:
         return value
 
-    # Prefixos visuais fazem parte da interface, não da linguagem. Eles precisam
-    # sobreviver exatamente à localização; por isso são separados antes da
-    # normalização textual do catálogo.
     for prefix in _UI_PREFIXES:
         if value.startswith(prefix):
             tail = value[len(prefix):]
@@ -36,10 +37,19 @@ def localize_ui_text(manager, text: str) -> str:
 
 
 class LocalizedStarApp(StarApp):
-    """A mesma GUI V1.9, com localização aplicada como camada de apresentação."""
+    """A mesma GUI V1.9, com localização e anexo visual como apresentação."""
+
+    IMAGE_TYPES = (
+        ("Imagens", "*.jpg *.jpeg *.png *.webp *.bmp"),
+        ("JPEG", "*.jpg *.jpeg"),
+        ("PNG", "*.png"),
+        ("WebP", "*.webp"),
+        ("Todos os arquivos", "*.*"),
+    )
 
     def __init__(self, brain):
         self._observed_locale = None
+        self.pending_image_path: Path | None = None
         super().__init__(brain)
         manager = self.language
         self._observed_locale = manager.locale if manager is not None else None
@@ -101,7 +111,6 @@ class LocalizedStarApp(StarApp):
 
         visit(self.window)
 
-        # O placeholder é conteúdo de Entry, não a propriedade ``text``.
         entry = getattr(self, "entry", None)
         if entry is not None:
             try:
@@ -128,6 +137,92 @@ class LocalizedStarApp(StarApp):
 
     def _append_system(self, text):
         self._append(self._loc("SISTEMA"), text, "system")
+
+    def _build_input(self, root):
+        """Transforma o antigo '+' decorativo em anexo de imagem real."""
+        super()._build_input(root)
+        inner = getattr(self.entry, "master", None)
+        if inner is None:
+            return
+        try:
+            for child in tuple(inner.winfo_children()):
+                if isinstance(child, tk.Label) and child.cget("text") == "+":
+                    child.destroy()
+                    break
+            self.attach_button = tk.Button(
+                inner,
+                text="+",
+                command=self.attach_image,
+                bg="#25364b",
+                fg="#d8e7f5",
+                activebackground="#304760",
+                activeforeground="white",
+                relief=tk.FLAT,
+                borderwidth=0,
+                font=("Segoe UI", 23),
+                cursor="hand2",
+            )
+            self.attach_button.pack(side="left", padx=(16, 8), before=self.entry)
+        except tk.TclError:
+            return
+
+    def attach_image(self):
+        """Seleciona somente referência local; a análise ocorre no worker do chat."""
+        if self.processing:
+            return
+        selected = filedialog.askopenfilename(
+            parent=self.window,
+            title="Selecionar imagem para a STAR",
+            filetypes=self.IMAGE_TYPES,
+        )
+        if not selected:
+            return
+        path = Path(selected).expanduser()
+        if not path.is_file():
+            self._activate_conversation()
+            self._append_system("🖼️ Não consegui acessar essa imagem.")
+            return
+        self.pending_image_path = path
+        self._activate_conversation()
+        self._append_system(f"🖼️ Imagem anexada: {path.name}. Ela será percebida localmente pelo B25 ao enviar a mensagem.")
+
+    def send_message(self):
+        if self.processing or not hasattr(self, "entry"):
+            return
+        if self.pending_image_path is None:
+            return super().send_message()
+
+        self.voice.cancel_speech()
+        text = self.entry.get().strip()
+        if not text or text == "Pergunte algo à STAR...":
+            text = "O que você observa nesta imagem?"
+        path = self.pending_image_path
+        self.pending_image_path = None
+        self.entry.delete(0, tk.END)
+        self._activate_conversation()
+        self._append_user(f"[imagem: {path.name}] {text}")
+        try:
+            self.memory.save("Você", f"[imagem anexada: {path.name}] {text}")
+        except Exception:
+            pass
+        self.processing = True
+        self.entry.config(state=tk.DISABLED)
+        self.send_button.config(state=tk.DISABLED)
+        self._set_status("PROCESSANDO", self.gold)
+        self._load_avatar("thinking")
+        threading.Thread(target=self._process_image_message, args=(text, path), daemon=True).start()
+
+    def _process_image_message(self, text: str, path: Path):
+        """Percebe a imagem antes da cognição; nunca injeta pixels como autorização."""
+        try:
+            runtime = getattr(self.brain, "perception_runtime", None)
+            if runtime is None:
+                raise RuntimeError("runtime perceptivo indisponível")
+            runtime.ingest_image(path, source="desktop-chat-attachment")
+            response = self.brain.process(text)
+            self.response_queue.put(("success", response))
+        except Exception as exc:
+            self.response_queue.put(("error", f"Falha ao perceber a imagem: {exc}"))
 
     def show_menu(self):
         super().show_menu()
