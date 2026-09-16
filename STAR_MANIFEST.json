@@ -54,6 +54,11 @@
     "sensor_fusion_b25",
     "persistent_people_entities_b26",
     "body_proprioception_endpoint_b27",
+    "cognitive_maintenance_b32",
+    "autonomy_limits_b33",
+    "functional_cognitive_benchmark_b34",
+    "cfc97_b35",
+    "consciousness_research_frontier_b36",
     "star_device_gateway_v0_2",
     "star_watch_android_v0_3",
     "star_watch_app_v0_4",
@@ -64,11 +69,20 @@
   ],
   "cognitive_blocks": {
     "status": "experimental-integrated",
-    "range": "B01..B27",
+    "range": "B01..B27 + B32..B36",
+    "undefined_blocks": ["B28", "B29", "B30", "B31"],
     "shared_database": "star.db",
     "shared_knowledge_graph": true,
     "parallel_brain": false,
     "automatic_operational_authorization": false,
+    "one_billion_contract": {
+      "logical_capacity_per_defined_block": 1000000000,
+      "materialization": "on-demand",
+      "billion_files": false,
+      "billion_rows_preloaded": false,
+      "knowledge_volume_equals_cognitive_quality": false,
+      "undefined_blocks_are_not_fabricated": true
+    },
     "integrated": {
       "B24": {
         "name": "MIND LOOP",
@@ -101,6 +115,47 @@
         "body_is_endpoint": true,
         "direct_actuation": false,
         "sensor_fusion_source": "B25"
+      },
+      "B32": {
+        "name": "MANUTENÇÃO COGNITIVA",
+        "engine": "core/cognitive_maintenance.py",
+        "addressable_contents": 1000000000,
+        "bounded_windows": true,
+        "source_preserving_consolidation": true,
+        "automatic_source_deletion": false
+      },
+      "B33": {
+        "name": "LIMITES DE AUTONOMIA",
+        "engine": "core/autonomy_limits.py",
+        "addressable_contents": 1000000000,
+        "authority": "B01 OperationalBoundary",
+        "parallel_permission_system": false,
+        "default_deny_execution": true
+      },
+      "B34": {
+        "name": "BENCHMARK COGNITIVO FUNCIONAL CFC",
+        "engine": "core/cfc_benchmark.py",
+        "addressable_contents": 1000000000,
+        "dimensions": 15,
+        "auto_grading": false,
+        "knowledge_volume_is_score": false
+      },
+      "B35": {
+        "name": "CFC-97",
+        "engine": "core/cfc_benchmark.py",
+        "addressable_contents": 1000000000,
+        "functional_target": 0.97,
+        "certified": false,
+        "humanity_percentage": false,
+        "consciousness_percentage": false
+      },
+      "B36": {
+        "name": "CONSCIÊNCIA COMO FRONTEIRA DE PESQUISA",
+        "engine": "core/consciousness_frontier.py",
+        "addressable_contents": 1000000000,
+        "self_consciousness_status": "not_established",
+        "automatic_consciousness_claim": false,
+        "knowledge_equals_proof_of_consciousness": false
       }
     }
   },
