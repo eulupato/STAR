@@ -21,6 +21,7 @@ from core.consciousness_frontier import ConsciousnessResearchFrontier
 from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
+from core.natural_interaction import NaturalInteraction
 from core.physics_knowledge_150k import PhysicsKnowledgeEngine
 from core.chemistry_knowledge_500k import ChemistryKnowledgeEngine
 from core.multidisciplinary_knowledge import MultidisciplinaryKnowledgeEngine
@@ -70,6 +71,23 @@ def create_star():
     star.cognitive_integration = cognition
     router.cognitive_integration = cognition
     executive.cognitive_integration = cognition
+
+    # Interação natural é uma camada de continuidade + expressão, não um cérebro.
+    # Usa B13/B16/B17/B24-B26 e pode usar Ollama local somente para verbalizar
+    # uma posição já decidida pela STAR. Falha/ausência do modelo mantém fallback.
+    star.natural_interaction = NaturalInteraction(star)
+    star.mind.natural_interaction = star.natural_interaction
+    star.conversation.natural_interaction = star.natural_interaction
+    cognition.natural_interaction = star.natural_interaction
+    executive.natural_interaction = star.natural_interaction
+
+    # Uma autoidentificação persistida pelo B26 também passa a ser o interlocutor
+    # ativo da camada conversacional. Isso não autentica a pessoa nem dá permissão.
+    def _sync_active_person(person):
+        star.natural_interaction.active_person_id = person.get("person_id")
+        star.natural_interaction.active_person_name = person.get("name")
+
+    star.people_entities.on_active_person = _sync_active_person
 
     # BLOCO 32: manutenção bounded sobre os stores, memória e grafo oficiais.
     # Consolidação continua delegada ao B13 e nenhuma exclusão ocorre por padrão.
@@ -176,6 +194,7 @@ def main():
     curriculum_stats = star.curriculum.stats()
     mind_stats = star.mind.stats()
     cfc97_stats = star.cfc97.stats()
+    natural_stats = star.natural_interaction.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -215,6 +234,10 @@ def main():
         f"{mind_stats['support_contents_total']} conteúdos operacionais endereçáveis"
     )
     print("🔄 Cognição integrada: FAST/DELIBERATIVE + posição cognitiva")
+    print(
+        "💬 Interação natural: ATIVA | contexto multi-turn bounded | "
+        f"modelo local={natural_stats['local_llm_model']} (opcional/lazy)"
+    )
     print("🧹 Manutenção cognitiva B32: BOUNDED/ON-DEMAND")
     print("🛡️ Limites de autonomia B33: B01 BOUNDARY / DEFAULT DENY")
     print(
