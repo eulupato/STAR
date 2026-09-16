@@ -95,6 +95,7 @@ def create_star():
     # Nenhum deles roda captura contínua em background; câmera/tela/áudio são lazy.
     star.perception_runtime = PerceptionRuntime(star)
     star.mind.perception_runtime = star.perception_runtime
+    star.agents.attach_perception_runtime(star.perception_runtime)
 
     # Autenticação é provider separado de reconhecimento. O arquivo local contém
     # somente salt+hash scrypt; autenticar nunca concede permissão operacional.
@@ -207,7 +208,6 @@ def main():
     mind_stats = star.mind.stats()
     cfc97_stats = star.cfc97.stats()
     natural_stats = star.natural_interaction.stats()
-    perception_stats = star.perception_runtime.status()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -249,13 +249,9 @@ def main():
     print("🔄 Cognição integrada: FAST/DELIBERATIVE + posição cognitiva")
     print(
         "💬 Interação natural: ATIVA | contexto multi-turn bounded | "
-        f"modelo local={natural_stats['local_llm_model']} (opcional/lazy)"
+        f"modelo local={natural_stats['local_llm_model']} (autodetectável/opcional/lazy)"
     )
-    print(
-        "👁️ Percepção real Grupo 1: B25 integrado | "
-        f"face_detection={'SIM' if perception_stats['vision']['face_detection'] else 'dependência opcional'} | "
-        f"VLM={perception_stats['vision']['semantic_model'] or 'não instalado'}"
-    )
+    print("👁️ Percepção Grupo 1: B25 conectado | visão/tela/áudio lazy | nenhum polling contínuo")
     print("🔐 Autenticação de pessoas: challenge local separado de reconhecimento; permissão=NÃO")
     print("🧹 Manutenção cognitiva B32: BOUNDED/ON-DEMAND")
     print("🛡️ Limites de autonomia B33: B01 BOUNDARY / DEFAULT DENY")
