@@ -2,7 +2,6 @@ import json
 import uuid
 
 from core.conversation import ConversationEngine
-from core.natural_interaction import NaturalInteraction
 from main import create_star
 
 
@@ -14,6 +13,10 @@ class FakeSurfaceModel:
     def generate(self, message, context=None, **kwargs):
         self.calls.append({"packet": json.loads(message), "context": context, "kwargs": kwargs})
         return self.response
+
+
+def _letters_suffix(length=7):
+    return "".join(chr(ord("a") + int(ch, 16) % 26) for ch in uuid.uuid4().hex[:length])
 
 
 def _use_fake_surface(star, response="Tá, entendi 😄. Me conta mais."):
@@ -65,11 +68,9 @@ def test_operational_commands_do_not_pass_through_freeform_expression():
 def test_multiturn_followup_carries_previous_topic_into_cognition():
     star = create_star()
     fake = _use_fake_surface(star, "Entendi. E sobre isso eu manteria minha leitura por enquanto.")
-
     star.process("O que você acha do filme Matrix?")
     first_topic = star.natural_interaction.active_topic
     assert first_topic
-
     star.process("E o segundo?")
     assert len(fake.calls) >= 2
     packet = fake.calls[-1]["packet"]
@@ -110,7 +111,7 @@ def test_real_b25_visual_observation_removes_fake_visual_gap_but_not_occasion_ga
 
 def test_declared_name_becomes_persistent_b26_person_without_authentication():
     star = create_star()
-    name = "Nina" + uuid.uuid4().hex[:7]
+    name = "Nina" + _letters_suffix()
     response = star.process(f"meu nome é {name}")
     assert "Prazer" in response
     assert star.people_entities.active_person_name == name
@@ -122,7 +123,7 @@ def test_declared_name_becomes_persistent_b26_person_without_authentication():
 
 def test_profile_and_visual_identity_evidence_persist_without_becoming_authentication():
     star = create_star()
-    name = "Ana" + uuid.uuid4().hex[:7]
+    name = "Ana" + _letters_suffix()
     result = star.people_entities.ingest_profile(
         name,
         {"apelido": "Aninha", "cor_preferida": "azul"},
@@ -145,6 +146,7 @@ def test_profile_and_visual_identity_evidence_persist_without_becoming_authentic
     context = star.people_entities.person_context(result["person"]["person_id"], limit=16)
     assert context["memories"]
     assert any("Perfil declarado" in item["content"] for item in context["memories"])
+    assert all((item.get("metadata") or {}).get("person_id") == result["person"]["person_id"] for item in context["memories"])
 
 
 def test_dialogue_history_is_bounded_and_persistence_is_not_raw_every_turn():
