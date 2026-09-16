@@ -44,6 +44,7 @@ O catálogo é determinístico e materializado sob demanda. Portanto:
 ### Operações
 
 - consolidação por delegação ao B13;
+- compressão por resumo/consolidação B13, preservando as memórias detalhadas como fontes;
 - candidatos a deduplicação de memória em janelas limitadas;
 - detecção de colisões de aliases;
 - resolução de aliases sem merge automático;
@@ -52,16 +53,26 @@ O catálogo é determinístico e materializado sob demanda. Portanto:
 - verificação de arestas órfãs no Knowledge Graph;
 - reparo opcional e restrito a arestas cujo nó de origem/destino realmente não existe;
 - candidatos a esquecimento funcional;
+- arquivamento **lógico e reversível** por metadata no store B13, sem exclusão física;
+- restauração de itens arquivados mantendo histórico de archive/restore;
+- inspeção de reorganização apenas sobre namespaces/linhas realmente materializados;
+- rebuild FTS5 somente por chamada explícita, nunca em background;
 - manutenção/invalidação do cache B03;
 - relatório bounded de integridade.
 
-### Esquecimento funcional
+### Esquecimento funcional e arquivamento
 
-“Esquecer” não significa apagar automaticamente memória persistente. O B32 apenas identifica candidatos de baixa importância e exclui tipos sensíveis/estruturais do conjunto padrão. Remoção física requer uma política futura explícita, auditável e reversível.
+“Esquecer” não significa apagar automaticamente memória persistente. O B32 apenas identifica candidatos de baixa importância e exclui tipos sensíveis/estruturais do conjunto padrão.
+
+O arquivamento implementado é lógico: marca a memória no metadata do **mesmo store oficial**, preserva seu conteúdo e proveniência e pode ser revertido. Não existe compactação destrutiva silenciosa nem remoção física automática.
+
+### Reorganização e cache
+
+A reorganização inspeciona somente dados materializados. O espaço lógico de 1B não é varrido. Rebuild de FTS5 e invalidação total de cache exigem chamada explícita; o ciclo normal de manutenção não dispara trabalho pesado em background.
 
 ### Crescimento controlado
 
-As operações possuem limites de janela/resultados. O B32 nunca faz scan de “1B” em RAM. Índices, consultas bounded e materialização sob demanda continuam sendo a estratégia de escala.
+As operações possuem limites de janela/resultados. O B32 nunca faz scan de “1B” em RAM. Índices, consultas bounded, consolidação source-preserving e materialização sob demanda continuam sendo a estratégia de escala.
 
 ## B33 — Limites de Autonomia
 
@@ -83,6 +94,7 @@ O `AgentManager` aceita o gate B33 já construído em `create_star()`. Comandos 
 - leitura/cognição continua leve;
 - escrita local exige interação/permissão local;
 - rede exige permissão local **e** modo de rede disponível;
+- se a rede está indisponível, a resposta offline canônica é preservada e nenhuma execução ocorre;
 - ações classificadas como confirmação continuam bloqueadas até existir autorização adequada;
 - reconhecimento probabilístico nunca satisfaz autenticação;
 - simulação, recomendação ou curiosidade não satisfazem `permission=True`.
@@ -205,7 +217,7 @@ Isto preserva a regra de que documentação e capacidades devem refletir o estad
 
 ## Segurança
 
-B32 pode diagnosticar e propor/manter estruturas limitadas, mas não recebe liberdade irrestrita para editar o sistema.
+B32 pode diagnosticar e propor/manter estruturas limitadas, mas não recebe liberdade irrestrita para editar o sistema. Arquivamento é lógico/reversível; reindexação é explícita; fontes não são apagadas pela compressão.
 
 B33 é a fronteira explícita para execução operacional e delega a decisão central ao B01.
 
