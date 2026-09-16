@@ -77,6 +77,9 @@ def create_star():
     # uma posição já decidida pela STAR. Falha/ausência do modelo mantém fallback.
     star.natural_interaction = NaturalInteraction(star)
     star.mind.natural_interaction = star.natural_interaction
+    star.conversation.natural_interaction = star.natural_interaction
+    cognition.natural_interaction = star.natural_interaction
+    executive.natural_interaction = star.natural_interaction
 
     # BLOCO 32: manutenção bounded sobre os stores, memória e grafo oficiais.
     # Consolidação continua delegada ao B13 e nenhuma exclusão ocorre por padrão.
