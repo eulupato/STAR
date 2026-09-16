@@ -57,6 +57,11 @@ class AgentManager:
         self._specs = {spec.name: spec for spec in AGENT_SPECS}
         self.weather = weather_provider or WeatherService()
         self.autonomy_limits = autonomy_limits
+        self.system_handlers = []
+
+    def attach_system_handlers(self, *handlers) -> None:
+        """Expõe camadas integradas leves sem criar outro router/agent manager."""
+        self.system_handlers = [handler for handler in handlers if handler is not None and hasattr(handler, "handle")]
 
     def list(self) -> dict:
         return {name: asdict(spec) for name, spec in self._specs.items()}
@@ -73,6 +78,13 @@ class AgentManager:
         )
 
     def dispatch(self, text: str, *, network_enabled: bool = False, remote: bool = False) -> str | None:
+        # Camadas cognitivas integradas podem responder status/IDs próprios. Isso
+        # reaproveita o dispatcher atual e evita criar um novo roteador paralelo.
+        for handler in tuple(self.system_handlers):
+            response = handler.handle(text)
+            if response is not None:
+                return response
+
         match = match_command(text)
         if match is None:
             return None
