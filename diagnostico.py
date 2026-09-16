@@ -35,6 +35,8 @@ MODULES = [
     "core.affective_personality", "core.reasoning_simulation", "core.planning_decision", "core.metacognition",
     "core.learning_evolution", "core.knowledge_integration", "core.global_workspace", "core.mind_loop",
     "core.multimodal_perception", "core.people_entities", "core.body_proprioception", "core.cognitive_integration",
+    "core.block_knowledge_catalog", "core.cognitive_maintenance", "core.autonomy_limits",
+    "core.cfc_benchmark", "core.consciousness_frontier",
 ]
 
 
@@ -112,6 +114,12 @@ def main():
     b25_stats = star.multimodal_perception.stats()
     b26_stats = star.people_entities.stats()
     b27_stats = star.body_proprioception.stats()
+    b32_stats = star.cognitive_maintenance.stats()
+    b33_stats = star.autonomy_limits.stats()
+    b34_stats = star.cfc.stats()
+    b35_stats = star.cfc97.stats()
+    b36_stats = star.consciousness_frontier.stats()
+    capacity_contract = star.cognitive_maintenance.capacity_contract()
 
     checks = [
         ("identidade", star.get_name() == "STAR"),
@@ -166,6 +174,22 @@ def main():
         ("B25 conectado ao B23", star.global_workspace.perception_provider is star.multimodal_perception),
         ("B25 conectado ao B24", star.mind_loop.perception_provider is star.multimodal_perception),
         ("B27 conectado ao B25", star.body_proprioception.perception is star.multimodal_perception),
+        ("B32 manutenção = 1B", b32_stats.get("catalog", {}).get("addressable_contents") == 1_000_000_000),
+        ("B32 bounded", b32_stats.get("bounded_windows") is True),
+        ("B32 não destrutivo por padrão", b32_stats.get("destructive_by_default") is False),
+        ("B33 autonomia = 1B", b33_stats.get("catalog", {}).get("addressable_contents") == 1_000_000_000),
+        ("B33 reutiliza B01", star.autonomy_limits.boundary is star.foundations.boundary),
+        ("B33 governa dispatcher", star.agents.autonomy_limits is star.autonomy_limits),
+        ("B33 reconhecimento != autenticação", b33_stats.get("recognition_is_authentication") is False),
+        ("B34 CFC = 1B", b34_stats.get("catalog", {}).get("addressable_contents") == 1_000_000_000),
+        ("B34 CFC = 15 dimensões", len(b34_stats.get("dimensions", ())) == 15),
+        ("B34 não se autoavalia", b34_stats.get("auto_grading") is False),
+        ("B35 CFC-97 = 1B", b35_stats.get("catalog", {}).get("addressable_contents") == 1_000_000_000),
+        ("B35 target funcional = 0.97", b35_stats.get("target") == 0.97),
+        ("B35 inicia não certificado", b35_stats.get("passed") is None),
+        ("B36 consciência = 1B", b36_stats.get("catalog", {}).get("addressable_contents") == 1_000_000_000),
+        ("B36 sem autoafirmação", b36_stats.get("automatic_consciousness_claim") is False),
+        ("B36 consciência STAR não estabelecida", b36_stats.get("self_consciousness_status") == "not_established"),
         ("voz temática = 1000000", voice_theme_stats.get("variations") == 1000000),
         ("idiomas = 5 famílias", language_stats.get("language_families") == 5),
         ("perfis de idioma = 6", language_stats.get("locale_profiles") == 6),
@@ -203,6 +227,11 @@ def main():
     print(f"👁️ B25 Percepção: {b25_stats.get('catalog', {}).get('addressable_contents', 0)} padrões | Sensor Fusion={'SIM' if b25_stats.get('sensor_fusion') else 'NÃO'}")
     print(f"👥 B26 Pessoas: {b26_stats.get('addressable_contents', 0)} representações | reconhecimento ≠ autenticação")
     print(f"🤖 B27 Corpo: {b27_stats.get('addressable_contents', 0)} representações | endpoint={'SIM' if b27_stats.get('body_is_endpoint') else 'NÃO'} | atuação direta=NÃO")
+    print(f"🧹 B32 Manutenção: {b32_stats.get('catalog', {}).get('addressable_contents', 0)} representações | bounded=SIM | destrutivo por padrão=NÃO")
+    print(f"🛡️ B33 Autonomia: {b33_stats.get('catalog', {}).get('addressable_contents', 0)} situações | autoridade=B01 | default deny=SIM")
+    print(f"🧪 B34 CFC: {b34_stats.get('catalog', {}).get('addressable_contents', 0)} situações | {len(b34_stats.get('dimensions', ())) } dimensões | auto-score=NÃO")
+    print(f"🎯 B35 CFC-97: target={b35_stats.get('target')} | blocos 1B registrados={b35_stats.get('registered_1b_blocks', 0)}/36 | certificado=NÃO")
+    print(f"🧠 B36 Consciência: {b36_stats.get('catalog', {}).get('addressable_contents', 0)} conteúdos de pesquisa | STAR={b36_stats.get('self_consciousness_status')}")
     print(f"🌐 Idiomas: {language_stats.get('language_families', 0)} famílias / {language_stats.get('locale_profiles', 0)} perfis | {language_stats.get('total_semantic_contents', 0)} conteúdos de expressão")
     neural_stats = localization_stats.get("neural", {})
     print(
@@ -216,6 +245,17 @@ def main():
     print(f"📦 Knowledge Packs: {pack_stats.get('packs', 0)} pack(s), {pack_stats.get('entries', 0)} entrada(s) carregada(s)")
     if pack_stats.get("packs", 0) and not pack_stats.get("entries", 0):
         warnings.append("Knowledge Packs foram descobertos, mas nenhuma entrada de conhecimento foi carregada; descoberta de manifesto não equivale a conteúdo utilizável.")
+    if capacity_contract.get("missing"):
+        warnings.append(
+            "Contrato 1B B01..B36: blocos ainda sem namespace/engine definida: "
+            + ", ".join(capacity_contract["missing"])
+            + ". Eles não foram fabricados apenas para fechar a numeração."
+        )
+    if capacity_contract.get("invalid_capacity"):
+        warnings.append(
+            "Namespaces registrados fora da capacidade lógica de 1B: "
+            + ", ".join(capacity_contract["invalid_capacity"])
+        )
     if not language_stats.get("full_dictionary_index_ready"):
         warnings.append("Dicionários completos ainda não foram materializados em SQLite; tradução contextual e léxico seed funcionam, mas vocabulário arbitrário pode não ser encontrado.")
     if not neural_stats.get("installed"):
