@@ -461,7 +461,7 @@ class CognitiveMaintenance:
         ]
         return {
             "namespaces": materialized,
-            "fts5_available": bool(self.knowledge.store.fts_available),
+            "fts5_available": bool(self.knowledge.store.fts5_available),
             "reindex_is_explicit": True,
             "logical_capacity_scanned": False,
             "materialized_rows_only": True,
@@ -469,7 +469,7 @@ class CognitiveMaintenance:
 
     def rebuild_search_index(self, *, apply: bool = False) -> dict:
         """Explicit FTS5 reorganization over materialized rows only."""
-        if not self.knowledge.store.fts_available:
+        if not self.knowledge.store.fts5_available:
             return {"available": False, "applied": False, "reason": "FTS5 unavailable; textual fallback remains active"}
         if not apply:
             return {"available": True, "applied": False, "requires_explicit_apply": True}
