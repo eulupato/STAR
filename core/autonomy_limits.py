@@ -7,7 +7,6 @@ Manager paralelo, não autentica pessoas e não executa ferramentas por conta pr
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any
 
 from core.block_knowledge_catalog import StructuredBillionCatalog
 from core.commands import match_command
@@ -155,13 +154,27 @@ class AutonomyLimits:
                 "reason": "read-only cognition/query",
             }
 
+        # Quando a capacidade de rede está desligada, não existe execução a
+        # autorizar. O dispatcher mantém sua resposta offline estável sem que B33
+        # a substitua por um falso pedido de permissão.
+        if risk == "network" and not network_enabled:
+            return {
+                "matched": True,
+                "intent": match.intent,
+                "agent": match.agent,
+                "risk": risk,
+                "can_proceed": True,
+                "operational_execution": False,
+                "reason": "network capability unavailable; downstream returns canonical offline response",
+            }
+
         if risk == "network":
             decision = self.evaluate(
                 match.intent,
-                permission=bool(local_permission and network_enabled),
-                capability=bool(network_enabled),
-                safety_ok=True,
-                authorization_source="local-user+network-mode" if local_permission and network_enabled else None,
+                permission=bool(local_permission),
+                capability=True,
+                safety_ok=bool(local_permission),
+                authorization_source="local-user+network-mode" if local_permission else None,
             )
         elif risk == "confirm":
             decision = self.evaluate(
