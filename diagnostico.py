@@ -1,6 +1,7 @@
 """Diagnóstico geral e leve da instalação da STAR V1.9 + MIND V2 alpha.
 
-Não carrega o Chatterbox pesado. Para síntese real use DIAGNOSTICO_VOZ.bat.
+Não carrega o Chatterbox pesado nem força o carregamento do modelo conversacional
+local. Para síntese real use DIAGNOSTICO_VOZ.bat.
 """
 from pathlib import Path
 import importlib
@@ -28,9 +29,9 @@ MODULES = [
     "core.curriculum_knowledge", "core.cognitive_catalog", "database.cognitive_store", "core.labs",
     "core.mind", "core.thematic_voice", "core.language_catalog", "core.offline_dictionary",
     "core.global_localization", "core.language_manager", "core.router", "core.executive", "core.star_core",
-    "core.commands", "core.conversation", "core.weather", "core.islands", "core.memory", "core.emotion",
-    "core.avatar", "core.knowledge_registry", "core.cure", "core.math_engine", "modules.computer_control",
-    "database.database", "database.memory", "voice.manager", "voice.audio_input", "gui.app",
+    "core.commands", "core.conversation", "core.natural_interaction", "core.weather", "core.islands",
+    "core.memory", "core.emotion", "core.avatar", "core.knowledge_registry", "core.cure", "core.math_engine",
+    "modules.computer_control", "database.database", "database.memory", "voice.manager", "voice.audio_input", "gui.app",
     "core.memory_continuity", "core.attention_salience", "core.internal_models", "core.social_cognition",
     "core.affective_personality", "core.reasoning_simulation", "core.planning_decision", "core.metacognition",
     "core.learning_evolution", "core.knowledge_integration", "core.global_workspace", "core.mind_loop",
@@ -114,6 +115,7 @@ def main():
     b25_stats = star.multimodal_perception.stats()
     b26_stats = star.people_entities.stats()
     b27_stats = star.body_proprioception.stats()
+    natural_stats = star.natural_interaction.stats()
     b32_stats = star.cognitive_maintenance.stats()
     b33_stats = star.autonomy_limits.stats()
     b34_stats = star.cfc.stats()
@@ -168,12 +170,21 @@ def main():
         ("B25 não fabrica observações", b25_stats.get("fabricates_observations") is False),
         ("B26 pessoas = 1B", b26_stats.get("addressable_contents") == 1_000_000_000),
         ("B26 reconhecimento != autenticação", b26_stats.get("recognition_is_authentication") is False),
+        ("B26 perfil persistente", b26_stats.get("profile_ingestion") is True),
+        ("B26 sem biometria bruta por padrão", b26_stats.get("raw_biometric_storage_by_default") is False),
         ("B27 corpo = 1B", b27_stats.get("addressable_contents") == 1_000_000_000),
         ("B27 corpo é endpoint", b27_stats.get("body_is_endpoint") is True),
         ("B27 sem atuação direta", b27_stats.get("direct_actuation") is False),
         ("B25 conectado ao B23", star.global_workspace.perception_provider is star.multimodal_perception),
         ("B25 conectado ao B24", star.mind_loop.perception_provider is star.multimodal_perception),
         ("B27 conectado ao B25", star.body_proprioception.perception is star.multimodal_perception),
+        ("interação natural ativa", natural_stats.get("status") == "active-integrated"),
+        ("interação natural bounded", 0 < natural_stats.get("turn_buffer_limit", 0) <= 64),
+        ("conversa usa runtime único", star.conversation.natural_interaction is star.natural_interaction),
+        ("executive usa runtime único", star.executive.natural_interaction is star.natural_interaction),
+        ("modelo de expressão não é STAR", natural_stats.get("model_is_star") is False),
+        ("modelo de expressão não decide fatos", natural_stats.get("model_decides_facts") is False),
+        ("modelo de expressão não concede permissões", natural_stats.get("model_grants_permissions") is False),
         ("B32 manutenção = 1B", b32_stats.get("catalog", {}).get("addressable_contents") == 1_000_000_000),
         ("B32 bounded", b32_stats.get("bounded_windows") is True),
         ("B32 não destrutivo por padrão", b32_stats.get("destructive_by_default") is False),
@@ -203,7 +214,7 @@ def main():
         ("catálogo UI traduz INICIAR", star.language.localization.static("INICIAR", "fr-FR") == "DÉMARRER"),
         ("catálogo operacional de voz >= 4000", command_count() >= 4000),
         ("catálogo total de voz > 1000000", command_count() + THEMATIC_VOICE_VARIATIONS > 1000000),
-        ("catálogo conversacional >= 5000", conversation_response_count() >= 5000),
+        ("catálogo conversacional fallback >= 5000", conversation_response_count() >= 5000),
     ]
     for name, ok in checks:
         print(("🟢 " if ok else "🔴 ") + name)
@@ -225,8 +236,13 @@ def main():
     print(f"🧠 MIND alpha: {mind_stats.get('capabilities', 0)} capacidades, {mind_stats.get('canonical_nodes_total', 0)} nós canônicos, {mind_stats.get('support_contents_total', 0)} conteúdos operacionais | FTS5={'SIM' if mind_stats.get('store', {}).get('fts5_available') else 'fallback textual'}")
     print(f"🧠 B24 Mind Loop: {b24_stats.get('catalog', {}).get('addressable_contents', 0)} representações | ação automática=NÃO")
     print(f"👁️ B25 Percepção: {b25_stats.get('catalog', {}).get('addressable_contents', 0)} padrões | Sensor Fusion={'SIM' if b25_stats.get('sensor_fusion') else 'NÃO'}")
-    print(f"👥 B26 Pessoas: {b26_stats.get('addressable_contents', 0)} representações | reconhecimento ≠ autenticação")
+    print(f"👥 B26 Pessoas: {b26_stats.get('addressable_contents', 0)} representações | perfil persistente=SIM | reconhecimento ≠ autenticação")
     print(f"🤖 B27 Corpo: {b27_stats.get('addressable_contents', 0)} representações | endpoint={'SIM' if b27_stats.get('body_is_endpoint') else 'NÃO'} | atuação direta=NÃO")
+    print(
+        "💬 Interação natural: "
+        f"{natural_stats.get('status')} | contexto={natural_stats.get('turn_buffer_limit')} turnos bounded | "
+        f"modelo local={natural_stats.get('local_llm_model')} opcional/lazy | modelo≠STAR"
+    )
     print(f"🧹 B32 Manutenção: {b32_stats.get('catalog', {}).get('addressable_contents', 0)} representações | bounded=SIM | destrutivo por padrão=NÃO")
     print(f"🛡️ B33 Autonomia: {b33_stats.get('catalog', {}).get('addressable_contents', 0)} situações | autoridade=B01 | default deny=SIM")
     print(f"🧪 B34 CFC: {b34_stats.get('catalog', {}).get('addressable_contents', 0)} situações | {len(b34_stats.get('dimensions', ())) } dimensões | auto-score=NÃO")
@@ -263,7 +279,7 @@ def main():
     if not mind_stats.get("store", {}).get("fts5_available"):
         warnings.append("SQLite FTS5 indisponível neste build; o RAG usa busca textual fallback, com menor qualidade de ranking.")
 
-    print(f"🗣️ Voz: {command_count()} operacionais + {THEMATIC_VOICE_VARIATIONS} temáticas = {command_count() + THEMATIC_VOICE_VARIATIONS} variações | 💬 respostas conversacionais: {conversation_response_count()}")
+    print(f"🗣️ Voz: {command_count()} operacionais + {THEMATIC_VOICE_VARIATIONS} temáticas = {command_count() + THEMATIC_VOICE_VARIATIONS} variações | 💬 fallback conversacional: {conversation_response_count()}")
 
     from voice.manager import VoiceManager
 
