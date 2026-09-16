@@ -114,6 +114,15 @@ def create_star():
     )
     star.mind.consciousness_frontier = star.consciousness_frontier
 
+    # Os novos blocos ficam acessíveis pelo dispatcher já existente para status
+    # e IDs. Não há um segundo Router: o mesmo AgentManager apenas delega handles.
+    star.agents.attach_system_handlers(
+        star.cognitive_maintenance,
+        star.autonomy_limits,
+        star.cfc97,
+        star.consciousness_frontier,
+    )
+
     star.skills = SkillRegistry()
     star.tools = ToolRegistry()
     star.tools.register("math", safe_math, True, "Cálculo matemático offline")
