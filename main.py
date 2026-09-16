@@ -13,7 +13,11 @@ from config import (
     EXTERNAL_AI_ENABLED,
     VERSION,
 )
+from core.autonomy_limits import AutonomyLimits
+from core.cfc_benchmark import CFC97, FunctionalCognitiveBenchmark
 from core.cognitive_integration import CognitiveIntegration
+from core.cognitive_maintenance import CognitiveMaintenance
+from core.consciousness_frontier import ConsciousnessResearchFrontier
 from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
@@ -67,6 +71,49 @@ def create_star():
     router.cognitive_integration = cognition
     executive.cognitive_integration = cognition
 
+    # BLOCO 32: manutenção bounded sobre os stores, memória e grafo oficiais.
+    # Consolidação continua delegada ao B13 e nenhuma exclusão ocorre por padrão.
+    star.cognitive_maintenance = CognitiveMaintenance(
+        star.knowledge,
+        memory_continuity=star.memory_continuity,
+        epistemics=star.mind.epistemics,
+        graph=star.mind.graph,
+        self_improvement=star.mind.self_improvement,
+    )
+    star.mind.cognitive_maintenance = star.cognitive_maintenance
+
+    # BLOCO 33: formaliza a fronteira de autonomia reutilizando exatamente o
+    # OperationalBoundary do B01. Não existe Permission Manager paralelo.
+    star.autonomy_limits = AutonomyLimits(
+        star.knowledge,
+        operational_boundary=star.foundations.boundary,
+    )
+    star.mind.autonomy_limits = star.autonomy_limits
+    star.agents.autonomy_limits = star.autonomy_limits
+
+    # BLOCO 34/35: benchmark funcional e protocolo CFC-97. O benchmark só pontua
+    # resultados observados/fornecidos; não se autoaprova e não mede humanidade.
+    star.cfc = FunctionalCognitiveBenchmark(
+        star.knowledge,
+        self_improvement=star.mind.self_improvement,
+    )
+    star.mind.cfc = star.cfc
+    star.cfc97 = CFC97(
+        star.knowledge,
+        benchmark=star.cfc,
+        self_improvement=star.mind.self_improvement,
+    )
+    star.mind.cfc97 = star.cfc97
+
+    # BLOCO 36: pesquisa sobre consciência via B02/B03, mantendo a conclusão
+    # sobre consciência da STAR explicitamente não estabelecida.
+    star.consciousness_frontier = ConsciousnessResearchFrontier(
+        star.knowledge,
+        self_model=star.self_model,
+        metacognition=star.metacognition,
+    )
+    star.mind.consciousness_frontier = star.consciousness_frontier
+
     star.skills = SkillRegistry()
     star.tools = ToolRegistry()
     star.tools.register("math", safe_math, True, "Cálculo matemático offline")
@@ -119,6 +166,7 @@ def main():
     plus_stats = star.knowledge_plus.stats()
     curriculum_stats = star.curriculum.stats()
     mind_stats = star.mind.stats()
+    cfc97_stats = star.cfc97.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -158,6 +206,14 @@ def main():
         f"{mind_stats['support_contents_total']} conteúdos operacionais endereçáveis"
     )
     print("🔄 Cognição integrada: FAST/DELIBERATIVE + posição cognitiva")
+    print("🧹 Manutenção cognitiva B32: BOUNDED/ON-DEMAND")
+    print("🛡️ Limites de autonomia B33: B01 BOUNDARY / DEFAULT DENY")
+    print(
+        "🧪 CFC/CFC-97 B34-B35: "
+        f"{len(star.cfc.stats()['dimensions'])} dimensões | "
+        f"{cfc97_stats['registered_1b_blocks']}/36 blocos 1B registrados | NÃO CERTIFICADO"
+    )
+    print("🧠 Consciência B36: FRONTEIRA DE PESQUISA / STATUS DA STAR NÃO ESTABELECIDO")
     print("🧩 Skills: PREPARADAS")
     print("🛠️ Ferramentas: ATIVAS (matemática offline + MIND experimental)")
     print(f"📦 Knowledge Packs detectados: {pack_stats['packs']}")
