@@ -431,18 +431,34 @@ class CognitiveMaintenance:
     def reorganization_plan(self, *, limit: int = 50) -> dict:
         """Inspects materialized namespaces only; logical 1B spaces are never scanned."""
         limit = self._bounded(limit, 100)
-        namespaces = self.knowledge.store.list_namespaces()[:limit]
-        materialized = []
-        for item in namespaces:
-            stats = self.knowledge.store.stats(namespace=item["namespace"])
-            materialized.append({
-                "namespace": item["namespace"],
-                "logical_capacity": int(item["logical_capacity"]),
-                "materialized_knowledge": int(stats.get("knowledge", 0)),
-                "aliases": int(stats.get("aliases", 0)),
-                "facets": int(stats.get("facets", 0)),
-                "claim_links": int(stats.get("claim_links", 0)),
-            })
+        with engine.connect() as conn:
+            rows = conn.execute(text("""
+                SELECT n.namespace,n.logical_capacity,
+                       (SELECT COUNT(*) FROM universal_knowledge u
+                        WHERE u.namespace=n.namespace) AS knowledge,
+                       (SELECT COUNT(*) FROM universal_aliases a
+                        JOIN universal_knowledge u ON u.knowledge_id=a.knowledge_id
+                        WHERE u.namespace=n.namespace) AS aliases,
+                       (SELECT COUNT(*) FROM universal_facets f
+                        JOIN universal_knowledge u ON u.knowledge_id=f.knowledge_id
+                        WHERE u.namespace=n.namespace) AS facets,
+                       (SELECT COUNT(*) FROM universal_claim_links c
+                        JOIN universal_knowledge u ON u.knowledge_id=c.knowledge_id
+                        WHERE u.namespace=n.namespace) AS claim_links
+                FROM universal_namespaces n
+                ORDER BY n.namespace LIMIT :limit
+            """), {"limit": limit}).mappings().all()
+        materialized = [
+            {
+                "namespace": row["namespace"],
+                "logical_capacity": int(row["logical_capacity"]),
+                "materialized_knowledge": int(row["knowledge"]),
+                "aliases": int(row["aliases"]),
+                "facets": int(row["facets"]),
+                "claim_links": int(row["claim_links"]),
+            }
+            for row in rows
+        ]
         return {
             "namespaces": materialized,
             "fts5_available": bool(self.knowledge.store.fts_available),
