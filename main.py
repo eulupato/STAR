@@ -81,6 +81,14 @@ def create_star():
     cognition.natural_interaction = star.natural_interaction
     executive.natural_interaction = star.natural_interaction
 
+    # Uma autoidentificação persistida pelo B26 também passa a ser o interlocutor
+    # ativo da camada conversacional. Isso não autentica a pessoa nem dá permissão.
+    def _sync_active_person(person):
+        star.natural_interaction.active_person_id = person.get("person_id")
+        star.natural_interaction.active_person_name = person.get("name")
+
+    star.people_entities.on_active_person = _sync_active_person
+
     # BLOCO 32: manutenção bounded sobre os stores, memória e grafo oficiais.
     # Consolidação continua delegada ao B13 e nenhuma exclusão ocorre por padrão.
     star.cognitive_maintenance = CognitiveMaintenance(
