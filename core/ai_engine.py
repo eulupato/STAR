@@ -1,9 +1,9 @@
 """Engine opcional de modelo de linguagem para recursos da STAR.
 
 Na STAR Foundation este componente permanece desativado por padrão. A identidade,
-memória, decisões e capacidades fundamentais da STAR não dependem dele. Chamadores
-podem fornecer um timeout menor para superfícies interativas sem alterar o padrão
-legado de operações mais longas.
+memória, decisões e capacidades fundamentais da STAR não dependem dele. O timeout
+padrão é curto o bastante para interação; tarefas explicitamente longas podem
+fornecer um valor maior no chamador.
 """
 
 from config import EXTERNAL_AI_ENABLED
@@ -28,7 +28,7 @@ class AIEngine:
         except requests.RequestException:
             return False
 
-    def generate(self, message, context=None, *, timeout=120.0):
+    def generate(self, message, context=None, *, timeout=12.0):
         self._ensure_enabled()
         import json
         import requests
