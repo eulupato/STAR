@@ -37,6 +37,10 @@ def _clamp(value: Any, default: float = 0.5) -> float:
         return default
 
 
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
 DOMAINS = {
     "consolidation": ("episodic", "semantic", "conversation", "project", "people", "social", "temporal", "autobiographical", "cross_memory", "canonicalization"),
     "deduplication": ("exact", "normalized", "alias", "claim", "evidence", "memory", "node", "edge", "source", "cross_namespace"),
@@ -100,6 +104,8 @@ class CognitiveMaintenance:
                 "bounded_windows": True,
                 "destructive_by_default": False,
                 "source_preserving_consolidation": True,
+                "logical_archive": True,
+                "archive_reversible": True,
                 "shared_database": "star.db",
                 "shared_graph": True,
                 "parallel_memory": False,
@@ -299,6 +305,163 @@ class CognitiveMaintenance:
             meaning=meaning,
         )
 
+    def compress_memories(
+        self,
+        memory_ids,
+        summary: str,
+        *,
+        source: str,
+        reference: str,
+        meaning: str = "",
+        archive_sources: bool = False,
+    ) -> dict:
+        """Creates a B13 summary view and optionally archives sources logically.
+
+        Compression never destroys provenance. The detailed memories remain in the
+        same official store and can be restored/recalled for audit.
+        """
+        ids = list(dict.fromkeys(int(value) for value in memory_ids))[: self.MAX_RESULTS]
+        if not ids:
+            raise ValueError("compressão requer ao menos uma memória")
+        consolidated = self.consolidate_memories(
+            ids,
+            summary,
+            source=source,
+            reference=reference,
+            meaning=meaning,
+        )
+        archive_result = None
+        if archive_sources:
+            archive_result = self.archive_memories(
+                ids,
+                reason=f"compressed into memory {consolidated.get('memory_id')}",
+                apply=True,
+            )
+        return {
+            "mode": "source-preserving-summary",
+            "summary_memory": consolidated,
+            "source_memory_ids": ids,
+            "source_memories_preserved": True,
+            "sources_logically_archived": bool(archive_sources),
+            "archive": archive_result,
+        }
+
+    def _memory_archive_records(self, memory_ids) -> tuple[list[dict], list[int]]:
+        ids = list(dict.fromkeys(int(value) for value in memory_ids))[: self.MAX_RESULTS]
+        records = []
+        missing = []
+        for memory_id in ids:
+            record = self.memory_continuity.memory_record(memory_id)
+            if record is None:
+                missing.append(memory_id)
+            else:
+                records.append(record)
+        return records, missing
+
+    def archive_memories(self, memory_ids, *, reason: str, apply: bool = False) -> dict:
+        """Logical, reversible archive in existing cognitive_memory metadata."""
+        reason = _clean(reason)
+        if not reason:
+            raise ValueError("arquivamento exige motivo")
+        records, missing = self._memory_archive_records(memory_ids)
+        plan = {
+            "memory_ids": [int(item["id"]) for item in records],
+            "missing": missing,
+            "reason": reason,
+            "apply": bool(apply),
+            "physical_deletion": False,
+            "reversible": True,
+            "archived": 0,
+        }
+        if not apply or not records:
+            return plan
+
+        archived_at = _now()
+        with engine.begin() as conn:
+            for record in records:
+                metadata = deepcopy(record.get("metadata") or {})
+                history = list(metadata.get("b32_archive_history") or [])[-31:]
+                event = {"archived_at": archived_at, "reason": reason, "actor": "B32-cognitive-maintenance"}
+                history.append(event)
+                metadata["b32_archive_history"] = history
+                metadata["b32_archive"] = event
+                conn.execute(
+                    text("UPDATE cognitive_memory SET metadata_json=:metadata,updated_at=:updated WHERE id=:id"),
+                    {
+                        "id": int(record["id"]),
+                        "metadata": json.dumps(metadata, ensure_ascii=False, sort_keys=True),
+                        "updated": archived_at,
+                    },
+                )
+        plan["archived"] = len(records)
+        plan["archived_at"] = archived_at
+        return plan
+
+    def restore_archived_memories(self, memory_ids) -> dict:
+        """Removes the current archive marker while preserving archive history."""
+        records, missing = self._memory_archive_records(memory_ids)
+        restored = 0
+        restored_at = _now()
+        with engine.begin() as conn:
+            for record in records:
+                metadata = deepcopy(record.get("metadata") or {})
+                current = metadata.pop("b32_archive", None)
+                if current is None:
+                    continue
+                history = list(metadata.get("b32_archive_history") or [])[-31:]
+                history.append({"restored_at": restored_at, "actor": "B32-cognitive-maintenance"})
+                metadata["b32_archive_history"] = history[-32:]
+                conn.execute(
+                    text("UPDATE cognitive_memory SET metadata_json=:metadata,updated_at=:updated WHERE id=:id"),
+                    {
+                        "id": int(record["id"]),
+                        "metadata": json.dumps(metadata, ensure_ascii=False, sort_keys=True),
+                        "updated": restored_at,
+                    },
+                )
+                restored += 1
+        return {
+            "restored": restored,
+            "missing": missing,
+            "physical_recreation": False,
+            "history_preserved": True,
+            "restored_at": restored_at,
+        }
+
+    def reorganization_plan(self, *, limit: int = 50) -> dict:
+        """Inspects materialized namespaces only; logical 1B spaces are never scanned."""
+        limit = self._bounded(limit, 100)
+        namespaces = self.knowledge.store.list_namespaces()[:limit]
+        materialized = []
+        for item in namespaces:
+            stats = self.knowledge.store.stats(namespace=item["namespace"])
+            materialized.append({
+                "namespace": item["namespace"],
+                "logical_capacity": int(item["logical_capacity"]),
+                "materialized_knowledge": int(stats.get("knowledge", 0)),
+                "aliases": int(stats.get("aliases", 0)),
+                "facets": int(stats.get("facets", 0)),
+                "claim_links": int(stats.get("claim_links", 0)),
+            })
+        return {
+            "namespaces": materialized,
+            "fts5_available": bool(self.knowledge.store.fts_available),
+            "reindex_is_explicit": True,
+            "logical_capacity_scanned": False,
+            "materialized_rows_only": True,
+        }
+
+    def rebuild_search_index(self, *, apply: bool = False) -> dict:
+        """Explicit FTS5 reorganization over materialized rows only."""
+        if not self.knowledge.store.fts_available:
+            return {"available": False, "applied": False, "reason": "FTS5 unavailable; textual fallback remains active"}
+        if not apply:
+            return {"available": True, "applied": False, "requires_explicit_apply": True}
+        with engine.begin() as conn:
+            conn.execute(text("INSERT INTO universal_knowledge_fts(universal_knowledge_fts) VALUES('rebuild')"))
+        self.knowledge.cache.invalidate()
+        return {"available": True, "applied": True, "cache_invalidated": True, "scope": "materialized universal knowledge rows"}
+
     def functional_forgetting_candidates(
         self,
         *,
@@ -338,7 +501,7 @@ class CognitiveMaintenance:
 
     def maintenance_cycle(self, *, repair_safe_graph_edges: bool = False, window: int = 2_000) -> dict:
         """Bounded maintenance pass; no destructive forgetting or alias merge."""
-        started = datetime.now(timezone.utc).isoformat()
+        started = _now()
         report = {
             "started_at": started,
             "duplicates": self.duplicate_memory_candidates(window=window, limit=100),
@@ -346,11 +509,14 @@ class CognitiveMaintenance:
             "contradictions": self.contradictions(limit=100),
             "graph": self.graph_integrity(limit=100, repair=repair_safe_graph_edges),
             "forgetting_candidates": self.functional_forgetting_candidates(window=window, limit=100),
+            "reorganization": self.reorganization_plan(limit=50),
             "cache": self.cache_maintenance(invalidate=False),
             "capacity": self.capacity_contract(),
             "bounded": True,
             "automatic_source_deletion": False,
             "automatic_alias_merge": False,
+            "automatic_archive": False,
+            "automatic_reindex": False,
         }
         issues = (
             len(report["duplicates"])
@@ -359,7 +525,7 @@ class CognitiveMaintenance:
             + int(report["graph"]["dangling_count"])
         )
         report["issue_count"] = issues
-        report["completed_at"] = datetime.now(timezone.utc).isoformat()
+        report["completed_at"] = _now()
         if self.self_improvement is not None:
             score = 1.0 if issues == 0 else max(0.0, 1.0 - min(issues, 100) / 100.0)
             self.self_improvement.record("B32", "maintenance_integrity", score, {
@@ -379,6 +545,10 @@ class CognitiveMaintenance:
             "max_window": self.MAX_WINDOW,
             "destructive_by_default": False,
             "source_preserving_consolidation": True,
+            "source_preserving_compression": True,
+            "logical_archive": True,
+            "archive_reversible": True,
+            "explicit_reindex_only": True,
             "registered_blocks_1b_ready": capacity["one_billion_ready"],
             "missing_block_namespaces": capacity["missing"],
         }
