@@ -1,9 +1,9 @@
 """Conversa casual e contexto diário da STAR.
 
-A camada cobre small talk sem transformar o Core em uma sequência gigante de
-``if/elif``. As respostas são compostas por famílias de fragmentos naturais. O
-catálogo auditável possui pelo menos 5 mil combinações únicas, enquanto o runtime
-gera somente a resposta necessária.
+O catálogo abaixo continua como fallback local determinístico. Quando o runtime de
+interação natural está conectado, a resposta semântica é entregue a ele para
+continuidade de diálogo e expressão generativa local. O catálogo deixa de ser a
+"personalidade" da STAR e passa a ser apenas um fallback seguro/offline.
 
 Comentários meteorológicos são validados contra ``WeatherService``. Se a consulta
 falhar, a STAR não inventa temperatura, chuva ou condição do céu.
@@ -25,7 +25,7 @@ def normalize_conversation_text(text: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
-# Seis famílias x 10 x 10 x 10 = 6000 combinações potenciais.
+# Seis famílias x 10 x 10 x 10 = 6000 combinações potenciais de fallback.
 _RESPONSE_FAMILIES = {
     "greeting": (
         (
@@ -191,9 +191,6 @@ def _has_any(text: str, phrases: tuple[str, ...]) -> bool:
     return any(phrase in text for phrase in phrases)
 
 
-# Evite gatilhos genéricos como apenas "tempo", "clima" ou "dia está".
-# Eles gerariam falsos positivos em frases como "não tenho tempo" ou
-# "meu dia está difícil". Os padrões abaixo exigem contexto meteorológico.
 WEATHER_HINTS = (
     "como esta o tempo", "como ta o tempo", "tempo hoje", "tempo agora",
     "previsao do tempo", "como esta o clima", "como ta o clima", "qual o clima",
@@ -229,6 +226,23 @@ SUPPORT_PHRASES = (
 class ConversationEngine:
     def __init__(self, weather: WeatherService | None = None):
         self.weather = weather or WeatherService()
+        self.natural_interaction = None
+
+    def _finalize(self, text: str, response: str, *, intent: str = "conversation") -> str:
+        runtime = self.natural_interaction
+        if runtime is None:
+            return response
+        try:
+            context = runtime.begin_turn(text)
+            return runtime.finish_turn(
+                text,
+                response,
+                intent=intent,
+                response_source="conversation_fallback" if intent == "conversation" else intent,
+                turn_context=context,
+            )
+        except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+            return response
 
     def respond(self, text: str, *, user_name: str | None = None) -> str | None:
         normalized = normalize_conversation_text(text)
@@ -236,24 +250,24 @@ class ConversationEngine:
             return None
         plain = normalized.translate(str.maketrans("", "", "?!,."))
 
-        # Apoio cotidiano precede clima para evitar que "dia difícil" seja
-        # interpretado como meteorologia; clima explícito ainda é reconhecido.
         if _has_any(plain, SUPPORT_PHRASES):
-            return _compose("support", plain)
+            return self._finalize(text, _compose("support", plain))
 
         if _has_any(plain, WEATHER_HINTS):
-            return self._weather_response(plain)
+            return self._finalize(text, self._weather_response(plain), intent="weather")
 
         if plain in GREETING_PHRASES or any(plain.startswith(item + " ") for item in GREETING_PHRASES):
             response = _compose("greeting", plain)
-            return f"{response} {user_name}, estou por aqui." if user_name else response
+            if user_name:
+                response = f"{response} {user_name}, estou por aqui."
+            return self._finalize(text, response)
 
         if _has_any(plain, WELLBEING_PHRASES):
-            return _compose("wellbeing", plain)
+            return self._finalize(text, _compose("wellbeing", plain))
         if _has_any(plain, THANKS_PHRASES):
-            return _compose("thanks", plain)
+            return self._finalize(text, _compose("thanks", plain))
         if plain in FAREWELL_PHRASES or any(plain.startswith(item + " ") for item in FAREWELL_PHRASES):
-            return _compose("farewell", plain)
+            return self._finalize(text, _compose("farewell", plain))
 
         if any(
             plain.startswith(prefix)
@@ -262,7 +276,7 @@ class ConversationEngine:
                 "estou tranquilo", "estou tranquila", "que loucura",
             )
         ):
-            return _compose("casual", plain)
+            return self._finalize(text, _compose("casual", plain))
         return None
 
     def _weather_response(self, text: str) -> str:
