@@ -48,6 +48,12 @@
   ],
   "experimental_features": [
     "star_mind_v2_alpha",
+    "integrated_cognitive_position_b12_b24",
+    "mind_loop_b24",
+    "multimodal_perception_b25",
+    "sensor_fusion_b25",
+    "persistent_people_entities_b26",
+    "body_proprioception_endpoint_b27",
     "star_device_gateway_v0_2",
     "star_watch_android_v0_3",
     "star_watch_app_v0_4",
@@ -56,6 +62,48 @@
     "star_mobile_ios_v0",
     "adaptive_device_runtime_v0"
   ],
+  "cognitive_blocks": {
+    "status": "experimental-integrated",
+    "range": "B01..B27",
+    "shared_database": "star.db",
+    "shared_knowledge_graph": true,
+    "parallel_brain": false,
+    "automatic_operational_authorization": false,
+    "integrated": {
+      "B24": {
+        "name": "MIND LOOP",
+        "engine": "core/mind_loop.py",
+        "addressable_contents": 1000000000,
+        "stages": 17,
+        "bounded_retrieval": true,
+        "executes_actions": false
+      },
+      "B25": {
+        "name": "PERCEPÇÃO MULTIMODAL",
+        "engine": "core/multimodal_perception.py",
+        "addressable_contents": 1000000000,
+        "sensor_fusion": true,
+        "materialization": "on-demand",
+        "fabricates_observations": false
+      },
+      "B26": {
+        "name": "PESSOAS COMO ENTIDADES PERSISTENTES",
+        "engine": "core/people_entities.py",
+        "addressable_contents": 1000000000,
+        "memory_source": "B13",
+        "recognition_is_authentication": false,
+        "trust_is_permission": false
+      },
+      "B27": {
+        "name": "CORPO E PROPRIOCEPÇÃO",
+        "engine": "core/body_proprioception.py",
+        "addressable_contents": 1000000000,
+        "body_is_endpoint": true,
+        "direct_actuation": false,
+        "sensor_fusion_source": "B25"
+      }
+    }
+  },
   "physics": {
     "status": "active-local",
     "engine": "core/physics_knowledge_150k.py",

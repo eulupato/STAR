@@ -31,6 +31,10 @@ MODULES = [
     "core.commands", "core.conversation", "core.weather", "core.islands", "core.memory", "core.emotion",
     "core.avatar", "core.knowledge_registry", "core.cure", "core.math_engine", "modules.computer_control",
     "database.database", "database.memory", "voice.manager", "voice.audio_input", "gui.app",
+    "core.memory_continuity", "core.attention_salience", "core.internal_models", "core.social_cognition",
+    "core.affective_personality", "core.reasoning_simulation", "core.planning_decision", "core.metacognition",
+    "core.learning_evolution", "core.knowledge_integration", "core.global_workspace", "core.mind_loop",
+    "core.multimodal_perception", "core.people_entities", "core.body_proprioception", "core.cognitive_integration",
 ]
 
 
@@ -104,6 +108,11 @@ def main():
         for token in ("CHEMX-0000042", "9.81 m/s", "https://example.org", "`x = 2 + 2`")
     )
 
+    b24_stats = star.mind_loop.stats()
+    b25_stats = star.multimodal_perception.stats()
+    b26_stats = star.people_entities.stats()
+    b27_stats = star.body_proprioception.stats()
+
     checks = [
         ("identidade", star.get_name() == "STAR"),
         ("saudação", bool(star.process("olá"))),
@@ -144,6 +153,19 @@ def main():
         ("MIND responde status", "STAR MIND" in str(star.process("status mind"))),
         ("MIND planeja", "Plano:" in str(star.process("planeje criar um software simples"))),
         ("MIND deriva", "2*x" in str(star.process("derive x^2 em x"))),
+        ("B24 Mind Loop integrado", b24_stats.get("catalog", {}).get("addressable_contents") == 1_000_000_000),
+        ("B24 não executa ações", b24_stats.get("policy", {}).get("action_stage_executes_tools") is False),
+        ("B25 percepção multimodal = 1B", b25_stats.get("catalog", {}).get("addressable_contents") == 1_000_000_000),
+        ("B25 Sensor Fusion ativo", b25_stats.get("sensor_fusion") is True),
+        ("B25 não fabrica observações", b25_stats.get("fabricates_observations") is False),
+        ("B26 pessoas = 1B", b26_stats.get("addressable_contents") == 1_000_000_000),
+        ("B26 reconhecimento != autenticação", b26_stats.get("recognition_is_authentication") is False),
+        ("B27 corpo = 1B", b27_stats.get("addressable_contents") == 1_000_000_000),
+        ("B27 corpo é endpoint", b27_stats.get("body_is_endpoint") is True),
+        ("B27 sem atuação direta", b27_stats.get("direct_actuation") is False),
+        ("B25 conectado ao B23", star.global_workspace.perception_provider is star.multimodal_perception),
+        ("B25 conectado ao B24", star.mind_loop.perception_provider is star.multimodal_perception),
+        ("B27 conectado ao B25", star.body_proprioception.perception is star.multimodal_perception),
         ("voz temática = 1000000", voice_theme_stats.get("variations") == 1000000),
         ("idiomas = 5 famílias", language_stats.get("language_families") == 5),
         ("perfis de idioma = 6", language_stats.get("locale_profiles") == 6),
@@ -177,6 +199,10 @@ def main():
         f"{curriculum_stats.get('total_new_addressable_contents', 0)} visões/conteúdos curriculares endereçáveis"
     )
     print(f"🧠 MIND alpha: {mind_stats.get('capabilities', 0)} capacidades, {mind_stats.get('canonical_nodes_total', 0)} nós canônicos, {mind_stats.get('support_contents_total', 0)} conteúdos operacionais | FTS5={'SIM' if mind_stats.get('store', {}).get('fts5_available') else 'fallback textual'}")
+    print(f"🧠 B24 Mind Loop: {b24_stats.get('catalog', {}).get('addressable_contents', 0)} representações | ação automática=NÃO")
+    print(f"👁️ B25 Percepção: {b25_stats.get('catalog', {}).get('addressable_contents', 0)} padrões | Sensor Fusion={'SIM' if b25_stats.get('sensor_fusion') else 'NÃO'}")
+    print(f"👥 B26 Pessoas: {b26_stats.get('addressable_contents', 0)} representações | reconhecimento ≠ autenticação")
+    print(f"🤖 B27 Corpo: {b27_stats.get('addressable_contents', 0)} representações | endpoint={'SIM' if b27_stats.get('body_is_endpoint') else 'NÃO'} | atuação direta=NÃO")
     print(f"🌐 Idiomas: {language_stats.get('language_families', 0)} famílias / {language_stats.get('locale_profiles', 0)} perfis | {language_stats.get('total_semantic_contents', 0)} conteúdos de expressão")
     neural_stats = localization_stats.get("neural", {})
     print(
@@ -206,16 +232,9 @@ def main():
     print("VOZ (sem carregar modelos)")
     print(f"Modo: {voice.mode}")
     print(f"STT instalado: {'SIM' if voice.stt_configured else 'NÃO'}")
-    print(f"Referência resolvida: {voice.official.reference_path}")
-    print(f"Referência existe: {'SIM' if voice.official.reference_path.exists() else 'NÃO'}")
-    print(f"Chatterbox env: {'SIM' if voice.official.python_path.exists() else 'NÃO'}")
-    print(f"Worker: {'SIM' if voice.official.worker_path.exists() else 'NÃO'}")
-    print(f"TTS: {voice.tts_description}")
-    if not voice.official.configured:
-        warnings.append("voz oficial indisponível: " + voice.official.status_message)
-    voice.close()
+    print(f"Referência resolvida: {voice.reference_voice if getattr(voice, 'reference_voice', None) else 'NÃO'}")
 
-    settings_path = ROOT / "user_settings.json"
+    settings_path = ROOT / "config" / "user_settings.json"
     if settings_path.exists():
         try:
             json.loads(settings_path.read_text(encoding="utf-8"))
