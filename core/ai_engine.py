@@ -15,6 +15,7 @@ class AIEngine:
         self.host = str(host or "http://localhost:11434").rstrip("/")
         self.url = f"{self.host}/api/chat"
         self.enabled = EXTERNAL_AI_ENABLED if enabled is None else bool(enabled)
+        self._resolved_once = False
 
     def _ensure_enabled(self):
         if not self.enabled:
@@ -57,7 +58,7 @@ class AIEngine:
             return True
         return installed.split(":", 1)[0] == wanted.split(":", 1)[0]
 
-    def resolve_model(self, preferred=None, *, candidates=(), timeout=1.5) -> str | None:
+    def resolve_model(self, preferred=None, *, candidates=(), timeout=1.5, fallback_any: bool = True) -> str | None:
         """Seleciona um modelo já instalado, preferindo o configurado."""
         installed = self.list_models(timeout=timeout)
         if not installed:
@@ -66,14 +67,19 @@ class AIEngine:
         for name in installed:
             if self._model_matches(name, wanted):
                 self.model = name
+                self._resolved_once = True
                 return name
         for candidate in tuple(candidates or ()):
             for name in installed:
                 if self._model_matches(name, candidate) or str(candidate).casefold() in name.casefold():
                     self.model = name
+                    self._resolved_once = True
                     return name
-        self.model = installed[0]
-        return installed[0]
+        if fallback_any:
+            self.model = installed[0]
+            self._resolved_once = True
+            return installed[0]
+        return None
 
     def pull_model(self, model=None, *, timeout=900.0) -> str:
         """Baixa um modelo somente quando o chamador pede explicitamente."""
@@ -89,12 +95,16 @@ class AIEngine:
         )
         response.raise_for_status()
         self.model = name
+        self._resolved_once = True
         return name
 
     def generate(self, message, context=None, *, timeout=12.0, images=None):
         self._ensure_enabled()
         import json
         import requests
+
+        if not self._resolved_once:
+            self.resolve_model(preferred=self.model, timeout=min(max(float(timeout) / 10.0, 0.25), 1.5))
 
         messages = []
         if context:
