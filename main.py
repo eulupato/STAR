@@ -22,6 +22,8 @@ from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
 from core.natural_interaction import NaturalInteraction
+from core.perception_runtime import PerceptionRuntime
+from core.person_auth import LocalPersonAuthenticator
 from core.physics_knowledge_150k import PhysicsKnowledgeEngine
 from core.chemistry_knowledge_500k import ChemistryKnowledgeEngine
 from core.multidisciplinary_knowledge import MultidisciplinaryKnowledgeEngine
@@ -88,6 +90,16 @@ def create_star():
         star.natural_interaction.active_person_name = person.get("name")
 
     star.people_entities.on_active_person = _sync_active_person
+
+    # Grupo 1: providers perceptivos reais continuam subordinados ao B25/B26.
+    # Nenhum deles roda captura contínua em background; câmera/tela/áudio são lazy.
+    star.perception_runtime = PerceptionRuntime(star)
+    star.mind.perception_runtime = star.perception_runtime
+
+    # Autenticação é provider separado de reconhecimento. O arquivo local contém
+    # somente salt+hash scrypt; autenticar nunca concede permissão operacional.
+    star.person_authenticator = LocalPersonAuthenticator(ROOT / "runtime" / "security" / "person_credentials.json")
+    star.mind.person_authenticator = star.person_authenticator
 
     # BLOCO 32: manutenção bounded sobre os stores, memória e grafo oficiais.
     # Consolidação continua delegada ao B13 e nenhuma exclusão ocorre por padrão.
@@ -195,6 +207,7 @@ def main():
     mind_stats = star.mind.stats()
     cfc97_stats = star.cfc97.stats()
     natural_stats = star.natural_interaction.stats()
+    perception_stats = star.perception_runtime.status()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -238,6 +251,12 @@ def main():
         "💬 Interação natural: ATIVA | contexto multi-turn bounded | "
         f"modelo local={natural_stats['local_llm_model']} (opcional/lazy)"
     )
+    print(
+        "👁️ Percepção real Grupo 1: B25 integrado | "
+        f"face_detection={'SIM' if perception_stats['vision']['face_detection'] else 'dependência opcional'} | "
+        f"VLM={perception_stats['vision']['semantic_model'] or 'não instalado'}"
+    )
+    print("🔐 Autenticação de pessoas: challenge local separado de reconhecimento; permissão=NÃO")
     print("🧹 Manutenção cognitiva B32: BOUNDED/ON-DEMAND")
     print("🛡️ Limites de autonomia B33: B01 BOUNDARY / DEFAULT DENY")
     print(
