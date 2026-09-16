@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
-from core.commands import CommandMatch, command_count, command_variables, match_command
+from core.commands import CommandMatch, command_count, command_variables, match_command, normalize_text
 from core.thematic_voice import THEMATIC_VOICE_VARIATIONS
 from core.weather import WeatherService, format_weather
 
@@ -36,7 +36,7 @@ AGENT_SPECS = (
     AgentSpec("simulation", "Simulação local determinística: projétil, dinâmica exponencial, Monte Carlo e integração RK4 escalar.", "available", "V3.3 alpha", "local"),
     AgentSpec("rag", "Ingestão local TXT/MD/CSV/JSON/Python/PDF e recuperação FTS5/BM25 com citações de origem.", "available", "V3 alpha", "read-local"),
     AgentSpec("music", "Spotify e controles multimídia locais disponíveis em escopo limitado.", "partial", "V1.9 → V4 Operator", "safe-subset"),
-    AgentSpec("vision", "STAR Vision Portal local com webcam, tracking de mãos, portal AR e filtros; análise semântica de cena permanece futura.", "partial", "V1.9 experimental → V5 Senses", "read/local-camera"),
+    AgentSpec("vision", "STAR Vision Portal + B25: câmera/AR, imagem anexada, metadados, face detection opcional, VLM local opcional, tela explícita e Sensor Fusion.", "partial", "V1.9 experimental → V5 Senses", "read/local-camera"),
     AgentSpec("device", "Gateway LAN experimental e runtime adaptativo; Device Manager completo é futuro.", "partial", "V1.9 experimental → V9", "read"),
     AgentSpec("cure", "Diagnóstico básico existente; avaliação cognitiva registra métricas, mas Guardian/Cura inteligente completa fica para V7.", "partial", "V1.9 → V7 Guardian", "read"),
     AgentSpec("security", "Ações sensíveis aguardam Permission Manager, Audit Log e autenticação forte.", "planned", "V7 Guardian", "block-sensitive"),
@@ -53,15 +53,33 @@ AGENT_SPECS = (
 class AgentManager:
     """Despacha somente capacidades já suportadas e mantém limites operacionais."""
 
+    SCREEN_COMMANDS = {
+        "olhe minha tela", "veja minha tela", "analise minha tela", "analisa minha tela",
+        "o que tem na minha tela", "perceba minha tela", "observe minha tela",
+    }
+    AUDIO_COMMANDS = {
+        "escute o ambiente", "ouca o ambiente", "ouça o ambiente", "escute ao redor",
+        "ouca ao redor", "ouça ao redor", "analise o som ambiente", "analisa o som ambiente",
+    }
+    PERCEPTION_STATUS_COMMANDS = {
+        "status da percepcao", "status da percepção", "status perceptivo",
+        "status da visao semantica", "status da visão semântica",
+    }
+
     def __init__(self, weather_provider: WeatherService | None = None, autonomy_limits=None):
         self._specs = {spec.name: spec for spec in AGENT_SPECS}
         self.weather = weather_provider or WeatherService()
         self.autonomy_limits = autonomy_limits
         self.system_handlers = []
+        self.perception_runtime = None
 
     def attach_system_handlers(self, *handlers) -> None:
         """Expõe camadas integradas leves sem criar outro router/agent manager."""
         self.system_handlers = [handler for handler in handlers if handler is not None and hasattr(handler, "handle")]
+
+    def attach_perception_runtime(self, runtime) -> None:
+        """Anexa os providers B25 existentes; não cria outro agente de visão."""
+        self.perception_runtime = runtime
 
     def list(self) -> dict:
         return {name: asdict(spec) for name, spec in self._specs.items()}
@@ -77,20 +95,70 @@ class AgentManager:
             f"Planejados: {', '.join(planned) or 'nenhum'}."
         )
 
+    @staticmethod
+    def _observation_summary(result: dict) -> str:
+        observations = result.get("observations") or ()
+        contents = []
+        for item in observations:
+            value = str((item or {}).get("content") or "").strip() if isinstance(item, dict) else ""
+            if value and value not in contents:
+                contents.append(value)
+        if contents:
+            return " | ".join(contents[:5])
+        semantic = result.get("semantic") or {}
+        scene = str(semantic.get("scene") or "").strip() if isinstance(semantic, dict) else ""
+        return scene or "A captura foi registrada no B25, mas não há descrição semântica adicional disponível."
+
+    def _perception_command(self, text: str, *, remote: bool) -> str | None:
+        command = normalize_text(text)
+        runtime = self.perception_runtime
+        if command in self.PERCEPTION_STATUS_COMMANDS:
+            if runtime is None:
+                return "O runtime perceptivo B25 não está conectado nesta sessão."
+            status = runtime.status(probe=False)
+            vision = status.get("vision") or {}
+            return (
+                "Percepção B25 ativa. "
+                f"OpenCV={'sim' if vision.get('opencv') else 'opcional/ausente'}; "
+                f"VLM local={vision.get('semantic_model') or 'não sondado/ausente'}; "
+                "tela e áudio são capturados somente sob pedido local explícito; "
+                "reconhecimento não autentica."
+            )
+        if command not in self.SCREEN_COMMANDS and command not in self.AUDIO_COMMANDS:
+            return None
+        if remote:
+            return "Essa percepção exige uma solicitação local explícita; dispositivos remotos não podem ativar tela ou microfone do PC."
+        if runtime is None:
+            return "O runtime perceptivo B25 não está disponível nesta sessão."
+        if command in self.SCREEN_COMMANDS:
+            result = runtime.screen.capture()
+            if not result.get("available"):
+                return "Não consegui capturar a tela agora. A percepção permaneceu fechada e nenhuma observação foi inventada."
+            return "Observei a tela nesta solicitação: " + self._observation_summary(result)
+        result = runtime.audio.sample(seconds=1.0)
+        if not result.get("available"):
+            return "Não consegui acessar o áudio ambiente agora. Nenhum som foi inferido sem captura real."
+        features = result.get("features") or {}
+        return (
+            "Amostrei o áudio ambiente por cerca de 1 segundo, sem manter gravação contínua. "
+            f"Classificação perceptiva: {features.get('classification') or 'indeterminada'}; "
+            f"nível RMS={features.get('rms', 0):.4f}."
+        )
+
     def dispatch(self, text: str, *, network_enabled: bool = False, remote: bool = False) -> str | None:
-        # Camadas cognitivas integradas podem responder status/IDs próprios. Isso
-        # reaproveita o dispatcher atual e evita criar um novo roteador paralelo.
         for handler in tuple(self.system_handlers):
             response = handler.handle(text)
             if response is not None:
                 return response
 
+        perception = self._perception_command(text, remote=remote)
+        if perception is not None:
+            return perception
+
         match = match_command(text)
         if match is None:
             return None
 
-        # BLOCO 33: toda execução operacional conhecida passa pela mesma fronteira
-        # B01. Read-only continua leve; write/network/confirm exigem o gate.
         if self.autonomy_limits is not None:
             gate = self.autonomy_limits.gate_command(
                 text,
