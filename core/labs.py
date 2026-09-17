@@ -142,15 +142,34 @@ class SimulationLab:
 
 
 class CodeLab:
-    """Execução local limitada para pequenos testes de Python.
-
-    Não é um sandbox de segurança do sistema operacional. O validador bloqueia
-    I/O, rede, introspecção e imports perigosos; tarefas não confiáveis ainda
-    devem usar o Sandbox/Guardian futuro da STAR.
-    """
+    """Execução Python em dois níveis.\n\n    ``run()`` preserva o runner restrito legado para pequenos scripts confiáveis.\n    ``run_sandboxed()`` exige o sandbox de SO/container do Guardian e falha\n    fechado quando esse backend não está disponível.\n    """
 
     SAFE_MODULES = {"math", "statistics", "random", "json", "re", "itertools", "functools", "collections", "decimal", "fractions"}
     FORBIDDEN_NAMES = {"open", "exec", "eval", "compile", "input", "globals", "locals", "vars", "getattr", "setattr", "delattr", "__import__", "breakpoint", "help", "dir", "memoryview"}
+
+    def __init__(self, *, sandbox=None):
+        self.sandbox = sandbox
+
+    def attach_sandbox(self, sandbox):
+        self.sandbox = sandbox
+        return self
+
+    def run_sandboxed(self, code: str, *, timeout: float = 5.0, network: bool = False) -> dict:
+        """Executa somente quando um backend real de isolamento está pronto."""
+        validation = self.validate(code)
+        if not validation["ok"]:
+            return {
+                "ok": False, "stdout": "", "stderr": "\n".join(validation["errors"]),
+                "returncode": None, "timed_out": False, "os_grade": False,
+                "reason": "validation_failed",
+            }
+        if self.sandbox is None:
+            return {
+                "ok": False, "stdout": "", "stderr": "sandbox real não anexado",
+                "returncode": None, "timed_out": False, "os_grade": False,
+                "reason": "os_sandbox_unavailable",
+            }
+        return self.sandbox.run_python(code, timeout=timeout, network=network)
 
     def validate(self, code: str) -> dict:
         code = str(code)

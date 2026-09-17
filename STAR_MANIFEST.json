@@ -39,11 +39,16 @@
     "fast_local_tts_fallback",
     "voice_degraded_startup",
     "automatic_spoken_replies",
-    "removable_knowledge_packs"
+    "removable_knowledge_packs",
+    "group3_knowledge_research_documents",
+    "controlled_cure_guardian",
+    "os_grade_sandbox_runtime",
+    "security_agent_read_only",
+    "home_automation_home_assistant",
+    "personal_integrations_email_messaging_calendar"
   ],
   "features_prepared": [
     "expanded_automation",
-    "messaging_integrations",
     "web_tools",
     "star_mind_v2_full"
   ],
@@ -71,12 +76,22 @@
     "group2_physical_sensor_transport",
     "group2_persistent_agenda_scheduler",
     "b27_fk_ik_runtime",
-    "safe_body_actuation_executor"
+    "safe_body_actuation_executor",
+    "group4_controlled_cure",
+    "group4_os_sandbox",
+    "group4_security_agent",
+    "group4_home_automation",
+    "group4_personal_integrations"
   ],
   "cognitive_blocks": {
     "status": "experimental-integrated",
     "range": "B01..B27 + B32..B36",
-    "undefined_blocks": ["B28", "B29", "B30", "B31"],
+    "undefined_blocks": [
+      "B28",
+      "B29",
+      "B30",
+      "B31"
+    ],
     "shared_database": "star.db",
     "shared_knowledge_graph": true,
     "parallel_brain": false,
@@ -183,19 +198,38 @@
     "added_content_variations": 100000,
     "content_variations": 150000,
     "id_range": "PHYS-00001..PHYS-150000",
-    "levels": [1, 2, 3, 4, 5],
+    "levels": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
     "variation_model": "10 families x 10 styles x 10 contexts per canonical topic",
     "families": [
-      "conceito", "formula", "variaveis_unidades", "hipoteses_validade", "derivacao",
-      "calculo", "aplicacao", "erros_comuns", "limites", "conexoes"
+      "conceito",
+      "formula",
+      "variaveis_unidades",
+      "hipoteses_validade",
+      "derivacao",
+      "calculo",
+      "aplicacao",
+      "erros_comuns",
+      "limites",
+      "conexoes"
     ],
     "materialization": "on-demand",
     "internet_required": false,
     "watch_available_via_core": true,
     "source_families": [
-      "MIT OpenCourseWare", "OpenStax University Physics", "NIST/CODATA",
-      "Particle Data Group 2026", "CERN", "NASA Physics of the Cosmos",
-      "LIGO Scientific Collaboration", "IAEA"
+      "MIT OpenCourseWare",
+      "OpenStax University Physics",
+      "NIST/CODATA",
+      "Particle Data Group 2026",
+      "CERN",
+      "NASA Physics of the Cosmos",
+      "LIGO Scientific Collaboration",
+      "IAEA"
     ]
   },
   "chemistry": {
@@ -212,8 +246,14 @@
     "materialization": "on-demand",
     "internet_required": false,
     "source_families": [
-      "IUPAC Gold Book 2025", "OpenStax Chemistry 2e", "NIST Chemistry WebBook",
-      "NIST CCCBDB", "NIH/NLM PubChem", "MIT OpenCourseWare", "Chemistry LibreTexts", "IAEA"
+      "IUPAC Gold Book 2025",
+      "OpenStax Chemistry 2e",
+      "NIST Chemistry WebBook",
+      "NIST CCCBDB",
+      "NIH/NLM PubChem",
+      "MIT OpenCourseWare",
+      "Chemistry LibreTexts",
+      "IAEA"
     ]
   },
   "multidisciplinary": {
@@ -247,7 +287,10 @@
       "philosophy": "PHIL-000001..PHIL-500000"
     },
     "collision_policy": "specificity + explicit subject + cross-domain bridges; close cross-subject ties are not guessed",
-    "legacy_priority": ["physics", "chemistry"],
+    "legacy_priority": [
+      "physics",
+      "chemistry"
+    ],
     "history_hidden_details_with_evidence_policy": true,
     "decoding_defensive_scope": true,
     "psychology_individual_diagnosis": false
@@ -302,7 +345,13 @@
     "catalog": "core/cognitive_catalog.py",
     "store": "database/cognitive_store.py",
     "labs": "core/labs.py",
-    "roadmap_alignment": ["V2.0", "V2.1", "V2.2", "partial V3.0", "partial V3.3"],
+    "roadmap_alignment": [
+      "V2.0",
+      "V2.1",
+      "V2.2",
+      "partial V3.0",
+      "partial V3.3"
+    ],
     "capabilities": 15,
     "canonical_nodes_per_capability": 1000,
     "operational_contents_per_capability": 1000000,
@@ -312,12 +361,19 @@
     "fts5_with_fallback": true,
     "sympy_math": true,
     "pdf_text_rag": true,
-    "pdf_ocr": false,
+    "pdf_ocr": "optional-local-tesseract-pymupdf",
     "crossref_research": true,
     "network_default": false,
-    "code_lab_os_grade_sandbox": false,
+    "code_lab_os_grade_sandbox": "docker-podman-bwrap-if-ready-fail-closed",
     "autonomous_repository_modification": false,
-    "truthfulness_note": "15M MIND items are operational/cognitive support variations, not 15M independently researched facts"
+    "truthfulness_note": "15M MIND items are operational/cognitive support variations, not 15M independently researched facts",
+    "office_rag": [
+      "docx",
+      "xlsx",
+      "pptx"
+    ],
+    "semantic_file_search": "local-vector-index-star.db",
+    "general_web_research": "opt-in-provenance-preserving"
   },
   "languages": {
     "status": "active-local",
@@ -330,7 +386,14 @@
     "default_locale": "pt-BR",
     "canonical_content_locale": "pt-BR",
     "language_families": 5,
-    "locale_profiles": ["pt-BR", "en-US", "en-GB", "es-ES", "it-IT", "fr-FR"],
+    "locale_profiles": [
+      "pt-BR",
+      "en-US",
+      "en-GB",
+      "es-ES",
+      "it-IT",
+      "fr-FR"
+    ],
     "expression_contents_per_family": 100000,
     "total_semantic_expression_contents": 500000,
     "english_surface_variants": 2,
@@ -364,7 +427,13 @@
       "procedural": true,
       "asset_dependency": false,
       "target_fps": 30,
-      "states": ["PRONTA", "OUVINDO", "PENSANDO", "RESPONDENDO", "ATENÇÃO"]
+      "states": [
+        "PRONTA",
+        "OUVINDO",
+        "PENSANDO",
+        "RESPONDENDO",
+        "ATENÇÃO"
+      ]
     },
     "interaction": {
       "ring_rotate": true,
@@ -374,7 +443,19 @@
       "pc_mouse_wheel_simulates_ring": true,
       "pc_enter_simulates_ring_press": true
     },
-    "modes": ["voice", "search", "health", "gps", "vision", "people", "measure", "media", "weather", "language", "settings"]
+    "modes": [
+      "voice",
+      "search",
+      "health",
+      "gps",
+      "vision",
+      "people",
+      "measure",
+      "media",
+      "weather",
+      "language",
+      "settings"
+    ]
   },
   "voice": {
     "stt": "faster-whisper tiny local",
@@ -397,7 +478,11 @@
     "thematic_model": "10 actions x 10 tones x 10 depths x 10 formats x 10 contexts x 10 closers",
     "command_model": "intents + slots + wake words + aliases + thematic free-text study parser",
     "free_text_slots": [
-      "web_search.query", "find_file.query", "spotify_search.query", "weather_current.location", "knowledge.topic"
+      "web_search.query",
+      "find_file.query",
+      "spotify_search.query",
+      "weather_current.location",
+      "knowledge.topic"
     ]
   },
   "conversation": {
@@ -410,7 +495,14 @@
     "continuity_anchor_every_turns": 8,
     "response_variations_minimum": 5000,
     "response_variations_generated": 6000,
-    "families": ["greeting", "wellbeing", "thanks", "casual", "support", "farewell"],
+    "families": [
+      "greeting",
+      "wellbeing",
+      "thanks",
+      "casual",
+      "support",
+      "farewell"
+    ],
     "catalog_role": "semantic/offline fallback",
     "selection": "cognitive context + optional local surface realization + deterministic fallback",
     "local_surface_model": "Ollama loopback optional/lazy",
@@ -432,7 +524,10 @@
     "cache_seconds_default": 600,
     "general_web_mode_required": false,
     "environment": [
-      "STAR_WEATHER_ENABLED", "STAR_WEATHER_LOCATION", "STAR_WEATHER_AUTOLOCATE", "STAR_WEATHER_CACHE_SECONDS"
+      "STAR_WEATHER_ENABLED",
+      "STAR_WEATHER_LOCATION",
+      "STAR_WEATHER_AUTOLOCATE",
+      "STAR_WEATHER_CACHE_SECONDS"
     ]
   },
   "group2_sensors_body_proactivity": {
@@ -467,14 +562,31 @@
     "schema": 1,
     "sync_interval_seconds": 30,
     "theme": {
-      "background": "#03050A", "surface": "#0B1220", "primary": "#72E8FF",
-      "secondary": "#A276FF", "accent": "#FF79C8", "text": "#FFFFFF", "muted": "#8B96A8"
+      "background": "#03050A",
+      "surface": "#0B1220",
+      "primary": "#72E8FF",
+      "secondary": "#A276FF",
+      "accent": "#FF79C8",
+      "text": "#FFFFFF",
+      "muted": "#8B96A8"
     },
     "labels": {
-      "title": "STAR", "pair": "PAREAR", "send": "ENVIAR", "speak": "FALAR",
-      "stop_and_send": "ENVIAR ÁUDIO", "camera": "VISÃO", "search": "BUSCA",
-      "health": "SAÚDE", "gps": "GPS", "people": "PEOPLE", "measure": "MEDIR",
-      "sensors": "SENSORES", "media": "MÍDIA", "weather": "CLIMA", "language": "IDIOMA", "settings": "CONFIG"
+      "title": "STAR",
+      "pair": "PAREAR",
+      "send": "ENVIAR",
+      "speak": "FALAR",
+      "stop_and_send": "ENVIAR ÁUDIO",
+      "camera": "VISÃO",
+      "search": "BUSCA",
+      "health": "SAÚDE",
+      "gps": "GPS",
+      "people": "PEOPLE",
+      "measure": "MEDIR",
+      "sensors": "SENSORES",
+      "media": "MÍDIA",
+      "weather": "CLIMA",
+      "language": "IDIOMA",
+      "settings": "CONFIG"
     },
     "features": {
       "text": true,
@@ -501,15 +613,118 @@
     },
     "profiles": {
       "phone": {
-        "layout": "comfortable", "show_connection_fields": true,
-        "show_response_transcript": true, "preferred_columns": 1
+        "layout": "comfortable",
+        "show_connection_fields": true,
+        "show_response_transcript": true,
+        "preferred_columns": 1
       },
       "watch": {
-        "layout": "circular-shell", "shape": "circle", "show_connection_fields": false,
-        "show_response_transcript": true, "preferred_columns": 1,
-        "home_style": "plasma-core-ring", "visual_style": "plasma-orbit",
-        "screens": ["home", "voice", "search", "health", "gps", "vision", "people", "measure", "media", "weather", "language", "settings"]
+        "layout": "circular-shell",
+        "shape": "circle",
+        "show_connection_fields": false,
+        "show_response_transcript": true,
+        "preferred_columns": 1,
+        "home_style": "plasma-core-ring",
+        "visual_style": "plasma-orbit",
+        "screens": [
+          "home",
+          "voice",
+          "search",
+          "health",
+          "gps",
+          "vision",
+          "people",
+          "measure",
+          "media",
+          "weather",
+          "language",
+          "settings"
+        ]
       }
+    }
+  },
+  "group3_knowledge_research_documents": {
+    "status": "integrated",
+    "engine": "core/knowledge_research_documents.py",
+    "general_web": "opt-in-provenance-verified",
+    "safe_knowledge_update": "append-only-no-canonical-auto-promotion",
+    "offline_dictionary_materializer": true,
+    "ocr": "tesseract-local+pymupdf-optional",
+    "rag_formats": [
+      "txt",
+      "md",
+      "csv",
+      "json",
+      "py",
+      "rst",
+      "pdf",
+      "docx",
+      "xlsx",
+      "pptx",
+      "images-via-ocr"
+    ],
+    "semantic_file_search": "explicit-local-index",
+    "database": "star.db",
+    "automatic_directory_scan_on_startup": false
+  },
+  "group4_guardian_security_integrations": {
+    "status": "integrated-conditional-providers",
+    "cure": {
+      "engine": "core/cure.py",
+      "root_cause_log_analysis": true,
+      "disposable_git_worktree": true,
+      "sandbox_test_validation": true,
+      "automatic_repo_modification": false,
+      "explicit_mutation_gate": true
+    },
+    "sandbox": {
+      "engine": "core/os_sandbox.py",
+      "backends": [
+        "docker",
+        "podman",
+        "bubblewrap"
+      ],
+      "network_default": false,
+      "readonly_workspace": true,
+      "resource_limits": true,
+      "auto_install_or_pull": false,
+      "fail_closed": true
+    },
+    "security": {
+      "engine": "core/security_agent.py",
+      "mode": "read-only-audit",
+      "secret_scan": true,
+      "integrity_snapshot": true,
+      "dependency_audit": "pip-audit-if-installed",
+      "automatic_remediation": false,
+      "authority": "B01/B33"
+    },
+    "home": {
+      "engine": "core/home_automation.py",
+      "provider": "Home Assistant REST optional",
+      "safe_domains": [
+        "light",
+        "switch",
+        "fan"
+      ],
+      "two_step_local_confirmation": true,
+      "locks_alarms_security_devices": false,
+      "credentials_persisted": false,
+      "authority": "B01/B33"
+    },
+    "personal_integrations": {
+      "engine": "core/personal_integrations.py",
+      "email": [
+        "IMAP read",
+        "SMTP send"
+      ],
+      "messaging": "Telegram optional adapter",
+      "calendar": "CalDAV optional sync over existing AgendaManager",
+      "persistent_drafts": "star.db",
+      "two_step_local_confirmation": true,
+      "automatic_sending": false,
+      "credentials_persisted": false,
+      "authority": "B01/B33"
     }
   }
 }
