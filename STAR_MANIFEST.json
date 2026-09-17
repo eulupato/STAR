@@ -76,7 +76,12 @@
   "cognitive_blocks": {
     "status": "experimental-integrated",
     "range": "B01..B27 + B32..B36",
-    "undefined_blocks": ["B28", "B29", "B30", "B31"],
+    "undefined_blocks": [
+      "B28",
+      "B29",
+      "B30",
+      "B31"
+    ],
     "shared_database": "star.db",
     "shared_knowledge_graph": true,
     "parallel_brain": false,
@@ -183,19 +188,38 @@
     "added_content_variations": 100000,
     "content_variations": 150000,
     "id_range": "PHYS-00001..PHYS-150000",
-    "levels": [1, 2, 3, 4, 5],
+    "levels": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
     "variation_model": "10 families x 10 styles x 10 contexts per canonical topic",
     "families": [
-      "conceito", "formula", "variaveis_unidades", "hipoteses_validade", "derivacao",
-      "calculo", "aplicacao", "erros_comuns", "limites", "conexoes"
+      "conceito",
+      "formula",
+      "variaveis_unidades",
+      "hipoteses_validade",
+      "derivacao",
+      "calculo",
+      "aplicacao",
+      "erros_comuns",
+      "limites",
+      "conexoes"
     ],
     "materialization": "on-demand",
     "internet_required": false,
     "watch_available_via_core": true,
     "source_families": [
-      "MIT OpenCourseWare", "OpenStax University Physics", "NIST/CODATA",
-      "Particle Data Group 2026", "CERN", "NASA Physics of the Cosmos",
-      "LIGO Scientific Collaboration", "IAEA"
+      "MIT OpenCourseWare",
+      "OpenStax University Physics",
+      "NIST/CODATA",
+      "Particle Data Group 2026",
+      "CERN",
+      "NASA Physics of the Cosmos",
+      "LIGO Scientific Collaboration",
+      "IAEA"
     ]
   },
   "chemistry": {
@@ -212,8 +236,14 @@
     "materialization": "on-demand",
     "internet_required": false,
     "source_families": [
-      "IUPAC Gold Book 2025", "OpenStax Chemistry 2e", "NIST Chemistry WebBook",
-      "NIST CCCBDB", "NIH/NLM PubChem", "MIT OpenCourseWare", "Chemistry LibreTexts", "IAEA"
+      "IUPAC Gold Book 2025",
+      "OpenStax Chemistry 2e",
+      "NIST Chemistry WebBook",
+      "NIST CCCBDB",
+      "NIH/NLM PubChem",
+      "MIT OpenCourseWare",
+      "Chemistry LibreTexts",
+      "IAEA"
     ]
   },
   "multidisciplinary": {
@@ -247,7 +277,10 @@
       "philosophy": "PHIL-000001..PHIL-500000"
     },
     "collision_policy": "specificity + explicit subject + cross-domain bridges; close cross-subject ties are not guessed",
-    "legacy_priority": ["physics", "chemistry"],
+    "legacy_priority": [
+      "physics",
+      "chemistry"
+    ],
     "history_hidden_details_with_evidence_policy": true,
     "decoding_defensive_scope": true,
     "psychology_individual_diagnosis": false
@@ -302,7 +335,13 @@
     "catalog": "core/cognitive_catalog.py",
     "store": "database/cognitive_store.py",
     "labs": "core/labs.py",
-    "roadmap_alignment": ["V2.0", "V2.1", "V2.2", "partial V3.0", "partial V3.3"],
+    "roadmap_alignment": [
+      "V2.0",
+      "V2.1",
+      "V2.2",
+      "partial V3.0",
+      "partial V3.3"
+    ],
     "capabilities": 15,
     "canonical_nodes_per_capability": 1000,
     "operational_contents_per_capability": 1000000,
@@ -312,10 +351,10 @@
     "fts5_with_fallback": true,
     "sympy_math": true,
     "pdf_text_rag": true,
-    "pdf_ocr": false,
+    "pdf_ocr": "local-optional-tesseract+pymupdf",
     "crossref_research": true,
     "network_default": false,
-    "code_lab_os_grade_sandbox": false,
+    "code_lab_os_grade_sandbox": "container-runtime-if-available",
     "autonomous_repository_modification": false,
     "truthfulness_note": "15M MIND items are operational/cognitive support variations, not 15M independently researched facts"
   },
@@ -330,7 +369,14 @@
     "default_locale": "pt-BR",
     "canonical_content_locale": "pt-BR",
     "language_families": 5,
-    "locale_profiles": ["pt-BR", "en-US", "en-GB", "es-ES", "it-IT", "fr-FR"],
+    "locale_profiles": [
+      "pt-BR",
+      "en-US",
+      "en-GB",
+      "es-ES",
+      "it-IT",
+      "fr-FR"
+    ],
     "expression_contents_per_family": 100000,
     "total_semantic_expression_contents": 500000,
     "english_surface_variants": 2,
@@ -364,7 +410,13 @@
       "procedural": true,
       "asset_dependency": false,
       "target_fps": 30,
-      "states": ["PRONTA", "OUVINDO", "PENSANDO", "RESPONDENDO", "ATENÇÃO"]
+      "states": [
+        "PRONTA",
+        "OUVINDO",
+        "PENSANDO",
+        "RESPONDENDO",
+        "ATENÇÃO"
+      ]
     },
     "interaction": {
       "ring_rotate": true,
@@ -374,7 +426,19 @@
       "pc_mouse_wheel_simulates_ring": true,
       "pc_enter_simulates_ring_press": true
     },
-    "modes": ["voice", "search", "health", "gps", "vision", "people", "measure", "media", "weather", "language", "settings"]
+    "modes": [
+      "voice",
+      "search",
+      "health",
+      "gps",
+      "vision",
+      "people",
+      "measure",
+      "media",
+      "weather",
+      "language",
+      "settings"
+    ]
   },
   "voice": {
     "stt": "faster-whisper tiny local",
@@ -397,7 +461,11 @@
     "thematic_model": "10 actions x 10 tones x 10 depths x 10 formats x 10 contexts x 10 closers",
     "command_model": "intents + slots + wake words + aliases + thematic free-text study parser",
     "free_text_slots": [
-      "web_search.query", "find_file.query", "spotify_search.query", "weather_current.location", "knowledge.topic"
+      "web_search.query",
+      "find_file.query",
+      "spotify_search.query",
+      "weather_current.location",
+      "knowledge.topic"
     ]
   },
   "conversation": {
@@ -410,7 +478,14 @@
     "continuity_anchor_every_turns": 8,
     "response_variations_minimum": 5000,
     "response_variations_generated": 6000,
-    "families": ["greeting", "wellbeing", "thanks", "casual", "support", "farewell"],
+    "families": [
+      "greeting",
+      "wellbeing",
+      "thanks",
+      "casual",
+      "support",
+      "farewell"
+    ],
     "catalog_role": "semantic/offline fallback",
     "selection": "cognitive context + optional local surface realization + deterministic fallback",
     "local_surface_model": "Ollama loopback optional/lazy",
@@ -432,7 +507,10 @@
     "cache_seconds_default": 600,
     "general_web_mode_required": false,
     "environment": [
-      "STAR_WEATHER_ENABLED", "STAR_WEATHER_LOCATION", "STAR_WEATHER_AUTOLOCATE", "STAR_WEATHER_CACHE_SECONDS"
+      "STAR_WEATHER_ENABLED",
+      "STAR_WEATHER_LOCATION",
+      "STAR_WEATHER_AUTOLOCATE",
+      "STAR_WEATHER_CACHE_SECONDS"
     ]
   },
   "group2_sensors_body_proactivity": {
@@ -467,14 +545,31 @@
     "schema": 1,
     "sync_interval_seconds": 30,
     "theme": {
-      "background": "#03050A", "surface": "#0B1220", "primary": "#72E8FF",
-      "secondary": "#A276FF", "accent": "#FF79C8", "text": "#FFFFFF", "muted": "#8B96A8"
+      "background": "#03050A",
+      "surface": "#0B1220",
+      "primary": "#72E8FF",
+      "secondary": "#A276FF",
+      "accent": "#FF79C8",
+      "text": "#FFFFFF",
+      "muted": "#8B96A8"
     },
     "labels": {
-      "title": "STAR", "pair": "PAREAR", "send": "ENVIAR", "speak": "FALAR",
-      "stop_and_send": "ENVIAR ÁUDIO", "camera": "VISÃO", "search": "BUSCA",
-      "health": "SAÚDE", "gps": "GPS", "people": "PEOPLE", "measure": "MEDIR",
-      "sensors": "SENSORES", "media": "MÍDIA", "weather": "CLIMA", "language": "IDIOMA", "settings": "CONFIG"
+      "title": "STAR",
+      "pair": "PAREAR",
+      "send": "ENVIAR",
+      "speak": "FALAR",
+      "stop_and_send": "ENVIAR ÁUDIO",
+      "camera": "VISÃO",
+      "search": "BUSCA",
+      "health": "SAÚDE",
+      "gps": "GPS",
+      "people": "PEOPLE",
+      "measure": "MEDIR",
+      "sensors": "SENSORES",
+      "media": "MÍDIA",
+      "weather": "CLIMA",
+      "language": "IDIOMA",
+      "settings": "CONFIG"
     },
     "features": {
       "text": true,
@@ -501,15 +596,104 @@
     },
     "profiles": {
       "phone": {
-        "layout": "comfortable", "show_connection_fields": true,
-        "show_response_transcript": true, "preferred_columns": 1
+        "layout": "comfortable",
+        "show_connection_fields": true,
+        "show_response_transcript": true,
+        "preferred_columns": 1
       },
       "watch": {
-        "layout": "circular-shell", "shape": "circle", "show_connection_fields": false,
-        "show_response_transcript": true, "preferred_columns": 1,
-        "home_style": "plasma-core-ring", "visual_style": "plasma-orbit",
-        "screens": ["home", "voice", "search", "health", "gps", "vision", "people", "measure", "media", "weather", "language", "settings"]
+        "layout": "circular-shell",
+        "shape": "circle",
+        "show_connection_fields": false,
+        "show_response_transcript": true,
+        "preferred_columns": 1,
+        "home_style": "plasma-core-ring",
+        "visual_style": "plasma-orbit",
+        "screens": [
+          "home",
+          "voice",
+          "search",
+          "health",
+          "gps",
+          "vision",
+          "people",
+          "measure",
+          "media",
+          "weather",
+          "language",
+          "settings"
+        ]
       }
+    }
+  },
+  "features": [
+    "group3_knowledge_research_documents",
+    "group4_controlled_cure",
+    "group4_container_sandbox",
+    "group4_security_agent",
+    "group4_home_automation",
+    "group4_personal_integrations"
+  ],
+  "group3_knowledge_research_documents": {
+    "status": "experimental-integrated",
+    "notifications": "relevance-aware",
+    "general_web_research": "opt-in-provenance-verified",
+    "automatic_knowledge_update": "append-only-no-auto-canonical-promotion",
+    "offline_dictionary_materialization": true,
+    "ocr": "tesseract-local+pymupdf-optional",
+    "rag_formats": [
+      "txt",
+      "md",
+      "csv",
+      "json",
+      "py",
+      "rst",
+      "pdf",
+      "docx",
+      "xlsx",
+      "pptx",
+      "images-via-ocr"
+    ],
+    "semantic_file_search": "local-index-star.db",
+    "automatic_disk_scan": false
+  },
+  "group4_guardian_security_integrations": {
+    "status": "experimental-integrated",
+    "cure": "root-cause+evidence+controlled-validation",
+    "automatic_repository_modification": false,
+    "sandbox": {
+      "runtime": "Docker/Podman if locally available",
+      "image_download_automatic": false,
+      "network": "none",
+      "root_filesystem": "read-only",
+      "host_fallback": false
+    },
+    "security_agent": {
+      "mode": "defensive-read-only",
+      "repository_scan": true,
+      "dependency_audit": "pip-audit if installed",
+      "audit_log": "star.db",
+      "automatic_remediation": false
+    },
+    "home_automation": {
+      "provider": "Home Assistant opt-in",
+      "credentials": "environment-only",
+      "authority": "B01/B33",
+      "automatic_actions": false,
+      "sensitive_domains_require_authentication": true
+    },
+    "personal_integrations": {
+      "email": [
+        "IMAP read",
+        "SMTP confirmed send"
+      ],
+      "calendar": [
+        "local agenda",
+        "CalDAV confirmed write"
+      ],
+      "messaging": "confirmed webhook",
+      "credentials_persisted_by_star": false,
+      "authority": "B01/B33"
     }
   }
 }
