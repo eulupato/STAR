@@ -14,10 +14,12 @@ from config import (
     VERSION,
 )
 from core.autonomy_limits import AutonomyLimits
+from core.body_proprioception import BodyActuationExecutor, TcpJsonBodyEndpoint
 from core.cfc_benchmark import CFC97, FunctionalCognitiveBenchmark
 from core.cognitive_integration import CognitiveIntegration
 from core.cognitive_maintenance import CognitiveMaintenance
 from core.consciousness_frontier import ConsciousnessResearchFrontier
+from core.device_sensors import DeviceSensorHub
 from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
@@ -36,6 +38,23 @@ from core.star_identity import StarIdentity
 from core.state import StarState
 from core.tools import ToolRegistry, safe_math
 from gui.localized_app import LocalizedStarApp
+from modules.automation import AgendaManager, ProactiveScheduler
+
+
+def _configure_optional_body_endpoint(star):
+    host = str(os.getenv("STAR_BODY_ENDPOINT_HOST", "")).strip()
+    port = str(os.getenv("STAR_BODY_ENDPOINT_PORT", "")).strip()
+    if not host and not port:
+        return None
+    if not host or not port:
+        raise ValueError("STAR_BODY_ENDPOINT_HOST e STAR_BODY_ENDPOINT_PORT devem ser definidos juntos")
+    endpoint = TcpJsonBodyEndpoint(
+        host, int(port),
+        timeout=float(os.getenv("STAR_BODY_ENDPOINT_TIMEOUT", "2.0")),
+        token=os.getenv("STAR_BODY_ENDPOINT_TOKEN") or None,
+    )
+    star.body_proprioception.attach_endpoint(endpoint)
+    return endpoint
 
 
 def create_star():
@@ -75,16 +94,12 @@ def create_star():
     executive.cognitive_integration = cognition
 
     # Interação natural é uma camada de continuidade + expressão, não um cérebro.
-    # Usa B13/B16/B17/B24-B26 e pode usar Ollama local somente para verbalizar
-    # uma posição já decidida pela STAR. Falha/ausência do modelo mantém fallback.
     star.natural_interaction = NaturalInteraction(star)
     star.mind.natural_interaction = star.natural_interaction
     star.conversation.natural_interaction = star.natural_interaction
     cognition.natural_interaction = star.natural_interaction
     executive.natural_interaction = star.natural_interaction
 
-    # Uma autoidentificação persistida pelo B26 também passa a ser o interlocutor
-    # ativo da camada conversacional. Isso não autentica a pessoa nem dá permissão.
     def _sync_active_person(person):
         star.natural_interaction.active_person_id = person.get("person_id")
         star.natural_interaction.active_person_name = person.get("name")
@@ -92,18 +107,35 @@ def create_star():
     star.people_entities.on_active_person = _sync_active_person
 
     # Grupo 1: providers perceptivos reais continuam subordinados ao B25/B26.
-    # Nenhum deles roda captura contínua em background; câmera/tela/áudio são lazy.
     star.perception_runtime = PerceptionRuntime(star)
     star.mind.perception_runtime = star.perception_runtime
     star.agents.attach_perception_runtime(star.perception_runtime)
 
-    # Autenticação é provider separado de reconhecimento. O arquivo local contém
-    # somente salt+hash scrypt; autenticar nunca concede permissão operacional.
     star.person_authenticator = LocalPersonAuthenticator(ROOT / "runtime" / "security" / "person_credentials.json")
     star.mind.person_authenticator = star.person_authenticator
 
+    # Grupo 2: agenda e scheduler usam o mesmo star.db. create_star constrói mas
+    # não inicia thread; o processo principal controla lifecycle explicitamente.
+    star.agenda = AgendaManager()
+    star.proactivity = ProactiveScheduler(
+        star.agenda,
+        poll_seconds=float(os.getenv("STAR_PROACTIVE_POLL_SECONDS", "1.0")),
+    )
+    star.mind.agenda = star.agenda
+    star.mind.proactivity = star.proactivity
+
+    # Sensores físicos autenticados dos endpoints entram no B25/B27. O hub não
+    # simula leituras ausentes e telemetria jamais concede autorização.
+    star.device_sensors = DeviceSensorHub(star)
+    star.mind.device_sensors = star.device_sensors
+
+    # B27 calcula/observa. Atuação é objeto separado e continua sem rota automática
+    # pelo chat. Um endpoint físico só é anexado quando configurado explicitamente.
+    star.body_executor = BodyActuationExecutor(star.body_proprioception)
+    star.mind.body_executor = star.body_executor
+    star.body_endpoint = _configure_optional_body_endpoint(star)
+
     # BLOCO 32: manutenção bounded sobre os stores, memória e grafo oficiais.
-    # Consolidação continua delegada ao B13 e nenhuma exclusão ocorre por padrão.
     star.cognitive_maintenance = CognitiveMaintenance(
         star.knowledge,
         memory_continuity=star.memory_continuity,
@@ -113,8 +145,7 @@ def create_star():
     )
     star.mind.cognitive_maintenance = star.cognitive_maintenance
 
-    # BLOCO 33: formaliza a fronteira de autonomia reutilizando exatamente o
-    # OperationalBoundary do B01. Não existe Permission Manager paralelo.
+    # BLOCO 33: exatamente a fronteira operacional B01.
     star.autonomy_limits = AutonomyLimits(
         star.knowledge,
         operational_boundary=star.foundations.boundary,
@@ -122,8 +153,6 @@ def create_star():
     star.mind.autonomy_limits = star.autonomy_limits
     star.agents.autonomy_limits = star.autonomy_limits
 
-    # BLOCO 34/35: benchmark funcional e protocolo CFC-97. O benchmark só pontua
-    # resultados observados/fornecidos; não se autoaprova e não mede humanidade.
     star.cfc = FunctionalCognitiveBenchmark(
         star.knowledge,
         self_improvement=star.mind.self_improvement,
@@ -136,8 +165,6 @@ def create_star():
     )
     star.mind.cfc97 = star.cfc97
 
-    # BLOCO 36: pesquisa sobre consciência via B02/B03, mantendo a conclusão
-    # sobre consciência da STAR explicitamente não estabelecida.
     star.consciousness_frontier = ConsciousnessResearchFrontier(
         star.knowledge,
         self_model=star.self_model,
@@ -145,9 +172,10 @@ def create_star():
     )
     star.mind.consciousness_frontier = star.consciousness_frontier
 
-    # Os novos blocos ficam acessíveis pelo dispatcher já existente para status
-    # e IDs. Não há um segundo Router: o mesmo AgentManager apenas delega handles.
+    # O mesmo AgentManager delega handles. Agenda é cognitiva/temporal; execução
+    # física não é registrada como handler conversacional.
     star.agents.attach_system_handlers(
+        star.agenda,
         star.cognitive_maintenance,
         star.autonomy_limits,
         star.cfc97,
@@ -208,58 +236,26 @@ def main():
     mind_stats = star.mind.stats()
     cfc97_stats = star.cfc97.stats()
     natural_stats = star.natural_interaction.stats()
+    body_stats = star.body_proprioception.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
-    print(
-        "⚛️ Física local: "
-        f"{physics_stats['canonical_topics']} tópicos | "
-        f"{physics_stats['content_variations']} conteúdos variáveis"
-    )
-    print(
-        "🧪 Química local: "
-        f"{chemistry_stats['canonical_topics']} tópicos | "
-        f"{chemistry_stats['content_variations']} conteúdos variáveis"
-    )
-    print(
-        "🧭 Biblioteca multidisciplinar: "
-        f"{multi_stats['subjects']} matérias | "
-        f"{multi_stats['canonical_nodes']} nós | "
-        f"{multi_stats['total_content_variations']} conteúdos variáveis"
-    )
-    print(
-        "🚀 Knowledge PLUS: "
-        f"+{plus_stats['added_content_variations_per_domain']} por domínio | "
-        f"+{plus_stats['added_content_variations']} novos | "
-        f"{plus_stats['combined_content_variations']} conteúdos de conhecimento combinados"
-    )
-    print(
-        "🧬 Currículo canônico: "
-        f"{curriculum_stats['themes']} temas | "
-        f"{curriculum_stats['unique_concepts']} conceitos únicos | "
-        f"{curriculum_stats['deduplicated_mentions']} menções duplicadas consolidadas | "
-        f"{curriculum_stats['total_new_addressable_contents']} conteúdos endereçáveis"
-    )
-    print(
-        "🧠 STAR MIND alpha: "
-        f"{mind_stats['capabilities']} capacidades | "
-        f"{mind_stats['canonical_nodes_total']} nós cognitivos | "
-        f"{mind_stats['support_contents_total']} conteúdos operacionais endereçáveis"
-    )
+    print(f"⚛️ Física local: {physics_stats['canonical_topics']} tópicos | {physics_stats['content_variations']} conteúdos variáveis")
+    print(f"🧪 Química local: {chemistry_stats['canonical_topics']} tópicos | {chemistry_stats['content_variations']} conteúdos variáveis")
+    print(f"🧭 Biblioteca multidisciplinar: {multi_stats['subjects']} matérias | {multi_stats['canonical_nodes']} nós | {multi_stats['total_content_variations']} conteúdos variáveis")
+    print(f"🚀 Knowledge PLUS: +{plus_stats['added_content_variations_per_domain']} por domínio | +{plus_stats['added_content_variations']} novos | {plus_stats['combined_content_variations']} conteúdos de conhecimento combinados")
+    print(f"🧬 Currículo canônico: {curriculum_stats['themes']} temas | {curriculum_stats['unique_concepts']} conceitos únicos | {curriculum_stats['deduplicated_mentions']} menções duplicadas consolidadas | {curriculum_stats['total_new_addressable_contents']} conteúdos endereçáveis")
+    print(f"🧠 STAR MIND alpha: {mind_stats['capabilities']} capacidades | {mind_stats['canonical_nodes_total']} nós cognitivos | {mind_stats['support_contents_total']} conteúdos operacionais endereçáveis")
     print("🔄 Cognição integrada: FAST/DELIBERATIVE + posição cognitiva")
-    print(
-        "💬 Interação natural: ATIVA | contexto multi-turn bounded | "
-        f"modelo local={natural_stats['local_llm_model']} (autodetectável/opcional/lazy)"
-    )
+    print(f"💬 Interação natural: ATIVA | contexto multi-turn bounded | modelo local={natural_stats['local_llm_model']} (autodetectável/opcional/lazy)")
     print("👁️ Percepção Grupo 1: B25 conectado | visão/tela/áudio lazy | nenhum polling contínuo")
+    print("🛰️ Sensores Grupo 2: GPS/IMU/saúde/medição via endpoints físicos autenticados; simulação=NÃO")
+    print(f"🤖 B27: FK/IK ATIVOS | corpo físico={'CONECTADO' if body_stats['endpoint_available'] else 'NÃO CONFIGURADO'} | atuação direta=NÃO")
+    print("⏰ Agenda/proatividade: star.db + scheduler de eventos | execução automática=NÃO")
     print("🔐 Autenticação de pessoas: challenge local separado de reconhecimento; permissão=NÃO")
     print("🧹 Manutenção cognitiva B32: BOUNDED/ON-DEMAND")
     print("🛡️ Limites de autonomia B33: B01 BOUNDARY / DEFAULT DENY")
-    print(
-        "🧪 CFC/CFC-97 B34-B35: "
-        f"{len(star.cfc.stats()['dimensions'])} dimensões | "
-        f"{cfc97_stats['registered_1b_blocks']}/36 blocos 1B registrados | NÃO CERTIFICADO"
-    )
+    print(f"🧪 CFC/CFC-97 B34-B35: {len(star.cfc.stats()['dimensions'])} dimensões | {cfc97_stats['registered_1b_blocks']}/36 blocos 1B registrados | NÃO CERTIFICADO")
     print("🧠 Consciência B36: FRONTEIRA DE PESQUISA / STATUS DA STAR NÃO ESTABELECIDO")
     print("🧩 Skills: PREPARADAS")
     print("🛠️ Ferramentas: ATIVAS (matemática offline + MIND experimental)")
@@ -270,9 +266,11 @@ def main():
     print("🖥️ Interface: ATIVA")
 
     gateway = _start_device_gateway(star)
+    star.proactivity.start()
     try:
         LocalizedStarApp(brain=star).run()
     finally:
+        star.proactivity.stop()
         if gateway is not None:
             gateway.stop()
 
