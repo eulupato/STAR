@@ -11,6 +11,7 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 
 import org.json.JSONArray;
@@ -75,16 +76,30 @@ final class WatchSensorBridge implements SensorEventListener, LocationListener {
         scheduler.shutdownNow();
     }
 
+    private boolean granted(String permission) {
+        return activity.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED;
+    }
+
     private void register(int type) {
         if (sensors == null) return;
+        if (type == Sensor.TYPE_HEART_RATE && !granted(Manifest.permission.BODY_SENSORS)) return;
+        if (type == Sensor.TYPE_STEP_COUNTER
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                && !granted(Manifest.permission.ACTIVITY_RECOGNITION)) return;
         Sensor sensor = sensors.getDefaultSensor(type);
-        if (sensor != null) sensors.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+        if (sensor == null) return;
+        try {
+            sensors.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+        } catch (SecurityException ignored) {
+            // Permissão/hardware indisponível significa ausência de observação,
+            // nunca valor sintético nem queda da Activity.
+        }
     }
 
     private void startLocation() {
         if (location == null) return;
-        if (activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) return;
+        if (!granted(Manifest.permission.ACCESS_FINE_LOCATION)
+                && !granted(Manifest.permission.ACCESS_COARSE_LOCATION)) return;
         try {
             if (location.isProviderEnabled(LocationManager.GPS_PROVIDER))
                 location.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000L, 2f, this);
