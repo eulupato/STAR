@@ -38,12 +38,12 @@ AGENT_SPECS = (
     AgentSpec("music", "Spotify e controles multimídia locais disponíveis em escopo limitado.", "partial", "V1.9 → V4 Operator", "safe-subset"),
     AgentSpec("vision", "STAR Vision Portal + B25: câmera/AR, imagem anexada, metadados, face detection opcional, VLM local opcional, tela explícita e Sensor Fusion.", "partial", "V1.9 experimental → V5 Senses", "read/local-camera"),
     AgentSpec("device", "Gateway LAN experimental e runtime adaptativo; Device Manager completo é futuro.", "partial", "V1.9 experimental → V9", "read"),
-    AgentSpec("cure", "Diagnóstico básico existente; avaliação cognitiva registra métricas, mas Guardian/Cura inteligente completa fica para V7.", "partial", "V1.9 → V7 Guardian", "read"),
-    AgentSpec("security", "Ações sensíveis aguardam Permission Manager, Audit Log e autenticação forte.", "planned", "V7 Guardian", "block-sensitive"),
-    AgentSpec("personal_assistant", "Hora/data, conversa contextual e clima atual sob demanda; agenda persistente fica para V8.", "partial", "V1.9 → V8 Agent", "read/network-weather"),
+    AgentSpec("cure", "CURA controlada: diagnóstico de logs/causa provável, worktree descartável, validação em sandbox e aplicação somente com gates explícitos.", "available", "V7 Guardian integrated", "read/confirmed-mutation"),
+    AgentSpec("security", "Auditoria read-only de segredos, integridade, dependências e configuração; B01/B33 continuam sendo a autoridade.", "available", "V7 Guardian integrated", "read"),
+    AgentSpec("personal_assistant", "Agenda persistente + e-mail/Telegram/CalDAV opcionais com drafts e confirmação local em duas etapas.", "available", "V8 Agent integrated", "read/confirmed-network-write"),
     AgentSpec("web", "Camada operacional mínima de navegador/pesquisa web.", "partial", "V1.9 → V4/V12+", "network"),
     AgentSpec("coding", "Code Lab local restrito para pequenos testes Python; não é sandbox de SO nem agente autônomo de edição do repositório.", "partial", "V2/V12+", "local-restricted"),
-    AgentSpec("home", "Automação residencial.", "planned", "V9 Ecosystem", "none"),
+    AgentSpec("home", "Home Assistant REST opcional com leitura e ações allowlisted confirmadas localmente em duas etapas.", "available", "V9 Ecosystem integrated", "read/confirmed-device-write"),
     AgentSpec("body", "Controle abstrato de corpo/robótica.", "planned", "V10 Embodied", "none"),
     AgentSpec("creation", "Orquestração de projetos criativos na Central de Criação.", "planned", "V6/V12+", "none"),
     AgentSpec("orchestrator", "Coordenação paralela de agentes registrados com contratos simples de entrada/saída.", "available", "V2/V8 alpha", "local"),
@@ -75,7 +75,10 @@ class AgentManager:
 
     def attach_system_handlers(self, *handlers) -> None:
         """Expõe camadas integradas leves sem criar outro router/agent manager."""
-        self.system_handlers = [handler for handler in handlers if handler is not None and hasattr(handler, "handle")]
+        self.system_handlers = [
+            handler for handler in handlers
+            if handler is not None and (hasattr(handler, "handle") or hasattr(handler, "handle_context"))
+        ]
 
     def attach_perception_runtime(self, runtime) -> None:
         """Anexa os providers B25 existentes; não cria outro agente de visão."""
@@ -147,7 +150,14 @@ class AgentManager:
 
     def dispatch(self, text: str, *, network_enabled: bool = False, remote: bool = False) -> str | None:
         for handler in tuple(self.system_handlers):
-            response = handler.handle(text)
+            if hasattr(handler, "handle_context"):
+                response = handler.handle_context(
+                    text,
+                    network_enabled=network_enabled,
+                    remote=remote,
+                )
+            else:
+                response = handler.handle(text)
             if response is not None:
                 return response
 
