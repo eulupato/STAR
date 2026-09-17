@@ -20,12 +20,16 @@ from core.cognitive_integration import CognitiveIntegration
 from core.cognitive_maintenance import CognitiveMaintenance
 from core.consciousness_frontier import ConsciousnessResearchFrontier
 from core.device_sensors import DeviceSensorHub
+from core.cure import CureSystem
 from core.executive import Executive
+from core.home_automation import HomeAutomationService
 from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
 from core.knowledge_research_documents import Group3KnowledgeServices, IntelligentProactiveScheduler
 from core.natural_interaction import NaturalInteraction
+from core.os_sandbox import OSSandbox
 from core.perception_runtime import PerceptionRuntime
+from core.personal_integrations import PersonalIntegrations
 from core.person_auth import LocalPersonAuthenticator
 from core.physics_knowledge_150k import PhysicsKnowledgeEngine
 from core.chemistry_knowledge_500k import ChemistryKnowledgeEngine
@@ -33,6 +37,7 @@ from core.multidisciplinary_knowledge import MultidisciplinaryKnowledgeEngine
 from core.knowledge_expansion_15m import KnowledgeExpansion15MEngine
 from core.curriculum_knowledge import CurriculumKnowledgeEngine
 from core.router import Router
+from core.security_agent import SecurityAgent
 from core.skills import SkillRegistry
 from core.star_core import StarCore
 from core.star_identity import StarIdentity
@@ -125,6 +130,12 @@ def create_star():
     star.mind.rag = star.group3.rag
     star.mind.group3 = star.group3
 
+    # Grupo 4: o CodeLab preserva o runner restrito legado, mas código não
+    # confiável só usa run_sandboxed quando um backend real já está disponível.
+    star.os_sandbox = OSSandbox()
+    star.mind.code.attach_sandbox(star.os_sandbox)
+    star.mind.os_sandbox = star.os_sandbox
+
     # Grupo 2 + Grupo 3: a mesma agenda/star.db ganha política de relevância.
     # create_star constrói, mas não inicia thread; main controla o lifecycle.
     star.agenda = AgendaManager()
@@ -165,6 +176,31 @@ def create_star():
     star.mind.autonomy_limits = star.autonomy_limits
     star.agents.autonomy_limits = star.autonomy_limits
 
+    # Grupo 4: Guardian/CURA, segurança, casa e integrações pessoais reutilizam
+    # B01/B33 e star.db. Nenhum provider guarda token/senha no banco.
+    star.cure = CureSystem(
+        sandbox=star.os_sandbox,
+        autonomy_limits=star.autonomy_limits,
+    )
+    star.security_agent = SecurityAgent(
+        star=star,
+        root=ROOT,
+        sandbox=star.os_sandbox,
+    )
+    star.home_automation = HomeAutomationService(
+        autonomy_limits=star.autonomy_limits,
+        network_enabled_provider=lambda: bool(star.network_enabled),
+    )
+    star.personal_integrations = PersonalIntegrations(
+        agenda=star.agenda,
+        autonomy_limits=star.autonomy_limits,
+        network_enabled_provider=lambda: bool(star.network_enabled),
+    )
+    star.mind.cure = star.cure
+    star.mind.security_agent = star.security_agent
+    star.mind.home_automation = star.home_automation
+    star.mind.personal_integrations = star.personal_integrations
+
     star.cfc = FunctionalCognitiveBenchmark(
         star.knowledge,
         self_improvement=star.mind.self_improvement,
@@ -189,6 +225,10 @@ def create_star():
     star.agents.attach_system_handlers(
         star.agenda,
         star.group3,
+        star.cure,
+        star.security_agent,
+        star.home_automation,
+        star.personal_integrations,
         star.cognitive_maintenance,
         star.autonomy_limits,
         star.cfc97,
@@ -227,6 +267,7 @@ def _start_device_gateway(star):
         runtime_dir=ROOT / "runtime" / "oni",
         manifest_path=ROOT / "STAR_MANIFEST.json",
     ).start()
+    star.device_gateway = gateway
     print(f"📡 STAR Device Gateway: {gateway.url}")
     print(f"🔐 Código de pareamento desta sessão: {gateway.pairing_code}")
     print(f"🔄 Runtime adaptativo: {gateway.runtime.revision}")
@@ -251,6 +292,9 @@ def main():
     natural_stats = star.natural_interaction.stats()
     body_stats = star.body_proprioception.stats()
     group3_stats = star.group3.stats()
+    sandbox_stats = star.os_sandbox.stats()
+    home_stats = star.home_automation.stats()
+    personal_stats = star.personal_integrations.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -267,6 +311,9 @@ def main():
     print(f"🤖 B27: FK/IK ATIVOS | corpo físico={'CONECTADO' if body_stats['endpoint_available'] else 'NÃO CONFIGURADO'} | atuação direta=NÃO")
     print("⏰ Agenda/proatividade: star.db + relevância inteligente + scheduler de eventos | execução automática=NÃO")
     print(f"🌐 Grupo 3: web com proveniência | RAG Office/PDF | OCR={'ATIVO' if group3_stats['documents']['ocr']['available'] else 'OPCIONAL/TESSERACT AUSENTE'} | busca de arquivos={group3_stats['semantic_files']['vector_backend']}")
+    print(f"🛡️ Grupo 4 Guardian: CURA controlada | Security read-only | sandbox={'ATIVO' if sandbox_stats['ready'] else 'INDISPONÍVEL/FAIL-CLOSED'}")
+    print(f"🏠 Home: Home Assistant={'CONFIGURADO' if home_stats['configured'] else 'NÃO CONFIGURADO'} | confirmação física=2 ETAPAS")
+    print(f"📨 Integrações pessoais: email={'SIM' if personal_stats['email_read'] or personal_stats['email_send'] else 'NÃO'} | mensagens={'SIM' if personal_stats['messaging'] else 'NÃO'} | CalDAV={'SIM' if personal_stats['calendar_sync'] else 'NÃO'} | envio automático=NÃO")
     print("🔐 Autenticação de pessoas: challenge local separado de reconhecimento; permissão=NÃO")
     print("🧹 Manutenção cognitiva B32: BOUNDED/ON-DEMAND")
     print("🛡️ Limites de autonomia B33: B01 BOUNDARY / DEFAULT DENY")
