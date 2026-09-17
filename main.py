@@ -19,6 +19,8 @@ from core.cfc_benchmark import CFC97, FunctionalCognitiveBenchmark
 from core.cognitive_integration import CognitiveIntegration
 from core.cognitive_maintenance import CognitiveMaintenance
 from core.consciousness_frontier import ConsciousnessResearchFrontier
+from core.cure import CureSystem
+from core.guardian_services import ContainerSandbox, GuardianServices
 from core.device_sensors import DeviceSensorHub
 from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
@@ -125,6 +127,13 @@ def create_star():
     star.mind.rag = star.group3.rag
     star.mind.group3 = star.group3
 
+    # Grupo 4: sandbox real é opcional e fail-closed. A CURA usa o mesmo
+    # sandbox do CodeLab; não existe executor paralelo nem fallback inseguro.
+    star.sandbox = ContainerSandbox()
+    star.mind.code.sandbox = star.sandbox
+    star.cure = CureSystem(sandbox=star.sandbox)
+    star.mind.cure = star.cure
+
     # Grupo 2 + Grupo 3: a mesma agenda/star.db ganha política de relevância.
     # create_star constrói, mas não inicia thread; main controla o lifecycle.
     star.agenda = AgendaManager()
@@ -165,6 +174,22 @@ def create_star():
     star.mind.autonomy_limits = star.autonomy_limits
     star.agents.autonomy_limits = star.autonomy_limits
 
+    # Grupo 4: Security/Home/Personal usam B01/B33 como autoridade única.
+    # Credenciais ficam fora do banco/repositório e providers são opt-in.
+    star.guardian = GuardianServices(
+        root=ROOT,
+        autonomy_limits=star.autonomy_limits,
+        agenda=star.agenda,
+        sandbox=star.sandbox,
+    )
+    star.security_agent = star.guardian.security
+    star.home_automation = star.guardian.home
+    star.personal_integrations = star.guardian.personal
+    star.mind.guardian = star.guardian
+    star.mind.security_agent = star.security_agent
+    star.mind.home_automation = star.home_automation
+    star.mind.personal_integrations = star.personal_integrations
+
     star.cfc = FunctionalCognitiveBenchmark(
         star.knowledge,
         self_improvement=star.mind.self_improvement,
@@ -189,6 +214,10 @@ def create_star():
     star.agents.attach_system_handlers(
         star.agenda,
         star.group3,
+        star.cure,
+        star.security_agent,
+        star.home_automation,
+        star.personal_integrations,
         star.cognitive_maintenance,
         star.autonomy_limits,
         star.cfc97,
@@ -251,6 +280,7 @@ def main():
     natural_stats = star.natural_interaction.stats()
     body_stats = star.body_proprioception.stats()
     group3_stats = star.group3.stats()
+    guardian_stats = star.guardian.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -272,6 +302,11 @@ def main():
     print("🛡️ Limites de autonomia B33: B01 BOUNDARY / DEFAULT DENY")
     print(f"🧪 CFC/CFC-97 B34-B35: {len(star.cfc.stats()['dimensions'])} dimensões | {cfc97_stats['registered_1b_blocks']}/36 blocos 1B registrados | NÃO CERTIFICADO")
     print("🧠 Consciência B36: FRONTEIRA DE PESQUISA / STATUS DA STAR NÃO ESTABELECIDO")
+    print(
+        "🛡️ Grupo 4 Guardian: CURA controlada | "
+        f"sandbox={'ATIVO' if guardian_stats['sandbox']['available'] else 'OPCIONAL/INDISPONÍVEL'} | "
+        "Security=ATIVO | Home/integrações=PROVIDER OPT-IN"
+    )
     print("🧩 Skills: PREPARADAS")
     print("🛠️ Ferramentas: ATIVAS (matemática offline + MIND experimental)")
     print(f"📦 Knowledge Packs detectados: {pack_stats['packs']}")
