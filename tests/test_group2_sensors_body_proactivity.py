@@ -31,7 +31,7 @@ def _physical_stack():
 
 
 def test_sensor_hub_requires_declared_capability_and_never_grants_permission():
-    hub, _, perception = _physical_stack()
+    hub, _, _ = _physical_stack()
     payload = {
         "samples": [{
             "kind": "location",
@@ -49,7 +49,7 @@ def test_sensor_hub_requires_declared_capability_and_never_grants_permission():
     assert accepted["accepted"] == 1
     assert accepted["operational_authorization"] is False
     assert accepted["hardware_attested"] is False
-    observation = perception.workspace_observations(limit=1)[0]
+    observation = accepted["observations"][0]
     assert observation["modality"] == "location"
     assert observation["operational_authorization"] is False
     assert observation["attributes"]["endpoint_reported"] is True
@@ -57,14 +57,14 @@ def test_sensor_hub_requires_declared_capability_and_never_grants_permission():
 
 
 def test_health_sensor_is_context_not_diagnosis():
-    hub, _, perception = _physical_stack()
+    hub, _, _ = _physical_stack()
     result = hub.ingest(
         "watch-health",
         {"kind": "heart_rate", "bpm": 72, "accuracy": "sensor"},
         capabilities=["heart_rate"],
     )
     assert result["accepted"] == 1
-    observation = perception.workspace_observations(limit=1)[0]
+    observation = result["observations"][0]
     assert observation["attributes"]["health_data"] is True
     assert observation["attributes"]["diagnosis"] is False
 
