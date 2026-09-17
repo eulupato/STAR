@@ -23,6 +23,7 @@ from core.device_sensors import DeviceSensorHub
 from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
+from core.knowledge_research_documents import Group3KnowledgeServices, IntelligentProactiveScheduler
 from core.natural_interaction import NaturalInteraction
 from core.perception_runtime import PerceptionRuntime
 from core.person_auth import LocalPersonAuthenticator
@@ -38,7 +39,7 @@ from core.star_identity import StarIdentity
 from core.state import StarState
 from core.tools import ToolRegistry, safe_math
 from gui.localized_app import LocalizedStarApp
-from modules.automation import AgendaManager, ProactiveScheduler
+from modules.automation import AgendaManager
 
 
 def _configure_optional_body_endpoint(star):
@@ -114,12 +115,23 @@ def create_star():
     star.person_authenticator = LocalPersonAuthenticator(ROOT / "runtime" / "security" / "person_credentials.json")
     star.mind.person_authenticator = star.person_authenticator
 
-    # Grupo 2: agenda e scheduler usam o mesmo star.db. create_star constrói mas
-    # não inicia thread; o processo principal controla lifecycle explicitamente.
+    # Grupo 3: amplia o RAG existente e conecta web, OCR, Office, índice semântico,
+    # dicionários materializados e atualização segura sem criar outro cérebro/banco.
+    star.group3 = Group3KnowledgeServices(
+        star.mind.store,
+        star.mind.growth,
+        network_enabled_provider=lambda: bool(star.network_enabled),
+    )
+    star.mind.rag = star.group3.rag
+    star.mind.group3 = star.group3
+
+    # Grupo 2 + Grupo 3: a mesma agenda/star.db ganha política de relevância.
+    # create_star constrói, mas não inicia thread; main controla o lifecycle.
     star.agenda = AgendaManager()
-    star.proactivity = ProactiveScheduler(
+    star.proactivity = IntelligentProactiveScheduler(
         star.agenda,
         poll_seconds=float(os.getenv("STAR_PROACTIVE_POLL_SECONDS", "1.0")),
+        relevance_threshold=float(os.getenv("STAR_NOTIFICATION_RELEVANCE", "0.55")),
     )
     star.mind.agenda = star.agenda
     star.mind.proactivity = star.proactivity
@@ -172,10 +184,11 @@ def create_star():
     )
     star.mind.consciousness_frontier = star.consciousness_frontier
 
-    # O mesmo AgentManager delega handles. Agenda é cognitiva/temporal; execução
-    # física não é registrada como handler conversacional.
+    # O mesmo AgentManager delega handles. Grupo 3 só responde comandos explícitos;
+    # execução física não é registrada como handler conversacional.
     star.agents.attach_system_handlers(
         star.agenda,
+        star.group3,
         star.cognitive_maintenance,
         star.autonomy_limits,
         star.cfc97,
@@ -237,6 +250,7 @@ def main():
     cfc97_stats = star.cfc97.stats()
     natural_stats = star.natural_interaction.stats()
     body_stats = star.body_proprioception.stats()
+    group3_stats = star.group3.stats()
     print(f"🧠 Identidade: {star.get_name()}")
     print(f"👤 Criador: {star.get_creator()}")
     print("📚 Conhecimento interno: ATIVO")
@@ -251,7 +265,8 @@ def main():
     print("👁️ Percepção Grupo 1: B25 conectado | visão/tela/áudio lazy | nenhum polling contínuo")
     print("🛰️ Sensores Grupo 2: GPS/IMU/saúde/medição via endpoints físicos autenticados; simulação=NÃO")
     print(f"🤖 B27: FK/IK ATIVOS | corpo físico={'CONECTADO' if body_stats['endpoint_available'] else 'NÃO CONFIGURADO'} | atuação direta=NÃO")
-    print("⏰ Agenda/proatividade: star.db + scheduler de eventos | execução automática=NÃO")
+    print("⏰ Agenda/proatividade: star.db + relevância inteligente + scheduler de eventos | execução automática=NÃO")
+    print(f"🌐 Grupo 3: web com proveniência | RAG Office/PDF | OCR={'ATIVO' if group3_stats['documents']['ocr']['available'] else 'OPCIONAL/TESSERACT AUSENTE'} | busca de arquivos={group3_stats['semantic_files']['vector_backend']}")
     print("🔐 Autenticação de pessoas: challenge local separado de reconhecimento; permissão=NÃO")
     print("🧹 Manutenção cognitiva B32: BOUNDED/ON-DEMAND")
     print("🛡️ Limites de autonomia B33: B01 BOUNDARY / DEFAULT DENY")
