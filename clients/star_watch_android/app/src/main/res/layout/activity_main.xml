@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootScroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
@@ -74,6 +75,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="📷 MOSTRAR À STAR" />
+
+        <Button
+            android:id="@+id/sensorButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🛰 SENSORES" />
 
         <TextView
             android:id="@+id/responseText"

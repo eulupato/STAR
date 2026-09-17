@@ -13,9 +13,12 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.util.DisplayMetrics;
+import android.view.InputDevice;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import org.json.JSONArray;
@@ -29,6 +32,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends Activity {
     private static final int REQUEST_AUDIO = 1001;
     private static final int REQUEST_CAMERA = 1002;
+    private static final int REQUEST_SENSORS = 1003;
     private static final int REQUEST_CAPTURE_IMAGE = 2001;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -52,13 +58,18 @@ public class MainActivity extends Activity {
     private Button sendButton;
     private Button voiceButton;
     private Button cameraButton;
+    private Button sensorButton;
+    private ScrollView rootScroll;
 
     private SharedPreferences preferences;
     private WatchAudioRecorder audioRecorder;
+    private WatchSensorBridge sensorBridge;
     private boolean recording = false;
     private TextToSpeech tts;
     private volatile String runtimeRevision = "";
     private volatile boolean spokenRepliesEnabled = true;
+    private volatile boolean sensorTransportEnabled = true;
+    private volatile boolean rotaryInputEnabled = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,7 +86,10 @@ public class MainActivity extends Activity {
         sendButton = findViewById(R.id.sendButton);
         voiceButton = findViewById(R.id.voiceButton);
         cameraButton = findViewById(R.id.cameraButton);
+        sensorButton = findViewById(R.id.sensorButton);
+        rootScroll = findViewById(R.id.rootScroll);
 
+        sensorBridge = new WatchSensorBridge(this, this::uploadSensorBatch);
         serverInput.setText(preferences.getString("server", ""));
         updateStatus();
 
@@ -83,6 +97,26 @@ public class MainActivity extends Activity {
         sendButton.setOnClickListener(v -> sendText());
         voiceButton.setOnClickListener(v -> toggleRecording());
         cameraButton.setOnClickListener(v -> openCamera());
+        sensorButton.setOnClickListener(v -> toggleSensors());
+
+        rootScroll.setOnGenericMotionListener((view, event) -> {
+            if (!rotaryInputEnabled || event.getAction() != MotionEvent.ACTION_SCROLL
+                    || !event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) return false;
+            float delta = event.getAxisValue(MotionEvent.AXIS_SCROLL);
+            rootScroll.scrollBy(0, Math.round(-delta * 90f));
+            if (sensorBridge != null && sensorBridge.isActive()) {
+                JSONArray samples = new JSONArray();
+                JSONObject sample = new JSONObject();
+                try {
+                    sample.put("kind", "rotary");
+                    sample.put("timestamp", System.currentTimeMillis());
+                    sample.put("delta", delta);
+                    samples.put(sample);
+                    uploadSensorBatch(samples);
+                } catch (Exception ignored) { }
+            }
+            return true;
+        });
 
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) tts.setLanguage(new Locale("pt", "BR"));
@@ -138,154 +172,129 @@ public class MainActivity extends Activity {
                 body.put("pairing_code", code);
                 body.put("device_id", deviceId());
                 body.put("name", "STAR Watch Android");
-
                 JSONArray capabilities = new JSONArray();
-                capabilities.put("microphone");
-                capabilities.put("pcm16_wav");
-                capabilities.put("camera");
-                capabilities.put("display");
-                capabilities.put("speaker");
-                capabilities.put("voice_commands");
+                for (String capability : new String[]{"microphone", "pcm16_wav", "camera", "display", "speaker", "voice_commands",
+                        "location", "accelerometer", "gyroscope", "rotation_vector", "heart_rate", "steps", "proximity",
+                        "rotary_input", "physical_measurement"}) capabilities.put(capability);
                 body.put("capabilities", capabilities);
-
                 JSONObject metadata = new JSONObject();
-                metadata.put("platform", "android");
-                metadata.put("form_factor", "watch");
-                metadata.put("os_version", Build.VERSION.RELEASE);
-                metadata.put("app_version", BuildConfig.VERSION_NAME);
-                metadata.put("screen_width", metrics.widthPixels);
-                metadata.put("screen_height", metrics.heightPixels);
+                metadata.put("platform", "android"); metadata.put("form_factor", "watch");
+                metadata.put("os_version", Build.VERSION.RELEASE); metadata.put("app_version", BuildConfig.VERSION_NAME);
+                metadata.put("screen_width", metrics.widthPixels); metadata.put("screen_height", metrics.heightPixels);
                 body.put("metadata", metadata);
 
                 JSONObject response = postJson(base + "/v1/pair", body, false);
                 String newToken = response.getString("token");
                 preferences.edit().putString("server", base).putString("token", newToken).apply();
-                JSONObject runtime = response.optJSONObject("runtime");
-                if (runtime != null) applyRuntime(runtime);
-
+                JSONObject runtime = response.optJSONObject("runtime"); if (runtime != null) applyRuntime(runtime);
                 runOnUiThread(() -> {
-                    serverInput.setText(base);
-                    statusText.setText("● ONLINE");
-                    responseText.setText("STAR Watch pareado com o Core.");
-                    pairCodeInput.setText("");
+                    serverInput.setText(base); statusText.setText("● ONLINE");
+                    responseText.setText("STAR Watch pareado com o Core."); pairCodeInput.setText("");
                 });
-            } catch (Exception exception) {
-                showError(exception);
-            }
+            } catch (Exception exception) { showError(exception); }
         });
     }
 
     private void sendText() {
         String text = messageInput.getText().toString().trim();
         if (text.isEmpty()) return;
-        if (token().isEmpty()) {
-            showResponse("Pareie o relógio com a STAR primeiro.");
-            return;
-        }
-        String base = serverBase();
-        setBusy("● STAR PENSANDO NO PC...");
+        if (token().isEmpty()) { showResponse("Pareie o relógio com a STAR primeiro."); return; }
+        String base = serverBase(); setBusy("● STAR PENSANDO NO PC...");
         executor.execute(() -> {
             try {
-                JSONObject body = new JSONObject();
-                body.put("text", text);
+                JSONObject body = new JSONObject(); body.put("text", text);
                 JSONObject response = postJson(base + "/v1/text", body, true);
                 String answer = response.optString("response", "Sem resposta.");
                 runOnUiThread(() -> {
-                    statusText.setText("● ONLINE");
-                    responseText.setText(answer);
-                    messageInput.setText("");
-                    speak(answer);
+                    statusText.setText("● ONLINE"); responseText.setText(answer); messageInput.setText(""); speak(answer);
                 });
-            } catch (Exception exception) {
-                showError(exception);
-            }
+            } catch (Exception exception) { showError(exception); }
         });
     }
 
     private void toggleRecording() {
-        if (recording) {
-            stopRecordingAndUpload();
-            return;
-        }
+        if (recording) { stopRecordingAndUpload(); return; }
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_AUDIO);
-            return;
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_AUDIO); return;
         }
         startRecording();
     }
 
     private void startRecording() {
-        if (token().isEmpty()) {
-            showResponse("Pareie o relógio com a STAR primeiro.");
-            return;
-        }
+        if (token().isEmpty()) { showResponse("Pareie o relógio com a STAR primeiro."); return; }
         try {
-            audioRecorder = WatchAudioRecorder.create(getCacheDir());
-            audioRecorder.start();
-            recording = true;
+            audioRecorder = WatchAudioRecorder.create(getCacheDir()); audioRecorder.start(); recording = true;
             voiceButton.setText("■ " + runtimeLabel("stop_and_send", "ENVIAR ÁUDIO"));
             statusText.setText("● OUVINDO PCM " + audioRecorder.getSampleRate() + " HZ...");
             responseText.setText("Fale normalmente e toque novamente para enviar. O áudio é capturado em PCM mono para melhorar o reconhecimento.");
-        } catch (Exception exception) {
-            releaseAudioRecorder();
-            showResponse("Não consegui iniciar o microfone: " + exception.getMessage());
-        }
+        } catch (Exception exception) { releaseAudioRecorder(); showResponse("Não consegui iniciar o microfone: " + exception.getMessage()); }
     }
 
     private void stopRecordingAndUpload() {
-        final WatchAudioRecorder activeRecorder = audioRecorder;
-        audioRecorder = null;
-        recording = false;
-        voiceButton.setText("🎙 " + runtimeLabel("speak", "FALAR"));
-        statusText.setText("● PREPARANDO ÁUDIO...");
-        if (activeRecorder == null) {
-            showResponse("Não há gravação ativa.");
-            return;
-        }
-
+        final WatchAudioRecorder activeRecorder = audioRecorder; audioRecorder = null; recording = false;
+        voiceButton.setText("🎙 " + runtimeLabel("speak", "FALAR")); statusText.setText("● PREPARANDO ÁUDIO...");
+        if (activeRecorder == null) { showResponse("Não há gravação ativa."); return; }
         String base = serverBase();
         executor.execute(() -> {
             try {
-                File audioFile = activeRecorder.stopAndGetFile();
-                byte[] data = readFile(audioFile);
+                File audioFile = activeRecorder.stopAndGetFile(); byte[] data = readFile(audioFile);
                 runOnUiThread(() -> statusText.setText("● TRANSCRIBINDO NO PC..."));
                 JSONObject response = postBytes(base + "/v1/audio", data, "audio/wav");
-                String transcript = response.optString("transcript", "");
-                String answer = response.optString("response", "Sem resposta.");
-                runOnUiThread(() -> {
-                    statusText.setText("● ONLINE");
-                    responseText.setText("Você: " + transcript + "\n\nSTAR: " + answer);
-                    speak(answer);
-                });
-            } catch (Exception exception) {
-                activeRecorder.cancel();
-                showError(exception);
-            }
+                String transcript = response.optString("transcript", ""); String answer = response.optString("response", "Sem resposta.");
+                runOnUiThread(() -> { statusText.setText("● ONLINE"); responseText.setText("Você: " + transcript + "\n\nSTAR: " + answer); speak(answer); });
+            } catch (Exception exception) { activeRecorder.cancel(); showError(exception); }
         });
     }
 
     private void releaseAudioRecorder() {
-        WatchAudioRecorder recorder = audioRecorder;
-        audioRecorder = null;
-        recording = false;
+        WatchAudioRecorder recorder = audioRecorder; audioRecorder = null; recording = false;
         if (recorder != null) recorder.cancel();
     }
 
     private void openCamera() {
-        if (token().isEmpty()) {
-            showResponse("Pareie o relógio com a STAR primeiro.");
-            return;
-        }
+        if (token().isEmpty()) { showResponse("Pareie o relógio com a STAR primeiro."); return; }
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA);
-            return;
+            requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA); return;
         }
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (intent.resolveActivity(getPackageManager()) == null) {
-            showResponse("Nenhum aplicativo de câmera disponível neste relógio.");
-            return;
-        }
+        if (intent.resolveActivity(getPackageManager()) == null) { showResponse("Nenhum aplicativo de câmera disponível neste relógio."); return; }
         startActivityForResult(intent, REQUEST_CAPTURE_IMAGE);
+    }
+
+    private void toggleSensors() {
+        if (!sensorTransportEnabled) { showResponse("O Core desativou o transporte de sensores nesta sessão."); return; }
+        if (token().isEmpty()) { showResponse("Pareie o relógio com a STAR primeiro."); return; }
+        if (sensorBridge.isActive()) {
+            sensorBridge.stop(); sensorButton.setText("🛰 " + runtimeLabel("sensors", "SENSORES"));
+            showResponse("Sensores físicos pausados. Nenhuma telemetria continua em background."); return;
+        }
+        List<String> missing = new ArrayList<>();
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            missing.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            missing.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        if (checkSelfPermission(Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED)
+            missing.add(Manifest.permission.BODY_SENSORS);
+        if (!missing.isEmpty()) { requestPermissions(missing.toArray(new String[0]), REQUEST_SENSORS); return; }
+        startSensors();
+    }
+
+    private void startSensors() {
+        sensorBridge.start(); sensorButton.setText("■ SENSORES ATIVOS");
+        showResponse("Sensores físicos ativos enquanto este app estiver aberto: GPS/IMU/saúde/medição somente quando o hardware disponibilizar.");
+    }
+
+    private void uploadSensorBatch(JSONArray samples) {
+        if (samples == null || samples.length() == 0 || token().isEmpty()) return;
+        final String base = storedServer(); if (base.isEmpty()) return;
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject(); body.put("samples", samples);
+                postJson(base + "/v1/sensors", body, true);
+            } catch (Exception exception) {
+                runOnUiThread(() -> statusText.setText("● SENSOR OFFLINE"));
+            }
+        });
     }
 
     @Override
@@ -293,38 +302,29 @@ public class MainActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode != REQUEST_CAPTURE_IMAGE || resultCode != RESULT_OK || data == null) return;
         Object raw = data.getExtras() == null ? null : data.getExtras().get("data");
-        if (!(raw instanceof Bitmap)) {
-            showResponse("A câmera não retornou uma imagem compatível.");
-            return;
-        }
-        Bitmap bitmap = (Bitmap) raw;
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output);
-        byte[] image = output.toByteArray();
-        statusText.setText("● ENVIANDO IMAGEM...");
-        String base = serverBase();
+        if (!(raw instanceof Bitmap)) { showResponse("A câmera não retornou uma imagem compatível."); return; }
+        Bitmap bitmap = (Bitmap) raw; ByteArrayOutputStream output = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output); byte[] image = output.toByteArray();
+        statusText.setText("● ENVIANDO IMAGEM..."); String base = serverBase();
         executor.execute(() -> {
             try {
                 JSONObject response = postBytes(base + "/v1/image", image, "image/jpeg");
                 String message = response.optString("message", "Imagem recebida.");
-                runOnUiThread(() -> {
-                    statusText.setText("● ONLINE");
-                    responseText.setText(message);
-                });
-            } catch (Exception exception) {
-                showError(exception);
-            }
+                runOnUiThread(() -> { statusText.setText("● ONLINE"); responseText.setText(message); });
+            } catch (Exception exception) { showError(exception); }
         });
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
-        if (!granted) {
-            showResponse("Permissão negada.");
-            return;
+        if (requestCode == REQUEST_SENSORS) {
+            // Inicia o subconjunto permitido; providers sem permissão/hardware
+            // permanecem ausentes em vez de serem simulados.
+            startSensors(); return;
         }
+        boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+        if (!granted) { showResponse("Permissão negada."); return; }
         if (requestCode == REQUEST_AUDIO) startRecording();
         else if (requestCode == REQUEST_CAMERA) openCamera();
     }
@@ -337,45 +337,39 @@ public class MainActivity extends Activity {
 
     private void applyRuntime(JSONObject runtime) {
         runtimeRevision = runtime.optString("revision", runtimeRevision);
-        JSONObject labels = runtime.optJSONObject("labels");
-        JSONObject features = runtime.optJSONObject("features");
-        if (labels == null) labels = new JSONObject();
-        if (features == null) features = new JSONObject();
-        final JSONObject finalLabels = labels;
-        final JSONObject finalFeatures = features;
+        JSONObject labels = runtime.optJSONObject("labels"); JSONObject features = runtime.optJSONObject("features");
+        if (labels == null) labels = new JSONObject(); if (features == null) features = new JSONObject();
+        final JSONObject finalLabels = labels; final JSONObject finalFeatures = features;
         spokenRepliesEnabled = finalFeatures.optBoolean("spoken_reply", true);
-
+        sensorTransportEnabled = finalFeatures.optBoolean("sensor_transport", true);
+        rotaryInputEnabled = finalFeatures.optBoolean("rotary_input", true);
         runOnUiThread(() -> {
-            pairButton.setTag(R.id.pairButton, finalLabels);
-            pairButton.setText(finalLabels.optString("pair", "PAREAR"));
+            pairButton.setTag(R.id.pairButton, finalLabels); pairButton.setText(finalLabels.optString("pair", "PAREAR"));
             sendButton.setText("💬 " + finalLabels.optString("send", "ENVIAR"));
             voiceButton.setText(recording ? "■ " + finalLabels.optString("stop_and_send", "ENVIAR ÁUDIO") : "🎙 " + finalLabels.optString("speak", "FALAR"));
             cameraButton.setText("📷 " + finalLabels.optString("camera", "MOSTRAR À STAR"));
+            sensorButton.setText(sensorBridge.isActive() ? "■ SENSORES ATIVOS" : "🛰 " + finalLabels.optString("sensors", "SENSORES"));
             sendButton.setVisibility(finalFeatures.optBoolean("text", true) ? View.VISIBLE : View.GONE);
             voiceButton.setVisibility(finalFeatures.optBoolean("voice_input", true) ? View.VISIBLE : View.GONE);
             cameraButton.setVisibility(finalFeatures.optBoolean("camera_transport", true) ? View.VISIBLE : View.GONE);
+            sensorButton.setVisibility(sensorTransportEnabled ? View.VISIBLE : View.GONE);
         });
     }
 
     private void refreshRuntimeSafe() {
         try {
-            String base = storedServer();
-            if (base.isEmpty() || token().isEmpty()) return;
+            String base = storedServer(); if (base.isEmpty() || token().isEmpty()) return;
             applyRuntime(getJson(base + "/v1/runtime"));
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) { }
     }
 
     private void syncOnce() {
-        String base = storedServer();
-        if (base.isEmpty() || token().isEmpty()) return;
+        String base = storedServer(); if (base.isEmpty() || token().isEmpty()) return;
         try {
             JSONObject heartbeat = postJson(base + "/v1/heartbeat", new JSONObject(), true);
             if (heartbeat.optBoolean("runtime_changed", false)) applyRuntime(getJson(base + "/v1/runtime"));
             else runOnUiThread(() -> statusText.setText("● ONLINE"));
-        } catch (Exception exception) {
-            runOnUiThread(() -> statusText.setText("● SEM CONEXÃO"));
-        }
+        } catch (Exception exception) { runOnUiThread(() -> statusText.setText("● SEM CONEXÃO")); }
     }
 
     private void speak(String text) {
@@ -384,64 +378,40 @@ public class MainActivity extends Activity {
     }
 
     private JSONObject postJson(String url, JSONObject body, boolean authenticated) throws Exception {
-        byte[] bytes = body.toString().getBytes(StandardCharsets.UTF_8);
-        return request(url, "POST", bytes, "application/json; charset=utf-8", authenticated);
+        return request(url, "POST", body.toString().getBytes(StandardCharsets.UTF_8), "application/json; charset=utf-8", authenticated);
     }
-
-    private JSONObject postBytes(String url, byte[] body, String contentType) throws Exception {
-        return request(url, "POST", body, contentType, true);
-    }
-
-    private JSONObject getJson(String url) throws Exception {
-        return request(url, "GET", null, null, true);
-    }
+    private JSONObject postBytes(String url, byte[] body, String contentType) throws Exception { return request(url, "POST", body, contentType, true); }
+    private JSONObject getJson(String url) throws Exception { return request(url, "GET", null, null, true); }
 
     private JSONObject request(String endpoint, String method, byte[] body, String contentType, boolean authenticated) throws Exception {
         HttpURLConnection connection = (HttpURLConnection) new URL(endpoint).openConnection();
-        connection.setRequestMethod(method);
-        connection.setConnectTimeout(10000);
-        connection.setReadTimeout(120000);
-        connection.setRequestProperty("Accept", "application/json");
-        connection.setRequestProperty("X-STAR-Client-Form", "watch");
+        connection.setRequestMethod(method); connection.setConnectTimeout(10000); connection.setReadTimeout(120000);
+        connection.setRequestProperty("Accept", "application/json"); connection.setRequestProperty("X-STAR-Client-Form", "watch");
         if (contentType != null) {
             connection.setRequestProperty("Content-Type", contentType);
             if ("audio/wav".equals(contentType)) connection.setRequestProperty("X-STAR-Audio-Profile", "watch-pcm16");
         }
         if (authenticated) {
-            connection.setRequestProperty("Authorization", "Bearer " + token());
-            connection.setRequestProperty("X-STAR-Device", deviceId());
+            connection.setRequestProperty("Authorization", "Bearer " + token()); connection.setRequestProperty("X-STAR-Device", deviceId());
             if (!runtimeRevision.isEmpty()) connection.setRequestProperty("X-STAR-Runtime", runtimeRevision);
         }
-        if (body != null) {
-            connection.setDoOutput(true);
-            try (OutputStream output = connection.getOutputStream()) { output.write(body); }
-        }
-        int status = connection.getResponseCode();
-        InputStream input = status >= 200 && status < 300 ? connection.getInputStream() : connection.getErrorStream();
-        String text = readStream(input);
-        connection.disconnect();
-        JSONObject result = text.isEmpty() ? new JSONObject() : new JSONObject(text);
-        if (status < 200 || status >= 300) {
-            throw new IllegalStateException(result.optString("detail", result.optString("error", "HTTP " + status)));
-        }
+        if (body != null) { connection.setDoOutput(true); try (OutputStream output = connection.getOutputStream()) { output.write(body); } }
+        int status = connection.getResponseCode(); InputStream input = status >= 200 && status < 300 ? connection.getInputStream() : connection.getErrorStream();
+        String text = readStream(input); connection.disconnect(); JSONObject result = text.isEmpty() ? new JSONObject() : new JSONObject(text);
+        if (status < 200 || status >= 300) throw new IllegalStateException(result.optString("detail", result.optString("error", "HTTP " + status)));
         return result;
     }
 
     private static byte[] readFile(File file) throws Exception {
         try (FileInputStream input = new FileInputStream(file); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[8192];
-            int count;
-            while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
-            return output.toByteArray();
+            byte[] buffer = new byte[8192]; int count; while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count); return output.toByteArray();
         }
     }
 
     private static String readStream(InputStream input) throws Exception {
         if (input == null) return "";
         try (InputStream source = input; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[8192];
-            int count;
-            while ((count = source.read(buffer)) != -1) output.write(buffer, 0, count);
+            byte[] buffer = new byte[8192]; int count; while ((count = source.read(buffer)) != -1) output.write(buffer, 0, count);
             return new String(output.toByteArray(), StandardCharsets.UTF_8);
         }
     }
@@ -449,12 +419,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         releaseAudioRecorder();
-        executor.shutdownNow();
-        syncExecutor.shutdownNow();
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
+        if (sensorBridge != null) sensorBridge.close();
+        executor.shutdownNow(); syncExecutor.shutdownNow();
+        if (tts != null) { tts.stop(); tts.shutdown(); }
         super.onDestroy();
     }
 }

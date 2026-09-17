@@ -131,6 +131,24 @@ struct ContentView: View {
                     action: { showCamera = true }
                 )
             }
+
+            if state.feature("sensor_transport", fallback: true) {
+                actionButton(
+                    title: state.sensorsActive
+                        ? "■ SENSORES ATIVOS"
+                        : "🛰 " + state.label("sensors", fallback: "SENSORES"),
+                    color: Color(hex: state.theme["accent"] ?? "#6CC8FF"),
+                    foreground: .black,
+                    action: state.toggleSensors
+                )
+
+                actionButton(
+                    title: "📏 " + state.label("measure", fallback: "MEDIR"),
+                    color: Color(hex: state.theme["secondary"] ?? "#F18ACB"),
+                    foreground: .black,
+                    action: state.measurePhysical
+                )
+            }
         }
         .padding(14)
         .background(surface)
