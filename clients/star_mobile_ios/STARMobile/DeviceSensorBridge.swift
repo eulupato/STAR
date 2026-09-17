@@ -20,6 +20,7 @@ final class DeviceSensorBridge: NSObject, CLLocationManagerDelegate, ARSessionDe
     private var flushTimer: Timer?
     private var healthTimer: Timer?
     private var depthCompletion: ((Result<Double, Error>) -> Void)?
+    private var depthRequestID = UUID()
     private let onBatch: BatchSink
     private let onStatus: StatusSink
     private(set) var active = false
@@ -57,7 +58,10 @@ final class DeviceSensorBridge: NSObject, CLLocationManagerDelegate, ARSessionDe
         flushTimer?.invalidate(); flushTimer = nil
         healthTimer?.invalidate(); healthTimer = nil
         arSession.pause()
-        depthCompletion = nil
+        if let completion = depthCompletion {
+            depthCompletion = nil
+            completion(.failure(SensorError("Medição interrompida.")))
+        }
         lock.lock(); latest.removeAll(); lock.unlock()
         onStatus("Sensores pausados. Nenhuma coleta continua em background.")
     }
@@ -68,7 +72,9 @@ final class DeviceSensorBridge: NSObject, CLLocationManagerDelegate, ARSessionDe
         guard active else { return }
         var sample = values
         sample["kind"] = kind
-        sample["timestamp"] = timestamp()
+        if sample["timestamp"] == nil {
+            sample["timestamp"] = timestamp()
+        }
         lock.lock(); latest[kind] = sample; lock.unlock()
     }
 
@@ -76,6 +82,15 @@ final class DeviceSensorBridge: NSObject, CLLocationManagerDelegate, ARSessionDe
         guard active else { return }
         lock.lock(); let values = Array(latest.values); latest.removeAll(); lock.unlock()
         if !values.isEmpty { onBatch(values) }
+    }
+
+    private func emitImmediate(_ kind: String, _ values: [String: Any]) {
+        var sample = values
+        sample["kind"] = kind
+        if sample["timestamp"] == nil {
+            sample["timestamp"] = timestamp()
+        }
+        onBatch([sample])
     }
 
     private func startLocationIfAllowed() {
@@ -145,13 +160,22 @@ final class DeviceSensorBridge: NSObject, CLLocationManagerDelegate, ARSessionDe
         let query = HKSampleQuery(sampleType: heart, predicate: nil, limit: 1, sortDescriptors: [sort]) { [weak self] _, samples, _ in
             guard let self, let sample = samples?.first as? HKQuantitySample else { return }
             let bpm = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
-            if bpm > 0 { self.put("heart_rate", ["bpm": bpm, "accuracy": "healthkit-sample"]) }
+            if bpm > 0 {
+                self.put("heart_rate", [
+                    "bpm": bpm,
+                    "accuracy": "healthkit-sample",
+                    "timestamp": sample.endDate.timeIntervalSince1970 * 1000
+                ])
+            }
         }
         health.execute(query)
     }
 
     /// Mede profundidade central somente em hardware com ARKit sceneDepth (LiDAR/ToF).
     func measureDepth(completion: @escaping (Result<Double, Error>) -> Void) {
+        guard depthCompletion == nil else {
+            completion(.failure(SensorError("Já existe uma medição física em andamento."))); return
+        }
         guard ARWorldTrackingConfiguration.isSupported else {
             completion(.failure(SensorError("ARKit não suportado neste aparelho."))); return
         }
@@ -160,8 +184,16 @@ final class DeviceSensorBridge: NSObject, CLLocationManagerDelegate, ARSessionDe
             completion(.failure(SensorError("Este aparelho não oferece sceneDepth/LiDAR."))); return
         }
         configuration.frameSemantics.insert(.sceneDepth)
+        let requestID = UUID()
+        depthRequestID = requestID
         depthCompletion = completion
         arSession.run(configuration, options: [.resetTracking])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+            guard let self, self.depthRequestID == requestID, let pending = self.depthCompletion else { return }
+            self.depthCompletion = nil
+            self.arSession.pause()
+            pending(.failure(SensorError("O sensor de profundidade não entregou uma leitura válida a tempo.")))
+        }
     }
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
@@ -179,9 +211,22 @@ final class DeviceSensorBridge: NSObject, CLLocationManagerDelegate, ARSessionDe
         guard meters.isFinite, meters > 0 else { return }
         depthCompletion = nil
         arSession.pause()
-        put("lidar_depth", ["meters": meters, "method": "ios-arkit-sceneDepth"])
-        flush()
+        emitImmediate("lidar_depth", ["meters": meters, "method": "ios-arkit-sceneDepth"])
         completion(.success(meters))
+    }
+
+    func session(_ session: ARSession, didFailWithError error: Error) {
+        guard let completion = depthCompletion else { return }
+        depthCompletion = nil
+        session.pause()
+        completion(.failure(SensorError("ARKit: \(error.localizedDescription)")))
+    }
+
+    func sessionWasInterrupted(_ session: ARSession) {
+        guard let completion = depthCompletion else { return }
+        depthCompletion = nil
+        session.pause()
+        completion(.failure(SensorError("A sessão de profundidade foi interrompida.")))
     }
 }
 
