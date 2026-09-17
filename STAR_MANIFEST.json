@@ -61,13 +61,17 @@
     "cfc97_b35",
     "consciousness_research_frontier_b36",
     "optional_local_llm_surface_realizer",
-    "star_device_gateway_v0_2",
+    "star_device_gateway_v0_3",
     "star_watch_android_v0_3",
     "star_watch_app_v0_4",
     "star_watch_pc_simulator_v0_4",
     "star_watch_plasma_orbit_ui",
-    "star_mobile_ios_v0",
-    "adaptive_device_runtime_v0"
+    "star_mobile_ios_v0_2",
+    "adaptive_device_runtime_v0",
+    "group2_physical_sensor_transport",
+    "group2_persistent_agenda_scheduler",
+    "b27_fk_ik_runtime",
+    "safe_body_actuation_executor"
   ],
   "cognitive_blocks": {
     "status": "experimental-integrated",
@@ -119,7 +123,10 @@
         "addressable_contents": 1000000000,
         "body_is_endpoint": true,
         "direct_actuation": false,
-        "sensor_fusion_source": "B25"
+        "sensor_fusion_source": "B25",
+        "forward_kinematics": true,
+        "inverse_kinematics": "damped-least-squares-position",
+        "actuation_executor": "separate-boundary-gated"
       },
       "B32": {
         "name": "MANUTENÇÃO COGNITIVA",
@@ -428,13 +435,33 @@
       "STAR_WEATHER_ENABLED", "STAR_WEATHER_LOCATION", "STAR_WEATHER_AUTOLOCATE", "STAR_WEATHER_CACHE_SECONDS"
     ]
   },
+  "group2_sensors_body_proactivity": {
+    "status": "experimental-integrated",
+    "sensor_bridge": "core/device_sensors.py",
+    "agenda_scheduler": "modules/automation.py",
+    "database": "star.db",
+    "gps": "real-provider-if-available",
+    "health": "real-provider-if-available-no-diagnosis",
+    "motion": "accelerometer-gyroscope-rotation-vector-if-available",
+    "watch_rotary": "physical-input-if-reported-by-os",
+    "physical_measurement": "hardware-if-available-no-simulation",
+    "body_endpoint": "optional TCP JSON-line controller",
+    "body_fk": true,
+    "body_ik": "damped-least-squares-position",
+    "actuation": "separate executor behind B01 operational boundary",
+    "background_sensor_capture": false,
+    "scheduler_executes_actions": false,
+    "hardware_attestation": false,
+    "telemetry_grants_permission": false
+  },
   "device_gateway": {
     "status": "experimental",
     "enabled_by_default": false,
     "protocol": 1,
     "transport": "LAN HTTP",
     "default_port": 8765,
-    "processing_location": "STAR Core no PC"
+    "processing_location": "STAR Core no PC",
+    "sensor_endpoint": "/v1/sensors"
   },
   "device_ecosystem": {
     "schema": 1,
@@ -447,20 +474,25 @@
       "title": "STAR", "pair": "PAREAR", "send": "ENVIAR", "speak": "FALAR",
       "stop_and_send": "ENVIAR ÁUDIO", "camera": "VISÃO", "search": "BUSCA",
       "health": "SAÚDE", "gps": "GPS", "people": "PEOPLE", "measure": "MEDIR",
-      "media": "MÍDIA", "weather": "CLIMA", "language": "IDIOMA", "settings": "CONFIG"
+      "sensors": "SENSORES", "media": "MÍDIA", "weather": "CLIMA", "language": "IDIOMA", "settings": "CONFIG"
     },
     "features": {
       "text": true,
       "voice_input": true,
       "spoken_reply": true,
       "camera_transport": true,
-      "vision_analysis": false,
-      "health_transport": false,
-      "location_transport": false,
+      "vision_analysis": true,
+      "sensor_transport": true,
+      "health_transport": true,
+      "location_transport": true,
+      "motion_transport": true,
+      "rotary_input": true,
       "ring_navigation": true,
       "ring_press": true,
       "people_local_store": true,
-      "measure_provider": "simulated-until-hardware",
+      "measure_provider": "hardware-if-available",
+      "physical_measurement": true,
+      "background_sensor_capture": false,
       "core_weather_context": true,
       "language_selection": true,
       "offline_dictionary_lookup": true,
