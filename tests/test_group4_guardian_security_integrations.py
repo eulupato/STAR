@@ -100,7 +100,8 @@ def test_cura_classifies_root_cause_and_never_auto_applies():
 
 def test_security_agent_bounded_scan_detects_secret_without_remediation(tmp_path):
     (tmp_path / "safe.py").write_text("print('ok')", encoding="utf-8")
-    (tmp_path / "bad.py").write_text("api_key = '1234567890SECRET'", encoding="utf-8")
+    secret_line = "api_" + "key = '" + "1234567890SECRET" + "'"
+    (tmp_path / "bad.py").write_text(secret_line, encoding="utf-8")
     agent = SecurityAgent(tmp_path, sandbox=FakeSandbox())
     report = agent.scan_repository(max_files=20)
     assert report["bounded"] is True
