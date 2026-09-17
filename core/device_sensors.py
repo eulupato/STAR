@@ -3,7 +3,11 @@
 Dispositivos somente reportam observações. Este módulo valida unidades/faixas,
 normaliza proveniência e entrega evidência perceptiva ao B25. Dados de saúde não
 viram diagnóstico; localização não concede permissão; medição só é aceita quando
-o próprio hardware informa uma grandeza métrica.
+o endpoint autenticado declara a capacidade correspondente.
+
+Pareamento autentica o endpoint, mas não é atestado criptográfico do hardware.
+Por isso as observações são marcadas como ``endpoint_reported`` e nunca como
+prova absoluta de que um sensor físico específico é genuíno.
 """
 from __future__ import annotations
 
@@ -18,6 +22,21 @@ _ALLOWED_KINDS = {
     "location", "accelerometer", "gyroscope", "rotation_vector", "heart_rate",
     "steps", "proximity", "distance", "lidar_depth", "tof_distance", "rotary",
     "body_proprioception",
+}
+
+_CAPABILITIES_BY_KIND = {
+    "location": {"location", "gps"},
+    "accelerometer": {"accelerometer", "motion"},
+    "gyroscope": {"gyroscope", "motion"},
+    "rotation_vector": {"rotation_vector", "motion"},
+    "heart_rate": {"heart_rate", "health", "healthkit"},
+    "steps": {"steps", "health", "healthkit", "activity_recognition"},
+    "proximity": {"proximity", "physical_measurement"},
+    "distance": {"distance", "physical_measurement"},
+    "lidar_depth": {"lidar_depth", "physical_measurement"},
+    "tof_distance": {"tof_distance", "physical_measurement"},
+    "rotary": {"rotary_input"},
+    "body_proprioception": {"body_proprioception", "robot_body"},
 }
 
 
@@ -68,15 +87,28 @@ class DeviceSensorHub:
             "unit": str(sample.get("unit") or unit)[:24],
         }
 
+    @staticmethod
+    def _require_capability(kind: str, capabilities: set[str]) -> None:
+        expected = _CAPABILITIES_BY_KIND.get(kind, {kind})
+        if not capabilities.intersection(expected):
+            raise ValueError(f"capacidade não declarada para sensor: {kind}")
+
     def _normalize(self, sample: dict, *, device_id: str, capabilities: set[str]) -> tuple[str, dict]:
         if not isinstance(sample, dict):
             raise ValueError("amostra deve ser objeto")
         kind = str(sample.get("kind") or "").strip().lower()
         if kind not in _ALLOWED_KINDS:
             raise ValueError("tipo de sensor não suportado")
+        self._require_capability(kind, capabilities)
         timestamp = _timestamp(sample.get("timestamp"))
-        source = f"device:{device_id}:{kind}"
-        attrs = {"sensor_kind": kind, "device_id": device_id, "hardware_reported": True}
+        attrs = {
+            "sensor_kind": kind,
+            "device_id": device_id,
+            "endpoint_reported": True,
+            "paired_endpoint": True,
+            "hardware_attested": False,
+            "operational_authorization": False,
+        }
         event_key = str(sample.get("event_id") or f"{device_id}:{kind}:{timestamp}")[:180]
 
         if kind == "location":
@@ -85,7 +117,7 @@ class DeviceSensorHub:
             accuracy = _finite(sample.get("accuracy_m", 0), minimum=0, maximum=100_000)
             attrs.update({"latitude": lat, "longitude": lon, "accuracy_m": accuracy, "privacy": "ephemeral_observation"})
             observation = {
-                "content": f"Localização física reportada pelo dispositivo com precisão aproximada de {accuracy:.1f} m",
+                "content": f"Localização reportada pelo endpoint pareado com precisão aproximada de {accuracy:.1f} m",
                 "timestamp": timestamp, "confidence": 0.95 if accuracy <= 25 else 0.75,
                 "importance": 0.65, "event_key": event_key, "attributes": attrs,
             }
@@ -96,7 +128,7 @@ class DeviceSensorHub:
             vector = self._vector(sample, defaults[kind])
             attrs.update(vector)
             observation = {
-                "content": f"{kind} físico atualizado",
+                "content": f"{kind} reportado pelo endpoint físico",
                 "timestamp": timestamp, "confidence": 0.98, "importance": 0.45,
                 "event_key": event_key, "attributes": attrs,
             }
@@ -107,7 +139,7 @@ class DeviceSensorHub:
             accuracy = str(sample.get("accuracy") or "unknown")[:24]
             attrs.update({"bpm": bpm, "accuracy": accuracy, "health_data": True, "diagnosis": False})
             observation = {
-                "content": f"Frequência cardíaca observada pelo sensor: {bpm:.0f} bpm",
+                "content": f"Frequência cardíaca reportada pelo sensor: {bpm:.0f} bpm",
                 "timestamp": timestamp, "confidence": 0.9, "importance": 0.65,
                 "event_key": event_key, "attributes": attrs,
             }
@@ -117,7 +149,7 @@ class DeviceSensorHub:
             steps = int(_finite(sample.get("steps"), minimum=0, maximum=10_000_000))
             attrs.update({"steps": steps, "health_data": True, "diagnosis": False})
             return "sensor", {
-                "content": f"Contagem física de passos reportada: {steps}",
+                "content": f"Contagem de passos reportada pelo endpoint: {steps}",
                 "timestamp": timestamp, "confidence": 0.9, "importance": 0.4,
                 "event_key": event_key, "attributes": attrs,
             }
@@ -130,14 +162,14 @@ class DeviceSensorHub:
             method = str(sample.get("method") or kind)[:48]
             attrs.update({"meters": meters, "method": method, "metric_measurement": True, "simulated": False})
             return "sensor", {
-                "content": f"Medição física {method}: {meters:.3f} m",
+                "content": f"Medição física reportada ({method}): {meters:.3f} m",
                 "timestamp": timestamp, "confidence": 0.9, "importance": 0.55,
                 "event_key": event_key, "attributes": attrs,
             }
 
         if kind == "rotary":
             delta = _finite(sample.get("delta"), minimum=-100, maximum=100)
-            attrs.update({"delta": delta, "input": "physical_rotary", "operational_authorization": False})
+            attrs.update({"delta": delta, "input": "physical_rotary"})
             return "sensor", {
                 "content": f"Entrada física da coroa/bezel: {delta:+.3f}",
                 "timestamp": timestamp, "confidence": 0.99, "importance": 0.35,
@@ -148,7 +180,6 @@ class DeviceSensorHub:
             state = sample.get("state")
             if not isinstance(state, dict):
                 raise ValueError("body_proprioception requer state")
-            # B27 é o único dono do estado corporal; o hub apenas encaminha.
             body_state = self.body.update_proprioception(
                 source=f"device:{device_id}",
                 position=state.get("position"), orientation=state.get("orientation"),
@@ -203,6 +234,7 @@ class DeviceSensorHub:
             "observations": accepted,
             "operational_authorization": False,
             "simulated": False,
+            "hardware_attested": False,
         }
 
     def status(self) -> dict:
@@ -211,7 +243,8 @@ class DeviceSensorHub:
             "rejected": self.rejected,
             "devices_seen": len(self.last_by_device),
             "supported_kinds": tuple(sorted(_ALLOWED_KINDS)),
-            "real_sensor_data_only": True,
+            "real_provider_contract": True,
+            "hardware_attestation": False,
             "health_diagnosis": False,
             "sensor_data_grants_permission": False,
         }
