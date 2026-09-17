@@ -214,13 +214,14 @@ class HomeAutomationService:
 
     def confirm(self, code: str, *, remote: bool = False) -> dict:
         code = str(code or "").strip().upper()
-        pending = self._pending.pop(code, None)
+        pending = self._pending.get(code)
         if pending is None:
             return {"ok": False, "reason": "confirmation_not_found"}
         if remote:
             self._audit(pending.service, pending.entity_id, "blocked_remote")
             return {"ok": False, "reason": "local_confirmation_required"}
         if datetime.now(timezone.utc) > pending.expires_at:
+            self._pending.pop(code, None)
             self._audit(pending.service, pending.entity_id, "expired")
             return {"ok": False, "reason": "confirmation_expired"}
         if not self.network_enabled_provider():
@@ -240,6 +241,7 @@ class HomeAutomationService:
             self._audit(pending.service, pending.entity_id, "blocked_boundary", {"missing": decision.get("missing")})
             return {"ok": False, "reason": "boundary_blocked", "missing": decision.get("missing")}
         domain = pending.entity_id.split(".", 1)[0]
+        self._pending.pop(code, None)
         try:
             result = self.adapter.call(domain, pending.service, pending.entity_id)
         except requests.RequestException as exc:
