@@ -7,7 +7,7 @@ automática é append-only e nunca promove conteúdo web a fato canônico sozinh
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import tempfile
 import threading
+import time
 import unicodedata
 import xml.etree.ElementTree as ET
 import zipfile
@@ -29,6 +30,7 @@ from core.cognitive_catalog import THEME_ORDER
 from core.labs import DocumentRAG
 from core.offline_dictionary import DEFAULT_DB, OfflineDictionaryStore
 from database.database import engine
+from modules.automation import ProactiveScheduler
 from modules.internet import GeneralWebSearch
 
 
@@ -371,7 +373,7 @@ class SemanticFileSearch:
         self.extractor = extractor or DocumentExtractor()
         self.vectorizer = LocalTextVectorizer()
         self._thread: threading.Thread | None = None
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._progress = {"running": False, "root": None, "indexed": 0, "skipped": 0, "errors": 0, "finished_at": None}
         with engine.begin() as conn:
             for ddl in _FILE_SCHEMA:
@@ -588,16 +590,165 @@ class OfflineDictionaryMaterializer:
         }
 
 
+class IntelligentProactiveScheduler(ProactiveScheduler):
+    """Refina o scheduler existente com relevância, urgência e antirrepetição."""
+
+    KIND_BONUS = {
+        "reminder_due": 0.35,
+        "safety": 0.45,
+        "security": 0.45,
+        "health_signal": 0.30,
+        "knowledge_update": 0.15,
+        "research_update": 0.12,
+        "ambient": -0.15,
+    }
+
+    def __init__(self, agenda, *, poll_seconds: float = 1.0, max_queue: int = 128, relevance_threshold: float = 0.55, duplicate_seconds: float = 300.0):
+        super().__init__(agenda, poll_seconds=poll_seconds, max_queue=max_queue)
+        self.relevance_threshold = max(0.0, min(float(relevance_threshold), 1.0))
+        self.duplicate_seconds = max(0.0, min(float(duplicate_seconds), 86400.0))
+        self._recent_notifications: dict[str, float] = {}
+
+    def relevance(self, kind: str, content: str, *, payload=None, importance: float = 0.5) -> dict:
+        payload = dict(payload or {})
+        importance = max(0.0, min(float(importance), 1.0))
+        score = importance * 0.65 + self.KIND_BONUS.get(str(kind), 0.0)
+        reasons = [f"importance={importance:.2f}"]
+        urgency = payload.get("urgency")
+        if urgency is not None:
+            try:
+                urgency_value = max(0.0, min(float(urgency), 1.0))
+                score += urgency_value * 0.20
+                reasons.append(f"urgency={urgency_value:.2f}")
+            except (TypeError, ValueError):
+                pass
+        relevance = payload.get("relevance")
+        if relevance is not None:
+            try:
+                relevance_value = max(0.0, min(float(relevance), 1.0))
+                score += relevance_value * 0.15
+                reasons.append(f"context={relevance_value:.2f}")
+            except (TypeError, ValueError):
+                pass
+        if payload.get("user_requested"):
+            score += 0.25
+            reasons.append("user_requested")
+        fingerprint = hashlib.sha256(f"{kind}\n{_clean(content).casefold()}".encode("utf-8")).hexdigest()
+        previous = self._recent_notifications.get(fingerprint)
+        duplicate = previous is not None and time.monotonic() - previous < self.duplicate_seconds
+        if duplicate:
+            score -= 0.60
+            reasons.append("recent_duplicate")
+        score = max(0.0, min(score, 1.0))
+        return {"score": score, "threshold": self.relevance_threshold, "relevant": score >= self.relevance_threshold, "duplicate": duplicate, "fingerprint": fingerprint, "reasons": reasons}
+
+    def emit(self, kind: str, content: str, *, payload=None, importance: float = 0.5, notify: bool = True) -> dict:
+        payload = dict(payload or {})
+        assessment = self.relevance(kind, content, payload=payload, importance=importance)
+        should_notify = bool(notify) and assessment["relevant"]
+        payload["notification_relevance"] = {k: v for k, v in assessment.items() if k != "fingerprint"}
+        event = super().emit(kind, content, payload=payload, importance=importance, notify=should_notify)
+        if should_notify:
+            self._recent_notifications[assessment["fingerprint"]] = time.monotonic()
+            if len(self._recent_notifications) > 512:
+                cutoff = time.monotonic() - self.duplicate_seconds
+                self._recent_notifications = {k: v for k, v in self._recent_notifications.items() if v >= cutoff}
+        return event
+
+    def stats(self) -> dict:
+        data = super().stats()
+        data.update({
+            "intelligent_relevance": True,
+            "relevance_threshold": self.relevance_threshold,
+            "duplicate_seconds": self.duplicate_seconds,
+            "recent_notification_fingerprints": len(self._recent_notifications),
+        })
+        return data
+
+
 class Group3KnowledgeServices:
     """Ponto de integração fino do Grupo 3 sobre MIND/RAG/growth já existentes."""
 
-    def __init__(self, store, growth):
+    def __init__(self, store, growth, *, network_enabled_provider=None):
         self.extractor = DocumentExtractor()
         self.rag = EnhancedDocumentRAG(store, extractor=self.extractor)
         self.web = GeneralWebSearch()
         self.updater = SafeKnowledgeUpdater(growth, web=self.web)
         self.files = SemanticFileSearch(extractor=self.extractor)
         self.dictionaries = OfflineDictionaryMaterializer()
+        self.network_enabled_provider = network_enabled_provider or (lambda: False)
+
+    def _network_enabled(self) -> bool:
+        try:
+            return bool(self.network_enabled_provider())
+        except (TypeError, ValueError, RuntimeError):
+            return False
+
+    def handle(self, text_value: str) -> str | None:
+        raw = _clean(text_value)
+        low = raw.casefold()
+        if not raw:
+            return None
+        if low in {"status grupo 3", "status conhecimento pesquisa documentos", "status de pesquisa e documentos"}:
+            status = self.stats()
+            file_status = status["semantic_files"]
+            dictionary = status["dictionaries"]
+            return (
+                "⭐ Grupo 3 ativo: web com proveniência; RAG TXT/MD/CSV/JSON/PY/PDF/DOCX/XLSX/PPTX; "
+                f"OCR={'ATIVO' if status['documents']['ocr']['available'] else 'AGUARDANDO TESSERACT'}; "
+                f"índice semântico={file_status['indexed_files']} arquivos ({file_status['vector_backend']}); "
+                f"dicionário completo={'MATERIALIZADO' if dictionary['ready'] else 'AGUARDANDO DUMPS LOCAIS'}; "
+                "atualização automática=EVIDÊNCIA APPEND-ONLY, sem promoção canônica automática."
+            )
+        if low in {"status dicionario offline", "status dicionário offline", "status dos dicionarios offline", "status dos dicionários offline"}:
+            item = self.dictionaries.status()
+            return f"📖 Dicionários offline: {'prontos' if item['ready'] else 'não materializados'} | relações={item['translation_rows']} | banco={item['database']}"
+        match = re.match(r"^(?:star[, ]+)?(?:indexe|indexar|adicione ao rag|adicionar ao rag) (?:o )?(?:documento|arquivo)\s+(.+)$", raw, re.I)
+        if match:
+            result = self.rag.ingest_file(match.group(1).strip())
+            return f"📚 Documento indexado no RAG existente: id={result['document_id']} | formato={result['format']} | chunks={result['chunks']} | OCR={'sim' if result['ocr_used'] else 'não'}."
+        match = re.match(r"^(?:star[, ]+)?(?:ocr|leia com ocr|extrair texto de)\s+(.+)$", raw, re.I)
+        if match:
+            item = self.extractor.extract(match.group(1).strip(), ocr_if_needed=True)
+            preview = _clean(item.text)[:1600]
+            return f"🔎 OCR/extração local ({item.extraction}, {item.format}): {preview or 'nenhum texto reconhecido'}"
+        match = re.match(r"^(?:star[, ]+)?(?:indexe arquivos em|indexar arquivos em|crie indice de arquivos em|crie índice de arquivos em)\s+(.+)$", raw, re.I)
+        if match:
+            status = self.files.start_index(match.group(1).strip())
+            return f"🗂️ Indexação semântica iniciada sem bloquear a interface: raiz={status.get('root') or match.group(1).strip()} | backend={status['vector_backend']}."
+        if low in {"status da indexacao de arquivos", "status da indexação de arquivos", "status indice de arquivos", "status índice de arquivos"}:
+            status = self.files.status()
+            return f"🗂️ Índice de arquivos: {status['indexed_files']} persistidos | execução={'ATIVA' if status['running'] else 'PARADA'} | novos={status['indexed']} | ignorados={status['skipped']} | erros={status['errors']} | backend={status['vector_backend']}."
+        match = re.match(r"^(?:star[, ]+)?(?:busque semanticamente nos arquivos|busque nos arquivos|pesquise nos arquivos)\s+(.+)$", raw, re.I)
+        if match:
+            hits = self.files.search(match.group(1), limit=8)
+            if not hits:
+                return "🗂️ Não encontrei arquivos no índice semântico. Indexe primeiro uma pasta com 'indexe arquivos em <pasta>'."
+            return "🗂️ Arquivos semanticamente relacionados:\n" + "\n".join(f"- {x['title']} ({x['score']:.3f}) — {x['path']}" for x in hits)
+        match = re.match(r"^(?:star[, ]+)?(?:pesquise na web|pesquisar na web|pesquise na internet|pesquisar na internet)\s+(.+)$", raw, re.I)
+        if match:
+            result = self.web.search(match.group(1), limit=8, network_enabled=self._network_enabled(), verify=True)
+            if not result["ok"]:
+                if result.get("reason") == "network_disabled":
+                    return "A pesquisa web geral está pronta, mas o modo ONLINE está desativado."
+                return "Não consegui obter resultados web verificáveis agora."
+            lines = []
+            for item in result["results"][:8]:
+                marker = "✓" if item.get("provenance_verified") else "?"
+                lines.append(f"- [{marker}] {item['title']} — {item['url']}")
+            verification = result["verification"]
+            return "🌐 Pesquisa web com proveniência:\n" + "\n".join(lines) + f"\nVerificação: {verification['status']} | domínios={verification['independent_domains']} | verdade automática=NÃO."
+        themes = "|".join(re.escape(x) for x in THEME_ORDER)
+        match = re.match(rf"^(?:star[, ]+)?(?:atualize conhecimento|atualizar conhecimento)\s+({themes})\s+sobre\s+(.+)$", raw, re.I)
+        if match:
+            theme = match.group(1).casefold()
+            result = self.updater.refresh(theme, match.group(2), network_enabled=self._network_enabled())
+            if not result["ok"]:
+                if result.get("reason") == "network_disabled":
+                    return "A atualização segura está pronta, mas o modo ONLINE está desativado."
+                return "Não atualizei o conhecimento: faltaram pelo menos duas fontes independentes com proveniência recuperável."
+            return f"🧠 Conhecimento atualizado com {result['accepted']} evidências novas e {result['duplicates']} duplicadas. Promoção automática a fato canônico: NÃO."
+        return None
 
     def stats(self) -> dict:
         return {
