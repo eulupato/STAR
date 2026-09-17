@@ -334,16 +334,17 @@ class PersonalIntegrations:
             return {"ok": False, "reason": "draft_not_found"}
         if pending is None or secrets.compare_digest(pending.code, str(code or "").strip().upper()) is False:
             return {"ok": False, "reason": "invalid_confirmation"}
-        self._pending.pop(draft_id, None)
         if remote:
             return {"ok": False, "reason": "local_confirmation_required"}
         if datetime.now(timezone.utc) > pending.expires_at:
+            self._pending.pop(draft_id, None)
             return {"ok": False, "reason": "confirmation_expired"}
         if not self.network_enabled_provider():
             return {"ok": False, "reason": "network_disabled"}
         decision = self._boundary("personal_" + draft["kind"])
         if not decision.get("can_act"):
             return {"ok": False, "reason": "boundary_blocked", "missing": decision.get("missing")}
+        self._pending.pop(draft_id, None)
         try:
             if draft["kind"] == "email":
                 self.email.send(draft["recipient"], draft.get("subject") or "", draft["content"])
