@@ -116,7 +116,7 @@ class OSSandbox:
         ]
         if not network:
             command.append("--unshare-net")
-        for system_path in ("/usr", "/bin", "/lib", "/lib64", "/etc"):
+        for system_path in ("/usr", "/usr/local", "/bin", "/lib", "/lib64", "/etc"):
             if Path(system_path).exists():
                 command += ["--ro-bind", system_path, system_path]
         return [*command, *argv]
