@@ -15,7 +15,7 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.0</string>
+    <string>0.2.0</string>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>LSRequiresIPhoneOS</key>
@@ -30,9 +30,15 @@
     <key>NSMicrophoneUsageDescription</key>
     <string>O microfone envia comandos de voz ao STAR Core no seu PC.</string>
     <key>NSCameraUsageDescription</key>
-    <string>A câmera envia imagens ao STAR Core para recursos de percepção.</string>
+    <string>A câmera é usada para visão e, em aparelhos compatíveis, para medição física com profundidade real.</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>A biblioteca pode ser usada como alternativa de imagem quando a câmera não estiver disponível.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>O GPS fornece localização real à STAR somente enquanto os sensores estiverem ativos no app.</string>
+    <key>NSHealthShareUsageDescription</key>
+    <string>A STAR lê medições de saúde autorizadas, como frequência cardíaca, para contexto pessoal local.</string>
+    <key>NSMotionUsageDescription</key>
+    <string>A STAR usa acelerômetro e giroscópio para compreender movimento e orientação do dispositivo.</string>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
