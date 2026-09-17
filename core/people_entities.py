@@ -81,6 +81,7 @@ class PeopleEntities:
                 "recognition_is_authentication": False,
                 "trust_is_permission": False,
                 "raw_biometric_storage_by_default": False,
+                "biometric_templates_require_consent": True,
                 "sensitive_attribute_inference": False,
                 "default_deny": True,
             },
@@ -121,9 +122,7 @@ class PeopleEntities:
         safe_metadata = deepcopy(metadata or {})
         safe_metadata.pop("inferred_sensitive_attributes", None)
         node = self.graph.add_entity(
-            "person",
-            name,
-            node_id=pid,
+            "person", name, node_id=pid,
             data={
                 "block": "B26", "aliases": aliases, "source": source, "reference": reference,
                 "metadata": safe_metadata, "authentication_status": "not_authenticated",
@@ -194,6 +193,62 @@ class PeopleEntities:
         self.graph.relate(person_id, mem["memory_node_id"], "has_profile_memory", metadata={"block": "B26"})
         return {**mem, "person_id": person_id, "profile": safe, "declared": bool(declared)}
 
+    def remember_preference(self, person_id: str, key: str, value: Any, *, source: str, reference: str, declared: bool = True, context: dict | None = None, confidence: float = 0.8) -> dict:
+        key = _clean(key)
+        if not key:
+            raise ValueError("preferência requer chave")
+        payload = value if isinstance(value, (str, int, float, bool)) or value is None else _clean(value)
+        mem = self.memory.remember(
+            "people", f"Preferência {'declarada' if declared else 'observada'}: {key}={payload}",
+            source=source, reference=reference, entities=[person_id], context=context,
+            importance=0.65, confidence=_clamp(confidence),
+            metadata={
+                "person_id": person_id, "preference": {"key": key, "value": payload},
+                "declared": bool(declared), "permission": False,
+            },
+        )
+        self.graph.relate(person_id, mem["memory_node_id"], "has_preference_memory", metadata={"block": "B26", "key": key})
+        return {**mem, "person_id": person_id, "preference": {"key": key, "value": payload}}
+
+    def remember_event(self, person_id: str, event: str, *, source: str, reference: str, context: dict | None = None, importance: float = 0.6) -> dict:
+        event = _clean(event)
+        if not event:
+            raise ValueError("evento vazio")
+        mem = self.memory.remember(
+            "people", f"Evento relacionado à pessoa: {event}", source=source, reference=reference,
+            entities=[person_id], context=context, importance=importance,
+            metadata={"person_id": person_id, "person_event": True, "permission": False},
+        )
+        self.graph.relate(person_id, mem["memory_node_id"], "has_event_memory", metadata={"block": "B26"})
+        return mem
+
+    def set_consent(self, person_id: str, scope: str, granted: bool, *, purpose: str, source: str, reference: str, expires_at: str | None = None) -> dict:
+        scope, purpose = _clean(scope), _clean(purpose)
+        if not scope or not purpose:
+            raise ValueError("consentimento exige scope e purpose")
+        mem = self.memory.remember(
+            "people", f"Consentimento {'concedido' if granted else 'revogado'}: {scope} para {purpose}",
+            source=source, reference=reference, entities=[person_id], importance=0.9,
+            metadata={
+                "person_id": person_id, "consent": True, "scope": scope, "purpose": purpose,
+                "granted": bool(granted), "expires_at": _clean(expires_at) or None,
+                "operational_permission": False,
+            },
+        )
+        self.graph.relate(person_id, mem["memory_node_id"], "has_consent_record", metadata={"block": "B26", "scope": scope})
+        return {**mem, "person_id": person_id, "scope": scope, "granted": bool(granted), "operational_permission": False}
+
+    def record_trust(self, person_id: str, domain: str, confidence: float, *, source: str, reference: str, basis: str = "") -> dict:
+        domain = _clean(domain) or "general"
+        score = _clamp(confidence)
+        mem = self.memory.remember(
+            "social", f"Confiança contextual em {domain}: {score:.2f}. Base: {_clean(basis) or 'não especificada'}",
+            source=source, reference=reference, entities=[person_id], importance=0.6, confidence=score,
+            metadata={"person_id": person_id, "trust_domain": domain, "trust": score, "trust_is_permission": False},
+        )
+        self.graph.relate(person_id, mem["memory_node_id"], "has_trust_record", metadata={"block": "B26", "domain": domain, "permission": False})
+        return {**mem, "person_id": person_id, "domain": domain, "trust": score, "permission": False}
+
     def attach_identity_evidence(self, person_id: str, *, modality: str, source: str, reference: str, descriptor: str = "", confidence: float = 0.5) -> dict:
         """Associa evidência referenciada; não autentica e não persiste biometria bruta."""
         modality, source, reference = _norm(modality), _clean(source), _clean(reference)
@@ -213,25 +268,69 @@ class PeopleEntities:
         self.graph.relate(person_id, mem["memory_node_id"], "has_identity_evidence", metadata={"block": "B26", "modality": modality})
         return {**mem, "person_id": person_id, "modality": modality, "authenticated": False, "grants_permission": False, "raw_biometric_stored": False}
 
+    def store_identity_template(self, person_id: str, *, modality: str, template: dict, source: str, reference: str, consent: bool = False) -> dict:
+        """Persiste somente template derivado e consentido; nunca a mídia bruta."""
+        modality = _norm(modality)
+        if modality not in {"face", "voice"}:
+            raise ValueError("template biométrico suporta somente face/voice")
+        if not consent:
+            raise PermissionError("template biométrico exige consentimento explícito")
+        algorithm = _clean((template or {}).get("algorithm"))
+        vector = list((template or {}).get("vector") or ())
+        if not algorithm or not vector or len(vector) > 512:
+            raise ValueError("template biométrico inválido")
+        safe_template = {
+            "algorithm": algorithm,
+            "dimensions": int((template or {}).get("dimensions") or len(vector)),
+            "vector": [round(float(value), 6) for value in vector],
+        }
+        if modality == "voice" and (template or {}).get("sample_rate"):
+            safe_template["sample_rate"] = int((template or {})["sample_rate"])
+        mem = self.memory.remember(
+            "people", f"Identity template {modality}: {algorithm}",
+            source=source, reference=reference, entities=[person_id], importance=0.9, confidence=0.8,
+            metadata={
+                "person_id": person_id, "identity_template": True, "modality": modality,
+                "template": safe_template, "biometric_consent": True,
+                "raw_biometric_stored": False, "authenticated": False, "grants_permission": False,
+            },
+        )
+        self.graph.relate(person_id, mem["memory_node_id"], "has_identity_template", metadata={"block": "B26", "modality": modality, "consent": True})
+        return {
+            **mem, "person_id": person_id, "modality": modality, "template": safe_template,
+            "raw_biometric_stored": False, "authenticated": False, "grants_permission": False,
+        }
+
+    def identity_templates(self, modality: str, *, limit: int = 256) -> list[dict]:
+        modality = _norm(modality)
+        if modality not in {"face", "voice"}:
+            return []
+        recalled = self.memory.recall("Identity template", kinds=("people",), limit=min(max(int(limit), 1), 100), include_working=False)
+        result = []
+        for item in recalled:
+            meta = item.get("metadata") or {}
+            if meta.get("identity_template") and _norm(meta.get("modality")) == modality and meta.get("biometric_consent"):
+                result.append({
+                    "memory_id": item.get("id"), "person_id": meta.get("person_id"),
+                    "modality": modality, "template": deepcopy(meta.get("template") or {}),
+                    "source": meta.get("source"), "reference": meta.get("reference"),
+                })
+        return result[: min(max(int(limit), 1), 256)]
+
     def ingest_profile(self, name: str, profile: dict, *, aliases: Iterable[str] = (), source: str, reference: str, identity_evidence: Iterable[dict] = ()) -> dict:
         person = self.upsert_declared_person(name, aliases=aliases, source=source, reference=reference, profile=profile)
         evidence_records = []
         for evidence in list(identity_evidence or ())[:16]:
             if isinstance(evidence, dict):
                 evidence_records.append(self.attach_identity_evidence(
-                    person["person_id"],
-                    modality=evidence.get("modality") or "context",
-                    source=evidence.get("source") or source,
-                    reference=evidence.get("reference") or reference,
+                    person["person_id"], modality=evidence.get("modality") or "context",
+                    source=evidence.get("source") or source, reference=evidence.get("reference") or reference,
                     descriptor=evidence.get("descriptor") or evidence.get("content") or "",
                     confidence=evidence.get("confidence", 0.5),
                 ))
         return {
-            "person": person,
-            "profile": self.person_context(person["person_id"], limit=16),
-            "identity_evidence": evidence_records,
-            "authenticated": False,
-            "grants_permission": False,
+            "person": person, "profile": self.person_context(person["person_id"], limit=16),
+            "identity_evidence": evidence_records, "authenticated": False, "grants_permission": False,
         }
 
     def remember_interaction(self, person_id: str, content: str, *, source: str, reference: str = "", context: dict | None = None, importance: float = 0.6) -> dict:
@@ -262,13 +361,16 @@ class PeopleEntities:
 
     def authenticate(self, person_id: str, *, verifier=None, challenge: Any = None) -> dict:
         if verifier is None:
-            return {"person_id": person_id, "authenticated": False, "reason": "authentication_verifier_unavailable", "recognition_used_as_authentication": False}
+            return {"person_id": person_id, "authenticated": False, "reason": "authentication_verifier_unavailable", "recognition_used_as_authentication": False, "operational_permission": False}
         try:
             result = verifier.verify(person_id, challenge)
         except (AttributeError, RuntimeError, ValueError, OSError):
-            return {"person_id": person_id, "authenticated": False, "reason": "authentication_failed_closed", "recognition_used_as_authentication": False}
+            return {"person_id": person_id, "authenticated": False, "reason": "authentication_failed_closed", "recognition_used_as_authentication": False, "operational_permission": False}
         ok = bool(result.get("authenticated")) if isinstance(result, dict) else bool(result)
-        return {"person_id": person_id, "authenticated": ok, "result": deepcopy(result), "recognition_used_as_authentication": False, "operational_permission": False}
+        return {
+            "person_id": person_id, "authenticated": ok, "result": deepcopy(result),
+            "recognition_used_as_authentication": False, "operational_permission": False,
+        }
 
     def person_context(self, person_id: str, *, limit: int = 16) -> dict:
         """Recupera contexto pelo grafo pessoa→memory_entry, não por busca textual."""
@@ -299,7 +401,9 @@ class PeopleEntities:
             "status": "experimental-integrated", "namespace": self.knowledge.store.get_namespace(self.NAMESPACE),
             "addressable_contents": ADDRESSABLE_CONTENTS, "shared_graph": True, "shared_memory": True,
             "recognition_is_authentication": False, "profile_ingestion": True,
+            "preferences": True, "events": True, "consent_records": True, "contextual_trust": True,
             "identity_evidence_without_authentication": True, "raw_biometric_storage_by_default": False,
+            "biometric_templates_require_consent": True,
         }
 
     def handle(self, text: str) -> str | None:

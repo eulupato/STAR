@@ -22,6 +22,8 @@ from core.executive import Executive
 from core.internal_knowledge import StarInternalKnowledge
 from core.knowledge_packs import KnowledgePackManager
 from core.natural_interaction import NaturalInteraction
+from core.perception_runtime import PerceptionRuntime
+from core.person_auth import LocalPersonAuthenticator
 from core.physics_knowledge_150k import PhysicsKnowledgeEngine
 from core.chemistry_knowledge_500k import ChemistryKnowledgeEngine
 from core.multidisciplinary_knowledge import MultidisciplinaryKnowledgeEngine
@@ -88,6 +90,17 @@ def create_star():
         star.natural_interaction.active_person_name = person.get("name")
 
     star.people_entities.on_active_person = _sync_active_person
+
+    # Grupo 1: providers perceptivos reais continuam subordinados ao B25/B26.
+    # Nenhum deles roda captura contínua em background; câmera/tela/áudio são lazy.
+    star.perception_runtime = PerceptionRuntime(star)
+    star.mind.perception_runtime = star.perception_runtime
+    star.agents.attach_perception_runtime(star.perception_runtime)
+
+    # Autenticação é provider separado de reconhecimento. O arquivo local contém
+    # somente salt+hash scrypt; autenticar nunca concede permissão operacional.
+    star.person_authenticator = LocalPersonAuthenticator(ROOT / "runtime" / "security" / "person_credentials.json")
+    star.mind.person_authenticator = star.person_authenticator
 
     # BLOCO 32: manutenção bounded sobre os stores, memória e grafo oficiais.
     # Consolidação continua delegada ao B13 e nenhuma exclusão ocorre por padrão.
@@ -236,8 +249,10 @@ def main():
     print("🔄 Cognição integrada: FAST/DELIBERATIVE + posição cognitiva")
     print(
         "💬 Interação natural: ATIVA | contexto multi-turn bounded | "
-        f"modelo local={natural_stats['local_llm_model']} (opcional/lazy)"
+        f"modelo local={natural_stats['local_llm_model']} (autodetectável/opcional/lazy)"
     )
+    print("👁️ Percepção Grupo 1: B25 conectado | visão/tela/áudio lazy | nenhum polling contínuo")
+    print("🔐 Autenticação de pessoas: challenge local separado de reconhecimento; permissão=NÃO")
     print("🧹 Manutenção cognitiva B32: BOUNDED/ON-DEMAND")
     print("🛡️ Limites de autonomia B33: B01 BOUNDARY / DEFAULT DENY")
     print(
