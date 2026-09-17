@@ -152,6 +152,12 @@ class CodeLab:
     SAFE_MODULES = {"math", "statistics", "random", "json", "re", "itertools", "functools", "collections", "decimal", "fractions"}
     FORBIDDEN_NAMES = {"open", "exec", "eval", "compile", "input", "globals", "locals", "vars", "getattr", "setattr", "delattr", "__import__", "breakpoint", "help", "dir", "memoryview"}
 
+    def __init__(self, sandbox=None):
+        if sandbox is None:
+            from core.guardian_services import ContainerSandbox
+            sandbox = ContainerSandbox()
+        self.sandbox = sandbox
+
     def validate(self, code: str) -> dict:
         code = str(code)
         if len(code) > 50_000:
@@ -196,6 +202,26 @@ exec(compile(code,"<star-codelab>","exec"), {"__builtins__":_SAFE})
             return {"ok": proc.returncode == 0, "stdout": proc.stdout[-20000:], "stderr": proc.stderr[-20000:], "returncode": proc.returncode, "timed_out": False}
         except subprocess.TimeoutExpired as exc:
             return {"ok": False, "stdout": (exc.stdout or "")[-20000:] if isinstance(exc.stdout, str) else "", "stderr": "tempo limite excedido", "returncode": None, "timed_out": True}
+
+    def run_sandboxed(self, code: str, *, timeout: float = 5.0) -> dict:
+        """Executa somente em container real; nunca cai silenciosamente no host."""
+        validation = self.validate(code)
+        if not validation["ok"]:
+            return {
+                "ok": False, "available": bool(getattr(self.sandbox, "available", False)),
+                "reason": "validation_failed", "stdout": "",
+                "stderr": "\\n".join(validation["errors"]), "returncode": None,
+            }
+        return self.sandbox.run_python(code, timeout=timeout)
+
+    def stats(self) -> dict:
+        sandbox_stats = self.sandbox.stats() if self.sandbox is not None else {"available": False}
+        return {
+            "restricted_host_runner": True,
+            "os_grade_sandbox": bool(sandbox_stats.get("available")),
+            "sandbox": sandbox_stats,
+            "host_runner_is_security_boundary": False,
+        }
 
 
 @dataclass(frozen=True)
