@@ -37,7 +37,8 @@ MODULES = [
     "core.learning_evolution", "core.knowledge_integration", "core.global_workspace", "core.mind_loop",
     "core.multimodal_perception", "core.people_entities", "core.body_proprioception", "core.cognitive_integration",
     "core.block_knowledge_catalog", "core.cognitive_maintenance", "core.autonomy_limits",
-    "core.cfc_benchmark", "core.consciousness_frontier",
+    "core.cfc_benchmark", "core.consciousness_frontier", "core.os_sandbox",
+    "core.security_agent", "core.home_automation", "core.personal_integrations",
 ]
 
 
@@ -121,6 +122,11 @@ def main():
     b34_stats = star.cfc.stats()
     b35_stats = star.cfc97.stats()
     b36_stats = star.consciousness_frontier.stats()
+    sandbox_stats = star.os_sandbox.stats()
+    cure_stats = star.cure.stats()
+    security_stats = star.security_agent.stats()
+    home_stats = star.home_automation.stats()
+    personal_stats = star.personal_integrations.stats()
     capacity_contract = star.cognitive_maintenance.capacity_contract()
 
     checks = [
@@ -201,6 +207,15 @@ def main():
         ("B36 consciência = 1B", b36_stats.get("catalog", {}).get("addressable_contents") == 1_000_000_000),
         ("B36 sem autoafirmação", b36_stats.get("automatic_consciousness_claim") is False),
         ("B36 consciência STAR não estabelecida", b36_stats.get("self_consciousness_status") == "not_established"),
+        ("Grupo 4 sandbox fail-closed", sandbox_stats.get("fail_closed") is True),
+        ("Grupo 4 CodeLab usa sandbox único", star.mind.code.sandbox is star.os_sandbox),
+        ("Grupo 4 CURA sem auto-modificação", cure_stats.get("automatic_repo_modification") is False),
+        ("Grupo 4 CURA exige gate de mutação", cure_stats.get("explicit_mutation_gate") is True),
+        ("Grupo 4 Security read-only", security_stats.get("automatic_remediation") is False),
+        ("Grupo 4 Home confirmação 2 etapas", home_stats.get("two_step_confirmation") is True),
+        ("Grupo 4 Home sem locks/alarmes", home_stats.get("locks_alarms_security_devices") is False),
+        ("Grupo 4 integrações sem envio automático", personal_stats.get("automatic_sending") is False),
+        ("Grupo 4 integrações confirmação 2 etapas", personal_stats.get("two_step_confirmation") is True),
         ("voz temática = 1000000", voice_theme_stats.get("variations") == 1000000),
         ("idiomas = 5 famílias", language_stats.get("language_families") == 5),
         ("perfis de idioma = 6", language_stats.get("locale_profiles") == 6),
@@ -248,6 +263,13 @@ def main():
     print(f"🧪 B34 CFC: {b34_stats.get('catalog', {}).get('addressable_contents', 0)} situações | {len(b34_stats.get('dimensions', ())) } dimensões | auto-score=NÃO")
     print(f"🎯 B35 CFC-97: target={b35_stats.get('target')} | blocos 1B registrados={b35_stats.get('registered_1b_blocks', 0)}/36 | certificado=NÃO")
     print(f"🧠 B36 Consciência: {b36_stats.get('catalog', {}).get('addressable_contents', 0)} conteúdos de pesquisa | STAR={b36_stats.get('self_consciousness_status')}")
+    print(
+        "🛡️ Grupo 4 Guardian: "
+        f"sandbox={'ATIVO' if sandbox_stats.get('ready') else 'INDISPONÍVEL/FAIL-CLOSED'} | "
+        "CURA auto-modificação=NÃO | Security read-only=SIM | "
+        f"Home={'CONFIGURADO' if home_stats.get('configured') else 'provider opcional'} | "
+        f"integrações pessoais drafts={personal_stats.get('drafts_pending', 0)}"
+    )
     print(f"🌐 Idiomas: {language_stats.get('language_families', 0)} famílias / {language_stats.get('locale_profiles', 0)} perfis | {language_stats.get('total_semantic_contents', 0)} conteúdos de expressão")
     neural_stats = localization_stats.get("neural", {})
     print(
