@@ -16,6 +16,7 @@ from html.parser import HTMLParser
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 import requests
@@ -141,6 +142,7 @@ def main() -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("status")
     sub.add_parser("catalog")
+    sub.add_parser("install-reader")
     download_parser = sub.add_parser("download-wikipedia")
     download_parser.add_argument("profile", choices=tuple(PROFILES))
     import_parser = sub.add_parser("import-facts")
@@ -158,6 +160,15 @@ def main() -> int:
             "target_per_category": 1_000_000_000,
         }, ensure_ascii=False, indent=2))
         return 0
+
+    if args.command == "install-reader":
+        command = [sys.executable, "-m", "pip", "install", "libzim>=3.13,<4"]
+        print(json.dumps({
+            "explicit_install": True,
+            "package": "libzim>=3.13,<4",
+            "purpose": "leitura/busca local de arquivos ZIM",
+        }, ensure_ascii=False, indent=2))
+        return subprocess.call(command)
 
     if args.command == "download-wikipedia":
         url, filename = resolve_latest(args.profile)
