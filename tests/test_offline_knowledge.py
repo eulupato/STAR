@@ -2,6 +2,7 @@ import json
 
 from core.executive import Executive
 from core.knowledge_research_documents import RealKnowledgeMaterializer
+from core.physics_knowledge_150k import PhysicsKnowledgeEngine
 from core.offline_knowledge import BILLION, CATEGORY_SOURCES, OfflineKnowledgeService
 from database.cognitive_store import CognitiveStore
 
@@ -71,6 +72,12 @@ def test_executive_uses_offline_knowledge_before_legacy_matchers():
     answer = executive.execute({"input": "Qual a capital de Testelândia?"}, {"mode": "FAST"})
     assert "Cidade Teste" in answer
     assert "RESPOSTA ERRADA" not in answer
+
+
+def test_physics_does_not_hijack_ambiguous_quanto_e_uma_acao():
+    physics = PhysicsKnowledgeEngine()
+    assert physics.match("Quanto é uma ação?") is None
+    assert physics.match("Quanto é a velocidade da luz?") is not None
 
 
 def test_seed_file_has_one_sourced_fact_for_every_category():
