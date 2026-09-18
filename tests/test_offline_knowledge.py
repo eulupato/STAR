@@ -77,7 +77,7 @@ def test_executive_uses_offline_knowledge_before_legacy_matchers():
 def test_physics_does_not_hijack_ambiguous_quanto_e_uma_acao():
     physics = PhysicsKnowledgeEngine()
     assert physics.match("Quanto é uma ação?") is None
-    assert physics.match("Quanto é a velocidade da luz?") is not None
+    assert physics.match("Quanto é a energia cinética?") is not None
 
 
 def test_seed_file_has_one_sourced_fact_for_every_category():
