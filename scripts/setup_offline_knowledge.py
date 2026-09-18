@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 from html.parser import HTMLParser
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -88,7 +89,38 @@ def download(url: str, destination: Path) -> dict:
                 stream.write(chunk)
                 written += len(chunk)
     partial.replace(destination)
-    return {"path": str(destination), "bytes": written, "url": url}
+
+    verified = False
+    expected = actual = None
+    try:
+        checksum_response = requests.get(url + ".sha256", timeout=30)
+        if checksum_response.status_code == 200:
+            match = re.search(r"\b([a-fA-F0-9]{64})\b", checksum_response.text)
+            if match:
+                expected = match.group(1).casefold()
+                digest = hashlib.sha256()
+                with destination.open("rb") as stream:
+                    while True:
+                        block = stream.read(8 * 1024 * 1024)
+                        if not block:
+                            break
+                        digest.update(block)
+                actual = digest.hexdigest()
+                if actual != expected:
+                    destination.unlink(missing_ok=True)
+                    raise RuntimeError("SHA-256 do ZIM não corresponde ao checksum oficial")
+                verified = True
+    except requests.RequestException:
+        pass
+
+    return {
+        "path": str(destination),
+        "bytes": written,
+        "url": url,
+        "sha256_verified": verified,
+        "sha256_expected": expected,
+        "sha256_actual": actual,
+    }
 
 
 def import_normalized_facts(path: Path) -> dict:
