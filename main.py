@@ -292,6 +292,7 @@ def main():
     natural_stats = star.natural_interaction.stats()
     body_stats = star.body_proprioception.stats()
     group3_stats = star.group3.stats()
+    real_knowledge_stats = group3_stats.get("real_knowledge", {})
     sandbox_stats = star.os_sandbox.stats()
     home_stats = star.home_automation.stats()
     personal_stats = star.personal_integrations.stats()
@@ -304,6 +305,11 @@ def main():
     print(f"🚀 Knowledge PLUS: +{plus_stats['added_content_variations_per_domain']} por domínio | +{plus_stats['added_content_variations']} novos | {plus_stats['combined_content_variations']} conteúdos de conhecimento combinados")
     print(f"🧬 Currículo canônico: {curriculum_stats['themes']} temas | {curriculum_stats['unique_concepts']} conceitos únicos | {curriculum_stats['deduplicated_mentions']} menções duplicadas consolidadas | {curriculum_stats['total_new_addressable_contents']} conteúdos endereçáveis")
     print(f"🧠 STAR MIND alpha: {mind_stats['capabilities']} capacidades | {mind_stats['canonical_nodes_total']} nós cognitivos | {mind_stats['support_contents_total']} conteúdos operacionais endereçáveis")
+    print(
+        "🧱 Conhecimento real materializado: "
+        f"{real_knowledge_stats.get('materialized_real_total', 0)} registros físicos | "
+        "meta=1.000.000.000 por namespace | variações lógicas não contam"
+    )
     print("🔄 Cognição integrada: FAST/DELIBERATIVE + posição cognitiva")
     print(f"💬 Interação natural: ATIVA | contexto multi-turn bounded | modelo local={natural_stats['local_llm_model']} (autodetectável/opcional/lazy)")
     print("👁️ Percepção Grupo 1: B25 conectado | visão/tela/áudio lazy | nenhum polling contínuo")

@@ -10,6 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
+import bz2
+import gzip
 import json
 import math
 import os
@@ -666,6 +668,262 @@ class IntelligentProactiveScheduler(ProactiveScheduler):
         return data
 
 
+_REAL_KNOWLEDGE_SCHEMA = (
+    """CREATE TABLE IF NOT EXISTS star_real_knowledge_namespaces (
+        namespace TEXT PRIMARY KEY,
+        target_count INTEGER NOT NULL,
+        materialized_count INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'empty',
+        updated_at TEXT NOT NULL
+    )""",
+    """CREATE TABLE IF NOT EXISTS star_real_knowledge_sources (
+        source_id TEXT PRIMARY KEY,
+        namespace TEXT NOT NULL,
+        source_path TEXT NOT NULL,
+        source_format TEXT NOT NULL,
+        source_type TEXT NOT NULL,
+        license TEXT NOT NULL,
+        sha256 TEXT NOT NULL,
+        size_bytes INTEGER NOT NULL,
+        record_count INTEGER NOT NULL,
+        registered_at TEXT NOT NULL,
+        metadata_json TEXT NOT NULL DEFAULT '{}',
+        UNIQUE(namespace, sha256)
+    )""",
+    "CREATE INDEX IF NOT EXISTS idx_star_real_knowledge_namespace ON star_real_knowledge_sources(namespace)",
+)
+
+
+class RealKnowledgeMaterializer:
+    """Ledger físico de conteúdo real, sem converter capacidade lógica em fatos.
+
+    Um namespace só pode declarar 1B quando a soma de registros físicos únicos
+    registrados naquele namespace alcançar 1_000_000_000. O conteúdo continua
+    nos dumps locais; o star.db guarda apenas proveniência, checksum e contagem.
+    """
+
+    TARGET_PER_NAMESPACE = 1_000_000_000
+    SUPPORTED_FORMATS = {
+        "jsonl", "ndjson", "ntriples", "nt", "text-lines", "wikidata-json",
+    }
+
+    def __init__(self, *, target_per_namespace: int = TARGET_PER_NAMESPACE):
+        self.target_per_namespace = int(target_per_namespace)
+        if self.target_per_namespace != self.TARGET_PER_NAMESPACE:
+            raise ValueError("o alvo real por namespace deve permanecer em 1.000.000.000")
+        with engine.begin() as conn:
+            for ddl in _REAL_KNOWLEDGE_SCHEMA:
+                conn.execute(text(ddl))
+
+    @staticmethod
+    def _namespace(value: str) -> str:
+        namespace = re.sub(r"[^a-z0-9_.-]+", "_", str(value or "").strip().casefold()).strip("_.-")
+        if not namespace:
+            raise ValueError("namespace vazio")
+        if len(namespace) > 80:
+            raise ValueError("namespace acima de 80 caracteres")
+        return namespace
+
+    @staticmethod
+    def _open_text(path: Path):
+        suffix = path.suffix.casefold()
+        if suffix == ".gz":
+            return gzip.open(path, "rt", encoding="utf-8", errors="replace")
+        if suffix == ".bz2":
+            return bz2.open(path, "rt", encoding="utf-8", errors="replace")
+        return path.open("rt", encoding="utf-8", errors="replace")
+
+    @staticmethod
+    def _sha256(path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as stream:
+            while True:
+                chunk = stream.read(8 * 1024 * 1024)
+                if not chunk:
+                    break
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    @classmethod
+    def _valid_record(cls, line: str, source_format: str) -> bool:
+        value = line.strip()
+        if not value or value in {"[", "]"}:
+            return False
+        if source_format in {"ntriples", "nt"}:
+            return value.endswith(".") and value.startswith("<")
+        if source_format == "wikidata-json":
+            return value.startswith("{") and value.rstrip(",").endswith("}")
+        if source_format in {"jsonl", "ndjson"}:
+            try:
+                item = json.loads(value.rstrip(","))
+            except json.JSONDecodeError:
+                return False
+            return isinstance(item, dict) and bool(item)
+        return bool(value)
+
+    @classmethod
+    def _count_records(cls, path: Path, source_format: str) -> int:
+        count = 0
+        with cls._open_text(path) as stream:
+            for line in stream:
+                if cls._valid_record(line, source_format):
+                    count += 1
+        return count
+
+    def _refresh_namespace(self, namespace: str) -> dict:
+        namespace = self._namespace(namespace)
+        with engine.begin() as conn:
+            total = int(conn.execute(text(
+                "SELECT COALESCE(SUM(record_count),0) FROM star_real_knowledge_sources WHERE namespace=:ns"
+            ), {"ns": namespace}).scalar_one())
+            status = "complete" if total >= self.target_per_namespace else ("partial" if total else "empty")
+            conn.execute(text("""
+                INSERT INTO star_real_knowledge_namespaces(namespace,target_count,materialized_count,status,updated_at)
+                VALUES (:ns,:target,:count,:status,:now)
+                ON CONFLICT(namespace) DO UPDATE SET
+                  target_count=excluded.target_count,
+                  materialized_count=excluded.materialized_count,
+                  status=excluded.status,
+                  updated_at=excluded.updated_at
+            """), {
+                "ns": namespace, "target": self.target_per_namespace, "count": total,
+                "status": status, "now": _now(),
+            })
+        return self.status(namespace)
+
+    def register_source(
+        self,
+        namespace: str,
+        path: str | Path,
+        *,
+        source_format: str,
+        source_type: str,
+        license_name: str,
+        metadata: dict | None = None,
+    ) -> dict:
+        namespace = self._namespace(namespace)
+        source_format = str(source_format or "").strip().casefold()
+        if source_format not in self.SUPPORTED_FORMATS:
+            raise ValueError(f"formato não suportado: {source_format}")
+        source_type = _clean(source_type)
+        license_name = _clean(license_name)
+        if not source_type or not license_name:
+            raise ValueError("source_type e license_name são obrigatórios")
+        path = Path(path).expanduser().resolve()
+        if not path.is_file():
+            raise FileNotFoundError(path)
+
+        checksum = self._sha256(path)
+        with engine.connect() as conn:
+            existing = conn.execute(text("""
+                SELECT source_id,record_count FROM star_real_knowledge_sources
+                WHERE namespace=:ns AND sha256=:sha
+            """), {"ns": namespace, "sha": checksum}).mappings().first()
+        if existing:
+            state = self._refresh_namespace(namespace)
+            return {
+                "registered": False,
+                "duplicate_source": True,
+                "source_id": existing["source_id"],
+                "record_count": int(existing["record_count"]),
+                "namespace_status": state,
+            }
+
+        record_count = self._count_records(path, source_format)
+        if record_count <= 0:
+            raise ValueError("fonte sem registros válidos")
+        source_id = "RKS-" + hashlib.sha256(
+            f"{namespace}\n{checksum}\n{source_format}".encode("utf-8")
+        ).hexdigest()[:24].upper()
+        payload = dict(metadata or {})
+        payload.update({
+            "local_source": True,
+            "synthetic": False,
+            "logical_variations_counted": False,
+            "provenance_required": True,
+        })
+        with engine.begin() as conn:
+            conn.execute(text("""
+                INSERT INTO star_real_knowledge_sources(
+                    source_id,namespace,source_path,source_format,source_type,license,
+                    sha256,size_bytes,record_count,registered_at,metadata_json
+                ) VALUES (
+                    :id,:ns,:path,:format,:type,:license,:sha,:size,:count,:now,:meta
+                )
+            """), {
+                "id": source_id, "ns": namespace, "path": str(path),
+                "format": source_format, "type": source_type, "license": license_name,
+                "sha": checksum, "size": path.stat().st_size, "count": record_count,
+                "now": _now(), "meta": json.dumps(payload, ensure_ascii=False, sort_keys=True),
+            })
+        state = self._refresh_namespace(namespace)
+        return {
+            "registered": True,
+            "duplicate_source": False,
+            "source_id": source_id,
+            "record_count": record_count,
+            "sha256": checksum,
+            "namespace_status": state,
+        }
+
+    def status(self, namespace: str | None = None) -> dict:
+        with engine.connect() as conn:
+            if namespace is not None:
+                ns = self._namespace(namespace)
+                row = conn.execute(text("""
+                    SELECT namespace,target_count,materialized_count,status,updated_at
+                    FROM star_real_knowledge_namespaces WHERE namespace=:ns
+                """), {"ns": ns}).mappings().first()
+                if row is None:
+                    return {
+                        "namespace": ns,
+                        "target_count": self.target_per_namespace,
+                        "materialized_real_count": 0,
+                        "status": "empty",
+                        "billion_claim_allowed": False,
+                        "remaining": self.target_per_namespace,
+                    }
+                data = dict(row)
+                count = int(data.pop("materialized_count"))
+                target = int(data["target_count"])
+                return {
+                    **data,
+                    "materialized_real_count": count,
+                    "remaining": max(0, target - count),
+                    "billion_claim_allowed": count >= target,
+                }
+
+            rows = conn.execute(text("""
+                SELECT namespace,target_count,materialized_count,status,updated_at
+                FROM star_real_knowledge_namespaces ORDER BY namespace
+            """)).mappings().all()
+            source_count = int(conn.execute(text(
+                "SELECT COUNT(*) FROM star_real_knowledge_sources"
+            )).scalar_one())
+        namespaces = []
+        total = 0
+        for row in rows:
+            count = int(row["materialized_count"])
+            target = int(row["target_count"])
+            total += count
+            namespaces.append({
+                "namespace": row["namespace"],
+                "target_count": target,
+                "materialized_real_count": count,
+                "remaining": max(0, target - count),
+                "status": row["status"],
+                "billion_claim_allowed": count >= target,
+                "updated_at": row["updated_at"],
+            })
+        return {
+            "target_per_namespace": self.target_per_namespace,
+            "materialized_real_total": total,
+            "registered_sources": source_count,
+            "namespaces": namespaces,
+            "counting_policy": "physical unique source records only; no synthetic/addressable variations",
+        }
+
+
 class Group3KnowledgeServices:
     """Ponto de integração fino do Grupo 3 sobre MIND/RAG/growth já existentes."""
 
@@ -676,6 +934,7 @@ class Group3KnowledgeServices:
         self.updater = SafeKnowledgeUpdater(growth, web=self.web)
         self.files = SemanticFileSearch(extractor=self.extractor)
         self.dictionaries = OfflineDictionaryMaterializer()
+        self.real_knowledge = RealKnowledgeMaterializer()
         self.network_enabled_provider = network_enabled_provider or (lambda: False)
 
     def _network_enabled(self) -> bool:
@@ -700,6 +959,18 @@ class Group3KnowledgeServices:
                 f"dicionário completo={'MATERIALIZADO' if dictionary['ready'] else 'AGUARDANDO DUMPS LOCAIS'}; "
                 "atualização automática=EVIDÊNCIA APPEND-ONLY, sem promoção canônica automática."
             )
+        if low in {"status conhecimento real", "status conhecimento materializado", "status 1b real"}:
+            item = self.real_knowledge.status()
+            if not item["namespaces"]:
+                return (
+                    "🧠 Conhecimento real materializado: 0 registros físicos. "
+                    "Meta=1.000.000.000 por namespace; nenhuma variação lógica conta como conteúdo real."
+                )
+            lines = [
+                f"{x['namespace']}: {x['materialized_real_count']}/{x['target_count']} ({x['status']})"
+                for x in item["namespaces"]
+            ]
+            return "🧠 Conhecimento real materializado:\n" + "\n".join(lines)
         if low in {"status dicionario offline", "status dicionário offline", "status dos dicionarios offline", "status dos dicionários offline"}:
             item = self.dictionaries.status()
             return f"📖 Dicionários offline: {'prontos' if item['ready'] else 'não materializados'} | relações={item['translation_rows']} | banco={item['database']}"
@@ -756,5 +1027,6 @@ class Group3KnowledgeServices:
             "documents": self.extractor.stats(),
             "semantic_files": self.files.status(),
             "dictionaries": self.dictionaries.status(),
+            "real_knowledge": self.real_knowledge.status(),
             "automatic_knowledge_update": {"append_only": True, "canonical_promotion": False, "multi_source_required": True},
         }
