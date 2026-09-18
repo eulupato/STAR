@@ -501,7 +501,43 @@ class OfflineKnowledgeService:
         )
         return {"seeded": True, "accepted": accepted}
 
+    @staticmethod
+    def _retrieval_query_allowed(query: str) -> bool:
+        raw = " ".join(str(query or "").strip().split())
+        low = raw.casefold()
+        if not low:
+            return False
+        # Follow-ups como "E o segundo?" pertencem à continuidade conversacional,
+        # não ao retrieval lexical. Sem este gate, "segundo" pode casar com
+        # "metros por segundo" e sequestrar a conversa.
+        if re.match(
+            r"^(?:e\s+)?(?:o|a|os|as)\s+"
+            r"(?:primeir[oa]s?|segund[oa]s?|terceir[oa]s?|próxim[oa]s?|proxim[oa]s?|anterior(?:es)?)\b",
+            low,
+        ):
+            return False
+        words = re.findall(r"[\wÀ-ÿ]+", low)
+        referential = {"isso", "isto", "esse", "essa", "esses", "essas", "ele", "ela", "aquilo", "aquele", "aquela"}
+        if len(words) <= 5 and any(word in referential for word in words):
+            return False
+        meaningful = [
+            word for word in words
+            if word not in {
+                "a","o","as","os","um","uma","de","da","do","das","dos","em","no","na",
+                "e","que","qual","quem","como","onde","quando","me","diga","explique","sobre","é","star",
+            }
+        ]
+        if len(meaningful) >= 2:
+            return True
+        explicit_single = re.match(
+            r"^(?:star[, ]+)?(?:o que é|o que e|quem é|quem e|defina|explique|o que significa)\s+\S+",
+            low,
+        )
+        return bool(explicit_single)
+
     def search(self, query: str, *, limit: int = 5) -> list[dict]:
+        if not self._retrieval_query_allowed(query):
+            return []
         facts = self.store.search_facts(query, limit=limit)
         strong = [x for x in facts if float(x.get("confidence", 0)) >= 0.72 and float(x.get("query_overlap", 0)) >= 0.45]
         if strong:
