@@ -15,6 +15,7 @@ class Executive:
         knowledge_expansion=None,
         curriculum_knowledge=None,
         cognitive_integration=None,
+        offline_knowledge=None,
     ):
         self.model_manager = model_manager
         self.internal_knowledge = internal_knowledge
@@ -25,6 +26,7 @@ class Executive:
         self.knowledge_expansion = knowledge_expansion
         self.curriculum_knowledge = curriculum_knowledge
         self.cognitive_integration = cognitive_integration
+        self.offline_knowledge = offline_knowledge
         self.natural_interaction = None
         self.last_cognitive_position = None
 
@@ -78,6 +80,17 @@ class Executive:
             answer = self.internal_knowledge.answer(text)
             if answer:
                 return finish(answer, "internal_knowledge")
+
+        # Conhecimento offline real/enciclopédico vem antes dos matchers temáticos
+        # legados. Isso evita que uma coincidência lexical fraca em Física/PLUS
+        # sequestre uma pergunta factual simples.
+        if self.offline_knowledge is not None:
+            try:
+                answer = self.offline_knowledge.answer(text)
+            except (OSError, RuntimeError, TypeError, ValueError):
+                answer = None
+            if answer:
+                return finish(answer, "offline_knowledge")
 
         # Quando a própria consulta pede profundidade/pesquisa/benchmark/dados,
         # a camada PLUS pode responder antes. Isso preserva o comportamento já

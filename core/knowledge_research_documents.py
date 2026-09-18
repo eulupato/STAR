@@ -770,6 +770,30 @@ class RealKnowledgeMaterializer:
                     count += 1
         return count
 
+    def ensure_namespaces(self, namespaces) -> dict:
+        created = existing = 0
+        now = _now()
+        with engine.begin() as conn:
+            for raw in namespaces:
+                namespace = self._namespace(raw)
+                row = conn.execute(text(
+                    "SELECT namespace FROM star_real_knowledge_namespaces WHERE namespace=:ns"
+                ), {"ns": namespace}).first()
+                if row:
+                    existing += 1
+                    continue
+                conn.execute(text("""
+                    INSERT INTO star_real_knowledge_namespaces(
+                        namespace,target_count,materialized_count,status,updated_at
+                    ) VALUES (:ns,:target,0,'empty',:now)
+                """), {"ns": namespace, "target": self.target_per_namespace, "now": now})
+                created += 1
+        return {
+            "created": created,
+            "existing": existing,
+            "target_per_namespace": self.target_per_namespace,
+        }
+
     def _refresh_namespace(self, namespace: str) -> dict:
         namespace = self._namespace(namespace)
         with engine.begin() as conn:
