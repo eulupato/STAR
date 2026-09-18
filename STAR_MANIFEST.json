@@ -686,6 +686,28 @@
       "runtime_status_field": "materialized_real_count",
       "completion_rule": "complete only when materialized_real_count >= 1000000000",
       "truthfulness_note": "1B só pode ser declarado quando 1.000.000.000 registros físicos reais estiverem materializados localmente no namespace"
+    },
+    "offline_knowledge": {
+      "status": "integrated-local-first",
+      "engine": "core/offline_knowledge.py",
+      "setup": "scripts/setup_offline_knowledge.py",
+      "categories": 34,
+      "target_per_category": 1000000000,
+      "target_is_physical_goal": true,
+      "logical_variations_count_as_real": false,
+      "built_in_seed": "knowledge/offline_core_facts.jsonl",
+      "factual_index": "cognitive_facts + FTS5",
+      "encyclopedia": {
+        "format": "ZIM",
+        "provider": "Kiwix/OpenZIM",
+        "reader": "python-libzim preferred; kiwix-serve fallback",
+        "runtime_internet_required": false,
+        "automatic_download": false,
+        "default_directory": "runtime/knowledge/zim"
+      },
+      "routing": "offline factual/encyclopedic retrieval before legacy thematic matchers",
+      "source_policy": "specialized authoritative sources preferred; Wikipedia/Wikidata used as broad secondary/structured coverage",
+      "billion_completion_rule": "only physical unique records count; no synthetic padding"
     }
   },
   "group4_guardian_security_integrations": {
