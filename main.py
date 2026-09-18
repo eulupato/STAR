@@ -28,6 +28,7 @@ from core.knowledge_packs import KnowledgePackManager
 from core.knowledge_research_documents import Group3KnowledgeServices, IntelligentProactiveScheduler
 from core.natural_interaction import NaturalInteraction
 from core.os_sandbox import OSSandbox
+from core.offline_knowledge import OfflineKnowledgeService
 from core.perception_runtime import PerceptionRuntime
 from core.personal_integrations import PersonalIntegrations
 from core.person_auth import LocalPersonAuthenticator
@@ -129,6 +130,16 @@ def create_star():
     )
     star.mind.rag = star.group3.rag
     star.mind.group3 = star.group3
+
+    # Conhecimento real offline: reutiliza o mesmo EpistemicStore/CognitiveStore e
+    # o ledger físico do Grupo 3. A consulta factual ocorre antes dos matchers
+    # temáticos legados, e Kiwix/ZIM é usado apenas localmente quando instalado.
+    star.offline_knowledge = OfflineKnowledgeService(
+        star.mind.store,
+        real_materializer=star.group3.real_knowledge,
+    )
+    star.mind.offline_knowledge = star.offline_knowledge
+    executive.offline_knowledge = star.offline_knowledge
 
     # Grupo 4: o CodeLab preserva o runner restrito legado, mas código não
     # confiável só usa run_sandboxed quando um backend real já está disponível.
@@ -293,6 +304,7 @@ def main():
     body_stats = star.body_proprioception.stats()
     group3_stats = star.group3.stats()
     real_knowledge_stats = group3_stats.get("real_knowledge", {})
+    offline_knowledge_stats = star.offline_knowledge.stats()
     sandbox_stats = star.os_sandbox.stats()
     home_stats = star.home_automation.stats()
     personal_stats = star.personal_integrations.stats()
@@ -309,6 +321,11 @@ def main():
         "🧱 Conhecimento real materializado: "
         f"{real_knowledge_stats.get('materialized_real_total', 0)} registros físicos | "
         "meta=1.000.000.000 por namespace | variações lógicas não contam"
+    )
+    print(
+        f"📚 Conhecimento offline: {offline_knowledge_stats['categories']} categorias registradas | "
+        f"Kiwix={'ATIVO' if offline_knowledge_stats['kiwix']['available'] else 'OPCIONAL/NÃO INSTALADO'} | "
+        "fatos locais indexados antes dos matchers legados"
     )
     print("🔄 Cognição integrada: FAST/DELIBERATIVE + posição cognitiva")
     print(f"💬 Interação natural: ATIVA | contexto multi-turn bounded | modelo local={natural_stats['local_llm_model']} (autodetectável/opcional/lazy)")
