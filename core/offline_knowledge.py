@@ -17,6 +17,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import threading
 import time
 import xml.etree.ElementTree as ET
 
@@ -286,6 +287,14 @@ class KiwixOfflineEncyclopedia:
         self.port = int(os.getenv("STAR_KIWIX_PORT", "8767"))
         self._process: subprocess.Popen | None = None
         self._base = f"http://127.0.0.1:{self.port}"
+        self._lock = threading.RLock()
+        self._archives = {}
+        try:
+            from libzim.reader import Archive
+            from libzim.search import Query, Searcher
+            self._libzim = (Archive, Query, Searcher)
+        except ImportError:
+            self._libzim = None
         atexit.register(self.stop)
 
     @property
@@ -296,7 +305,7 @@ class KiwixOfflineEncyclopedia:
 
     @property
     def available(self) -> bool:
-        return bool(self.executable and self.zim_files)
+        return bool(self.zim_files and (self._libzim is not None or self.executable))
 
     def _healthy(self) -> bool:
         try:
@@ -348,9 +357,50 @@ class KiwixOfflineEncyclopedia:
         except subprocess.TimeoutExpired:
             process.kill()
 
+    def _search_libzim(self, query: str, limit: int) -> list[dict]:
+        if self._libzim is None:
+            return []
+        Archive, Query, Searcher = self._libzim
+        results = []
+        with self._lock:
+            for zim_path in self.zim_files:
+                try:
+                    archive = self._archives.get(str(zim_path))
+                    if archive is None:
+                        archive = Archive(str(zim_path))
+                        self._archives[str(zim_path)] = archive
+                    search = Searcher(archive).search(Query().set_query(query))
+                    paths = list(search.getResults(0, max(1, min(limit, 10))))
+                    for path in paths:
+                        entry = archive.get_entry_by_path(str(path))
+                        payload = bytes(entry.get_item().content).decode("utf-8", errors="replace")
+                        extractor = _TextExtractor()
+                        extractor.feed(payload)
+                        text_value = extractor.text()
+                        if len(text_value) < 80:
+                            continue
+                        results.append({
+                            "content": text_value[:4000],
+                            "source": f"zim-local:{zim_path.name}:{path}",
+                            "source_type": "offline_encyclopedia",
+                            "confidence": 0.82,
+                            "local_only": True,
+                            "backend": "python-libzim",
+                        })
+                        if len(results) >= limit:
+                            return results
+                except (KeyError, OSError, RuntimeError, ValueError):
+                    continue
+        return results
+
     def search(self, query: str, *, limit: int = 3) -> list[dict]:
         query = " ".join(str(query or "").split())
-        if not query or not self.start():
+        if not query:
+            return []
+        direct = self._search_libzim(query, limit)
+        if direct:
+            return direct
+        if not self.start():
             return []
         try:
             response = requests.get(
@@ -398,10 +448,12 @@ class KiwixOfflineEncyclopedia:
     def stats(self) -> dict:
         return {
             "available": self.available,
+            "backend": "python-libzim" if self._libzim is not None else ("kiwix-serve" if self.executable else None),
+            "python_libzim": self._libzim is not None,
             "kiwix_serve": self.executable,
             "zim_dir": str(self.zim_dir),
             "zim_files": len(self.zim_files),
-            "runtime_network": "loopback-only",
+            "runtime_network": "none" if self._libzim is not None else "loopback-only",
         }
 
 
