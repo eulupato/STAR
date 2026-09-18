@@ -25,6 +25,12 @@ def test_offline_seed_answers_capital_of_brazil():
     assert "Brasília" in answer
 
 
+def test_anaphoric_ordinal_followup_does_not_trigger_fact_retrieval():
+    store = CognitiveStore()
+    service = OfflineKnowledgeService(store, real_materializer=RealKnowledgeMaterializer())
+    assert service.search("E o segundo?") == []
+
+
 def test_offline_fact_search_prefers_full_query_overlap():
     store = CognitiveStore()
     store.ingest_facts("geography", [{
