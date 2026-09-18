@@ -317,7 +317,7 @@ class KiwixOfflineEncyclopedia:
     def start(self) -> bool:
         if self._healthy():
             return True
-        if not self.available:
+        if not self.executable or not self.zim_files:
             return False
         command = [
             str(self.executable),
