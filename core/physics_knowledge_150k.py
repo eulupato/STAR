@@ -141,6 +141,19 @@ class PhysicsKnowledgeEngine(BasePhysicsKnowledgeEngine):
         if not query_tokens:
             query_tokens = set(q.split())
 
+        # Perguntas quantitativas curtas não devem virar Física só porque uma
+        # palavra isolada também é um termo técnico (ex.: "quanto é uma ação?").
+        # Grandezas físicas explícitas continuam permitidas.
+        if q.startswith("quanto e "):
+            semantic_tokens = {t for t in query_tokens if t != "quanto"}
+            physics_markers = {
+                "fisica", "mecanica", "quantica", "energia", "forca", "potencia",
+                "velocidade", "aceleracao", "massa", "campo", "onda", "particula",
+                "temperatura", "pressao", "frequencia", "momento", "luz",
+            }
+            if len(semantic_tokens) <= 1 and not (semantic_tokens & physics_markers):
+                return None
+
         best = None
         best_score = 0.0
         best_specificity = -1
