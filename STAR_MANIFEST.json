@@ -665,7 +665,28 @@
     ],
     "semantic_file_search": "explicit-local-index",
     "database": "star.db",
-    "automatic_directory_scan_on_startup": false
+    "automatic_directory_scan_on_startup": false,
+    "real_knowledge_materialization": {
+      "target_per_namespace": 1000000000,
+      "count_basis": "physical unique source records",
+      "logical_variations_counted": false,
+      "synthetic_fill_allowed": false,
+      "provenance_required": true,
+      "source_checksum": "sha256",
+      "duplicate_source_counted_twice": false,
+      "supported_local_formats": [
+        "jsonl",
+        "ndjson",
+        "ntriples",
+        "nt",
+        "text-lines",
+        "wikidata-json"
+      ],
+      "large_dumps_stored_in_git": false,
+      "runtime_status_field": "materialized_real_count",
+      "completion_rule": "complete only when materialized_real_count >= 1000000000",
+      "truthfulness_note": "1B só pode ser declarado quando 1.000.000.000 registros físicos reais estiverem materializados localmente no namespace"
+    }
   },
   "group4_guardian_security_integrations": {
     "status": "integrated-conditional-providers",
