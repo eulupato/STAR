@@ -158,10 +158,14 @@ SCHEMA = (
 FTS_SCHEMA = """CREATE VIRTUAL TABLE IF NOT EXISTS cognitive_document_fts
 USING fts5(chunk_id UNINDEXED, title, source, content, tokenize='unicode61 remove_diacritics 2')"""
 
+FACT_FTS_SCHEMA = """CREATE VIRTUAL TABLE IF NOT EXISTS cognitive_facts_fts
+USING fts5(content_hash UNINDEXED, theme UNINDEXED, content, source, tokenize='unicode61 remove_diacritics 2')"""
+
 
 class CognitiveStore:
     def __init__(self):
         self.fts5_available = False
+        self.facts_fts_available = False
         self._ensure_schema()
 
     def _ensure_schema(self):
@@ -173,6 +177,11 @@ class CognitiveStore:
                 self.fts5_available = True
             except OperationalError:
                 self.fts5_available = False
+            try:
+                conn.execute(text(FACT_FTS_SCHEMA))
+                self.facts_fts_available = True
+            except OperationalError:
+                self.facts_fts_available = False
 
     def remember(self, kind: str, content: str, *, key: str | None = None, metadata=None, importance: float = 0.5) -> int:
         now = _now()
@@ -453,6 +462,11 @@ class CognitiveStore:
                 if result.rowcount:
                     accepted += 1
                     sources.add(source)
+                    if self.facts_fts_available:
+                        conn.execute(text("""
+                            INSERT INTO cognitive_facts_fts(content_hash,theme,content,source)
+                            VALUES (:hash,:theme,:content,:source)
+                        """), {"hash": digest, "theme": theme, "content": content, "source": source})
                 else:
                     duplicate += 1
             status = "complete" if accepted >= target_count else "partial"
@@ -462,13 +476,97 @@ class CognitiveStore:
             """), {"date": run_date or now[:10], "theme": theme, "target": int(target_count), "accepted": accepted, "duplicate": duplicate, "rejected": rejected, "sources": len(sources), "status": status, "now": now})
         return {"theme": theme, "target": int(target_count), "accepted": accepted, "duplicates": duplicate, "rejected": rejected, "sources": len(sources), "status": status}
 
+    @staticmethod
+    def _fact_query_tokens(query: str) -> list[str]:
+        stop = {
+            "a","o","as","os","um","uma","uns","umas","de","da","do","das","dos","em","no","na",
+            "nos","nas","por","para","com","sem","e","ou","que","qual","quais","quem","como","onde",
+            "quando","quanto","quantos","quantas","porque","porquê","me","diga","explique","sobre","é",
+            "ser","foi","são","star",
+        }
+        return [
+            token for token in re.findall(r"[\wÀ-ÿ]+", str(query).casefold())
+            if len(token) > 1 and token not in stop
+        ][:16]
+
+    def search_facts(self, query: str, *, themes: Iterable[str] | None = None, limit: int = 8) -> list[dict]:
+        tokens = self._fact_query_tokens(query)
+        if not tokens:
+            return []
+        limit = max(1, min(int(limit), 50))
+        theme_values = tuple(str(x) for x in (themes or ()) if str(x).strip())
+
+        def enrich(rows):
+            out = []
+            token_set = set(tokens)
+            for row in rows:
+                item = dict(row)
+                item["metadata"] = _load(item.pop("metadata_json", "{}"))
+                content_tokens = set(re.findall(r"[\wÀ-ÿ]+", str(item.get("content") or "").casefold()))
+                overlap = len(token_set & content_tokens) / max(1, len(token_set))
+                item["query_overlap"] = overlap
+                out.append(item)
+            out.sort(key=lambda x: (-x["query_overlap"], -float(x.get("confidence", 0.0)), x.get("content", "")))
+            return out[:limit]
+
+        if self.facts_fts_available:
+            params = {"limit": max(limit * 6, 24)}
+            theme_clause = ""
+            if theme_values:
+                holders = []
+                for i, value in enumerate(theme_values):
+                    key = f"theme{i}"
+                    params[key] = value
+                    holders.append(f":{key}")
+                theme_clause = f" AND c.theme IN ({','.join(holders)})"
+            clean_tokens = [t.replace('"', "") for t in tokens]
+            for joiner in (" AND ", " OR "):
+                params["match"] = joiner.join(f'"{t}"' for t in clean_tokens)
+                with engine.connect() as conn:
+                    rows = conn.execute(text(f"""
+                        SELECT c.content_hash,c.theme,c.content,c.source,c.source_type,c.retrieved_at,
+                               c.confidence,c.metadata_json,c.created_at,bm25(cognitive_facts_fts) AS rank
+                        FROM cognitive_facts_fts f
+                        JOIN cognitive_facts c ON c.content_hash=f.content_hash
+                        WHERE cognitive_facts_fts MATCH :match{theme_clause}
+                        ORDER BY rank ASC, c.confidence DESC
+                        LIMIT :limit
+                    """), params).mappings().all()
+                if rows:
+                    return enrich(rows)
+
+        params = {"limit": max(limit * 10, 50)}
+        clauses = []
+        for i, token in enumerate(tokens[:8]):
+            key = f"q{i}"
+            params[key] = f"%{token}%"
+            clauses.append(f"lower(content) LIKE :{key}")
+        theme_clause = ""
+        if theme_values:
+            holders = []
+            for i, value in enumerate(theme_values):
+                key = f"theme{i}"
+                params[key] = value
+                holders.append(f":{key}")
+            theme_clause = f" AND theme IN ({','.join(holders)})"
+        with engine.connect() as conn:
+            rows = conn.execute(text(f"""
+                SELECT content_hash,theme,content,source,source_type,retrieved_at,
+                       confidence,metadata_json,created_at
+                FROM cognitive_facts
+                WHERE ({' OR '.join(clauses)}){theme_clause}
+                ORDER BY confidence DESC, created_at DESC
+                LIMIT :limit
+            """), params).mappings().all()
+        return enrich(rows)
+
     def stats(self) -> dict:
         tables = {
             "memories": "cognitive_memory", "nodes": "knowledge_nodes", "edges": "knowledge_edges",
             "projects": "cognitive_projects", "documents": "cognitive_documents", "chunks": "cognitive_document_chunks",
             "evaluations": "cognitive_evaluations", "research_sources": "cognitive_research_sources", "facts": "cognitive_facts",
         }
-        out = {"fts5_available": self.fts5_available}
+        out = {"fts5_available": self.fts5_available, "facts_fts_available": self.facts_fts_available}
         with engine.connect() as conn:
             for key, table in tables.items():
                 out[key] = int(conn.execute(text(f"SELECT COUNT(*) FROM {table}")).scalar_one())
