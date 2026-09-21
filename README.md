@@ -183,6 +183,10 @@ Nesse modo:
 - ruídos curtos são descartados antes do STT;
 - o limiar sobe enquanto a STAR fala para reduzir eco/auto-disparo;
 - fala humana confirmada durante o TTS executa **barge-in** e interrompe a resposta;
+- pausas acústicas e fim de pensamento são tratados separadamente: segmentos podem
+  ser agrupados em um único turno antes de chegar ao Core;
+- o assembler reconhece continuações comuns em português/inglês e possui limite
+  máximo de retenção para nunca deixar um turno aberto indefinidamente;
 - somente segmentos detectados viram WAV temporário para o faster-whisper;
 - os arquivos temporários são removidos depois da transcrição;
 - não existe gravação bruta contínua persistida pelo VAD;
