@@ -66,3 +66,21 @@ def test_runtime_identity_does_not_claim_established_consciousness():
         for response in intent["responses"]
     ]
     assert all("sou uma consciência virtual" not in response for response in all_responses)
+
+
+
+def test_gui_user_settings_recover_from_invalid_json_and_write_atomically(tmp_path, monkeypatch):
+    import json
+    import gui.app as app_module
+
+    monkeypatch.setattr(app_module, "PROJECT_ROOT", tmp_path)
+    app = app_module.StarApp.__new__(app_module.StarApp)
+    settings = tmp_path / "user_settings.json"
+    settings.write_text("{broken", encoding="utf-8")
+
+    assert app._read_user_settings() == {}
+    app._write_user_settings(voice_mode="fast", skin="original.jpeg")
+
+    saved = json.loads(settings.read_text(encoding="utf-8"))
+    assert saved == {"voice_mode": "fast", "skin": "original.jpeg"}
+    assert not (tmp_path / "user_settings.json.tmp").exists()
