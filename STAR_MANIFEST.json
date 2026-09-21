@@ -464,7 +464,7 @@
     ]
   },
   "voice": {
-    "stt": "faster-whisper tiny local",
+    "stt": "faster-whisper base local • PT-BR fixo • VAD interno desativado para segmentos já capturados",
     "tts_default": "Chatterbox Multilingual local com referência autorizada da STAR",
     "tts_fallback": "Piper pt_BR-faber-medium local; Windows SAPI como último fallback",
     "voice_mode": "official",

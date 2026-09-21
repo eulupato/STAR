@@ -18,7 +18,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import APP_NAME, VERSION, WINDOW_HEIGHT, WINDOW_WIDTH, MENU_HEIGHT, MENU_WIDTH, VOICE_CHAT_MODE
+from config import APP_NAME, VERSION, WINDOW_HEIGHT, WINDOW_WIDTH, MENU_HEIGHT, MENU_WIDTH, STT_MODEL, VOICE_CHAT_MODE
 from core.avatar import AvatarManager
 from core.emotion import EmotionManager
 from database.memory import Memory
@@ -446,7 +446,7 @@ class StarApp:
         mode=tk.Frame(body,bg=self.panel,padx=22,pady=18);mode.pack(fill="x",pady=(18,12));tk.Label(mode,text="MODO DE FUNCIONAMENTO",fg=self.text,bg=self.panel,font=("Segoe UI",12,"bold")).pack(anchor="w");row=tk.Frame(mode,bg=self.panel);row.pack(anchor="w",pady=12);self.online_btn=self._button(row,"🟢 ONLINE",lambda:self._set_mode(True));self.online_btn.pack(side="left",padx=(0,10));self.offline_btn=self._button(row,"🔴 OFFLINE",lambda:self._set_mode(False));self.offline_btn.pack(side="left");self._refresh_mode_buttons();tk.Label(mode,text="O modo online controla recursos de internet. A voz da STAR é local nos dois modos.",fg=self.muted,bg=self.panel).pack(anchor="w")
         voicebox=tk.Frame(body,bg=self.panel,padx=22,pady=18);voicebox.pack(fill="x",pady=12)
         tk.Label(voicebox,text="🎙️ VOZ DA STAR",fg=self.star,bg=self.panel,font=("Segoe UI",13,"bold")).pack(anchor="w")
-        tk.Label(voicebox,text=f"Entrada: faster-whisper tiny • Conversa: {self.voice.tts_description}",fg=self.text,bg=self.panel).pack(anchor="w",pady=(8,6))
+        tk.Label(voicebox,text=f"Entrada: faster-whisper {STT_MODEL} PT-BR • Conversa: {self.voice.tts_description}",fg=self.text,bg=self.panel).pack(anchor="w",pady=(8,6))
         voice_row=tk.Frame(voicebox,bg=self.panel);voice_row.pack(anchor="w",pady=(2,8))
         self._button(voice_row,"⚡ CONVERSA RÁPIDA",lambda:self._set_voice_mode("fast"),small=True).pack(side="left",padx=(0,8))
         self._button(voice_row,"⭐ VOZ OFICIAL",lambda:self._set_voice_mode("official"),small=True).pack(side="left")

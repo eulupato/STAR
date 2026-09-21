@@ -119,10 +119,23 @@ def _resolve_reference_path() -> Path:
 
 
 class LocalSpeechToText:
-    """STT local rápido com faster-whisper tiny."""
+    """STT local com faster-whisper, priorizando português brasileiro."""
 
-    def __init__(self, model_size: str = "tiny"):
-        self.model_size = os.getenv("STAR_STT_MODEL", model_size)
+    def __init__(self, model_size: str | None = None):
+        try:
+            from config import STT_INITIAL_PROMPT, STT_LANGUAGE, STT_MODEL
+        except Exception:
+            STT_MODEL = "base"
+            STT_LANGUAGE = "pt"
+            STT_INITIAL_PROMPT = "Conversa em português brasileiro com a assistente STAR."
+
+        configured_model = str(model_size or STT_MODEL or "base").strip()
+        self.model_size = os.getenv("STAR_STT_MODEL", configured_model).strip() or "base"
+        self.language = os.getenv("STAR_STT_LANGUAGE", str(STT_LANGUAGE or "pt")).strip() or "pt"
+        self.initial_prompt = os.getenv(
+            "STAR_STT_INITIAL_PROMPT",
+            str(STT_INITIAL_PROMPT or ""),
+        ).strip()
         self.model = None
         self.last_error = None
         self.last_elapsed = 0.0
@@ -164,14 +177,15 @@ class LocalSpeechToText:
                 self._load()
                 segments, _ = self.model.transcribe(
                     str(audio_path),
-                    language="pt",
+                    language=self.language,
                     task="transcribe",
-                    beam_size=1,
+                    beam_size=2,
                     best_of=1,
                     temperature=0.0,
-                    vad_filter=True,
+                    vad_filter=False,
                     condition_on_previous_text=False,
                     without_timestamps=True,
+                    initial_prompt=self.initial_prompt or None,
                 )
                 text = " ".join(
                     segment.text.strip()
@@ -544,17 +558,33 @@ class ChatterboxOfficialTTS:
                 self.last_error = "cancelled"
                 return False
 
+            # O Chatterbox continua sendo o motor oficial, mas respostas longas
+            # são geradas por blocos. Assim a primeira frase começa a tocar sem
+            # esperar a síntese da resposta inteira.
+            parts = FastPiperTTS._chunks(text, max_chars=180) or [text]
             with self._io_lock:
-                output_path = self._generate(text)
+                for part in parts:
+                    if cancel_event is not None and cancel_event.is_set():
+                        self.last_error = "cancelled"
+                        return False
 
-                if cancel_event is not None and cancel_event.is_set():
-                    self.last_error = "cancelled"
-                    return False
+                    output_path = self._generate(part)
+                    try:
+                        if cancel_event is not None and cancel_event.is_set():
+                            self.last_error = "cancelled"
+                            return False
 
-                ok = self._play_wav(output_path, cancel_event)
-                if not ok:
-                    self.last_error = "cancelled"
-                    return False
+                        ok = self._play_wav(output_path, cancel_event)
+                        if not ok:
+                            self.last_error = "cancelled"
+                            return False
+                    finally:
+                        if output_path is not None:
+                            try:
+                                output_path.unlink(missing_ok=True)
+                            except Exception:
+                                pass
+                            output_path = None
 
             self.last_elapsed = time.perf_counter() - started
             self.last_error = None

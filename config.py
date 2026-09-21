@@ -41,5 +41,9 @@ VOICE_CONVERSION_HOME = "voice/external/seed-vc"
 VOICE_REFERENCE = "voice/reference/star_reference.mp3"
 
 STT_ENGINE = "faster-whisper"
-STT_MODEL = "tiny"
+# "base" melhora bastante frases curtas em PT-BR sem tornar o STT pesado demais.
+# Pode ser sobrescrito por STAR_STT_MODEL quando necessário.
+STT_MODEL = "base"
+STT_LANGUAGE = "pt"
+STT_INITIAL_PROMPT = "Conversa em português brasileiro com a assistente STAR."
 PIPER_VOICE = "pt_BR-faber-medium"

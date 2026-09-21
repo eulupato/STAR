@@ -7,7 +7,7 @@ echo =====================================================
 echo        STAR V1.9 FINAL - INSTALACAO DE VOZ
 echo =====================================================
 echo.
-echo ENTRADA : faster-whisper tiny (PT-BR, local)
+echo ENTRADA : faster-whisper base (PT-BR, local)
 echo OFICIAL : Chatterbox + referencia local da STAR
 echo RAPIDA  : Piper PT-BR (somente se escolhido)
 echo.
@@ -35,8 +35,8 @@ if errorlevel 1 (
 )
 
 echo.
-echo [3/4] Preparando Whisper Tiny...
-".venv\Scripts\python.exe" -c "from faster_whisper import WhisperModel; WhisperModel('tiny',device='cpu',compute_type='int8')"
+echo [3/4] Preparando Whisper Base...
+".venv\Scripts\python.exe" -c "from faster_whisper import WhisperModel; WhisperModel('base',device='cpu',compute_type='int8')"
 if errorlevel 1 (
     echo AVISO: nao foi possivel preparar o Whisper agora.
 )

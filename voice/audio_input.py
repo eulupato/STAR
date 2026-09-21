@@ -7,6 +7,7 @@ para o STT existente.
 """
 from __future__ import annotations
 
+from collections import deque
 from pathlib import Path
 import os
 import tempfile
@@ -299,6 +300,7 @@ class VoiceActivityDetector:
         start_ms: int = 110,
         silence_ms: int = 650,
         max_ms: int = 20000,
+        pre_roll_ms: int = 300,
         floor_up: float = 0.0008,
         floor_down: float = 0.02,
     ):
@@ -310,6 +312,7 @@ class VoiceActivityDetector:
         self.start_ms = max(40, int(start_ms))
         self.silence_ms = max(200, int(silence_ms))
         self.max_ms = max(2000, int(max_ms))
+        self.pre_roll_ms = max(0, min(int(pre_roll_ms), 1000))
         self.floor_up = max(0.00001, min(float(floor_up), 0.2))
         self.floor_down = max(0.0001, min(float(floor_down), 0.5))
 
@@ -334,6 +337,14 @@ class VoiceActivityDetector:
         self._speech_started_at = 0.0
         self._last_loud = 0.0
         self._segment_frames = []
+        # Mantém uma pequena janela anterior ao disparo do VAD para não cortar
+        # fonemas iniciais de frases curtas como "Olá, STAR".
+        self._pre_roll_frames = deque()
+        self._pre_roll_samples = 0
+        self._pre_roll_limit = max(
+            0,
+            int(self.samplerate * self.pre_roll_ms / 1000.0),
+        )
         self._guard = False
         self._calibration_blocks = 0
 
@@ -379,6 +390,22 @@ class VoiceActivityDetector:
         self._speech_started_at = 0.0
         self._last_loud = 0.0
         self._segment_frames = []
+
+    def _remember_pre_roll_locked(self, samples: np.ndarray) -> None:
+        if self._pre_roll_limit <= 0:
+            return
+        block = samples.copy()
+        self._pre_roll_frames.append(block)
+        self._pre_roll_samples += int(block.shape[0])
+        while self._pre_roll_frames and self._pre_roll_samples > self._pre_roll_limit:
+            removed = self._pre_roll_frames.popleft()
+            self._pre_roll_samples -= int(removed.shape[0])
+
+    def _take_pre_roll_locked(self) -> list[np.ndarray]:
+        frames = [frame.copy() for frame in self._pre_roll_frames]
+        self._pre_roll_frames.clear()
+        self._pre_roll_samples = 0
+        return frames
 
     def _emit_segment(self, frames, duration_ms: float) -> None:
         if not frames:
@@ -442,10 +469,16 @@ class VoiceActivityDetector:
             release = self._threshold * self.release_ratio
 
             if not self._speaking:
+                # Sempre preserve um pequeno pré-roll antes do gatilho. Isso
+                # evita perder o início da primeira palavra quando o volume
+                # cruza o limiar alguns milissegundos depois da fala começar.
+                if self._armed_at == 0.0:
+                    self._remember_pre_roll_locked(samples)
+
                 if self._energy > self._threshold:
                     if self._armed_at == 0.0:
                         self._armed_at = now
-                        self._segment_frames = [samples.copy()]
+                        self._segment_frames = self._take_pre_roll_locked()
                     else:
                         self._segment_frames.append(samples.copy())
 
@@ -529,6 +562,8 @@ class VoiceActivityDetector:
 
         with self._lock:
             self._reset_segment_locked()
+            self._pre_roll_frames.clear()
+            self._pre_roll_samples = 0
             self._floor = 0.01
             self._energy = 0.0
             self._threshold = 0.026
@@ -574,6 +609,7 @@ class VoiceActivityDetector:
                 "guard": bool(self._guard),
                 "segments": int(self.segment_count),
                 "false_starts": int(self.false_starts),
+                "pre_roll_ms": int(self.pre_roll_ms),
                 "last_error": self.last_error,
                 "raw_audio_persisted": False,
                 "temporary_segments_only": True,
