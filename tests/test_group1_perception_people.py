@@ -188,3 +188,30 @@ def test_people_authenticate_uses_separate_verifier(tmp_path):
     assert result["authenticated"] is True
     assert result["recognition_used_as_authentication"] is False
     assert result["operational_permission"] is False
+
+
+
+def test_semantic_vision_failure_is_degraded_but_diagnosable(tmp_path, monkeypatch):
+    star = create_star()
+    image_path = tmp_path / "semantic-failure.png"
+    Image.new("RGB", (64, 64), (24, 48, 72)).save(image_path)
+
+    vision = star.perception_runtime.vision
+    monkeypatch.setattr(vision, "_vision_model", lambda: "fake-local-vlm")
+    monkeypatch.setattr(vision, "_face_boxes", lambda path: [])
+
+    def fail_generate(*args, **kwargs):
+        raise RuntimeError("provider indisponível")
+
+    monkeypatch.setattr(vision.engine, "generate", fail_generate)
+    result = star.perception_runtime.ingest_image(
+        image_path,
+        source="unit-semantic-failure",
+    )
+
+    assert result["semantic_available"] is False
+    assert result["semantic_model"] == "fake-local-vlm"
+    assert "RuntimeError" in result["semantic_error"]
+    assert "provider indisponível" in result["semantic_error"]
+    # Metadados locais continuam úteis mesmo quando o VLM falha.
+    assert result["observations"]
