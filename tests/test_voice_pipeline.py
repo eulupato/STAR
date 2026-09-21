@@ -189,9 +189,14 @@ def test_turn_assembler_emits_explicitly_finished_sentence_immediately():
     ) == 0
 
 
-def test_turn_assembler_short_override_is_immediate():
+def test_turn_assembler_short_override_uses_low_latency_settle():
     assert VoiceTurnAssembler.hold_for(
         "pare",
+        settle_ms=250,
+        continue_ms=1200,
+    ) == 250
+    assert VoiceTurnAssembler.hold_for(
+        "para",
         settle_ms=250,
         continue_ms=1200,
     ) == 250
