@@ -1,6 +1,9 @@
+import importlib
 import os
 import sys
+import threading
 from pathlib import Path
+from time import perf_counter
 
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
@@ -32,11 +35,6 @@ from core.offline_knowledge import OfflineKnowledgeService
 from core.perception_runtime import PerceptionRuntime
 from core.personal_integrations import PersonalIntegrations
 from core.person_auth import LocalPersonAuthenticator
-from core.physics_knowledge_150k import PhysicsKnowledgeEngine
-from core.chemistry_knowledge_500k import ChemistryKnowledgeEngine
-from core.multidisciplinary_knowledge import MultidisciplinaryKnowledgeEngine
-from core.knowledge_expansion_15m import KnowledgeExpansion15MEngine
-from core.curriculum_knowledge import CurriculumKnowledgeEngine
 from core.router import Router
 from core.security_agent import SecurityAgent
 from core.skills import SkillRegistry
@@ -44,9 +42,90 @@ from core.star_core import StarCore
 from core.star_identity import StarIdentity
 from core.state import StarState
 from core.tools import ToolRegistry, safe_math
-from gui.localized_app import LocalizedStarApp
 from modules.automation import AgendaManager
 
+
+class _LazyComponent:
+    """Proxy thread-safe para serviços pesados carregados somente no primeiro uso.
+
+    Preserva a API pública do serviço real via getattr e evita importar ou
+    instanciar grandes catálogos durante a abertura da interface.
+    """
+
+    def __init__(self, label: str, module_name: str, class_name: str):
+        self.label = str(label)
+        self.module_name = str(module_name)
+        self.class_name = str(class_name)
+        self._instance = None
+        self._load_seconds = None
+        self._lock = threading.RLock()
+
+    @property
+    def loaded(self) -> bool:
+        return self._instance is not None
+
+    @property
+    def load_seconds(self):
+        return self._load_seconds
+
+    def _load(self):
+        if self._instance is not None:
+            return self._instance
+        with self._lock:
+            if self._instance is None:
+                started = perf_counter()
+                module = importlib.import_module(self.module_name)
+                component = getattr(module, self.class_name)
+                self._instance = component()
+                self._load_seconds = round(perf_counter() - started, 4)
+        return self._instance
+
+    def runtime_status(self) -> dict:
+        return {
+            "label": self.label,
+            "loaded": self.loaded,
+            "load_seconds": self._load_seconds,
+            "target": f"{self.module_name}.{self.class_name}",
+        }
+
+    def __getattr__(self, name):
+        if name.startswith("_"):
+            raise AttributeError(name)
+        return getattr(self._load(), name)
+
+    def __bool__(self):
+        # O Executive usa truthiness para saber se a capacidade existe.
+        # Existir não deve forçar o carregamento do catálogo.
+        return True
+
+
+def _lazy_knowledge_components():
+    return {
+        "physics": _LazyComponent(
+            "physics", "core.physics_knowledge_150k", "PhysicsKnowledgeEngine"
+        ),
+        "chemistry": _LazyComponent(
+            "chemistry", "core.chemistry_knowledge_500k", "ChemistryKnowledgeEngine"
+        ),
+        "multidisciplinary": _LazyComponent(
+            "multidisciplinary", "core.multidisciplinary_knowledge",
+            "MultidisciplinaryKnowledgeEngine"
+        ),
+        "knowledge_plus": _LazyComponent(
+            "knowledge_plus", "core.knowledge_expansion_15m",
+            "KnowledgeExpansion15MEngine"
+        ),
+        "curriculum": _LazyComponent(
+            "curriculum", "core.curriculum_knowledge", "CurriculumKnowledgeEngine"
+        ),
+    }
+
+
+def _env_true(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return bool(default)
+    return raw.strip().casefold() in {"1", "true", "yes", "on", "sim"}
 
 def _configure_optional_body_endpoint(star):
     host = str(os.getenv("STAR_BODY_ENDPOINT_HOST", "")).strip()
@@ -67,11 +146,12 @@ def _configure_optional_body_endpoint(star):
 def create_star():
     identity = StarIdentity()
     knowledge = StarInternalKnowledge(identity)
-    physics = PhysicsKnowledgeEngine()
-    chemistry = ChemistryKnowledgeEngine()
-    multidisciplinary = MultidisciplinaryKnowledgeEngine()
-    knowledge_plus = KnowledgeExpansion15MEngine()
-    curriculum = CurriculumKnowledgeEngine()
+    knowledge_components = _lazy_knowledge_components()
+    physics = knowledge_components["physics"]
+    chemistry = knowledge_components["chemistry"]
+    multidisciplinary = knowledge_components["multidisciplinary"]
+    knowledge_plus = knowledge_components["knowledge_plus"]
+    curriculum = knowledge_components["curriculum"]
     packs = KnowledgePackManager(ROOT / "knowledge" / "packs", auto_removable=True)
     state = StarState()
     router = Router(internal_knowledge=knowledge)
@@ -286,79 +366,88 @@ def _start_device_gateway(star):
     return gateway
 
 
-def main():
-    print("=" * 60)
-    print(f"⭐ INICIALIZANDO STAR V{VERSION} — MODO OFFLINE-FIRST")
-    print("=" * 60)
-    star = create_star()
+def _print_startup_summary(star):
+    """Resumo rápido sem carregar catálogos pesados apenas para imprimir métricas."""
     pack_stats = star.packs.stats()
-    storage_stats = star.packs.storage_stats()
+    lazy_components = (
+        star.physics,
+        star.chemistry,
+        star.multidisciplinary,
+        star.knowledge_plus,
+        star.curriculum,
+    )
+    loaded = sum(1 for component in lazy_components if component.loaded)
+
+    print(f"🧠 Identidade: {star.get_name()}")
+    print(f"👤 Criador: {star.get_creator()}")
+    print("📚 Conhecimento interno: ATIVO")
+    print("⚡ Catálogos científicos: ON-DEMAND "
+          f"({loaded}/{len(lazy_components)} carregados no startup)")
+    print("🔄 Cognição integrada: FAST/DELIBERATIVE + posição cognitiva")
+    print("👁️ Percepção: providers locais/lazy; captura contínua=NÃO")
+    print("🛡️ Guardian/limites: DEFAULT DENY + execução separada da cognição")
+    print(f"📦 Knowledge Packs detectados: {pack_stats.get('packs', 0)}")
+    print("🤖 IA externa:", "ATIVA" if EXTERNAL_AI_ENABLED else "DESATIVADA")
+    print("🖥️ Interface: ATIVA")
+
+    if _env_true("STAR_STARTUP_VERBOSE", False):
+        _print_verbose_startup_stats(star)
+
+
+def _print_verbose_startup_stats(star):
+    """Diagnóstico opcional de startup; pode materializar serviços lazy."""
     physics_stats = star.physics.stats()
     chemistry_stats = star.chemistry.stats()
     multi_stats = star.multidisciplinary.stats()
     plus_stats = star.knowledge_plus.stats()
     curriculum_stats = star.curriculum.stats()
     mind_stats = star.mind.stats()
-    cfc97_stats = star.cfc97.stats()
-    natural_stats = star.natural_interaction.stats()
-    body_stats = star.body_proprioception.stats()
     group3_stats = star.group3.stats()
-    real_knowledge_stats = group3_stats.get("real_knowledge", {})
-    offline_knowledge_stats = star.offline_knowledge.stats()
-    sandbox_stats = star.os_sandbox.stats()
-    home_stats = star.home_automation.stats()
-    personal_stats = star.personal_integrations.stats()
-    print(f"🧠 Identidade: {star.get_name()}")
-    print(f"👤 Criador: {star.get_creator()}")
-    print("📚 Conhecimento interno: ATIVO")
-    print(f"⚛️ Física local: {physics_stats['canonical_topics']} tópicos | {physics_stats['content_variations']} conteúdos variáveis")
-    print(f"🧪 Química local: {chemistry_stats['canonical_topics']} tópicos | {chemistry_stats['content_variations']} conteúdos variáveis")
-    print(f"🧭 Biblioteca multidisciplinar: {multi_stats['subjects']} matérias | {multi_stats['canonical_nodes']} nós | {multi_stats['total_content_variations']} conteúdos variáveis")
-    print(f"🚀 Knowledge PLUS: +{plus_stats['added_content_variations_per_domain']} por domínio | +{plus_stats['added_content_variations']} novos | {plus_stats['combined_content_variations']} conteúdos de conhecimento combinados")
-    print(f"🧬 Currículo canônico: {curriculum_stats['themes']} temas | {curriculum_stats['unique_concepts']} conceitos únicos | {curriculum_stats['deduplicated_mentions']} menções duplicadas consolidadas | {curriculum_stats['total_new_addressable_contents']} conteúdos endereçáveis")
-    print(f"🧠 STAR MIND alpha: {mind_stats['capabilities']} capacidades | {mind_stats['canonical_nodes_total']} nós cognitivos | {mind_stats['support_contents_total']} conteúdos operacionais endereçáveis")
-    print(
-        "🧱 Conhecimento real materializado: "
-        f"{real_knowledge_stats.get('materialized_real_total', 0)} registros físicos | "
-        "meta=1.000.000.000 por namespace | variações lógicas não contam"
-    )
-    print(
-        f"📚 Conhecimento offline: {offline_knowledge_stats['categories']} categorias registradas | "
-        f"Kiwix={'ATIVO' if offline_knowledge_stats['kiwix']['available'] else 'OPCIONAL/NÃO INSTALADO'} | "
-        "fatos locais indexados antes dos matchers legados"
-    )
-    print("🔄 Cognição integrada: FAST/DELIBERATIVE + posição cognitiva")
-    print(f"💬 Interação natural: ATIVA | contexto multi-turn bounded | modelo local={natural_stats['local_llm_model']} (autodetectável/opcional/lazy)")
-    print("👁️ Percepção Grupo 1: B25 conectado | visão/tela/áudio lazy | nenhum polling contínuo")
-    print("🛰️ Sensores Grupo 2: GPS/IMU/saúde/medição via endpoints físicos autenticados; simulação=NÃO")
-    print(f"🤖 B27: FK/IK ATIVOS | corpo físico={'CONECTADO' if body_stats['endpoint_available'] else 'NÃO CONFIGURADO'} | atuação direta=NÃO")
-    print("⏰ Agenda/proatividade: star.db + relevância inteligente + scheduler de eventos | execução automática=NÃO")
-    print(f"🌐 Grupo 3: web com proveniência | RAG Office/PDF | OCR={'ATIVO' if group3_stats['documents']['ocr']['available'] else 'OPCIONAL/TESSERACT AUSENTE'} | busca de arquivos={group3_stats['semantic_files']['vector_backend']}")
-    print(f"🛡️ Grupo 4 Guardian: CURA controlada | Security read-only | sandbox={'ATIVO' if sandbox_stats['ready'] else 'INDISPONÍVEL/FAIL-CLOSED'}")
-    print(f"🏠 Home: Home Assistant={'CONFIGURADO' if home_stats['configured'] else 'NÃO CONFIGURADO'} | confirmação física=2 ETAPAS")
-    print(f"📨 Integrações pessoais: email={'SIM' if personal_stats['email_read'] or personal_stats['email_send'] else 'NÃO'} | mensagens={'SIM' if personal_stats['messaging'] else 'NÃO'} | CalDAV={'SIM' if personal_stats['calendar_sync'] else 'NÃO'} | envio automático=NÃO")
-    print("🔐 Autenticação de pessoas: challenge local separado de reconhecimento; permissão=NÃO")
-    print("🧹 Manutenção cognitiva B32: BOUNDED/ON-DEMAND")
-    print("🛡️ Limites de autonomia B33: B01 BOUNDARY / DEFAULT DENY")
-    print(f"🧪 CFC/CFC-97 B34-B35: {len(star.cfc.stats()['dimensions'])} dimensões | {cfc97_stats['registered_1b_blocks']}/36 blocos 1B registrados | NÃO CERTIFICADO")
-    print("🧠 Consciência B36: FRONTEIRA DE PESQUISA / STATUS DA STAR NÃO ESTABELECIDO")
-    print("🧩 Skills: PREPARADAS")
-    print("🛠️ Ferramentas: ATIVAS (matemática offline + MIND experimental)")
-    print(f"📦 Knowledge Packs detectados: {pack_stats['packs']}")
-    print(f"💾 Packs locais: {storage_stats['local']} | removíveis: {storage_stats['removable']}")
-    print(f"📄 Entradas de conhecimento carregadas: {pack_stats['entries']}")
-    print("🤖 IA externa:", "ATIVA" if EXTERNAL_AI_ENABLED else "DESATIVADA")
-    print("🖥️ Interface: ATIVA")
+    offline_stats = star.offline_knowledge.stats()
+
+    print("-" * 60)
+    print("DIAGNÓSTICO DETALHADO DE STARTUP")
+    print(f"⚛️ Física: {physics_stats['canonical_topics']} tópicos | "
+          f"{physics_stats['content_variations']} variações")
+    print(f"🧪 Química: {chemistry_stats['canonical_topics']} tópicos | "
+          f"{chemistry_stats['content_variations']} variações")
+    print(f"🧭 Multidisciplinar: {multi_stats['subjects']} matérias | "
+          f"{multi_stats['canonical_nodes']} nós")
+    print(f"🚀 Knowledge PLUS: +{plus_stats['added_content_variations']} endereçáveis")
+    print(f"🧬 Currículo: {curriculum_stats['themes']} temas | "
+          f"{curriculum_stats['unique_concepts']} conceitos")
+    print(f"🧠 MIND: {mind_stats['capabilities']} capacidades | "
+          f"{mind_stats['canonical_nodes_total']} nós")
+    print(f"🌐 Grupo 3: arquivos={group3_stats['semantic_files']['vector_backend']} | "
+          f"offline={offline_stats['categories']} categorias")
+    for component in (
+        star.physics, star.chemistry, star.multidisciplinary,
+        star.knowledge_plus, star.curriculum,
+    ):
+        status = component.runtime_status()
+        print(f"  • {status['label']}: loaded={status['loaded']} "
+              f"tempo={status['load_seconds']}s")
+    print("-" * 60)
+
+
+def main():
+    print("=" * 60)
+    print(f"⭐ INICIALIZANDO STAR V{VERSION} — MODO OFFLINE-FIRST")
+    print("=" * 60)
+    star = create_star()
+    _print_startup_summary(star)
 
     gateway = _start_device_gateway(star)
     star.proactivity.start()
     try:
+        # Import tardio: CLI/testes que só usam create_star não carregam Tk/Pillow.
+        from gui.localized_app import LocalizedStarApp
+
         LocalizedStarApp(brain=star).run()
     finally:
         star.proactivity.stop()
         if gateway is not None:
             gateway.stop()
-
 
 if __name__ == "__main__":
     main()
