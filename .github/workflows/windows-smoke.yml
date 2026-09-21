@@ -26,6 +26,9 @@ jobs:
       - name: Compile project
         run: python -m compileall -q core gui voice modules database tests main.py config.py diagnostico.py
 
+      - name: Repository hygiene
+        run: python tools/repo_hygiene.py
+
       - name: Run test suite
         run: pytest -q tests
 
