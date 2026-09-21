@@ -30,6 +30,8 @@ def main() -> int:
     print(f"Modo de voz: {manager.mode.upper()}")
     print(f"Fallback automático: {'ATIVO' if manager.fallback_on_error else 'DESATIVADO'}")
     print(f"STT: {'PRONTO' if manager.stt_configured else 'NÃO INSTALADO'}")
+    print(f"Modelo STT: {manager.stt.model_size}")
+    print(f"Idioma STT: {manager.stt.language} (fixado para evitar autodetecção incorreta)")
     print()
 
     print("VOZ OFICIAL")
