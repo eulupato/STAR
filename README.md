@@ -348,9 +348,15 @@ sob demanda, limitados ao seu domínio e documentados no Manifest.
 Antes de considerar uma atualização concluída:
 
 ```powershell
+python tools/repo_hygiene.py
 python diagnostico.py
 python -m pytest -q tests
 ```
+
+Os catálogos pesados de Física, Química, Multidisciplinar, Knowledge PLUS e Currículo
+são carregados sob demanda para não atrasar a abertura da STAR. Para materializar
+esses catálogos e imprimir métricas detalhadas também durante o startup, use
+`STAR_STARTUP_VERBOSE=1`.
 
 O diagnóstico valida também os contratos mínimos de catálogo de voz e conversa,
 os limites da expansão curricular e distingue Knowledge Packs descobertos de entradas

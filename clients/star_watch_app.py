@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import logging
 import math
 from pathlib import Path
 import threading
@@ -20,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNTIME_DIR = ROOT / "runtime" / "star_watch"
 PEOPLE_FILE = RUNTIME_DIR / "people.json"
 WATCH_APP_VERSION = "0.4.0"
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -339,8 +341,8 @@ class StarWatchApp:
             try:
                 self._voice().speak_async(str(answer), callback=lambda *_: self.root.after(0, self._idle))
                 return
-            except Exception:
-                pass
+            except Exception as exc:
+                LOGGER.warning("Saída de voz do Watch indisponível: %s", exc)
         self.root.after(1400, self._idle)
 
     def _idle(self):
@@ -636,13 +638,13 @@ class StarWatchApp:
         if self.recorder is not None:
             try:
                 self.recorder.stop()
-            except Exception:
-                pass
+            except Exception as exc:
+                LOGGER.warning("Falha ao encerrar gravador do Watch: %s", exc)
         if self.voice_manager is not None:
             try:
                 self.voice_manager.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                LOGGER.warning("Falha ao encerrar voz do Watch: %s", exc)
         self.root.destroy()
 
 

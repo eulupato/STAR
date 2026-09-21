@@ -247,8 +247,10 @@ class _GatewayHandler(BaseHTTPRequestHandler):
             message = scene or f"Imagem recebida e registrada no B25 ({result.get('faces_detected', 0)} rosto(s) detectado(s))."
             self._json(200, {"ok": True, "device_id": device_id, "stored": path.name, "vision_available": True,
                              "semantic_available": bool(result.get("semantic_available")), "message": message})
-        except Exception:
+        except Exception as exc:
+            self.gateway.last_error = f"vision:{type(exc).__name__}: {exc}"
             self._json(200, {"ok": True, "device_id": device_id, "stored": path.name, "vision_available": False,
+                             "vision_error_type": type(exc).__name__,
                              "message": "Imagem recebida, mas a análise perceptiva local não ficou disponível."})
 
     def _sensors(self, device_id: str):
