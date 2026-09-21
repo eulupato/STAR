@@ -15,6 +15,40 @@ from voice.manager import (
 )
 
 
+def test_stt_uses_pt_br_accuracy_defaults(monkeypatch):
+    monkeypatch.delenv("STAR_STT_MODEL", raising=False)
+    monkeypatch.delenv("STAR_STT_LANGUAGE", raising=False)
+    monkeypatch.delenv("STAR_STT_INITIAL_PROMPT", raising=False)
+
+    stt = LocalSpeechToText()
+    assert stt.model_size == "base"
+    assert stt.language == "pt"
+    assert "português brasileiro" in stt.initial_prompt.casefold()
+
+
+def test_stt_does_not_double_trim_speech_with_internal_vad(tmp_path):
+    calls = {}
+
+    class Segment:
+        text = " Olá, STAR. "
+
+    class FakeModel:
+        def transcribe(self, path, **kwargs):
+            calls["path"] = path
+            calls["kwargs"] = kwargs
+            return [Segment()], None
+
+    audio = tmp_path / "short.wav"
+    audio.write_bytes(b"RIFF")
+
+    stt = LocalSpeechToText()
+    stt.model = FakeModel()
+    assert stt.transcribe(audio) == "Olá, STAR."
+    assert calls["kwargs"]["language"] == "pt"
+    assert calls["kwargs"]["vad_filter"] is False
+    assert calls["kwargs"]["initial_prompt"]
+
+
 def test_voice_manager_has_local_components():
     manager = VoiceManager()
     assert isinstance(manager.stt, LocalSpeechToText)
@@ -149,6 +183,46 @@ def test_adaptive_vad_detects_sustained_voice_and_releases_after_silence():
     assert frames
     assert duration_ms >= 120
     assert vad.status()["segments"] == 1
+
+
+def test_vad_keeps_pre_roll_to_preserve_first_phonemes():
+    import numpy as np
+
+    vad = VoiceActivityDetector(
+        trigger_over_floor=2.0,
+        start_ms=80,
+        silence_ms=120,
+        pre_roll_ms=300,
+        max_ms=5000,
+    )
+
+    now = 1.0
+    quiet = np.full((160, 1), 0.001, dtype=np.float32)
+    loud = np.full((160, 1), 0.20, dtype=np.float32)
+    silence = np.zeros((160, 1), dtype=np.float32)
+
+    for _ in range(50):
+        now += 0.01
+        vad._process_block(quiet, now, False)
+
+    for _ in range(8):
+        now += 0.03
+        vad._process_block(loud, now, False)
+
+    completed = None
+    for _ in range(30):
+        now += 0.05
+        _, ended, _ = vad._process_block(silence, now, False)
+        if ended is not None:
+            completed = ended
+            break
+
+    assert completed is not None
+    frames, _ = completed
+    # Sem pré-roll haveria somente os blocos após o gatilho. A janela anterior
+    # garante contexto acústico suficiente para frases curtas.
+    assert len(frames) > 8
+    assert vad.status()["pre_roll_ms"] == 300
 
 
 def test_vad_guard_raises_trigger_while_star_is_speaking():
