@@ -129,11 +129,6 @@ class LocalSpeechToText:
         self._lock = threading.Lock()
 
     @property
-    def is_speaking(self) -> bool:
-        """Estado observável usado pelo VAD para eco e barge-in."""
-        return self._speaking.is_set()
-
-    @property
     def configured(self) -> bool:
         try:
             import faster_whisper  # noqa: F401
