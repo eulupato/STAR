@@ -190,7 +190,9 @@ Nesse modo:
 - somente segmentos detectados viram WAV temporário para o faster-whisper;
 - os arquivos temporários são removidos depois da transcrição;
 - não existe gravação bruta contínua persistida pelo VAD;
-- `VoiceManager.runtime_snapshot()` expõe estado e métricas leves para diagnóstico.
+- `VoiceManager.runtime_snapshot()` expõe estado e métricas leves para diagnóstico;
+- a fala remove emojis, URLs cruas e marcação visual de Markdown sem alterar o
+  texto que continua aparecendo integralmente na interface.
 
 O botão `◉` ao lado do microfone controla esse modo. O gravador manual continua
 disponível e não foi substituído.
