@@ -153,12 +153,19 @@ class VoiceTurnAssembler:
             return int(continue_ms)
 
         words = stripped.casefold().split()
+        normalized = " ".join(word.strip(".,!?;:") for word in words)
+
+        # Em português, "para" é tanto preposição quanto comando. Um comando
+        # curto explícito deve ganhar do heurístico de continuação para não
+        # transformar "STAR, para" em uma espera artificial longa.
+        if normalized in cls.IMMEDIATE_SHORT:
+            return int(settle_ms)
+
         last = words[-1].strip(".,!?;:") if words else ""
         if last in cls.CONTINUATIONS:
             return int(continue_ms)
 
-        normalized = " ".join(word.strip(".,!?;:") for word in words)
-        if len(words) <= 2 and normalized not in cls.IMMEDIATE_SHORT:
+        if len(words) <= 2:
             return int(continue_ms)
 
         return int(settle_ms)
