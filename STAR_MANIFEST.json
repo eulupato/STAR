@@ -50,7 +50,8 @@
     "opt_in_hands_free_voice",
     "voice_barge_in",
     "live_voice_runtime_health",
-    "voice_turn_assembly"
+    "voice_turn_assembly",
+    "spoken_text_sanitization"
   ],
   "features_prepared": [
     "expanded_automation",
@@ -796,6 +797,21 @@
       "continuation_aware": true,
       "bounded_max_hold_ms": 5500,
       "implementation": "voice.audio_input.VoiceTurnAssembler"
+    },
+    "spoken_text_sanitization": {
+      "enabled": true,
+      "visual_text_unchanged": true,
+      "removes": [
+        "emoji",
+        "raw_urls",
+        "markdown_syntax"
+      ],
+      "preserves": [
+        "link_labels",
+        "punctuation",
+        "accented_portuguese"
+      ],
+      "implementation": "voice.manager.prepare_tts_text"
     }
   }
 }
