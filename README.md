@@ -172,6 +172,31 @@ Alto-falante
 A referência da voz oficial continua privada e local. Não deve ser enviada ao Git.
 Seed-VC permanece opcional e separado do ambiente principal.
 
+### Voz em tempo real e barge-in
+
+A interface desktop preserva a gravação manual existente e agora também oferece um
+modo **mãos-livres opt-in**. Ele só é iniciado por ação explícita do usuário.
+
+Nesse modo:
+
+- o VAD é local e usa RMS + noise floor adaptativo + histerese;
+- ruídos curtos são descartados antes do STT;
+- o limiar sobe enquanto a STAR fala para reduzir eco/auto-disparo;
+- fala humana confirmada durante o TTS executa **barge-in** e interrompe a resposta;
+- pausas acústicas e fim de pensamento são tratados separadamente: segmentos podem
+  ser agrupados em um único turno antes de chegar ao Core;
+- o assembler reconhece continuações comuns em português/inglês e possui limite
+  máximo de retenção para nunca deixar um turno aberto indefinidamente;
+- somente segmentos detectados viram WAV temporário para o faster-whisper;
+- os arquivos temporários são removidos depois da transcrição;
+- não existe gravação bruta contínua persistida pelo VAD;
+- `VoiceManager.runtime_snapshot()` expõe estado e métricas leves para diagnóstico;
+- a fala remove emojis, URLs cruas e marcação visual de Markdown sem alterar o
+  texto que continua aparecendo integralmente na interface.
+
+O botão `◉` ao lado do microfone controla esse modo. O gravador manual continua
+disponível e não foi substituído.
+
 ## Command / Capability Foundation
 
 A STAR usa um registro central de intents em `core/commands.py`.

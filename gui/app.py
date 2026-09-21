@@ -19,7 +19,7 @@ from config import APP_NAME, VERSION, WINDOW_HEIGHT, WINDOW_WIDTH, MENU_HEIGHT, 
 from core.avatar import AvatarManager
 from core.emotion import EmotionManager
 from database.memory import Memory
-from voice.audio_input import AudioRecorder
+from voice.audio_input import AudioRecorder, VoiceActivityDetector, VoiceTurnAssembler
 from voice.manager import VoiceManager
 
 
@@ -32,6 +32,12 @@ class StarApp:
         self.voice = VoiceManager()
         self.voice.set_voice_mode(self._load_voice_mode())
         self.recorder = AudioRecorder()
+        self.vad = VoiceActivityDetector()
+        self.turn_assembler = VoiceTurnAssembler(
+            lambda text: self.response_queue.put(("vad_utterance", text))
+        )
+        self.hands_free = False
+        self._pending_voice_transcript = None
         self.online_mode = False
         self.processing = False
         self.recording = False
@@ -105,6 +111,16 @@ class StarApp:
         self._write_user_settings(voice_mode=self.voice.mode)
 
     def clear_screen(self):
+        # Mãos-livres só existe enquanto a superfície de chat está visível.
+        # Navegar para outra tela encerra o stream para manter consentimento
+        # observável e evitar um microfone ativo sem indicador na interface.
+        if getattr(self, "hands_free", False):
+            try:
+                self.vad.stop()
+            except Exception:
+                pass
+            self.turn_assembler.cancel()
+            self.hands_free = False
         for widget in self.window.winfo_children():
             widget.destroy()
         self.chat = None
@@ -147,7 +163,9 @@ class StarApp:
         box=tk.Frame(bottom,bg="#cbd9e8",padx=1,pady=1); box.place(relx=.5,rely=.5,anchor="center",relwidth=.64,height=62); inner=tk.Frame(box,bg="#25364b"); inner.pack(fill="both",expand=True)
         tk.Label(inner,text="+",fg="#d8e7f5",bg="#25364b",font=("Segoe UI",23)).pack(side="left",padx=(16,8)); self.entry=tk.Entry(inner,bg="#25364b",fg=self.text,insertbackground=self.text,relief=tk.FLAT,font=("Segoe UI",12)); self.entry.pack(side="left",fill="both",expand=True,pady=7); self.entry.insert(0,"Pergunte algo à STAR..."); self.entry.config(fg="#aebdcd")
         self.entry.bind("<FocusIn>",self._clear_placeholder); self.entry.bind("<FocusOut>",self._restore_placeholder); self.entry.bind("<Return>",self._on_enter)
-        self.mic=tk.Button(inner,text="🎤",command=self.toggle_microphone,bg="#25364b",fg="#d8e7f5",relief=tk.FLAT,borderwidth=0,font=("Segoe UI",14),cursor="hand2"); self.mic.pack(side="right",padx=4); self.send_button=tk.Button(inner,text="➜",command=self.send_message,bg="#395574",fg="white",relief=tk.FLAT,borderwidth=0,font=("Segoe UI",16,"bold"),width=3,cursor="hand2"); self.send_button.pack(side="right",padx=(2,8),pady=7)
+        self.mic=tk.Button(inner,text="🎤",command=self.toggle_microphone,bg="#25364b",fg="#d8e7f5",relief=tk.FLAT,borderwidth=0,font=("Segoe UI",14),cursor="hand2"); self.mic.pack(side="right",padx=4)
+        self.hands_free_button=tk.Button(inner,text="◉",command=self.toggle_hands_free,bg="#25364b",fg="#9aa8bb",relief=tk.FLAT,borderwidth=0,font=("Segoe UI",13,"bold"),cursor="hand2"); self.hands_free_button.pack(side="right",padx=4)
+        self.send_button=tk.Button(inner,text="➜",command=self.send_message,bg="#395574",fg="white",relief=tk.FLAT,borderwidth=0,font=("Segoe UI",16,"bold"),width=3,cursor="hand2"); self.send_button.pack(side="right",padx=(2,8),pady=7)
 
     def _clear_placeholder(self,_event=None):
         if self.entry.get()=="Pergunte algo à STAR...":self.entry.delete(0,tk.END);self.entry.config(fg=self.text)
@@ -156,7 +174,11 @@ class StarApp:
     def _on_enter(self,_event=None):self.send_message();return "break"
 
     def toggle_microphone(self):
-        self.voice.cancel_speech()
+        if self.hands_free:
+            self._activate_conversation()
+            self._append_system("🎙️ O modo mãos-livres está ativo. Desative o botão ◉ para usar a gravação manual.")
+            return
+        self.voice.cancel_speech(reason="manual_microphone")
         if not self.voice.stt_configured:self._activate_conversation();self._append_system("🎤 Reconhecimento local ainda não está instalado. Execute INSTALAR_VOZ.bat.");return
         if not self.recorder.available:self._activate_conversation();self._append_system("🎤 Não consegui acessar o microfone. Verifique as configurações de áudio do Windows.");return
         if not self.recording:
@@ -164,6 +186,94 @@ class StarApp:
             except Exception as exc:self._append_system(f"🎤 Erro ao abrir microfone: {exc}")
         else:
             self.recording=False;self.mic.config(text="🎤",bg="#25364b",fg="#d8e7f5");self._set_status("TRANSCRIVENDO",self.gold);threading.Thread(target=self._finish_recording,daemon=True).start()
+
+    def toggle_hands_free(self):
+        """Ativa escuta contínua somente após uma ação explícita do usuário."""
+        if self.hands_free:
+            try:
+                self.vad.stop()
+            finally:
+                self.hands_free = False
+                if hasattr(self, "hands_free_button"):
+                    self.hands_free_button.config(text="◉", bg="#25364b", fg="#9aa8bb")
+                if self.current_screen == "chat":
+                    self._set_status("OFFLINE" if not self.online_mode else "ONLINE", self.red if not self.online_mode else self.green)
+                    self._activate_conversation()
+                    self._append_system("🎙️ Modo mãos-livres desativado.")
+            return
+
+        if self.recording:
+            self._activate_conversation()
+            self._append_system("🎙️ Finalize a gravação manual antes de ativar o modo mãos-livres.")
+            return
+        if not self.voice.stt_configured:
+            self._activate_conversation()
+            self._append_system("🎙️ O STT local ainda não está instalado. Execute INSTALAR_VOZ.bat.")
+            return
+        if not self.vad.available:
+            self._activate_conversation()
+            self._append_system("🎙️ VAD local indisponível. Verifique sounddevice/soundfile e o microfone.")
+            return
+
+        try:
+            self.vad.start(
+                on_start=self._vad_on_start,
+                on_end=self._vad_on_end,
+                on_error=self._vad_on_error,
+                guard_provider=lambda: self.voice.is_speaking,
+            )
+            self.hands_free = True
+            if hasattr(self, "hands_free_button"):
+                self.hands_free_button.config(text="●", bg="#1f5a3a", fg="white")
+            self._activate_conversation()
+            self._append_system(
+                "🎙️ Mãos-livres ativo. A detecção é local; somente trechos de fala viram WAV temporário e são apagados após a transcrição. Fale por cima da STAR para interrompê-la."
+            )
+            self._set_status("MÃOS-LIVRES", self.green)
+        except Exception as exc:
+            self.hands_free = False
+            self._activate_conversation()
+            self._append_system(f"🎙️ Não consegui iniciar mãos-livres: {exc}")
+
+    def _vad_on_start(self):
+        self.turn_assembler.speech_started()
+        interrupted = self.voice.barge_in()
+        self.response_queue.put(("vad_start", interrupted))
+
+    def _vad_on_end(self, path, duration_ms):
+        threading.Thread(
+            target=self._transcribe_vad_segment,
+            args=(path, duration_ms),
+            daemon=True,
+            name="STAR-VAD-STT",
+        ).start()
+
+    def _vad_on_error(self, message):
+        self.response_queue.put(("vad_error", str(message)))
+
+    def _transcribe_vad_segment(self, path, duration_ms):
+        try:
+            text = self.voice.transcribe(path)
+            self.response_queue.put(("vad_transcript", (text, float(duration_ms))))
+        except Exception as exc:
+            self.response_queue.put(("vad_error", f"{type(exc).__name__}: {exc}"))
+        finally:
+            try:
+                Path(path).unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    def _flush_pending_voice_transcript(self):
+        if self.processing or not self._pending_voice_transcript or self.current_screen != "chat":
+            return
+        text = self._pending_voice_transcript
+        self._pending_voice_transcript = None
+        self.voice.cancel_speech(reason="new_voice_turn")
+        self.entry.config(state=tk.NORMAL)
+        self.entry.delete(0, tk.END)
+        self.entry.insert(0, text)
+        self.entry.config(fg=self.text)
+        self.send_message()
 
     def _finish_recording(self):
         path=None
@@ -202,7 +312,29 @@ class StarApp:
         try:
             while True:
                 kind,result=self.response_queue.get_nowait()
-                if kind=="transcript":
+                if kind=="vad_start":
+                    self._load_avatar("listening")
+                    self._set_status("OUVINDO", self.green)
+                    if result and self.current_screen=="chat":
+                        self._activate_conversation();self._append_system("🎙️ Interrompi minha fala para ouvir você.")
+                elif kind=="vad_transcript":
+                    text,duration_ms=result
+                    if self.current_screen=="chat":
+                        self._set_status("INTERPRETANDO FALA", self.gold)
+                    self.turn_assembler.feed(str(text))
+                elif kind=="vad_utterance":
+                    text=str(result).strip()
+                    if text and self.current_screen=="chat":
+                        if self.processing:
+                            self._pending_voice_transcript=text
+                            self._append_system("🎙️ Entendi seu próximo turno. Vou responder assim que concluir o processamento atual.")
+                        else:
+                            self.entry.config(state=tk.NORMAL);self.entry.delete(0,tk.END);self.entry.insert(0,text);self.entry.config(fg=self.text);self.send_message()
+                elif kind=="vad_error":
+                    if self.current_screen=="chat":
+                        self._activate_conversation();self._append_system(f"🎙️ Falha no modo mãos-livres: {result}")
+                    self._set_status("ATENÇÃO", self.red)
+                elif kind=="transcript":
                     if self.current_screen=="chat":
                         self.entry.config(state=tk.NORMAL);self.entry.delete(0,tk.END);self.entry.insert(0,str(result));self.entry.config(fg=self.text);self.send_message()
                 elif kind=="voice_error":
@@ -214,13 +346,16 @@ class StarApp:
                     ok,error=result
                     if not ok and self.current_screen=="chat":self._append_system(f"🔊 A resposta foi gerada, mas a voz falhou: {error}")
                     self._load_avatar("neutral")
-                    if self.current_screen=="chat":self._set_status("OFFLINE" if not self.online_mode else "ONLINE",self.red if not self.online_mode else self.green)
+                    if self.current_screen=="chat":
+                        if self.hands_free:self._set_status("MÃOS-LIVRES",self.green)
+                        else:self._set_status("OFFLINE" if not self.online_mode else "ONLINE",self.red if not self.online_mode else self.green)
                 elif kind=="success":
                     response=str(result);self._append_star(response)
                     try:self.memory.save("STAR",response)
                     except Exception:pass
                     self._load_avatar("speaking");self.voice.speak_async(response,lambda ok,error:self.response_queue.put(("speech_result",(ok,error))));self.processing=False
                     if self.current_screen=="chat":self.entry.config(state=tk.NORMAL);self.send_button.config(state=tk.NORMAL);self._set_status("FALANDO",self.green);self.entry.focus_set()
+                    if self._pending_voice_transcript:self.window.after(10,self._flush_pending_voice_transcript)
                 elif kind=="error":
                     self._append_system(f"Erro ao processar: {result}");self._load_avatar("neutral");self.processing=False
                     if self.current_screen=="chat":self.entry.config(state=tk.NORMAL);self.send_button.config(state=tk.NORMAL)
@@ -332,6 +467,12 @@ class StarApp:
     def close(self):
         if self._closing:return
         self._closing=True
+        try:
+            self.vad.stop()
+        except Exception:pass
+        try:
+            self.turn_assembler.cancel()
+        except Exception:pass
         try:
             if self.recording:self.recorder.stop_to_wav()
         except Exception:pass

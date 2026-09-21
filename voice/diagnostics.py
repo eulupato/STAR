@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from voice.audio_input import VoiceActivityDetector
 from voice.manager import VoiceManager
 from voice.seed_vc import SeedVCBackend
 
@@ -23,6 +24,7 @@ def main() -> int:
     print("=" * 64)
 
     manager = VoiceManager()
+    vad = VoiceActivityDetector()
     seed_vc = SeedVCBackend()
 
     print(f"Modo de voz: {manager.mode.upper()}")
@@ -61,6 +63,17 @@ def main() -> int:
     print()
 
     print(f"TTS selecionado: {manager.tts_description}")
+    runtime = manager.runtime_snapshot()
+    print()
+    print("RUNTIME DE VOZ")
+    print("-" * 64)
+    print(f"Falando agora: {'SIM' if runtime['is_speaking'] else 'NÃO'}")
+    print(f"Último motor: {runtime['last_tts_engine']}")
+    print(f"Cancelamentos: {runtime['speech_cancellations']}")
+    print(f"Barge-ins: {runtime['barge_ins']}")
+    print(f"Último motivo de cancelamento: {runtime['last_cancel_reason'] or 'nenhum'}")
+    print(f"VAD adaptativo: {flag(vad.available)} • modo mãos-livres opt-in")
+    print("Privacidade: segmentos temporários; áudio bruto não é persistido pelo VAD")
 
     try:
         import sounddevice as sd
@@ -133,6 +146,13 @@ def main() -> int:
 
     print(f"Tempo total TTS + reprodução: {elapsed:.2f}s")
     print(f"Motor usado: {manager.last_tts_engine}")
+    final_runtime = manager.runtime_snapshot()
+    print(
+        "Runtime final: "
+        f"barge-ins={final_runtime['barge_ins']} | "
+        f"cancelamentos={final_runtime['speech_cancellations']} | "
+        f"erro={final_runtime['last_error'] or 'nenhum'}"
+    )
 
     if ok:
         print("✅ TESTE DE VOZ: OK")

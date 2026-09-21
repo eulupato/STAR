@@ -5,6 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from voice.audio_input import VoiceActivityDetector, VoiceTurnAssembler
 from voice.manager import (
     ChatterboxOfficialTTS,
     FastPiperTTS,
@@ -75,3 +76,140 @@ def test_tts_text_removes_emoji_sequences_and_flags():
 def test_tts_text_keeps_normal_punctuation_and_accents():
     text = "Olá, Lu! Você está bem? Sim: estou ótima."
     assert prepare_tts_text(text) == text
+
+
+
+def test_voice_runtime_snapshot_is_observable_without_loading_models():
+    manager = VoiceManager()
+    snapshot = manager.runtime_snapshot()
+    assert snapshot["mode"] in {"official", "fast"}
+    assert snapshot["is_speaking"] is False
+    assert snapshot["speech_cancellations"] == 0
+    assert snapshot["barge_ins"] == 0
+    assert "stt_configured" in snapshot
+    assert "official_voice_configured" in snapshot
+    manager.close()
+
+
+def test_barge_in_only_cancels_active_speech():
+    manager = VoiceManager()
+    assert manager.barge_in() is False
+
+    manager._speaking.set()
+    assert manager.barge_in() is True
+    manager._speaking.clear()
+
+    snapshot = manager.runtime_snapshot()
+    assert snapshot["barge_ins"] == 1
+    assert snapshot["speech_cancellations"] == 1
+    assert snapshot["last_cancel_reason"] == "barge_in"
+    manager.close()
+
+
+def test_adaptive_vad_detects_sustained_voice_and_releases_after_silence():
+    import numpy as np
+
+    vad = VoiceActivityDetector(
+        trigger_over_floor=2.0,
+        start_ms=80,
+        silence_ms=120,
+        max_ms=5000,
+    )
+
+    now = 1.0
+    quiet = np.full((160, 1), 0.001, dtype=np.float32)
+    loud = np.full((160, 1), 0.20, dtype=np.float32)
+    silence = np.zeros((160, 1), dtype=np.float32)
+
+    for _ in range(50):
+        now += 0.01
+        started, ended, _ = vad._process_block(quiet, now, False)
+        assert started is False
+        assert ended is None
+
+    saw_start = False
+    for _ in range(8):
+        now += 0.03
+        started, ended, _ = vad._process_block(loud, now, False)
+        saw_start = saw_start or started
+        assert ended is None
+
+    assert saw_start is True
+
+    completed = None
+    for _ in range(30):
+        now += 0.05
+        _, ended, _ = vad._process_block(silence, now, False)
+        if ended is not None:
+            completed = ended
+            break
+
+    assert completed is not None
+    frames, duration_ms = completed
+    assert frames
+    assert duration_ms >= 120
+    assert vad.status()["segments"] == 1
+
+
+def test_vad_guard_raises_trigger_while_star_is_speaking():
+    import numpy as np
+
+    vad = VoiceActivityDetector(trigger_over_floor=2.0, guard_boost=3.0)
+    quiet = np.full((160, 1), 0.001, dtype=np.float32)
+    now = 1.0
+
+    for _ in range(50):
+        now += 0.01
+        vad._process_block(quiet, now, False)
+
+    vad._process_block(quiet, now + 0.01, False)
+    normal_threshold = vad.status()["threshold"]
+    vad._process_block(quiet, now + 0.02, True)
+    guarded_threshold = vad.status()["threshold"]
+
+    assert guarded_threshold > normal_threshold
+    assert vad.status()["guard"] is True
+
+
+
+def test_turn_assembler_waits_for_portuguese_continuation():
+    wait = VoiceTurnAssembler.hold_for(
+        "qual é a previsão para",
+        settle_ms=250,
+        continue_ms=1200,
+    )
+    assert wait == 1200
+
+
+def test_turn_assembler_emits_explicitly_finished_sentence_immediately():
+    assert VoiceTurnAssembler.hold_for(
+        "qual é a previsão para amanhã?",
+        settle_ms=250,
+        continue_ms=1200,
+    ) == 0
+
+
+def test_turn_assembler_short_override_uses_low_latency_settle():
+    assert VoiceTurnAssembler.hold_for(
+        "pare",
+        settle_ms=250,
+        continue_ms=1200,
+    ) == 250
+    assert VoiceTurnAssembler.hold_for(
+        "para",
+        settle_ms=250,
+        continue_ms=1200,
+    ) == 250
+
+
+
+def test_tts_text_preserves_markdown_link_label_but_drops_url():
+    text = "Veja [a documentação](https://example.com/docs) e https://example.com/raw."
+    spoken = prepare_tts_text(text)
+    assert "a documentação" in spoken
+    assert "https://" not in spoken
+
+
+def test_tts_text_removes_visual_markdown_markers():
+    text = "# Título\n- **Primeiro ponto**\n> _Segundo ponto_"
+    assert prepare_tts_text(text) == "Título Primeiro ponto Segundo ponto"
