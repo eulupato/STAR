@@ -6,11 +6,14 @@ ponte de anexos B25 e a entrega de eventos proativos já decididos pelo schedule
 from __future__ import annotations
 
 from pathlib import Path
+import logging
 import threading
 import tkinter as tk
 from tkinter import filedialog
 
 from gui.app import StarApp
+
+LOGGER = logging.getLogger(__name__)
 
 
 _UI_PREFIXES = ("◈ ", "🟢 ", "🔴 ", "⚡ ", "⭐ ", "🎙️ ", "🎤 ", "🔊 ", "🖼️ ", "⏰ ")
@@ -85,8 +88,8 @@ class LocalizedStarApp(StarApp):
                 # A voz é uma superfície de notificação; não executa a intenção.
                 try:
                     self.voice.speak_async("Lembrete. " + content.replace("Lembrete:", "", 1).strip())
-                except Exception:
-                    pass
+                except Exception as exc:
+                    LOGGER.warning("Falha ao falar lembrete proativo: %s", exc)
         try: self.window.after(500, self._watch_proactivity)
         except (AttributeError, tk.TclError): pass
 
@@ -159,8 +162,10 @@ class LocalizedStarApp(StarApp):
         if not text or text == "Pergunte algo à STAR...": text = "O que você observa nesta imagem?"
         path = self.pending_image_path; self.pending_image_path = None; self.entry.delete(0, tk.END)
         self._activate_conversation(); self._append_user(f"[imagem: {path.name}] {text}")
-        try: self.memory.save("Você", f"[imagem anexada: {path.name}] {text}")
-        except Exception: pass
+        try:
+            self.memory.save("Você", f"[imagem anexada: {path.name}] {text}")
+        except Exception as exc:
+            LOGGER.warning("Falha ao persistir mensagem com imagem %s: %s", path.name, exc)
         self.processing = True; self.entry.config(state=tk.DISABLED); self.send_button.config(state=tk.DISABLED)
         self._set_status("PROCESSANDO", self.gold); self._load_avatar("thinking")
         threading.Thread(target=self._process_image_message, args=(text, path), daemon=True).start()
