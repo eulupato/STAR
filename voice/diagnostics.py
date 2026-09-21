@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from voice.audio_input import VoiceActivityDetector
 from voice.manager import VoiceManager
 from voice.seed_vc import SeedVCBackend
 
@@ -23,6 +24,7 @@ def main() -> int:
     print("=" * 64)
 
     manager = VoiceManager()
+    vad = VoiceActivityDetector()
     seed_vc = SeedVCBackend()
 
     print(f"Modo de voz: {manager.mode.upper()}")
@@ -70,7 +72,7 @@ def main() -> int:
     print(f"Cancelamentos: {runtime['speech_cancellations']}")
     print(f"Barge-ins: {runtime['barge_ins']}")
     print(f"Último motivo de cancelamento: {runtime['last_cancel_reason'] or 'nenhum'}")
-    print("VAD adaptativo: disponível na interface em modo mãos-livres opt-in")
+    print(f"VAD adaptativo: {flag(vad.available)} • modo mãos-livres opt-in")
     print("Privacidade: segmentos temporários; áudio bruto não é persistido pelo VAD")
 
     try:
