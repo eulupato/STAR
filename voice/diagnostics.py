@@ -61,6 +61,17 @@ def main() -> int:
     print()
 
     print(f"TTS selecionado: {manager.tts_description}")
+    runtime = manager.runtime_snapshot()
+    print()
+    print("RUNTIME DE VOZ")
+    print("-" * 64)
+    print(f"Falando agora: {'SIM' if runtime['is_speaking'] else 'NÃO'}")
+    print(f"Último motor: {runtime['last_tts_engine']}")
+    print(f"Cancelamentos: {runtime['speech_cancellations']}")
+    print(f"Barge-ins: {runtime['barge_ins']}")
+    print(f"Último motivo de cancelamento: {runtime['last_cancel_reason'] or 'nenhum'}")
+    print("VAD adaptativo: disponível na interface em modo mãos-livres opt-in")
+    print("Privacidade: segmentos temporários; áudio bruto não é persistido pelo VAD")
 
     try:
         import sounddevice as sd
@@ -133,6 +144,13 @@ def main() -> int:
 
     print(f"Tempo total TTS + reprodução: {elapsed:.2f}s")
     print(f"Motor usado: {manager.last_tts_engine}")
+    final_runtime = manager.runtime_snapshot()
+    print(
+        "Runtime final: "
+        f"barge-ins={final_runtime['barge_ins']} | "
+        f"cancelamentos={final_runtime['speech_cancellations']} | "
+        f"erro={final_runtime['last_error'] or 'nenhum'}"
+    )
 
     if ok:
         print("✅ TESTE DE VOZ: OK")
