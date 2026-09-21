@@ -92,6 +92,182 @@ class AudioRecorder:
         return out
 
 
+class VoiceTurnAssembler:
+    """Agrupa segmentos acústicos em um único turno linguístico.
+
+    O VAD responde à pergunta física "a sala ficou quieta?". Este assembler
+    responde à pergunta conversacional "o pensamento parece ter terminado?".
+    Assim uma pausa curta no meio de uma frase não vira dois pedidos separados.
+
+    A lógica é deliberadamente pequena e determinística. Ela não tenta entender
+    semanticamente a conversa inteira e não substitui o Context Engine da STAR.
+    """
+
+    CONTINUATIONS = {
+        "e", "ou", "mas", "porque", "pois", "se", "quando", "enquanto",
+        "que", "quem", "cujo", "cuja", "para", "de", "do", "da", "dos",
+        "das", "em", "no", "na", "nos", "nas", "com", "sem", "por",
+        "pelo", "pela", "sobre", "entre", "até", "como", "então",
+        "and", "or", "but", "because", "if", "when", "while", "that",
+        "to", "of", "in", "on", "with", "from", "about",
+    }
+    IMMEDIATE_SHORT = {
+        "pare", "para", "espera", "espere", "cancela", "cancelar",
+        "chega", "silêncio", "silencio", "não", "nao", "sim", "star",
+        "stop", "wait", "cancel", "enough", "quiet", "no", "yes",
+    }
+
+    def __init__(
+        self,
+        on_utterance,
+        *,
+        settle_ms: int = 280,
+        continue_ms: int = 1350,
+        max_hold_ms: int = 5500,
+    ):
+        self.on_utterance = on_utterance
+        self.settle_ms = max(0, int(settle_ms))
+        self.continue_ms = max(self.settle_ms, int(continue_ms))
+        self.max_hold_ms = max(self.continue_ms, int(max_hold_ms))
+        self._lock = threading.RLock()
+        self._held = ""
+        self._first_at = 0.0
+        self._timer = None
+        self._generation = 0
+
+    @staticmethod
+    def _clean(text: str) -> str:
+        return " ".join(str(text or "").strip().split())
+
+    @classmethod
+    def hold_for(cls, text: str, *, settle_ms=280, continue_ms=1350) -> int:
+        value = cls._clean(text)
+        if not value:
+            return int(continue_ms)
+
+        if value.endswith((".", "!", "?")):
+            return 0
+
+        stripped = value.rstrip()
+        if stripped.endswith((",", ";", ":", "-", "–", "—")):
+            return int(continue_ms)
+
+        words = stripped.casefold().split()
+        last = words[-1].strip(".,!?;:") if words else ""
+        if last in cls.CONTINUATIONS:
+            return int(continue_ms)
+
+        normalized = " ".join(word.strip(".,!?;:") for word in words)
+        if len(words) <= 2 and normalized not in cls.IMMEDIATE_SHORT:
+            return int(continue_ms)
+
+        return int(settle_ms)
+
+    def _cancel_timer_locked(self) -> None:
+        timer = self._timer
+        self._timer = None
+        if timer is not None:
+            timer.cancel()
+
+    def _emit_generation(self, generation: int) -> None:
+        with self._lock:
+            if generation != self._generation:
+                return
+            value = self._held.strip()
+            self._held = ""
+            self._first_at = 0.0
+            self._timer = None
+            self._generation += 1
+        if value:
+            self.on_utterance(value)
+
+    def speech_started(self) -> None:
+        """Nova fala audível mantém o turno aberto sem perder texto já transcrito."""
+        with self._lock:
+            if not self._held:
+                return
+            self._cancel_timer_locked()
+            elapsed_ms = (time.monotonic() - self._first_at) * 1000.0
+            remaining = max(0, self.max_hold_ms - int(elapsed_ms))
+            self._generation += 1
+            generation = self._generation
+            timer = threading.Timer(
+                max(0.05, remaining / 1000.0),
+                self._emit_generation,
+                args=(generation,),
+            )
+            timer.daemon = True
+            self._timer = timer
+            timer.start()
+
+    def feed(self, text: str) -> str:
+        fragment = self._clean(text)
+        if not fragment:
+            return self.held()
+
+        with self._lock:
+            now = time.monotonic()
+            if not self._held:
+                self._first_at = now
+                self._held = fragment
+            else:
+                self._held = f"{self._held} {fragment}".strip()
+
+            self._cancel_timer_locked()
+            elapsed_ms = (now - self._first_at) * 1000.0
+            wait_ms = self.hold_for(
+                self._held,
+                settle_ms=self.settle_ms,
+                continue_ms=self.continue_ms,
+            )
+            wait_ms = min(wait_ms, max(0, self.max_hold_ms - int(elapsed_ms)))
+
+            self._generation += 1
+            generation = self._generation
+
+            if wait_ms <= 0:
+                value = self._held
+                self._held = ""
+                self._first_at = 0.0
+                self._generation += 1
+            else:
+                timer = threading.Timer(
+                    wait_ms / 1000.0,
+                    self._emit_generation,
+                    args=(generation,),
+                )
+                timer.daemon = True
+                self._timer = timer
+                timer.start()
+                return self._held
+
+        if value:
+            self.on_utterance(value)
+        return value
+
+    def flush(self) -> str:
+        with self._lock:
+            self._cancel_timer_locked()
+            value = self._held.strip()
+            self._held = ""
+            self._first_at = 0.0
+            self._generation += 1
+        if value:
+            self.on_utterance(value)
+        return value
+
+    def cancel(self) -> None:
+        with self._lock:
+            self._cancel_timer_locked()
+            self._held = ""
+            self._first_at = 0.0
+            self._generation += 1
+
+    def held(self) -> str:
+        with self._lock:
+            return self._held
+
+
 class VoiceActivityDetector:
     """VAD adaptativo local para mãos-livres e barge-in.
 
