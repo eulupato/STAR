@@ -117,6 +117,11 @@ class LocalSpeechToText:
         self._lock = threading.Lock()
 
     @property
+    def is_speaking(self) -> bool:
+        """Estado observável usado pelo VAD para eco e barge-in."""
+        return self._speaking.is_set()
+
+    @property
     def configured(self) -> bool:
         try:
             import faster_whisper  # noqa: F401
@@ -742,6 +747,12 @@ class VoiceManager:
         self._state_lock = threading.Lock()
         self._cancel_event = threading.Event()
         self._speaking = threading.Event()
+        self._metrics_lock = threading.Lock()
+        self._speech_cancellations = 0
+        self._barge_ins = 0
+        self._last_cancel_reason = None
+        self._last_speech_ok = None
+        self._last_speech_finished_at = 0.0
 
     @property
     def configured(self) -> bool:
@@ -779,7 +790,7 @@ class VoiceManager:
         mode = str(mode).strip().lower()
         if mode not in {"official", "fast"}:
             raise ValueError("Modo de voz deve ser 'official' ou 'fast'.")
-        self.cancel_speech()
+        self.cancel_speech(reason="mode_change")
         self.mode = mode
 
     def warmup(self) -> None:
@@ -823,11 +834,17 @@ class VoiceManager:
         with self._state_lock:
             return self._cancel_event
 
-    def cancel_speech(self) -> None:
+    def cancel_speech(self, reason: str = "manual") -> None:
+        was_speaking = self._speaking.is_set()
         with self._state_lock:
             previous = self._cancel_event
             previous.set()
             self._cancel_event = threading.Event()
+
+        if was_speaking:
+            with self._metrics_lock:
+                self._speech_cancellations += 1
+                self._last_cancel_reason = str(reason or "manual")
 
         try:
             import sounddevice as sd
@@ -842,6 +859,39 @@ class VoiceManager:
 
         if self._speaking.is_set():
             self.official.cancel()
+
+    def barge_in(self) -> bool:
+        """Interrompe o TTS quando o VAD confirma nova fala do usuário."""
+        if not self._speaking.is_set():
+            return False
+        with self._metrics_lock:
+            self._barge_ins += 1
+        self.cancel_speech(reason="barge_in")
+        return True
+
+    def runtime_snapshot(self) -> dict:
+        """Snapshot leve para UI e diagnóstico sem carregar modelos novos."""
+        with self._metrics_lock:
+            metrics = {
+                "speech_cancellations": int(self._speech_cancellations),
+                "barge_ins": int(self._barge_ins),
+                "last_cancel_reason": self._last_cancel_reason,
+                "last_speech_ok": self._last_speech_ok,
+                "last_speech_finished_at": float(self._last_speech_finished_at),
+            }
+        return {
+            "mode": self.mode,
+            "configured": bool(self.configured),
+            "stt_configured": bool(self.stt_configured),
+            "official_voice_configured": bool(self.official_voice_configured),
+            "fast_piper_configured": bool(self.piper_configured),
+            "windows_fallback_configured": bool(self.fallback.configured),
+            "is_speaking": bool(self.is_speaking),
+            "tts_description": self.tts_description,
+            "last_tts_engine": self.last_tts_engine,
+            "last_error": self.last_error,
+            **metrics,
+        }
 
     def _speak_fast(
         self,
@@ -965,16 +1015,21 @@ class VoiceManager:
         return thread
 
     def speak_async(self, text: str, callback=None):
-        self.cancel_speech()
+        self.cancel_speech(reason="superseded")
         event = self._current_cancel_event()
 
         def run():
             self._speaking.set()
+            ok = False
+            error = None
             try:
                 ok = self.speak(text, event)
                 error = self.last_error
             finally:
                 self._speaking.clear()
+                with self._metrics_lock:
+                    self._last_speech_ok = bool(ok)
+                    self._last_speech_finished_at = time.time()
 
             if callback:
                 callback(ok, error)
@@ -996,7 +1051,7 @@ class VoiceManager:
 
     def test_official_audio_async(self, callback=None):
         """Testa explicitamente o Chatterbox, mesmo se o chat estiver em modo rápido."""
-        self.cancel_speech()
+        self.cancel_speech(reason="voice_test")
         event = self._current_cancel_event()
 
         def run():
@@ -1031,7 +1086,7 @@ class VoiceManager:
         return thread
 
     def close(self):
-        self.cancel_speech()
+        self.cancel_speech(reason="shutdown")
         try:
             self.official.close()
         except Exception:
