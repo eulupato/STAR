@@ -51,18 +51,18 @@ def prepare_tts_text(text: str) -> str:
     value = emoji_pattern.sub(" ", value)
 
     # [rótulo](https://...) -> rótulo. Um link sem rótulo é omitido da fala.
-    value = re.sub(r"\\[([^\\]]+)\\]\\(\\s*https?://[^)]+\\)", r"\\1", value)
-    value = re.sub(r"https?://\\S+", " ", value)
+    value = re.sub(r"\[([^\]]+)\]\(\s*https?://[^)]+\)", r"\1", value)
+    value = re.sub(r"https?://\S+", " ", value)
 
     # Fences e marcação visual não pertencem à voz; o conteúdo continua.
     value = value.replace("```", " ")
-    value = re.sub(r"(?m)^\\s{0,3}#{1,6}\\s*", "", value)
-    value = re.sub(r"(?m)^\\s*>\\s?", "", value)
-    value = re.sub(r"(?m)^\\s*[-*•]\\s+", "", value)
+    value = re.sub(r"(?m)^\s{0,3}#{1,6}\s*", "", value)
+    value = re.sub(r"(?m)^\s*>\s?", "", value)
+    value = re.sub(r"(?m)^\s*[-*•]\s+", "", value)
     value = re.sub(r"[*_`]+", "", value)
 
-    value = re.sub(r"\\s+", " ", value).strip()
-    value = re.sub(r"\\s+([,.;:!?])", r"\\1", value)
+    value = re.sub(r"\s+", " ", value).strip()
+    value = re.sub(r"\s+([,.;:!?])", r"\1", value)
     return value
 
 def _reference_score(path: Path):
