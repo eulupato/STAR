@@ -199,6 +199,49 @@ SOURCE_DEFINITIONS = {
 
 # Toda categoria usa a enciclopédia offline como camada ampla e fontes
 # especializadas como camada de maior autoridade.
+OFFLINE_CATEGORY_LABELS = {
+    "geography": "Geografia",
+    "history": "História",
+    "physics": "Física",
+    "chemistry": "Química",
+    "biology": "Biologia",
+    "mathematics": "Matemática",
+    "astronomy": "Astronomia",
+    "earth_science": "Ciências da Terra",
+    "environment": "Meio Ambiente",
+    "medicine": "Medicina",
+    "neuroscience": "Neurociência",
+    "psychology": "Psicologia",
+    "sociology": "Sociologia",
+    "philosophy": "Filosofia",
+    "economics": "Economia",
+    "law": "Direito",
+    "civics": "Civismo e organização social",
+    "computer_science": "Ciência da Computação",
+    "software_engineering": "Engenharia de Software",
+    "engineering": "Engenharia",
+    "mechanics": "Mecânica",
+    "electronics": "Eletrônica",
+    "robotics": "Robótica",
+    "materials": "Ciência dos Materiais",
+    "energy": "Energia",
+    "fauna": "Fauna",
+    "flora": "Flora",
+    "linguistics": "Linguística",
+    "literature": "Literatura",
+    "arts": "Artes",
+    "music": "Música",
+    "culture": "Cultura",
+    "agriculture": "Agricultura",
+    "food_nutrition": "Alimentação e Nutrição",
+}
+
+BUNDLED_SEED_FILES = (
+    ("offline-core-facts-v1", "offline_core_facts.jsonl"),
+    ("offline-foundation-34-v1", "offline_foundation_34.jsonl"),
+)
+
+
 CATEGORY_SOURCES = {
     "geography": ("wikidata", "wikipedia_kiwix", "dbpedia", "usgs"),
     "history": ("wikidata", "wikipedia_kiwix", "dbpedia"),
@@ -465,41 +508,107 @@ class OfflineKnowledgeService:
         self.real_materializer = real_materializer
         self.kiwix = KiwixOfflineEncyclopedia()
         root = Path(__file__).resolve().parents[1]
-        self.seed_path = Path(seed_path or root / "knowledge" / "offline_core_facts.jsonl")
+        if seed_path is not None:
+            self.seed_specs = (("offline-core-facts-v1", Path(seed_path)),)
+        else:
+            self.seed_specs = tuple(
+                (marker, root / "knowledge" / filename)
+                for marker, filename in BUNDLED_SEED_FILES
+            )
+        # Compatibilidade com código/tests que ainda consultam seed_path.
+        self.seed_path = self.seed_specs[0][1]
         self.ensure_categories()
-        self.seed_builtin_once()
+        self.seed_status = self.seed_builtin_once()
 
     def ensure_categories(self):
         if self.real_materializer is not None and hasattr(self.real_materializer, "ensure_namespaces"):
             self.real_materializer.ensure_namespaces(CATEGORY_SOURCES)
 
-    def seed_builtin_once(self) -> dict:
-        marker = self.store.memory_by_key("offline-core-facts-v1", kind="system")
+    def _seed_file_once(self, marker_key: str, path: Path) -> dict:
+        marker = self.store.memory_by_key(marker_key, kind="system")
         if marker:
-            return {"seeded": False, "reason": "already_seeded"}
-        if not self.seed_path.is_file():
-            return {"seeded": False, "reason": "seed_missing"}
-        grouped = {}
-        with self.seed_path.open("r", encoding="utf-8") as stream:
-            for line in stream:
+            return {
+                "marker": marker_key,
+                "path": str(path),
+                "seeded": False,
+                "reason": "already_seeded",
+                "accepted": 0,
+                "duplicates": 0,
+                "rejected": 0,
+            }
+        if not path.is_file():
+            return {
+                "marker": marker_key,
+                "path": str(path),
+                "seeded": False,
+                "reason": "seed_missing",
+                "accepted": 0,
+                "duplicates": 0,
+                "rejected": 0,
+            }
+
+        grouped: dict[str, list[dict]] = {}
+        rejected = 0
+        with path.open("r", encoding="utf-8") as stream:
+            for line_number, line in enumerate(stream, start=1):
                 line = line.strip()
                 if not line:
                     continue
-                item = json.loads(line)
-                theme = str(item.pop("theme")).strip()
+                try:
+                    item = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(
+                        f"seed JSON inválido em {path.name}:{line_number}: {exc}"
+                    ) from exc
+                theme = str(item.pop("theme", "")).strip()
+                if theme not in CATEGORY_SOURCES:
+                    rejected += 1
+                    continue
                 grouped.setdefault(theme, []).append(item)
-        accepted = 0
+
+        accepted = duplicates = 0
         for theme, records in grouped.items():
             result = self.store.ingest_facts(theme, records, target_count=BILLION)
             accepted += int(result["accepted"])
+            duplicates += int(result["duplicates"])
+            rejected += int(result["rejected"])
+
         self.store.remember(
             "system",
-            f"offline core seed v1: {accepted} facts",
-            key="offline-core-facts-v1",
-            metadata={"source": str(self.seed_path), "accepted": accepted},
+            f"{marker_key}: {accepted} fatos novos",
+            key=marker_key,
+            metadata={
+                "source": str(path),
+                "accepted": accepted,
+                "duplicates": duplicates,
+                "rejected": rejected,
+                "categories": sorted(grouped),
+            },
             importance=0.2,
         )
-        return {"seeded": True, "accepted": accepted}
+        return {
+            "marker": marker_key,
+            "path": str(path),
+            "seeded": True,
+            "accepted": accepted,
+            "duplicates": duplicates,
+            "rejected": rejected,
+            "categories": sorted(grouped),
+        }
+
+    def seed_builtin_once(self) -> dict:
+        """Ingere cada corpus bundled uma única vez, com migração por marcador."""
+        results = [
+            self._seed_file_once(marker_key, Path(path))
+            for marker_key, path in self.seed_specs
+        ]
+        return {
+            "seeded": any(item["seeded"] for item in results),
+            "accepted": sum(int(item["accepted"]) for item in results),
+            "duplicates": sum(int(item["duplicates"]) for item in results),
+            "rejected": sum(int(item["rejected"]) for item in results),
+            "datasets": results,
+        }
 
     @staticmethod
     def _retrieval_query_allowed(query: str) -> bool:
@@ -573,6 +682,7 @@ class OfflineKnowledgeService:
             "target_per_category": BILLION,
             "categories": {
                 category: {
+                    "label": OFFLINE_CATEGORY_LABELS[category],
                     "target_count": BILLION,
                     "sources": [
                         {"id": source_id, **SOURCE_DEFINITIONS[source_id]}
@@ -588,7 +698,9 @@ class OfflineKnowledgeService:
         return {
             "categories": len(CATEGORY_SOURCES),
             "category_keys": list(CATEGORY_SOURCES),
+            "category_labels": dict(OFFLINE_CATEGORY_LABELS),
             "target_per_category": BILLION,
+            "bundled_seeds": self.seed_status,
             "real_materialization": status,
             "kiwix": self.kiwix.stats(),
             "offline_fact_retrieval": True,
