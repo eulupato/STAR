@@ -66,6 +66,7 @@ class SemanticVisionProvider:
         self.preferred_model = (model or os.getenv("STAR_LOCAL_VISION_MODEL", "qwen2.5vl:3b")).strip()
         self.engine = AIEngine(model=self.preferred_model, host=self.host, enabled=True)
         self.last_analysis: dict | None = None
+        self.last_error: str | None = None
 
     def _vision_model(self) -> str | None:
         models = self.engine.list_models(timeout=0.5)
@@ -180,9 +181,16 @@ class SemanticVisionProvider:
                 timeout=max(2.0, min(float(os.getenv("STAR_LOCAL_VISION_TIMEOUT", "15")), 45.0)),
                 images=[encoded],
             )
-        except Exception:
+        except Exception as exc:
+            self.last_error = f"{type(exc).__name__}: {exc}"
             return None, model
-        return self._extract_json(raw), model
+
+        parsed = self._extract_json(raw)
+        if parsed is None:
+            self.last_error = "invalid_semantic_model_response"
+            return None, model
+        self.last_error = None
+        return parsed, model
 
     def analyze(self, image_path: str | Path, *, source: str = "local-image", modality: str = "vision") -> dict:
         path = Path(image_path).expanduser().resolve()
@@ -264,6 +272,7 @@ class SemanticVisionProvider:
             "semantic_available": semantic is not None,
             "semantic_model": model,
             "semantic": deepcopy(semantic),
+            "semantic_error": self.last_error,
             "observations": ingested,
             "recognition_is_authentication": False,
             "raw_biometric_persisted": False,
