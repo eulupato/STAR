@@ -45,7 +45,11 @@
     "os_grade_sandbox_runtime",
     "security_agent_read_only",
     "home_automation_home_assistant",
-    "personal_integrations_email_messaging_calendar"
+    "personal_integrations_email_messaging_calendar",
+    "adaptive_local_vad",
+    "opt_in_hands_free_voice",
+    "voice_barge_in",
+    "live_voice_runtime_health"
   ],
   "features_prepared": [
     "expanded_automation",
@@ -769,5 +773,17 @@
       "credentials_persisted": false,
       "authority": "B01/B33"
     }
+  },
+  "voice_realtime": {
+    "status": "active-opt-in",
+    "vad": "adaptive-local-rms-noise-floor-hysteresis",
+    "barge_in": true,
+    "tts_echo_guard": true,
+    "user_activation_required": true,
+    "continuous_background_recording": false,
+    "raw_audio_persisted": false,
+    "temporary_segments_deleted_after_stt": true,
+    "runtime_health": "voice.manager.VoiceManager.runtime_snapshot",
+    "implementation": "voice/audio_input.py + voice/manager.py + gui/app.py"
   }
 }
