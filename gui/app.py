@@ -108,6 +108,15 @@ class StarApp:
         self._write_user_settings(voice_mode=self.voice.mode)
 
     def clear_screen(self):
+        # Mãos-livres só existe enquanto a superfície de chat está visível.
+        # Navegar para outra tela encerra o stream para manter consentimento
+        # observável e evitar um microfone ativo sem indicador na interface.
+        if getattr(self, "hands_free", False):
+            try:
+                self.vad.stop()
+            except Exception:
+                pass
+            self.hands_free = False
         for widget in self.window.winfo_children():
             widget.destroy()
         self.chat = None
