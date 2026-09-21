@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from voice.audio_input import VoiceActivityDetector
+from voice.audio_input import VoiceActivityDetector, VoiceTurnAssembler
 from voice.manager import (
     ChatterboxOfficialTTS,
     FastPiperTTS,
@@ -169,3 +169,29 @@ def test_vad_guard_raises_trigger_while_star_is_speaking():
 
     assert guarded_threshold > normal_threshold
     assert vad.status()["guard"] is True
+
+
+
+def test_turn_assembler_waits_for_portuguese_continuation():
+    wait = VoiceTurnAssembler.hold_for(
+        "qual é a previsão para",
+        settle_ms=250,
+        continue_ms=1200,
+    )
+    assert wait == 1200
+
+
+def test_turn_assembler_emits_explicitly_finished_sentence_immediately():
+    assert VoiceTurnAssembler.hold_for(
+        "qual é a previsão para amanhã?",
+        settle_ms=250,
+        continue_ms=1200,
+    ) == 0
+
+
+def test_turn_assembler_short_override_is_immediate():
+    assert VoiceTurnAssembler.hold_for(
+        "pare",
+        settle_ms=250,
+        continue_ms=1200,
+    ) == 250
