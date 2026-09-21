@@ -49,7 +49,8 @@
     "adaptive_local_vad",
     "opt_in_hands_free_voice",
     "voice_barge_in",
-    "live_voice_runtime_health"
+    "live_voice_runtime_health",
+    "voice_turn_assembly"
   ],
   "features_prepared": [
     "expanded_automation",
@@ -784,6 +785,17 @@
     "raw_audio_persisted": false,
     "temporary_segments_deleted_after_stt": true,
     "runtime_health": "voice.manager.VoiceManager.runtime_snapshot",
-    "implementation": "voice/audio_input.py + voice/manager.py + gui/app.py"
+    "implementation": "voice/audio_input.py + voice/manager.py + gui/app.py",
+    "turn_assembly": {
+      "enabled": true,
+      "languages": [
+        "pt-BR",
+        "en"
+      ],
+      "acoustic_segment_is_not_conversation_turn": true,
+      "continuation_aware": true,
+      "bounded_max_hold_ms": 5500,
+      "implementation": "voice.audio_input.VoiceTurnAssembler"
+    }
   }
 }
