@@ -767,6 +767,11 @@ class VoiceManager:
         self._last_speech_finished_at = 0.0
 
     @property
+    def is_speaking(self) -> bool:
+        """Indica se existe TTS ativo sem expor o Event interno."""
+        return self._speaking.is_set()
+
+    @property
     def configured(self) -> bool:
         if self.mode == "official":
             return self.official.configured
