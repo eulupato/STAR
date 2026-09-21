@@ -19,7 +19,7 @@ from config import APP_NAME, VERSION, WINDOW_HEIGHT, WINDOW_WIDTH, MENU_HEIGHT, 
 from core.avatar import AvatarManager
 from core.emotion import EmotionManager
 from database.memory import Memory
-from voice.audio_input import AudioRecorder, VoiceActivityDetector
+from voice.audio_input import AudioRecorder, VoiceActivityDetector, VoiceTurnAssembler
 from voice.manager import VoiceManager
 
 
@@ -33,6 +33,9 @@ class StarApp:
         self.voice.set_voice_mode(self._load_voice_mode())
         self.recorder = AudioRecorder()
         self.vad = VoiceActivityDetector()
+        self.turn_assembler = VoiceTurnAssembler(
+            lambda text: self.response_queue.put(("vad_utterance", text))
+        )
         self.hands_free = False
         self._pending_voice_transcript = None
         self.online_mode = False
@@ -116,6 +119,7 @@ class StarApp:
                 self.vad.stop()
             except Exception:
                 pass
+            self.turn_assembler.cancel()
             self.hands_free = False
         for widget in self.window.winfo_children():
             widget.destroy()
@@ -232,6 +236,7 @@ class StarApp:
             self._append_system(f"🎙️ Não consegui iniciar mãos-livres: {exc}")
 
     def _vad_on_start(self):
+        self.turn_assembler.speech_started()
         interrupted = self.voice.barge_in()
         self.response_queue.put(("vad_start", interrupted))
 
@@ -315,11 +320,16 @@ class StarApp:
                 elif kind=="vad_transcript":
                     text,duration_ms=result
                     if self.current_screen=="chat":
+                        self._set_status("INTERPRETANDO FALA", self.gold)
+                    self.turn_assembler.feed(str(text))
+                elif kind=="vad_utterance":
+                    text=str(result).strip()
+                    if text and self.current_screen=="chat":
                         if self.processing:
-                            self._pending_voice_transcript=str(text)
-                            self._append_system(f"🎙️ Ouvi você ({duration_ms/1000.0:.1f}s). Vou responder assim que concluir o turno atual.")
+                            self._pending_voice_transcript=text
+                            self._append_system("🎙️ Entendi seu próximo turno. Vou responder assim que concluir o processamento atual.")
                         else:
-                            self.entry.config(state=tk.NORMAL);self.entry.delete(0,tk.END);self.entry.insert(0,str(text));self.entry.config(fg=self.text);self.send_message()
+                            self.entry.config(state=tk.NORMAL);self.entry.delete(0,tk.END);self.entry.insert(0,text);self.entry.config(fg=self.text);self.send_message()
                 elif kind=="vad_error":
                     if self.current_screen=="chat":
                         self._activate_conversation();self._append_system(f"🎙️ Falha no modo mãos-livres: {result}")
@@ -459,6 +469,9 @@ class StarApp:
         self._closing=True
         try:
             self.vad.stop()
+        except Exception:pass
+        try:
+            self.turn_assembler.cancel()
         except Exception:pass
         try:
             if self.recording:self.recorder.stop_to_wav()
