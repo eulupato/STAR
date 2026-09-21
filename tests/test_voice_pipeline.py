@@ -200,3 +200,16 @@ def test_turn_assembler_short_override_uses_low_latency_settle():
         settle_ms=250,
         continue_ms=1200,
     ) == 250
+
+
+
+def test_tts_text_preserves_markdown_link_label_but_drops_url():
+    text = "Veja [a documentação](https://example.com/docs) e https://example.com/raw."
+    spoken = prepare_tts_text(text)
+    assert "a documentação" in spoken
+    assert "https://" not in spoken
+
+
+def test_tts_text_removes_visual_markdown_markers():
+    text = "# Título\n- **Primeiro ponto**\n> _Segundo ponto_"
+    assert prepare_tts_text(text) == "Título Primeiro ponto Segundo ponto"
