@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import queue
 import sys
 import threading
@@ -9,7 +10,9 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import scrolledtext
 
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, UnidentifiedImageError
+
+LOGGER = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -75,21 +78,36 @@ class StarApp:
         return PROJECT_ROOT / "user_settings.json"
 
     def _read_user_settings(self):
-        try:
-            return json.loads(self._user_settings_path.read_text(encoding="utf-8"))
-        except Exception:
+        path = self._user_settings_path
+        if not path.exists():
             return {}
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            LOGGER.warning("Não foi possível ler %s: %s", path, exc)
+            return {}
+        if not isinstance(data, dict):
+            LOGGER.warning("Configuração ignorada porque %s não contém um objeto JSON.", path)
+            return {}
+        return data
 
     def _write_user_settings(self, **values):
+        path = self._user_settings_path
+        temp = path.with_name(path.name + ".tmp")
+        data = self._read_user_settings()
+        data.update(values)
         try:
-            data = self._read_user_settings()
-            data.update(values)
-            self._user_settings_path.write_text(
+            temp.write_text(
                 json.dumps(data, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
-        except Exception:
-            pass
+            temp.replace(path)
+        except (OSError, TypeError) as exc:
+            LOGGER.error("Falha ao salvar configurações em %s: %s", path, exc)
+            try:
+                temp.unlink(missing_ok=True)
+            except OSError:
+                pass
 
     def _load_voice_mode(self):
         mode = str(self._read_user_settings().get("voice_mode", VOICE_CHAT_MODE)).lower()
@@ -99,9 +117,12 @@ class StarApp:
         local = self._read_user_settings().get("skin")
         if local:
             return str(local)
+        path = PROJECT_ROOT / "config_skin.json"
         try:
-            return json.loads((PROJECT_ROOT / "config_skin.json").read_text(encoding="utf-8")).get("skin", "original.jpeg")
-        except Exception:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            return str(data.get("skin", "original.jpeg")) if isinstance(data, dict) else "original.jpeg"
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            LOGGER.warning("Falha ao ler skin padrão de %s: %s", path, exc)
             return "original.jpeg"
 
     def _save_skin_selection(self):
@@ -383,8 +404,15 @@ class StarApp:
     def _load_display_avatar(self):
         skin=PROJECT_ROOT/"SKINS"/self.selected_skin
         if skin.exists():
-            try:image=Image.open(skin).convert("RGBA");image.thumbnail((300,330),Image.Resampling.LANCZOS);self.avatar_photo=ImageTk.PhotoImage(image);self.avatar_label.config(image=self.avatar_photo,text="");return
-            except Exception:pass
+            try:
+                with Image.open(skin) as source:
+                    image = source.convert("RGBA")
+                image.thumbnail((300,330),Image.Resampling.LANCZOS)
+                self.avatar_photo=ImageTk.PhotoImage(image)
+                self.avatar_label.config(image=self.avatar_photo,text="")
+                return
+            except (OSError, ValueError, UnidentifiedImageError) as exc:
+                LOGGER.warning("Skin inválida ou ilegível %s: %s", skin, exc)
         self._load_avatar("neutral")
     def _load_avatar(self,emotion="neutral"):
         path=self.avatar.avatar_dir/f"{emotion}.png"
