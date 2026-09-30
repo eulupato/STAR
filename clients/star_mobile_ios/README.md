@@ -31,7 +31,7 @@ de APIs novas dessas versões.
 Na raiz da STAR no Windows:
 
 ```powershell
-.\INICIAR_STAR_DEVICES.bat
+.\INICIAR_PC.bat
 ```
 
 O terminal mostra o endereço LAN e o código de pareamento.

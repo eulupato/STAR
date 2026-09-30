@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
-import logging
 import math
 from pathlib import Path
 import threading
@@ -21,7 +20,6 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNTIME_DIR = ROOT / "runtime" / "star_watch"
 PEOPLE_FILE = RUNTIME_DIR / "people.json"
 WATCH_APP_VERSION = "0.4.0"
-LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -237,14 +235,13 @@ class StarWatchApp:
 
     def _core(self):
         if self.star is None:
-            from main import create_star
-            self.star = create_star()
+            from clients.device_client import RemoteSurfaceBrain
+            self.star = RemoteSurfaceBrain("watch")
         return self.star
 
     def _voice(self):
         if self.voice_manager is None:
-            from voice.manager import VoiceManager
-            self.voice_manager = VoiceManager()
+            self.voice_manager = self._core().surface_voice
         return self.voice_manager
 
     def _clear_controls(self):
@@ -341,8 +338,8 @@ class StarWatchApp:
             try:
                 self._voice().speak_async(str(answer), callback=lambda *_: self.root.after(0, self._idle))
                 return
-            except Exception as exc:
-                LOGGER.warning("Saída de voz do Watch indisponível: %s", exc)
+            except Exception:
+                pass
         self.root.after(1400, self._idle)
 
     def _idle(self):
@@ -390,8 +387,12 @@ class StarWatchApp:
             path = None
             try:
                 path = recorder.stop_to_wav()
-                transcript = self._voice().transcribe(path)
-                answer = self._core().process(transcript, allow_actions=False)
+                core = self._core()
+                if getattr(core, "is_remote_endpoint", False):
+                    transcript, answer = core.process_audio(path)
+                else:
+                    transcript = self._voice().transcribe(path)
+                    answer = core.process(transcript, allow_actions=False)
                 error = None
             except Exception as exc:
                 transcript = ""
@@ -455,8 +456,23 @@ class StarWatchApp:
             filetypes=[("Imagens", "*.png *.jpg *.jpeg *.webp"), ("Todos", "*.*")],
         )
         if path:
-            self.message = f"Imagem selecionada:\n{Path(path).name}\n\nAnálise visual ainda não está ativa."
+            selected = Path(path)
+            self.model.set_state("thinking", "PENSANDO")
+            self.message = f"Enviando {selected.name} ao STAR Core..."
             self.render()
+
+            def work():
+                try:
+                    answer = self._core().process_image(
+                        selected, "O que você observa nesta imagem?"
+                    )
+                    state = "speaking"
+                except Exception as exc:
+                    answer = f"Erro: {type(exc).__name__}: {exc}"
+                    state = "error"
+                self.root.after(0, lambda: self._finish_core(answer, state))
+
+            threading.Thread(target=work, daemon=True, name="STAR-Watch-Vision").start()
 
     def _toggle_simulation(self):
         self.model.simulation_enabled = not self.model.simulation_enabled
@@ -555,7 +571,7 @@ class StarWatchApp:
             value = f"{data.get('speed_kmh', '--')} km/h" if data.get("available") else "GPS OFF"
             self._draw_center_value(value, data.get("message", ""))
         elif key == "vision":
-            self._draw_center_value("STAR SCAN", self.message or "Selecione uma imagem. Transporte existe; análise visual ainda não.")
+            self._draw_center_value("STAR SCAN", self.message or "Selecione uma imagem para enviar ao STAR Core e analisar pelo B25.")
             self._create_action_button("SELECIONAR IMAGEM", self._select_vision_image)
         elif key == "people":
             rows = self.people.list()
@@ -638,13 +654,20 @@ class StarWatchApp:
         if self.recorder is not None:
             try:
                 self.recorder.stop()
-            except Exception as exc:
-                LOGGER.warning("Falha ao encerrar gravador do Watch: %s", exc)
+            except Exception:
+                pass
         if self.voice_manager is not None:
             try:
                 self.voice_manager.close()
-            except Exception as exc:
-                LOGGER.warning("Falha ao encerrar voz do Watch: %s", exc)
+            except Exception:
+                pass
+        if self.star is not None:
+            close_surface = getattr(self.star, "close_surface", None)
+            if callable(close_surface):
+                try:
+                    close_surface()
+                except Exception:
+                    pass
         self.root.destroy()
 
 

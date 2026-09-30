@@ -13,6 +13,13 @@ from dataclasses import dataclass
 import re
 import unicodedata
 
+from core.curriculum_foundations import (
+    answer_foundational_fact,
+    render_theme_foundation,
+    sources_for,
+    stats as foundation_stats,
+    theme_foundation,
+)
 from core.curriculum_taxonomy import (
     CANONICAL_ALIAS_TARGETS,
     CONCEPT_ALIASES,
@@ -263,10 +270,16 @@ class CurriculumKnowledgeEngine:
     def stats(self) -> dict:
         linked = sum(1 for c in self.concepts if len(c.theme_ids) > 1)
         cross_owner = sum(1 for c in self.concepts if len(c.owners) > 1)
+        factual = foundation_stats()
         return {
             "themes": THEME_COUNT,
+            "factual_foundations": factual["theme_foundations"],
+            "verified_fact_records": factual["fact_records"],
+            "country_capitals": factual["country_capitals"],
+            "factual_sources": factual["sources"],
             "raw_topic_mentions": RAW_TOPIC_MENTIONS,
             "unique_concepts": CONCEPT_COUNT,
+            "concept_foundations": CONCEPT_COUNT,
             "deduplicated_mentions": DEDUPLICATED_MENTIONS,
             "cross_theme_concepts": linked,
             "cross_owner_concepts": cross_owner,
@@ -381,14 +394,35 @@ class CurriculumKnowledgeEngine:
         label = _norm(resolved.label)
         return resolved.score >= 2.0 or q == label or f" {label} " in f" {q} "
 
+    def answer_foundation(self, text: str) -> str | None:
+        """Retorna somente um fato curado de alta confiança, se houver."""
+        return answer_foundational_fact(text)
+
     def answer(self, text: str) -> str | None:
+        # Fatos básicos curados têm precedência sobre a síntese taxonômica.
+        # Assim a STAR responde a perguntas cotidianas com conteúdo verificável,
+        # sem depender de um LLM ou fabricar uma definição a partir do nome.
+        factual = self.answer_foundation(text)
+        if factual:
+            return factual
+
         resolved = self.resolve(text)
         if resolved is None:
             return None
+
+        q = _norm(text)
+        wants_sources = any(
+            token in q.split()
+            for token in ("fonte", "fontes", "referencia", "referencias", "evidencia")
+        )
+        if resolved.kind == "theme":
+            return render_theme_foundation(
+                resolved.item_id,
+                include_sources=wants_sources,
+            )
+
         variation = self._variation_from_query(text)
-        if resolved.kind == "concept":
-            return self.materialize_concept(resolved.item_id, variation)["answer"]
-        return self.materialize_theme(resolved.item_id, variation)["answer"]
+        return self.materialize_concept(resolved.item_id, variation)["answer"]
 
     @staticmethod
     def _variation_from_query(text: str) -> int:
@@ -414,30 +448,60 @@ class CurriculumKnowledgeEngine:
 
     @staticmethod
     def _render_theme(theme: CurriculumTheme, axes: dict[str, str]) -> str:
-        source_text = ", ".join(_theme_sources(theme)) or "fontes técnicas da área"
+        # A representação endereçável continua existindo, mas agora parte de
+        # conteúdo factual real em vez de devolver somente metadados do catálogo.
+        foundation = render_theme_foundation(theme.id)
         topics = ", ".join(theme.topics[:8])
         more = len(theme.topics) - min(8, len(theme.topics))
-        suffix = f" (+{more} conceitos ligados)" if more else ""
+        suffix = f" (+{more} conceitos catalogados)" if more else ""
         return (
-            f"📚 CURRÍCULO — {theme.label}. Área proprietária: {theme.owner}. "
-            f"Eixos: {axes['mode']} / {axes['depth']} / {axes['evidence_lens']} / {axes['context']}. "
-            f"Mapa canônico inclui: {topics}{suffix}. "
-            f"Fontes-guia: {source_text}. {_evidence_guidance(theme.evidence_class)} "
-            "Use os conceitos canônicos ligados; não replique fatos já existentes em outra base."
+            f"{foundation} Conceitos-base: {topics}{suffix}. "
+            f"{_evidence_guidance(theme.evidence_class)}"
         )
 
     @staticmethod
     def _render_concept(concept: CanonicalConcept, axes: dict[str, str]) -> str:
-        source_text = ", ".join(concept.sources[:6]) or "fontes técnicas da área"
+        # Cada um dos conceitos canônicos recebe conteúdo factual básico real,
+        # reutilizando a fundação curada do(s) tema(s) ao qual pertence. Isso
+        # substitui a antiga resposta de metadados ("Modo=...", "profundidade=...")
+        # sem inventar 885 definições isoladas ou criar outro sistema paralelo.
+        primary_theme_id = concept.theme_ids[0]
+        foundation = theme_foundation(primary_theme_id)
+        concept_tokens = _tokens(concept.label)
+
+        def fact_score(fact: str) -> tuple[int, int]:
+            fact_tokens = _tokens(fact)
+            overlap = len(concept_tokens & fact_tokens)
+            phrase = _norm(concept.label)
+            exact = 2 if phrase and phrase in _norm(fact) else 0
+            return (overlap + exact, -len(fact))
+
+        ranked = sorted(foundation.facts, key=fact_score, reverse=True)
+        key_fact = ranked[0] if ranked else foundation.summary
+
         memberships = ", ".join(concept.theme_labels)
-        return (
-            f"📘 CURRÍCULO — {concept.label}. Área principal: {concept.primary_owner}; "
-            f"conexões: {memberships}. Modo={axes['mode']}, profundidade={axes['depth']}, "
-            f"evidência={axes['evidence_lens']}, contexto={axes['context']}, "
-            f"representação={axes['representation']}, verificação={axes['verification']}. "
-            f"Fontes-guia: {source_text}. {_evidence_guidance(concept.evidence_class)} "
-            "Ao responder, preserve unidades/IDs/equações, explicite hipóteses e conecte às bases existentes sem duplicá-las."
+        answer = (
+            f"No currículo da STAR, {concept.label} pertence a {memberships}. "
+            f"{foundation.summary} Ponto-chave relacionado: {key_fact} "
+            f"{_evidence_guidance(concept.evidence_class)}"
         )
+
+        if axes["mode"] == "comparacao":
+            answer += " Em uma comparação, separe definição, hipóteses, grandezas comparáveis e limites de validade."
+        elif axes["mode"] == "falhas_limites":
+            answer += " Para limites e falhas, identifique condições de contorno, fontes de erro e casos em que o modelo deixa de valer."
+        elif axes["mode"] == "experimento":
+            answer += " Em contexto experimental, explicite variável medida, unidade, incerteza, controle e critério de validação."
+        elif axes["mode"] == "problema":
+            answer += " Para resolver problemas, comece pelas grandezas conhecidas, hipóteses, relações físicas/matemáticas e verificação dimensional."
+
+        if axes["verification"] == "fontes" or axes["mode"] == "evidencia":
+            refs = sources_for(foundation.source_keys)
+            if refs:
+                answer += " Fontes-base: " + "; ".join(
+                    f"{ref.name} — {ref.url}" for ref in refs
+                )
+        return answer
 
     def duplicates_report(self) -> tuple[dict, ...]:
         rows = []

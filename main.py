@@ -9,6 +9,15 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+
+def _configure_console_io():
+    """Mantém logs Unicode estáveis no Windows, inclusive fora de um .bat."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError):
+            pass
+
 from config import (
     DEVICE_GATEWAY_ENABLED,
     DEVICE_GATEWAY_HOST,
@@ -16,41 +25,10 @@ from config import (
     EXTERNAL_AI_ENABLED,
     VERSION,
 )
-from core.autonomy_limits import AutonomyLimits
-from core.body_proprioception import BodyActuationExecutor, TcpJsonBodyEndpoint
-from core.cfc_benchmark import CFC97, FunctionalCognitiveBenchmark
-from core.cognitive_integration import CognitiveIntegration
-from core.cognitive_maintenance import CognitiveMaintenance
-from core.consciousness_frontier import ConsciousnessResearchFrontier
-from core.device_sensors import DeviceSensorHub
-from core.cure import CureSystem
-from core.executive import Executive
-from core.home_automation import HomeAutomationService
-from core.internal_knowledge import StarInternalKnowledge
-from core.knowledge_packs import KnowledgePackManager
-from core.knowledge_research_documents import Group3KnowledgeServices, IntelligentProactiveScheduler
-from core.natural_interaction import NaturalInteraction
-from core.os_sandbox import OSSandbox
-from core.offline_knowledge import OfflineKnowledgeService
-from core.perception_runtime import PerceptionRuntime
-from core.personal_integrations import PersonalIntegrations
-from core.person_auth import LocalPersonAuthenticator
-from core.router import Router
-from core.security_agent import SecurityAgent
-from core.skills import SkillRegistry
-from core.star_core import StarCore
-from core.star_identity import StarIdentity
-from core.state import StarState
-from core.tools import ToolRegistry, safe_math
-from modules.automation import AgendaManager
 
 
 class _LazyComponent:
-    """Proxy thread-safe para serviços pesados carregados somente no primeiro uso.
-
-    Preserva a API pública do serviço real via getattr e evita importar ou
-    instanciar grandes catálogos durante a abertura da interface.
-    """
+    """Proxy thread-safe para catálogos pesados carregados somente no primeiro uso."""
 
     def __init__(self, label: str, module_name: str, class_name: str):
         self.label = str(label)
@@ -94,40 +72,26 @@ class _LazyComponent:
         return getattr(self._load(), name)
 
     def __bool__(self):
-        # O Executive usa truthiness para saber se a capacidade existe.
-        # Existir não deve forçar o carregamento do catálogo.
         return True
 
 
 def _lazy_knowledge_components():
     return {
-        "physics": _LazyComponent(
-            "physics", "core.physics_knowledge_150k", "PhysicsKnowledgeEngine"
-        ),
-        "chemistry": _LazyComponent(
-            "chemistry", "core.chemistry_knowledge_500k", "ChemistryKnowledgeEngine"
-        ),
+        "physics": _LazyComponent("physics", "core.physics_knowledge_150k", "PhysicsKnowledgeEngine"),
+        "chemistry": _LazyComponent("chemistry", "core.chemistry_knowledge_500k", "ChemistryKnowledgeEngine"),
         "multidisciplinary": _LazyComponent(
-            "multidisciplinary", "core.multidisciplinary_knowledge",
-            "MultidisciplinaryKnowledgeEngine"
+            "multidisciplinary", "core.multidisciplinary_knowledge", "MultidisciplinaryKnowledgeEngine"
         ),
         "knowledge_plus": _LazyComponent(
-            "knowledge_plus", "core.knowledge_expansion_15m",
-            "KnowledgeExpansion15MEngine"
+            "knowledge_plus", "core.knowledge_expansion_15m", "KnowledgeExpansion15MEngine"
         ),
-        "curriculum": _LazyComponent(
-            "curriculum", "core.curriculum_knowledge", "CurriculumKnowledgeEngine"
-        ),
+        "curriculum": _LazyComponent("curriculum", "core.curriculum_knowledge", "CurriculumKnowledgeEngine"),
     }
 
 
-def _env_true(name: str, default: bool = False) -> bool:
-    raw = os.getenv(name)
-    if raw is None:
-        return bool(default)
-    return raw.strip().casefold() in {"1", "true", "yes", "on", "sim"}
-
 def _configure_optional_body_endpoint(star):
+    from core.body_proprioception import TcpJsonBodyEndpoint
+
     host = str(os.getenv("STAR_BODY_ENDPOINT_HOST", "")).strip()
     port = str(os.getenv("STAR_BODY_ENDPOINT_PORT", "")).strip()
     if not host and not port:
@@ -144,6 +108,36 @@ def _configure_optional_body_endpoint(star):
 
 
 def create_star():
+    # Imports pesados ficam dentro da construção do Core para a janela de
+    # inicialização aparecer antes do carregamento cognitivo.
+    from core.autonomy_limits import AutonomyLimits
+    from core.body_proprioception import BodyActuationExecutor
+    from core.cfc_benchmark import CFC97, FunctionalCognitiveBenchmark
+    from core.cognitive_integration import CognitiveIntegration
+    from core.cognitive_maintenance import CognitiveMaintenance
+    from core.consciousness_frontier import ConsciousnessResearchFrontier
+    from core.device_sensors import DeviceSensorHub
+    from core.cure import CureSystem
+    from core.executive import Executive
+    from core.home_automation import HomeAutomationService
+    from core.internal_knowledge import StarInternalKnowledge
+    from core.knowledge_packs import KnowledgePackManager
+    from core.knowledge_research_documents import Group3KnowledgeServices, IntelligentProactiveScheduler
+    from core.natural_interaction import NaturalInteraction
+    from core.os_sandbox import OSSandbox
+    from core.perception_runtime import PerceptionRuntime
+    from core.personal_integrations import PersonalIntegrations
+    from core.person_auth import LocalPersonAuthenticator
+    from core.offline_knowledge import OfflineKnowledgeService
+    from core.router import Router
+    from core.security_agent import SecurityAgent
+    from core.skills import SkillRegistry
+    from core.star_core import StarCore
+    from core.star_identity import StarIdentity
+    from core.state import StarState
+    from core.tools import ToolRegistry, safe_math
+    from modules.automation import AgendaManager
+
     identity = StarIdentity()
     knowledge = StarInternalKnowledge(identity)
     knowledge_components = _lazy_knowledge_components()
@@ -211,9 +205,8 @@ def create_star():
     star.mind.rag = star.group3.rag
     star.mind.group3 = star.group3
 
-    # Conhecimento real offline: reutiliza o mesmo EpistemicStore/CognitiveStore e
-    # o ledger físico do Grupo 3. A consulta factual ocorre antes dos matchers
-    # temáticos legados, e Kiwix/ZIM é usado apenas localmente quando instalado.
+    # Conhecimento offline reutiliza o mesmo store e o materializador real do
+    # Grupo 3. Ele consulta fatos antes dos matchers temáticos legados.
     star.offline_knowledge = OfflineKnowledgeService(
         star.mind.store,
         real_materializer=star.group3.real_knowledge,
@@ -345,7 +338,7 @@ def _device_gateway_requested():
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _start_device_gateway(star):
+def _start_device_gateway(star, voice_manager=None):
     if not _device_gateway_requested():
         return None
 
@@ -357,6 +350,7 @@ def _start_device_gateway(star):
         port=int(os.getenv("STAR_DEVICE_PORT", str(DEVICE_GATEWAY_PORT))),
         runtime_dir=ROOT / "runtime" / "oni",
         manifest_path=ROOT / "STAR_MANIFEST.json",
+        voice_manager=voice_manager,
     ).start()
     star.device_gateway = gateway
     print(f"📡 STAR Device Gateway: {gateway.url}")
@@ -366,88 +360,114 @@ def _start_device_gateway(star):
     return gateway
 
 
-def _print_startup_summary(star):
-    """Resumo rápido sem carregar catálogos pesados apenas para imprimir métricas."""
-    pack_stats = star.packs.stats()
-    lazy_components = (
-        star.physics,
-        star.chemistry,
-        star.multidisciplinary,
-        star.knowledge_plus,
-        star.curriculum,
-    )
-    loaded = sum(1 for component in lazy_components if component.loaded)
-
-    print(f"🧠 Identidade: {star.get_name()}")
-    print(f"👤 Criador: {star.get_creator()}")
-    print("📚 Conhecimento interno: ATIVO")
-    print("⚡ Catálogos científicos: ON-DEMAND "
-          f"({loaded}/{len(lazy_components)} carregados no startup)")
-    print("🔄 Cognição integrada: FAST/DELIBERATIVE + posição cognitiva")
-    print("👁️ Percepção: providers locais/lazy; captura contínua=NÃO")
-    print("🛡️ Guardian/limites: DEFAULT DENY + execução separada da cognição")
-    print(f"📦 Knowledge Packs detectados: {pack_stats.get('packs', 0)}")
-    print("🤖 IA externa:", "ATIVA" if EXTERNAL_AI_ENABLED else "DESATIVADA")
-    print("🖥️ Interface: ATIVA")
-
-    if _env_true("STAR_STARTUP_VERBOSE", False):
-        _print_verbose_startup_stats(star)
-
-
-def _print_verbose_startup_stats(star):
-    """Diagnóstico opcional de startup; pode materializar serviços lazy."""
-    physics_stats = star.physics.stats()
-    chemistry_stats = star.chemistry.stats()
-    multi_stats = star.multidisciplinary.stats()
-    plus_stats = star.knowledge_plus.stats()
-    curriculum_stats = star.curriculum.stats()
-    mind_stats = star.mind.stats()
-    group3_stats = star.group3.stats()
-    offline_stats = star.offline_knowledge.stats()
-
-    print("-" * 60)
-    print("DIAGNÓSTICO DETALHADO DE STARTUP")
-    print(f"⚛️ Física: {physics_stats['canonical_topics']} tópicos | "
-          f"{physics_stats['content_variations']} variações")
-    print(f"🧪 Química: {chemistry_stats['canonical_topics']} tópicos | "
-          f"{chemistry_stats['content_variations']} variações")
-    print(f"🧭 Multidisciplinar: {multi_stats['subjects']} matérias | "
-          f"{multi_stats['canonical_nodes']} nós")
-    print(f"🚀 Knowledge PLUS: +{plus_stats['added_content_variations']} endereçáveis")
-    print(f"🧬 Currículo: {curriculum_stats['themes']} temas | "
-          f"{curriculum_stats['unique_concepts']} conceitos")
-    print(f"🧠 MIND: {mind_stats['capabilities']} capacidades | "
-          f"{mind_stats['canonical_nodes_total']} nós")
-    print(f"🌐 Grupo 3: arquivos={group3_stats['semantic_files']['vector_backend']} | "
-          f"offline={offline_stats['categories']} categorias")
-    for component in (
-        star.physics, star.chemistry, star.multidisciplinary,
-        star.knowledge_plus, star.curriculum,
-    ):
-        status = component.runtime_status()
-        print(f"  • {status['label']}: loaded={status['loaded']} "
-              f"tempo={status['load_seconds']}s")
-    print("-" * 60)
-
-
-def main():
-    print("=" * 60)
-    print(f"⭐ INICIALIZANDO STAR V{VERSION} — MODO OFFLINE-FIRST")
-    print("=" * 60)
-    star = create_star()
-    _print_startup_summary(star)
-
-    gateway = _start_device_gateway(star)
-    star.proactivity.start()
+def _print_runtime_summary(star) -> None:
+    """Resumo leve pós-startup; nunca materializa catálogos científicos só para logar."""
     try:
-        # Import tardio: CLI/testes que só usam create_star não carregam Tk/Pillow.
-        from gui.localized_app import LocalizedStarApp
+        pack_stats = star.packs.stats()
+        storage_stats = star.packs.storage_stats()
+        natural_stats = star.natural_interaction.stats()
+        lazy_components = (
+            star.physics,
+            star.chemistry,
+            star.multidisciplinary,
+            star.knowledge_plus,
+            star.curriculum,
+        )
+        loaded = sum(1 for component in lazy_components if component.loaded)
+        print(f"🧠 Identidade: {star.get_name()} | Criador: {star.get_creator()}")
+        print(f"⚡ Catálogos científicos: ON-DEMAND ({loaded}/{len(lazy_components)} carregados)")
+        print(f"💬 Interação natural: modelo local={natural_stats['local_llm_model']}")
+        print(f"📦 Packs: {pack_stats['packs']} | locais={storage_stats['local']} | removíveis={storage_stats['removable']}")
+        print("🤖 IA externa:", "ATIVA" if EXTERNAL_AI_ENABLED else "DESATIVADA")
+    except Exception as exc:
+        print(f"⚠️ Resumo de diagnóstico indisponível: {type(exc).__name__}: {exc}")
 
-        LocalizedStarApp(brain=star).run()
+
+def run_surface(profile: str = "pc") -> int:
+    """Abre uma superfície imediatamente e constrói o Core fora da thread da UI."""
+    import queue
+    import traceback
+    import tkinter as tk
+
+    profile = "mobile" if str(profile).lower() == "mobile" else "pc"
+    _configure_console_io()
+    print("=" * 60)
+    print(f"⭐ INICIALIZANDO STAR V{VERSION} — {profile.upper()} — OFFLINE-FIRST")
+    print("=" * 60)
+
+    if profile == "mobile":
+        from clients.device_client import RemoteSurfaceBrain
+        from gui.localized_app import LocalizedStarApp
+        brain = RemoteSurfaceBrain("mobile")
+        app = LocalizedStarApp(brain=brain, profile="mobile")
+        try:
+            app.run()
+        finally:
+            brain.close_surface()
+        return 0
+
+    results: queue.Queue = queue.Queue(maxsize=1)
+    holder = {}
+    splash = tk.Tk()
+    splash.title(f"STAR V{VERSION} — Inicializando")
+    splash.configure(bg="#0b1018")
+    splash.geometry("430x260" if profile == "mobile" else "520x300")
+    splash.resizable(False, False)
+    tk.Label(splash, text="⭐  STAR", fg="#8fd0ff", bg="#0b1018",
+             font=("Segoe UI", 28, "bold")).pack(pady=(58, 14))
+    status = tk.Label(splash, text="Inicializando núcleo compartilhado…",
+                      fg="#9aa8bb", bg="#0b1018", font=("Segoe UI", 10))
+    status.pack()
+
+    def build_core():
+        try:
+            results.put(("ready", create_star()))
+        except Exception as exc:
+            results.put(("error", (exc, traceback.format_exc())))
+
+    threading.Thread(target=build_core, daemon=True, name="STAR-CoreStartup").start()
+
+    def poll():
+        try:
+            kind, payload = results.get_nowait()
+        except queue.Empty:
+            splash.after(75, poll)
+            return
+        if kind == "ready":
+            holder["star"] = payload
+            splash.destroy()
+            return
+        exc, details = payload
+        holder["error"] = exc
+        print(details)
+        status.config(text=f"Falha ao iniciar: {type(exc).__name__}: {exc}", fg="#ff7c87")
+        tk.Button(splash, text="FECHAR", command=splash.destroy,
+                  bg="#243247", fg="white", relief=tk.FLAT).pack(pady=18)
+
+    splash.after(40, poll)
+    splash.mainloop()
+    star = holder.get("star")
+    if star is None:
+        return 1
+
+    from gui.localized_app import LocalizedStarApp
+    app = LocalizedStarApp(brain=star, profile="pc")
+    gateway = _start_device_gateway(star, voice_manager=app.voice)
+    star.proactivity.start()
+    threading.Thread(target=_print_runtime_summary, args=(star,), daemon=True,
+                     name="STAR-StartupSummary").start()
+    try:
+        app.run()
     finally:
         star.proactivity.stop()
         if gateway is not None:
             gateway.stop()
+    return 0
+
+
+def main():
+    return run_surface("pc")
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

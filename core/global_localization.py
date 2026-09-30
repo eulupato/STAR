@@ -76,6 +76,7 @@ STATIC_TEXTS = (
     _row("🎙️ VOZ DA STAR", "🎙️ STAR VOICE", "🎙️ STAR VOICE", "🎙️ VOZ DE STAR", "🎙️ VOCE DI STAR", "🎙️ VOIX DE STAR"),
     _row("⚡ CONVERSA RÁPIDA", "⚡ FAST CONVERSATION", "⚡ FAST CONVERSATION", "⚡ CONVERSACIÓN RÁPIDA", "⚡ CONVERSAZIONE RAPIDA", "⚡ CONVERSATION RAPIDE"),
     _row("⭐ VOZ OFICIAL", "⭐ OFFICIAL VOICE", "⭐ OFFICIAL VOICE", "⭐ VOZ OFICIAL", "⭐ VOCE UFFICIALE", "⭐ VOIX OFFICIELLE"),
+    _row("TESTAR VOZ ATUAL", "TEST CURRENT VOICE", "TEST CURRENT VOICE", "PROBAR VOZ ACTUAL", "TESTA VOCE ATTUALE", "TESTER LA VOIX ACTUELLE"),
     _row("TESTAR VOZ OFICIAL", "TEST OFFICIAL VOICE", "TEST OFFICIAL VOICE", "PROBAR VOZ OFICIAL", "TESTA VOCE UFFICIALE", "TESTER LA VOIX OFFICIELLE"),
     _row("Pronto para testar.", "Ready to test.", "Ready to test.", "Listo para probar.", "Pronto per il test.", "Prêt pour le test."),
     _row("Versão", "Version", "Version", "Versión", "Versione", "Version"),

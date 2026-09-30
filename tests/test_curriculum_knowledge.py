@@ -128,4 +128,77 @@ def test_main_wires_curriculum_without_breaking_legacy_routes(tmp_path, monkeypa
     assert "CURRÍCULO" not in broad
 
     specific = str(star.process("explique MBSE"))
-    assert "CURRÍCULO" in specific
+    assert "MBSE" in specific
+    assert "Modo=" not in specific
+
+
+def test_curriculum_foundations_cover_all_56_themes_with_real_content():
+    from core.curriculum_foundations import render_theme_foundation
+
+    engine = CurriculumKnowledgeEngine()
+    stats = engine.stats()
+    assert stats["factual_foundations"] == 56
+    assert stats["verified_fact_records"] >= 50
+    assert stats["country_capitals"] >= 70
+    assert stats["factual_sources"] >= 20
+
+    for theme_id in range(1, 57):
+        answer = render_theme_foundation(theme_id)
+        assert len(answer) > 120
+        assert "•" in answer
+
+
+def test_basic_general_knowledge_is_answered_locally():
+    engine = CurriculumKnowledgeEngine()
+    cases = {
+        "qual é a capital da França?": ("Paris",),
+        "quantos ossos o corpo humano tem?": ("206",),
+        "para que serve o coração?": ("sangue", "pulmões"),
+        "qual é a função do pulmão?": ("oxigênio", "dióxido de carbono"),
+        "quem é Michael Jackson?": ("cantor", "Thriller", "1958"),
+        "em que época os dinossauros existiram?": ("245", "66", "Mesozoica"),
+        "quantos planetas tem o Sistema Solar?": ("oito",),
+        "o que é DNA?": ("informação genética",),
+        "qual é a fórmula da água?": ("H₂O",),
+        "o que são placas tectônicas?": ("litosfera", "movem"),
+        "qual é o maior oceano?": ("Pacífico",),
+        "qual é a velocidade da luz?": ("299 792 458",),
+        "qual é a capital da Suécia?": ("Estocolmo",),
+    }
+    for question, expected in cases.items():
+        answer = engine.answer(question)
+        assert answer is not None, question
+        for fragment in expected:
+            assert fragment.casefold() in answer.casefold(), (question, answer)
+
+
+def test_foundational_answer_can_expose_real_source_when_requested():
+    engine = CurriculumKnowledgeEngine()
+    answer = engine.answer("qual é a capital da França? cite a fonte")
+    assert "Paris" in answer
+    assert "European Union" in answer
+    assert "https://" in answer
+
+
+def test_all_canonical_concepts_have_real_basic_content_not_metadata_only():
+    engine = CurriculumKnowledgeEngine()
+    stats = engine.stats()
+    assert stats["concept_foundations"] == stats["unique_concepts"]
+    assert stats["unique_concepts"] == len(CONCEPTS)
+
+    for concept in CONCEPTS:
+        answer = engine.materialize_concept(concept.index, 1)["answer"]
+        assert len(answer) > 180, concept.label
+        assert concept.label.casefold() in answer.casefold()
+        assert "Modo=" not in answer
+        assert "profundidade=" not in answer
+        assert "Ponto-chave relacionado:" in answer
+
+
+def test_concept_source_request_uses_real_foundation_urls():
+    engine = CurriculumKnowledgeEngine()
+    answer = engine.answer("explique neurônios e cite fontes")
+    assert answer is not None
+    assert "neurônios" in answer.casefold()
+    assert "NCBI" in answer or "OpenStax" in answer
+    assert "https://" in answer

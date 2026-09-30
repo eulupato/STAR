@@ -11,8 +11,8 @@ MIN_WINDOW_HEIGHT = 600
 
 EXTERNAL_AI_ENABLED = False
 
-# Ponte experimental de dispositivos. Permanece desligada por padrão para não
-# alterar o comportamento da Foundation. INICIAR_STAR_WATCH.bat ativa via env.
+# Ponte experimental de dispositivos. Permanece desligada no Core por padrão;
+# INICIAR_PC.bat ativa a ponte LAN para Mobile/Watch sem criar outro cérebro.
 DEVICE_GATEWAY_ENABLED = False
 DEVICE_GATEWAY_HOST = "0.0.0.0"
 DEVICE_GATEWAY_PORT = 8765
@@ -25,8 +25,8 @@ VOICE_MODE = "official"
 VOICE_CHAT_MODE = "fast"
 
 # Motor rápido disponível somente quando escolhido explicitamente.
-VOICE_FAST_ENGINE = "Windows SAPI / Piper"
-VOICE_FAST_PREFERENCE = "sapi"
+VOICE_FAST_ENGINE = "Piper / Windows SAPI"
+VOICE_FAST_PREFERENCE = "piper"
 VOICE_FALLBACK_ON_ERROR = False
 
 # Conversão de voz é uma capacidade separada do TTS. Seed-VC permanece opcional,

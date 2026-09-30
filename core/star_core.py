@@ -1,4 +1,5 @@
 import time
+import unicodedata
 
 from core.agents import AgentManager
 from core.attention_salience import AttentionSalience
@@ -587,9 +588,18 @@ class StarCore:
             return f"Prazer, {self.user_name}! ⭐ Agora vou me lembrar do seu nome durante esta sessão."
 
         normalized = request["input"].strip().lower()
+        normalized = "".join(
+            ch for ch in unicodedata.normalize("NFD", normalized)
+            if unicodedata.category(ch) != "Mn"
+        )
+        normalized = re.sub(r"[^a-z0-9\s]", " ", normalized)
+        normalized = " ".join(normalized.split())
         if (
-            normalized
-            in {"qual e o significado", "qual é o significado", "e o significado", "o significado"}
+            normalized in {
+                "qual e o significado", "e o significado", "o significado",
+                "o que isso significa", "isso significa o que",
+                "o isso significa", "e isso significa o que",
+            }
             and self.last_intent in {"meaning", "full_name", "name"}
         ):
             return self.internal_knowledge.answer("o que significa star")

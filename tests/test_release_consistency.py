@@ -29,3 +29,22 @@ def test_official_identity_is_consistent():
     assert identity.get_full_name() == "System for Thought, Analysis and Response"
     assert identity.get_creator() == "Lu"
     assert identity.is_creator("Lu") is True
+
+
+def test_only_three_product_launchers_exist_and_match_manifest():
+    manifest = json.loads((ROOT / "STAR_MANIFEST.json").read_text(encoding="utf-8"))
+    expected = {
+        "pc": "INICIAR_PC.bat",
+        "mobile": "INICIAR_MOBILE.bat",
+        "watch": "INICIAR_WATCH.bat",
+    }
+
+    assert manifest["launchers"] == expected
+    assert manifest["launcher"] == expected["pc"]
+    assert sorted(path.name for path in ROOT.glob("INICIAR_*.bat")) == sorted(expected.values())
+    assert (ROOT / "clients" / "star_mobile_app.py").exists()
+    assert manifest["star_mobile_app"]["core_source"] == "STAR Device Gateway -> PC StarCore"
+    assert manifest["star_mobile_app"]["shares_pc_cognition"] is True
+    assert manifest["star_mobile_app"]["creates_parallel_core"] is False
+    assert manifest["star_watch_app"]["shares_pc_cognition"] is True
+    assert manifest["star_watch_app"]["creates_parallel_core"] is False

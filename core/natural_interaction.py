@@ -342,7 +342,10 @@ class NaturalInteraction:
             "Preserve fatos, incertezas, limites, posição/opinião e intenção. Não acrescente fatos, percepção, memória, acesso, ação executada, autenticação, "
             "emoções humanas, consciência ou experiência subjetiva. Não copie a opinião do usuário como se fosse da STAR. "
             "Use o estado afetivo apenas para ritmo, calor, curiosidade, cautela e energia. Quando faltar contexto, faça no máximo uma pergunta útil. "
-            "Evite linguagem de assistente, menus e frases engessadas. Não mostre raciocínio interno. Retorne apenas a fala final da STAR."
+            "Evite bordões mecânicos como 'Olha:', 'Resumindo,', 'De forma simples,' ou 'Sendo bem direta,'. Não acrescente risadas, interjeições ou emojis sem motivo. "
+            "Se o usuário disser apenas 'hum', 'hmm', 'aham' ou chamar 'STAR', responda de forma curta e não reinicie uma explicação anterior. "
+            "Não repita apresentação, identidade ou explicações já dadas sem necessidade. Evite linguagem de assistente, menus e frases engessadas. "
+            "Não mostre raciocínio interno. Retorne apenas a fala final da STAR."
         )
 
     def _generate_natural(self, packet: dict) -> str | None:
@@ -377,6 +380,23 @@ class NaturalInteraction:
     def _should_generate(self, user_text: str, *, intent: str | None, position: dict | None, response_source: str | None) -> bool:
         if self._known_operational_command(user_text):
             return False
+
+        # Respostas já curadas/factuais não passam por um segundo modelo só para
+        # ganhar "estilo". Isso reduz latência e impede bordões ou fatos extras.
+        if response_source in {
+            "internal_knowledge",
+            "curriculum_knowledge",
+            "physics_knowledge",
+            "chemistry_knowledge",
+            "multidisciplinary_knowledge",
+            "knowledge_pack",
+        }:
+            return False
+
+        plain = _norm(user_text)
+        if plain in {"hum", "hmm", "hm", "uhum", "aham", "star", "lu"}:
+            return False
+
         if intent == "conversation":
             return True
         perceived = (position or {}).get("perceived_intent")

@@ -28,6 +28,7 @@ final class AppState: NSObject, ObservableObject {
 
     private let defaults = UserDefaults.standard
     private let speaker = AVSpeechSynthesizer()
+    private var audioPlayer: AVAudioPlayer?
     private var recorder: AVAudioRecorder?
     private var audioURL: URL?
     private var syncTimer: Timer?
@@ -108,7 +109,7 @@ final class AppState: NSObject, ObservableObject {
                 switch result {
                 case .success(let json):
                     let answer = json["response"] as? String ?? "Sem resposta."
-                    self.status = "● ONLINE"; self.response = answer; self.message = ""; self.speakIfEnabled(answer)
+                    self.status = "● ONLINE"; self.response = answer; self.message = ""; self.speakFromCore(answer)
                 case .failure(let error): self.showError(error.localizedDescription)
                 }
             }
@@ -118,6 +119,7 @@ final class AppState: NSObject, ObservableObject {
     func toggleVoiceCommand() {
         if isRecording { stopRecordingAndSend(); return }
         guard isPaired else { response = "Pareie o iPhone com a STAR primeiro."; return }
+        stopSpokenReply()
         AVAudioSession.sharedInstance().requestRecordPermission { allowed in
             DispatchQueue.main.async { allowed ? self.startRecording() : (self.response = "Permissão de microfone negada.") }
         }
@@ -150,7 +152,7 @@ final class AppState: NSObject, ObservableObject {
                     switch result {
                     case .success(let json):
                         let transcript = json["transcript"] as? String ?? ""; let answer = json["response"] as? String ?? "Sem resposta."
-                        self.status = "● ONLINE"; self.response = "Você: \(transcript)\n\nSTAR: \(answer)"; self.speakIfEnabled(answer)
+                        self.status = "● ONLINE"; self.response = "Você: \(transcript)\n\nSTAR: \(answer)"; self.speakFromCore(answer)
                     case .failure(let error): self.showError(error.localizedDescription)
                     }
                 }
@@ -239,10 +241,56 @@ final class AppState: NSObject, ObservableObject {
         if oldInterval != syncInterval, isPaired { startSyncLoop() }
     }
 
-    private func speakIfEnabled(_ text: String) {
+    private func stopSpokenReply() {
+        audioPlayer?.stop(); audioPlayer = nil
+        speaker.stopSpeaking(at: .immediate)
+    }
+
+    private func speakLocalFallback(_ text: String) {
+        stopSpokenReply()
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = AVSpeechSynthesisVoice(language: "pt-BR")
+        utterance.rate = 0.48
+        speaker.speak(utterance)
+    }
+
+    private func speakFromCore(_ text: String) {
         guard feature("spoken_reply", fallback: true), !text.isEmpty else { return }
-        speaker.stopSpeaking(at: .immediate); let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "pt-BR"); utterance.rate = 0.48; speaker.speak(utterance)
+        requestSpeechData(text) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let data):
+                    do {
+                        self.stopSpokenReply()
+                        let player = try AVAudioPlayer(data: data)
+                        self.audioPlayer = player
+                        player.prepareToPlay()
+                        if !player.play() { self.speakLocalFallback(text) }
+                    } catch { self.speakLocalFallback(text) }
+                case .failure:
+                    self.speakLocalFallback(text)
+                }
+            }
+        }
+    }
+
+    private func requestSpeechData(_ text: String, completion: @escaping (Result<Data, Error>) -> Void) {
+        let base = normalizedServer()
+        guard let url = URL(string: base + "/v1/speech") else { completion(.failure(STARClientError("Endereço do Core inválido."))); return }
+        var request = URLRequest(url: url); request.httpMethod = "POST"; request.timeoutInterval = 300
+        do { request.httpBody = try JSONSerialization.data(withJSONObject: ["text": text]) }
+        catch { completion(.failure(error)); return }
+        request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        request.setValue("audio/wav", forHTTPHeaderField: "Accept")
+        applyAuth(to: &request, authenticated: true)
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error { completion(.failure(error)); return }
+            guard let http = response as? HTTPURLResponse else { completion(.failure(STARClientError("Resposta HTTP inválida."))); return }
+            guard (200..<300).contains(http.statusCode), let data, !data.isEmpty else {
+                completion(.failure(STARClientError("Voz do Core indisponível."))); return
+            }
+            completion(.success(data))
+        }.resume()
     }
 
     private func normalizedServer() -> String {
@@ -268,7 +316,6 @@ final class AppState: NSObject, ObservableObject {
         request.setValue(contentType, forHTTPHeaderField: "Content-Type"); request.setValue("application/json", forHTTPHeaderField: "Accept")
         applyAuth(to: &request, authenticated: true); perform(request, completion: completion)
     }
-
     private func applyAuth(to request: inout URLRequest, authenticated: Bool) {
         guard authenticated else { return }
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization"); request.setValue(deviceID, forHTTPHeaderField: "X-STAR-Device")

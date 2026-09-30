@@ -63,7 +63,7 @@ O Plasma Orbit não depende de GIF, vídeo ou asset externo: o núcleo, órbitas
 ## Inicialização
 
 ```powershell
-.\INICIAR_STAR_WATCH_APP.bat
+.\INICIAR_WATCH.bat
 ```
 
 O launcher abre `clients/star_watch_visual.py`, que reutiliza `clients/star_watch_app.py` como base funcional.

@@ -42,10 +42,10 @@ class LocalizedStarApp(StarApp):
         ("Todos os arquivos", "*.*"),
     )
 
-    def __init__(self, brain):
+    def __init__(self, brain, profile="pc"):
         self._observed_locale = None
         self.pending_image_path: Path | None = None
-        super().__init__(brain)
+        super().__init__(brain, profile=profile)
         manager = self.language
         self._observed_locale = manager.locale if manager is not None else None
         self._schedule_localization()
@@ -172,10 +172,15 @@ class LocalizedStarApp(StarApp):
 
     def _process_image_message(self, text: str, path: Path):
         try:
-            runtime = getattr(self.brain, "perception_runtime", None)
-            if runtime is None: raise RuntimeError("runtime perceptivo indisponível")
-            runtime.ingest_image(path, source="desktop-chat-attachment")
-            response = self.brain.process(text); self.response_queue.put(("success", response))
+            remote_image = getattr(self.brain, "process_image", None)
+            if callable(remote_image):
+                response = remote_image(path, text)
+            else:
+                runtime = getattr(self.brain, "perception_runtime", None)
+                if runtime is None: raise RuntimeError("runtime perceptivo indisponível")
+                runtime.ingest_image(path, source="desktop-chat-attachment")
+                response = self.brain.process(text)
+            self.response_queue.put(("success", response))
         except Exception as exc:
             self.response_queue.put(("error", f"Falha ao perceber a imagem: {exc}"))
 

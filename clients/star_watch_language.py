@@ -5,10 +5,17 @@ LanguageManager usado pelo Core; não existe catálogo paralelo do Watch.
 """
 from __future__ import annotations
 
+from pathlib import Path
+import sys
 import tkinter as tk
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from clients import star_watch_app as watch_base
 from clients import star_watch_visual as visual
+from core.language_manager import LanguageManager
 
 LANGUAGE_MODE = watch_base.WatchMode("language", "IDIOMA", "LANG")
 if not any(mode.key == "language" for mode in watch_base.WATCH_MODES):
@@ -23,13 +30,23 @@ visual.WATCH_MODES = watch_base.WATCH_MODES
 
 
 class StarWatchLanguageVisualApp(visual.StarWatchVisualApp):
+    def __init__(self):
+        # Localização é camada de apresentação: não força a construção do Core
+        # completo apenas para desenhar a primeira tela do relógio.
+        self._surface_language = LanguageManager()
+        super().__init__()
+
+    def _language(self):
+        core = getattr(self, "star", None)
+        return getattr(core, "language", None) or self._surface_language
+
     def render(self):
         super().render()
         self._localize_static_canvas_text()
 
     def _localize_static_canvas_text(self):
         """Localiza somente textos fixos conhecidos; dados dinâmicos ficam intactos."""
-        manager = self._core().language
+        manager = self._language()
         for item in self.canvas.find_all():
             try:
                 text = self.canvas.itemcget(item, "text")
@@ -43,15 +60,15 @@ class StarWatchLanguageVisualApp(visual.StarWatchVisualApp):
 
     def rotate(self, steps: int):
         if self.model.active_mode == "language":
-            locale = self._core().language.cycle(steps)
-            self.message = self._core().language.display(locale)
+            locale = self._language().cycle(steps)
+            self.message = self._language().display(locale)
             self.render()
             return
         super().rotate(steps)
 
     def press(self):
         if self.model.active_mode == "language":
-            manager = self._core().language
+            manager = self._language()
             self.message = manager.message(
                 "language_confirmed",
                 display=manager.display(),
@@ -66,7 +83,7 @@ class StarWatchLanguageVisualApp(visual.StarWatchVisualApp):
             return super()._draw_mode_static(key)
 
         c = self.canvas
-        manager = self._core().language
+        manager = self._language()
         current = manager.profile()
         order = ("pt-BR", "en-US", "en-GB", "es-ES", "it-IT", "fr-FR")
         index = order.index(current["code"])

@@ -308,11 +308,13 @@ def main():
     voice = VoiceManager()
     print("-" * 64)
     print("VOZ (sem carregar modelos)")
-    print(f"Modo: {voice.mode}")
+    print(f"Modo base: {voice.mode}")
     print(f"STT instalado: {'SIM' if voice.stt_configured else 'NÃO'}")
-    print(f"Referência resolvida: {voice.reference_voice if getattr(voice, 'reference_voice', None) else 'NÃO'}")
+    reference = voice.official.reference_path
+    print(f"Referência oficial: {reference if reference.exists() else 'NÃO RESOLVIDA'}")
+    print(f"Modo rápido: {'PRONTO' if (voice.fallback.configured or voice.piper_configured) else 'INDISPONÍVEL'}")
 
-    settings_path = ROOT / "config" / "user_settings.json"
+    settings_path = ROOT / "user_settings.json"
     if settings_path.exists():
         try:
             json.loads(settings_path.read_text(encoding="utf-8"))

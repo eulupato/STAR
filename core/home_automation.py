@@ -134,6 +134,13 @@ class HomeAutomationService:
         if domain not in self.SAFE_DOMAINS:
             raise ValueError("domínio residencial não permitido nesta versão")
         with engine.begin() as conn:
+            # Um entity_id representa um dispositivo físico único. Reassociá-lo a
+            # outro alias deve renomear o vínculo, não falhar por estado persistido
+            # de uma sessão anterior.
+            conn.execute(
+                text("DELETE FROM star_home_entities WHERE entity_id=:entity AND alias<>:alias"),
+                {"entity": entity_id, "alias": alias},
+            )
             conn.execute(text("""
                 INSERT INTO star_home_entities(alias,entity_id,label,metadata_json,created_at)
                 VALUES (:alias,:entity,:label,:meta,:at)

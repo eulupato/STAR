@@ -5,7 +5,12 @@
   "release_channel": "stable",
   "mode": "offline-first",
   "entrypoint": "main.py",
-  "launcher": "INICIAR_STAR.bat",
+  "launcher": "INICIAR_PC.bat",
+  "launchers": {
+    "pc": "INICIAR_PC.bat",
+    "mobile": "INICIAR_MOBILE.bat",
+    "watch": "INICIAR_WATCH.bat"
+  },
   "features_active": [
     "identity",
     "internal_knowledge",
@@ -319,9 +324,16 @@
     "status": "active-local",
     "engine": "core/curriculum_knowledge.py",
     "taxonomy": "core/curriculum_taxonomy.py",
+    "factual_foundations": "core/curriculum_foundations.py",
     "manifest": "STAR_CURRICULUM_MANIFEST.json",
     "documentation": "docs/STAR_CURRICULUM_EXPANSION.md",
     "themes": 56,
+    "real_theme_foundations": 56,
+    "theme_foundation_statements": 168,
+    "real_concept_foundations": 885,
+    "curated_general_fact_records": 100,
+    "country_capital_records": 76,
+    "factual_source_registry_entries": 29,
     "raw_topic_mentions": 956,
     "unique_canonical_concepts": 885,
     "deduplicated_mentions": 71,
@@ -337,11 +349,13 @@
       "concepts": "CURRC-0001-0000001..CURRC-0885-1000000"
     },
     "deduplication_policy": "one canonical concept + aliases + multiple theme/owner memberships",
-    "routing_policy": "legacy scientific engines before curriculum fallback",
+    "routing_policy": "internal knowledge -> curated curriculum facts -> explicit-depth Knowledge PLUS -> legacy scientific engines -> curriculum theme/concept fallback -> remaining knowledge fallbacks",
     "priority_list_is_view": true,
     "learning_core_summary_is_view": true,
     "invention_cycle_is_process_metadata": true,
     "frontier_evidence_classification": true,
+    "basic_factual_routing_before_unknown_fallback": true,
+    "foundation_sources_are_explicit": true,
     "truthfulness_note": "941M is a deterministic addressable study/research space over 56 themes and 885 canonical concepts; it is not 941M independently researched facts and must not be reported as unique factual claims"
   },
   "mind": {
@@ -421,7 +435,11 @@
     "product_direction": "watch-first",
     "primary_shell": true,
     "pc_simulator": "clients/star_watch_language.py",
-    "launcher": "INICIAR_STAR_WATCH_APP.bat",
+    "launcher": "INICIAR_WATCH.bat",
+    "core_source": "STAR Device Gateway -> PC StarCore",
+    "shares_pc_cognition": true,
+    "creates_parallel_core": false,
+    "requires_pc_core": true,
     "android_transport_client_version": "0.3.0",
     "hardware_real_required": false,
     "visual_system": {
@@ -463,19 +481,41 @@
       "settings"
     ]
   },
+  "star_mobile_app": {
+    "version": "0.2.0",
+    "status": "functional-pc-simulator",
+    "launcher": "INICIAR_MOBILE.bat",
+    "pc_simulator": "clients/star_mobile_app.py",
+    "ui_source": "gui/localized_app.py",
+    "core_source": "STAR Device Gateway -> PC StarCore",
+    "shares_pc_cognition": true,
+    "creates_parallel_core": false,
+    "requires_pc_core": true,
+    "islands_visible": false,
+    "voice_input": true,
+    "spoken_reply": true,
+    "hardware_client": "clients/star_mobile_ios"
+  },
   "voice": {
     "stt": "faster-whisper base local • PT-BR fixo • VAD interno desativado para segmentos já capturados",
     "tts_default": "Chatterbox Multilingual local com referência autorizada da STAR",
     "tts_fallback": "Piper pt_BR-faber-medium local; Windows SAPI como último fallback",
     "voice_mode": "official",
+    "chat_voice_mode": "fast",
     "playback": "sounddevice local",
+    "device_routing": "voice/audio_devices.py",
+    "device_overrides": [
+      "user_settings.json:audio_input_device/audio_output_device",
+      "STAR_AUDIO_INPUT_DEVICE",
+      "STAR_AUDIO_OUTPUT_DEVICE"
+    ],
     "external_voice_services": false,
     "reference_audio": "local-only: resolvida por STAR_VOICE_REFERENCE/config.py/voice/reference/*",
     "silent_fallback_to_generic_voice": false,
     "startup_dependency": false,
     "interface_can_start_without_tts": true,
     "automatic_reply_from_gui": true,
-    "fast_mode": "Windows SAPI preferencial + Piper PT-BR fallback",
+    "fast_mode": "Piper PT-BR preferencial + Windows SAPI fallback; saída local selecionável",
     "language_switch_commands": true,
     "operational_command_variations": 27804,
     "thematic_study_variations_added": 1000000,
@@ -518,7 +558,12 @@
     "model_grants_permissions": false,
     "operational_commands_freeform_rewrite": false,
     "weather_freeform_rewrite": false,
-    "weather_grounded_smalltalk": true
+    "weather_grounded_smalltalk": true,
+    "identity_response_catalog": "authored-only",
+    "generated_prefix_suffix_response_inflation": false,
+    "short_acknowledgements_are_contextual": true,
+    "mechanical_prefixes_discouraged": true,
+    "random_laughter_discouraged": true
   },
   "weather": {
     "status": "active-on-demand",
@@ -562,7 +607,9 @@
     "transport": "LAN HTTP",
     "default_port": 8765,
     "processing_location": "STAR Core no PC",
-    "sensor_endpoint": "/v1/sensors"
+    "sensor_endpoint": "/v1/sensors",
+    "speech_endpoint": "/v1/speech",
+    "remote_voice_source": "voice/manager.py"
   },
   "device_ecosystem": {
     "schema": 1,
@@ -598,6 +645,7 @@
       "text": true,
       "voice_input": true,
       "spoken_reply": true,
+      "core_voice_stream": true,
       "camera_transport": true,
       "vision_analysis": true,
       "sensor_transport": true,
@@ -618,8 +666,19 @@
       "remote_pc_actions": false
     },
     "profiles": {
+      "pc": {
+        "layout": "desktop-full",
+        "visual_style": "star-skin",
+        "islands_visible": true,
+        "shared_core": true,
+        "voice_input": true,
+        "spoken_reply": true
+      },
       "phone": {
         "layout": "comfortable",
+        "visual_style": "star-skin-compact",
+        "islands_visible": false,
+        "shared_core": true,
         "show_connection_fields": true,
         "show_response_transcript": true,
         "preferred_columns": 1
@@ -627,6 +686,8 @@
       "watch": {
         "layout": "circular-shell",
         "shape": "circle",
+        "shared_core": true,
+        "islands_visible": false,
         "show_connection_fields": false,
         "show_response_transcript": true,
         "preferred_columns": 1,

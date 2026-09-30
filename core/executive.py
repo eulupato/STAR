@@ -92,6 +92,13 @@ class Executive:
             if answer:
                 return finish(answer, "offline_knowledge")
 
+        # Fatos cotidianos explicitamente curados também têm prioridade sobre os
+        # catálogos técnicos amplos quando não houve resposta offline confiável.
+        if self.curriculum_knowledge:
+            answer = self.curriculum_knowledge.answer_foundation(text)
+            if answer:
+                return finish(answer, "curriculum_knowledge")
+
         # Quando a própria consulta pede profundidade/pesquisa/benchmark/dados,
         # a camada PLUS pode responder antes. Isso preserva o comportamento já
         # validado e não altera IDs nem remove as bases legadas.
@@ -135,15 +142,12 @@ class Executive:
         words = str(text).strip().split()
         if len(words) <= 2:
             return finish(
-                "Entendi a palavra, mas ainda não sei o que você quer descobrir sobre ela. 😊 "
-                "Pode me fazer uma pergunta ou me dar um pouco mais de contexto?",
+                "Preciso de um pouco mais de contexto para entender o que você quer saber sobre isso.",
                 "bounded_fallback",
             )
 
         return finish(
-            "Ainda não tenho uma resposta confiável para isso na minha base local. "
-            "Prefiro ser sincera a inventar algo. 😊 Se você quiser, esse conhecimento "
-            "pode entrar em um Knowledge Pack quando ampliarmos minha biblioteca.",
+            "Não encontrei uma resposta confiável na minha base local para isso. Prefiro não inventar.",
             "unknown_fallback",
         )
 

@@ -20,6 +20,12 @@ A regra central é: **um conceito, uma identidade canônica, múltiplos vínculo
 
 Os 22,15M conteúdos factuais endereçáveis anteriores continuam documentados separadamente. Os 941M curriculares **não são 941M fatos independentes** e não devem ser somados ao total legado como se representassem novas afirmações factuais únicas.
 
+## Fundação factual dos 56 temas
+
+`core/curriculum_foundations.py` acrescenta conteúdo real e curado sem substituir a taxonomia. Cada um dos 56 temas possui um resumo factual básico, três pontos de fundamento e proveniência explícita — 168 afirmações temáticas curadas ao todo. Os 885 conceitos canônicos materializam uma fundação temática factual ligada ao tema e às fontes correspondentes, em vez de devolver apenas metadados de catálogo. A mesma camada mantém 100 registros factuais de alta frequência e 76 entradas/aliases de capitais, cobrindo anatomia e fisiologia humana, biologia, neurociência, química, física, computação, astronomia, geografia, Ciências da Terra, cultura e história. Esses registros existem para responder perguntas elementares diretamente, sem depender de LLM e sem cair no fallback de desconhecimento.
+
+A fundação usa 29 referências registradas, incluindo OpenStax, NIH/NHLBI, NCBI Bookshelf, NASA, NIST, IUPAC, PubChem, USGS, NOAA, IPCC, IETF, União Europeia, UN/UNGEGN, Nobel Prize, Natural History Museum e Recording Academy. As URLs ficam registradas junto aos fatos; pedir `fonte` ou `fontes` em uma consulta factual pode expor a proveniência armazenada.
+
 ## Como 1M é gerado
 
 Cada tema e cada conceito possui seis dimensões de dez valores:
@@ -173,22 +179,25 @@ A camada não promove especulação a fato:
 
 ## Roteamento
 
-A expansão foi integrada depois dos engines mais específicos:
+O roteamento separa fatos básicos curados de sínteses técnicas amplas:
 
 1. conhecimento interno;
-2. Knowledge PLUS quando a consulta pede explicitamente profundidade;
-3. Física legada;
-4. Química legada;
-5. Multidisciplinar legado;
-6. Currículo Canônico como fallback granular;
-7. Knowledge PLUS fallback;
-8. Knowledge Packs;
-9. fallback genérico.
+2. fatos básicos curados do Currículo Canônico;
+3. Knowledge PLUS quando a consulta pede explicitamente profundidade;
+4. Física legada;
+5. Química legada;
+6. Multidisciplinar legado;
+7. Currículo Canônico como fallback granular de tema/conceito;
+8. Knowledge PLUS fallback;
+9. Knowledge Packs;
+10. fallback genérico.
 
 Isso impede palavras amplas como `energia`, `campo`, `memória` ou `pressão` de capturarem consultas que já possuem uma rota melhor.
 
 ## Fontes-guia
 
-A taxonomia referencia famílias de fontes autoritativas compatíveis com cada área: NASA Systems Engineering/Technical Standards, NIST (metrologia, incerteza, engenharia e AI/TEVV), Particle Data Group 2026, NASA Science/LIGO, NIST/CODATA, MIT OpenCourseWare, IUPAC/NIST Chemistry WebBook, PubChem/NCBI, NIH/BRAIN Initiative, ACM/IETF, USGS/NOAA/NASA Earthdata/IPCC e DOE Fusion Energy Sciences.
+A taxonomia referencia famílias de fontes autoritativas compatíveis com cada área: NASA Systems Engineering/Technical Standards, NIST (metrologia, incerteza, engenharia e AI/TEVV), Particle Data Group, NASA Science/LIGO, NIST/CODATA, MIT OpenCourseWare, IUPAC/NIST Chemistry WebBook, PubChem/NCBI, NIH/BRAIN Initiative, ACM/IETF, USGS/NOAA/NASA Earthdata/IPCC e DOE Fusion Energy Sciences.
 
-Essas fontes orientam a taxonomia e as políticas de evidência. O espaço de 941M continua sendo composicional e não representa 941M afirmações retiradas individualmente dessas fontes.
+A fundação factual usa referências explícitas por registro, incluindo OpenStax, NIH/NHLBI, NCBI Bookshelf, União Europeia/UNGEGN, Natural History Museum e Recording Academy quando apropriado ao fato geral catalogado.
+
+Essas fontes orientam a taxonomia e sustentam os fatos efetivamente curados. O espaço de 941M continua sendo composicional e não representa 941M afirmações retiradas individualmente dessas fontes.

@@ -5,7 +5,7 @@ Objetivo do hotfix:
 - não cair silenciosamente para Piper quando a referência/Chatterbox falhar;
 - diagnóstico detalha exatamente o componente ausente;
 - modo "fast" oferece resposta falada de baixa latência para a interface;
-- no Windows, prefere uma voz SAPI PT-BR/feminina quando disponível e usa Piper como fallback.
+- Piper é o caminho rápido controlável pela STAR; SAPI permanece fallback local.
 
 Nenhum serviço externo de voz é necessário.
 """
@@ -17,6 +17,8 @@ import subprocess
 import threading
 import time
 from pathlib import Path
+
+from voice.audio_devices import resolve_audio_device
 
 ROOT = Path(__file__).resolve().parent.parent
 VOICE_DIR = ROOT / "voice"
@@ -246,6 +248,22 @@ class FastPiperTTS:
     def warmup(self) -> None:
         self._load()
 
+    def synthesize_to_wav(self, text: str, output_path: Path) -> Path:
+        """Gera WAV local sem reproduzir, para endpoints Mobile/Watch."""
+        import wave
+        from piper import SynthesisConfig
+
+        self._load()
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        cfg = SynthesisConfig(
+            volume=1.0, length_scale=0.95, noise_scale=0.667,
+            noise_w_scale=0.8, normalize_audio=True,
+        )
+        with wave.open(str(output_path), "wb") as wav_file:
+            self.voice.synthesize_wav(str(text), wav_file, syn_config=cfg)
+        return output_path
+
     @staticmethod
     def _chunks(text: str, max_chars: int = 220):
         import re
@@ -312,6 +330,7 @@ class FastPiperTTS:
                         if stream is None:
                             channels = max(1, int(chunk.sample_channels))
                             stream = sd.OutputStream(
+                                device=resolve_audio_device("output", sd),
                                 samplerate=int(chunk.sample_rate),
                                 channels=channels,
                                 dtype="float32",
@@ -527,6 +546,7 @@ class ChatterboxOfficialTTS:
         block = 4096
 
         with sd.OutputStream(
+            device=resolve_audio_device("output", sd),
             samplerate=int(sample_rate),
             channels=channels,
             dtype="float32",
@@ -541,6 +561,25 @@ class ChatterboxOfficialTTS:
                 if chunk.size:
                     stream.write(chunk)
         return True
+
+    def synthesize_to_wav(self, text: str, output_path: Path) -> Path:
+        """Gera a voz oficial em WAV sem tocar no alto-falante do PC."""
+        import shutil
+
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        generated = None
+        with self._io_lock:
+            try:
+                generated = self._generate(str(text))
+                shutil.copyfile(generated, output_path)
+            finally:
+                if generated is not None:
+                    try:
+                        generated.unlink(missing_ok=True)
+                    except OSError:
+                        pass
+        return output_path
 
     def speak(
         self,
@@ -747,15 +786,20 @@ class VoiceManager:
         Se falhar, ERRO VISÍVEL por padrão. Não usa voz genérica escondida.
 
     fast:
-        Windows SAPI de baixa latência quando disponível; Piper PT-BR como fallback.
+        Piper PT-BR por padrão, com saída controlada pela STAR; SAPI é fallback.
     """
 
     def __init__(self):
         try:
-            from config import VOICE_FALLBACK_ON_ERROR, VOICE_MODE
+            from config import (
+                VOICE_FALLBACK_ON_ERROR,
+                VOICE_FAST_PREFERENCE,
+                VOICE_MODE,
+            )
         except Exception:
             VOICE_MODE = "official"
             VOICE_FALLBACK_ON_ERROR = False
+            VOICE_FAST_PREFERENCE = "piper"
 
         self.mode = os.getenv(
             "STAR_VOICE_MODE",
@@ -764,6 +808,13 @@ class VoiceManager:
 
         if self.mode not in {"official", "fast"}:
             self.mode = "official"
+
+        self.fast_preference = os.getenv(
+            "STAR_VOICE_FAST_PREFERENCE",
+            VOICE_FAST_PREFERENCE,
+        ).strip().lower()
+        if self.fast_preference not in {"piper", "sapi"}:
+            self.fast_preference = "piper"
 
         env_fallback = os.getenv("STAR_VOICE_FALLBACK_ON_ERROR")
         if env_fallback is None:
@@ -821,6 +872,8 @@ class VoiceManager:
                 return f"Voz oficial STAR (Chatterbox local • {self.official.reference_path.name})"
             return "Voz oficial INDISPONÍVEL — " + self.official.status_message
 
+        if self.fast_preference == "piper" and self.piper.configured:
+            return "Piper PT-BR (modo rápido • saída do sistema)"
         if self.fallback.configured:
             suffix = f" • {self.fallback.voice_name}" if self.fallback.voice_name else ""
             return f"Windows SAPI (modo rápido{suffix})"
@@ -871,6 +924,28 @@ class VoiceManager:
 
     def transcribe(self, audio_path: Path) -> str:
         return self.stt.transcribe(audio_path)
+
+    def synthesize_to_wav(self, text: str, output_path: Path) -> Path:
+        """Gera a mesma voz da STAR para reprodução remota em Mobile/Watch."""
+        spoken_text = prepare_tts_text(text)
+        if not spoken_text:
+            raise ValueError("Texto vazio para síntese.")
+        output_path = Path(output_path)
+        with self._tts_lock:
+            if self.mode == "official":
+                if self.official.configured:
+                    path = self.official.synthesize_to_wav(spoken_text, output_path)
+                    self.last_tts_engine = "Chatterbox — voz oficial STAR"
+                    self.last_error = None
+                    return path
+                if not self.fallback_on_error:
+                    raise RuntimeError("Voz oficial indisponível: " + self.official.status_message)
+            if not self.piper.configured:
+                raise RuntimeError("Piper PT-BR indisponível para síntese remota.")
+            path = self.piper.synthesize_to_wav(spoken_text, output_path)
+            self.last_tts_engine = "Piper — endpoint remoto"
+            self.last_error = None
+            return path
 
     def _current_cancel_event(self) -> threading.Event:
         with self._state_lock:
@@ -940,36 +1015,38 @@ class VoiceManager:
         text: str,
         event: threading.Event,
     ) -> bool:
-        # No Windows, SAPI costuma responder quase imediatamente e permite
-        # escolher uma voz PT-BR/feminina instalada. Piper permanece como
-        # fallback determinístico se o SAPI não estiver disponível.
-        if self.fallback.configured and self.fallback.speak(text, event):
-            self.last_error = None
-            label = self.fallback.voice_name or "voz local"
-            self.last_tts_engine = f"Windows SAPI — {label}"
-            return True
+        order = (
+            ("piper", self.piper),
+            ("sapi", self.fallback),
+        ) if self.fast_preference == "piper" else (
+            ("sapi", self.fallback),
+            ("piper", self.piper),
+        )
+        errors = []
 
-        if event.is_set() or self.fallback.last_error == "cancelled":
-            self.last_error = "Fala cancelada."
-            return False
+        for name, engine in order:
+            if not engine.configured:
+                errors.append(f"{name}: não configurado")
+                continue
 
-        sapi_error = self.fallback.last_error
+            if engine.speak(text, event):
+                self.last_error = None
+                if name == "piper":
+                    self.last_tts_engine = "Piper — modo rápido"
+                else:
+                    label = self.fallback.voice_name or "voz local"
+                    self.last_tts_engine = f"Windows SAPI — {label}"
+                return True
 
-        if self.piper.configured and self.piper.speak(text, event):
-            self.last_error = None
-            self.last_tts_engine = "Piper — modo rápido"
-            return True
+            if event.is_set() or engine.last_error == "cancelled":
+                self.last_error = "Fala cancelada."
+                return False
 
-        if event.is_set() or self.piper.last_error == "cancelled":
-            self.last_error = "Fala cancelada."
-            return False
+            if engine.last_error:
+                errors.append(f"{name}: {engine.last_error}")
 
         self.last_tts_engine = "indisponível"
-        self.last_error = (
-            sapi_error
-            or self.piper.last_error
-            or "Windows SAPI e Piper falharam."
-        )
+        self.last_error = " | ".join(errors) or "Piper e Windows SAPI falharam."
         return False
 
     def speak(

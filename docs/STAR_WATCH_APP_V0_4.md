@@ -15,7 +15,7 @@ conhecimento e capacidades existentes continuam reutilizados.
 No Windows:
 
 ```bat
-INICIAR_STAR_WATCH_APP.bat
+INICIAR_WATCH.bat
 ```
 
 ou:

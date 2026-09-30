@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from voice.audio_input import VoiceActivityDetector
+from voice.audio_devices import audio_device_info
 from voice.manager import VoiceManager
 from voice.seed_vc import SeedVCBackend
 
@@ -24,14 +24,11 @@ def main() -> int:
     print("=" * 64)
 
     manager = VoiceManager()
-    vad = VoiceActivityDetector()
     seed_vc = SeedVCBackend()
 
     print(f"Modo de voz: {manager.mode.upper()}")
     print(f"Fallback automático: {'ATIVO' if manager.fallback_on_error else 'DESATIVADO'}")
     print(f"STT: {'PRONTO' if manager.stt_configured else 'NÃO INSTALADO'}")
-    print(f"Modelo STT: {manager.stt.model_size}")
-    print(f"Idioma STT: {manager.stt.language} (fixado para evitar autodetecção incorreta)")
     print()
 
     print("VOZ OFICIAL")
@@ -65,17 +62,6 @@ def main() -> int:
     print()
 
     print(f"TTS selecionado: {manager.tts_description}")
-    runtime = manager.runtime_snapshot()
-    print()
-    print("RUNTIME DE VOZ")
-    print("-" * 64)
-    print(f"Falando agora: {'SIM' if runtime['is_speaking'] else 'NÃO'}")
-    print(f"Último motor: {runtime['last_tts_engine']}")
-    print(f"Cancelamentos: {runtime['speech_cancellations']}")
-    print(f"Barge-ins: {runtime['barge_ins']}")
-    print(f"Último motivo de cancelamento: {runtime['last_cancel_reason'] or 'nenhum'}")
-    print(f"VAD adaptativo: {flag(vad.available)} • modo mãos-livres opt-in")
-    print("Privacidade: segmentos temporários; áudio bruto não é persistido pelo VAD")
 
     try:
         import sounddevice as sd
@@ -93,17 +79,27 @@ def main() -> int:
         print(f"Saídas disponíveis: {len(outputs)}")
 
         if outputs:
-            default_out = sd.default.device[1]
+            raw_out = sd.default.device[1]
+            selected_out = audio_device_info("output", sd)
             print(
-                f"Saída padrão: {default_out} — "
-                f"{sd.query_devices(default_out)['name']}"
+                f"Saída PortAudio padrão: {raw_out} — "
+                f"{sd.query_devices(raw_out)['name']}"
+            )
+            print(
+                f"Saída usada pela STAR: {selected_out['index']} — "
+                f"{selected_out['name']}"
             )
 
         if inputs:
-            default_in = sd.default.device[0]
+            raw_in = sd.default.device[0]
+            selected_in = audio_device_info("input", sd)
             print(
-                f"Entrada padrão: {default_in} — "
-                f"{sd.query_devices(default_in)['name']}"
+                f"Entrada PortAudio padrão: {raw_in} — "
+                f"{sd.query_devices(raw_in)['name']}"
+            )
+            print(
+                f"Entrada usada pela STAR: {selected_in['index']} — "
+                f"{selected_in['name']}"
             )
 
     except Exception as exc:
@@ -148,13 +144,6 @@ def main() -> int:
 
     print(f"Tempo total TTS + reprodução: {elapsed:.2f}s")
     print(f"Motor usado: {manager.last_tts_engine}")
-    final_runtime = manager.runtime_snapshot()
-    print(
-        "Runtime final: "
-        f"barge-ins={final_runtime['barge_ins']} | "
-        f"cancelamentos={final_runtime['speech_cancellations']} | "
-        f"erro={final_runtime['last_error'] or 'nenhum'}"
-    )
 
     if ok:
         print("✅ TESTE DE VOZ: OK")

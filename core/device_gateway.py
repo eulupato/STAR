@@ -142,6 +142,11 @@ class _GatewayHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body))); self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff"); self.end_headers(); self.wfile.write(body)
 
+    def _binary(self, status: int, body: bytes, content_type: str) -> None:
+        self.send_response(status); self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(body))); self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff"); self.end_headers(); self.wfile.write(body)
+
     def _read_body(self, limit: int) -> bytes:
         try: length = int(self.headers.get("Content-Length", "0"))
         except ValueError as exc: raise ValueError("Content-Length inválido.") from exc
@@ -172,7 +177,7 @@ class _GatewayHandler(BaseHTTPRequestHandler):
         if path == "/v1/health":
             self._json(200, {"service": "STAR Device Gateway", "status": "online", "protocol": PROTOCOL_VERSION,
                              "runtime_revision": self.gateway.runtime.revision, "mode": "lan",
-                             "sensor_transport": self.gateway.sensor_hub is not None})
+                             "sensor_transport": self.gateway.sensor_hub is not None, "speech_transport": True})
             return
         if path in {"/v1/device", "/v1/runtime"}:
             device_id = self._auth()
@@ -200,6 +205,8 @@ class _GatewayHandler(BaseHTTPRequestHandler):
                                  "runtime_changed": client_revision != runtime["revision"]})
             elif path == "/v1/text": self._text(device_id)
             elif path == "/v1/audio": self._audio(device_id)
+            elif path == "/v1/speech": self._speech(device_id)
+            elif path == "/v1/voice-mode": self._voice_mode(device_id)
             elif path == "/v1/image": self._image(device_id)
             elif path == "/v1/sensors": self._sensors(device_id)
             else: self._json(404, {"error": "not_found"})
@@ -228,8 +235,37 @@ class _GatewayHandler(BaseHTTPRequestHandler):
         if not body: raise ValueError("Áudio vazio.")
         content_type = self.headers.get("Content-Type", "audio/mp4").split(";", 1)[0].strip().lower()
         path = self.gateway.save_media("audio", device_id, content_type, body)
-        transcript = self.gateway.transcribe(path); response = self.gateway.process_text(transcript)
+        try:
+            transcript = self.gateway.transcribe(path)
+            response = self.gateway.process_text(transcript)
+        finally:
+            try: path.unlink(missing_ok=True)
+            except OSError: pass
         self._json(200, {"ok": True, "device_id": device_id, "transcript": transcript, "response": response})
+
+    def _speech(self, device_id: str):
+        payload = self._read_json(); text = str(payload.get("text") or "").strip()
+        if not text: raise ValueError("Texto vazio para fala.")
+        path = self.gateway.synthesize_speech(text, device_id)
+        try:
+            self._binary(200, path.read_bytes(), "audio/wav")
+        finally:
+            try: path.unlink(missing_ok=True)
+            except OSError: pass
+
+    def _voice_mode(self, device_id: str):
+        payload = self._read_json()
+        mode = str(payload.get("mode") or "").strip().lower()
+        if mode not in {"official", "fast"}:
+            raise ValueError("Modo de voz inválido.")
+        manager = self.gateway._get_voice_manager()
+        manager.set_voice_mode(mode)
+        self._json(200, {
+            "ok": True,
+            "device_id": device_id,
+            "mode": manager.mode,
+            "description": manager.tts_description,
+        })
 
     def _image(self, device_id: str):
         body = self._read_body(MAX_MEDIA_BYTES)
@@ -268,7 +304,8 @@ class DeviceGateway:
     def __init__(self, star, host: str = "0.0.0.0", port: int = 8765, runtime_dir: Path | None = None,
                  manifest_path: Path | None = None, pairing_code: str | None = None, verbose: bool = False,
                  pairing_rate_limit: int = PAIRING_RATE_LIMIT, pairing_rate_window_seconds: float = PAIRING_RATE_WINDOW_SECONDS,
-                 device_rate_limit: int = DEVICE_RATE_LIMIT, device_rate_window_seconds: float = DEVICE_RATE_WINDOW_SECONDS):
+                 device_rate_limit: int = DEVICE_RATE_LIMIT, device_rate_window_seconds: float = DEVICE_RATE_WINDOW_SECONDS,
+                 voice_manager=None):
         self.star = star; self.host = host; self.port = int(port)
         self.runtime_dir = Path(runtime_dir or Path.cwd() / "runtime" / "oni"); self.runtime_dir.mkdir(parents=True, exist_ok=True)
         self.registry = DeviceRegistry(self.runtime_dir / "devices.json")
@@ -278,7 +315,12 @@ class DeviceGateway:
         self.verbose = verbose; self.last_error = None
         self._pair_limiter = _RateLimiter(pairing_rate_limit, pairing_rate_window_seconds)
         self._device_limiter = _RateLimiter(device_rate_limit, device_rate_window_seconds)
-        self._star_lock = threading.Lock(); self._voice_lock = threading.Lock(); self._voice_manager = None; self._thread = None
+        self._star_lock = threading.Lock(); self._voice_lock = threading.Lock()
+        self._voice_manager = voice_manager
+        self._owns_voice_manager = voice_manager is None
+        self._thread = None
+        self._session_id = secrets.token_hex(12)
+        self._session_path = self.runtime_dir / "local_session.json"
         self.server = ThreadingHTTPServer((self.host, self.port), _GatewayHandler); self.server.daemon_threads = True
         self.server.gateway = self; self.port = int(self.server.server_address[1])
 
@@ -298,7 +340,21 @@ class DeviceGateway:
     def allow_pair_attempt(self, client_ip: str) -> bool: return self._pair_limiter.allow(client_ip)
     def allow_device_request(self, device_id: str) -> bool: return self._device_limiter.allow(_safe_device_id(device_id))
 
+    def _write_local_session(self) -> None:
+        payload = {
+            "session_id": self._session_id,
+            "local_url": f"http://127.0.0.1:{self.port}",
+            "lan_url": self.url,
+            "pairing_code": self.pairing_code,
+            "protocol": PROTOCOL_VERSION,
+            "runtime_revision": self.runtime.revision,
+        }
+        temp = self._session_path.with_suffix(".tmp")
+        temp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        temp.replace(self._session_path)
+
     def start(self, background: bool = True):
+        self._write_local_session()
         if background:
             if self._thread and self._thread.is_alive(): return self
             self._thread = threading.Thread(target=self.server.serve_forever, name="star-device-gateway", daemon=True); self._thread.start()
@@ -309,6 +365,16 @@ class DeviceGateway:
         try: self.server.shutdown()
         finally: self.server.server_close()
         if self._thread and self._thread.is_alive(): self._thread.join(timeout=1.0)
+        try:
+            current = json.loads(self._session_path.read_text(encoding="utf-8"))
+            if current.get("session_id") == self._session_id:
+                self._session_path.unlink(missing_ok=True)
+        except (OSError, json.JSONDecodeError):
+            pass
+        manager = self._voice_manager
+        if manager is not None and self._owns_voice_manager:
+            try: manager.close()
+            except Exception: pass
 
     def process_text(self, text_value: str) -> str:
         with self._star_lock: return str(self.star.process(text_value, allow_actions=False))
@@ -316,11 +382,19 @@ class DeviceGateway:
     def _get_voice_manager(self):
         with self._voice_lock:
             if self._voice_manager is None:
+                from config import VOICE_CHAT_MODE
                 from voice.manager import VoiceManager
                 self._voice_manager = VoiceManager()
+                self._voice_manager.set_voice_mode(VOICE_CHAT_MODE)
             return self._voice_manager
 
     def transcribe(self, path: Path) -> str: return self._get_voice_manager().transcribe(path)
+
+    def synthesize_speech(self, text: str, device_id: str) -> Path:
+        folder = self.runtime_dir / "outbox" / "speech"
+        folder.mkdir(parents=True, exist_ok=True)
+        filename = f"{_now_ms()}_{_safe_device_id(device_id)}_{secrets.token_hex(4)}.wav"
+        return self._get_voice_manager().synthesize_to_wav(text, folder / filename)
 
     def save_media(self, kind: str, device_id: str, content_type: str, data: bytes) -> Path:
         extension = _CONTENT_EXTENSIONS.get(content_type)

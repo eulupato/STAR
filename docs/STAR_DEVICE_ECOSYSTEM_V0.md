@@ -116,7 +116,7 @@ na V1.9 e só entra corretamente com V5 SENSES. O sistema retorna
 ## Segurança V0
 
 - Gateway desligado por padrão;
-- ativação explícita por `INICIAR_STAR_DEVICES.bat`;
+- ativação explícita por `INICIAR_PC.bat`;
 - usar apenas em LAN privada;
 - pareamento por código temporário;
 - token aleatório por dispositivo;

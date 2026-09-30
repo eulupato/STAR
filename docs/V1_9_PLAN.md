@@ -27,8 +27,9 @@ pelo GitHub.
 
 No modo `official`, uma falha do Chatterbox é visível e não troca a identidade
 da STAR silenciosamente. Fallback automático só ocorre quando explicitamente
-habilitado. O modo `fast` usa Windows SAPI quando disponível e Piper PT-BR como
-fallback local.
+habilitado. O modo `fast` usa **Piper PT-BR como motor preferencial**, com
+Windows SAPI como último fallback local. A entrada/saída física é resolvida por
+`voice/audio_devices.py`, respeitando os overrides locais configurados.
 
 Para priorizar velocidade manualmente:
 `STAR_VOICE_MODE=fast`.

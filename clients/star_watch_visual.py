@@ -429,7 +429,7 @@ class StarWatchVisualApp(StarWatchApp):
             self._draw_mode_value(
                 "STAR SCAN",
                 self.message
-                or "Selecione uma imagem. Transporte existe; análise visual completa ainda não.",
+                or "Selecione uma imagem para enviar ao STAR Core e analisar pelo B25.",
             )
             self._create_action_button("SELECIONAR IMAGEM", self._select_vision_image)
         elif key == "people":

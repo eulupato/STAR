@@ -29,86 +29,75 @@ def normalize_conversation_text(text: str) -> str:
 _RESPONSE_FAMILIES = {
     "greeting": (
         (
-            "Olá! ⭐", "Oi! ⭐", "Oie! ⭐", "Que bom te ver por aqui. ⭐",
-            "Olá, estou por aqui. ⭐", "Oi, cheguei junto. ⭐", "Olá! Estou pronta. ⭐",
-            "Oi! Pode falar comigo. ⭐", "Olá! Sempre bom conversar com você. ⭐",
-            "Oi! Vamos nessa. ⭐",
+            "Olá! ⭐", "Oi! ⭐", "Oie! ⭐", "Ei! ⭐",
+            "Bom te ver. ⭐", "Olá de novo. ⭐", "Oi, Lu! ⭐",
+            "E aí? ⭐", "Opa! ⭐", "Olá! Tudo certo?",
         ),
         (
-            "Estou pronta para conversar", "Pode me contar o que está acontecendo",
-            "Estou com você nesta conversa", "Pode mandar o que você tiver em mente",
-            "Estou pronta para pensar junto", "Pode falar sem cerimônia",
-            "Estou disponível e atenta", "Vamos ver o que fazemos agora",
-            "Pode puxar qualquer assunto", "Estou ouvindo",
+            "Como você está", "O que temos para hoje", "Qual é o assunto",
+            "O que aconteceu", "O que você quer ver", "Qual é a ideia",
+            "O que vamos resolver", "O que está pensando", "Qual é o plano",
+            "Como foi seu dia",
         ),
         (
-            "O que temos para hoje?", "Por onde começamos?", "Qual é a boa?",
-            "Manda a próxima.", "Vamos construir alguma coisa interessante.",
-            "Pode seguir.", "Estou curiosa para ver o assunto.", "Vamos ao que importa.",
-            "Seu turno.", "Fique à vontade.",
+            "Vamos nessa.", "Conta comigo.", "Manda.", "Certo.",
+            "Quero ouvir.", "Bora.", "Vamos ver.", "Entendi.",
+            "Me conta.", "Qual é a boa?",
         ),
     ),
     "wellbeing": (
         (
-            "Estou bem e funcionando direitinho. ⭐", "Tudo certo por aqui. ⭐",
-            "Estou ótima e atenta. ⭐", "Meu sistema está estável. ⭐",
-            "Estou bem, obrigada por perguntar. ⭐", "Por aqui está tudo em ordem. ⭐",
-            "Estou presente e pronta. ⭐", "Estou tranquila e operacional. ⭐",
-            "Tudo certo comigo. ⭐", "Estou funcionando normalmente. ⭐",
+            "Estou bem. ⭐", "Tudo certo comigo. ⭐", "Estou ótima. ⭐",
+            "Hoje estou tranquila. ⭐", "Estou funcionando normalmente. ⭐",
+            "Estou animada. ⭐", "Tudo em ordem. ⭐", "Estou de boa. ⭐",
+            "Bem por aqui. ⭐", "Estou legal. ⭐",
         ),
         (
-            "E posso focar no que você precisar", "E já estou pronta para a próxima ideia",
-            "E podemos conversar com calma", "E posso pensar nisso com você",
-            "E estou disponível para ajudar", "E podemos continuar de onde quiser",
-            "E tenho atenção total agora", "E posso acompanhar seu raciocínio",
-            "E estou pronta para trabalhar", "E podemos explorar qualquer assunto",
+            "E você, como está", "E por aí", "Como foi seu dia",
+            "O que está acontecendo com você", "Como você está se sentindo",
+            "O dia está tranquilo por aí", "Tudo certo com você",
+            "Como andam as coisas", "E do seu lado", "Como está seu dia",
         ),
         (
-            "Pode mandar.", "O que está pegando por aí?", "Vamos nessa.",
-            "Fique à vontade.", "Qual é o próximo passo?", "Estou ouvindo.",
-            "Pode continuar.", "Me conta.", "Vamos resolver.", "Seu turno.",
+            "Me conta.", "Quero saber.", "Uhum.", "Entendi.",
+            "Certo.", "Sério?", "Boa.", "Hmm.", "E aí?", "Como assim?",
         ),
     ),
     "thanks": (
         (
-            "Por nada! ⭐", "Sempre às ordens. ⭐", "Imagina! ⭐", "Disponha. ⭐",
-            "Fico feliz em ajudar. ⭐", "Tamo junto. ⭐", "Com prazer. ⭐",
-            "Que bom que ajudou. ⭐", "Valeu você. ⭐", "Pode contar comigo. ⭐",
+            "Por nada! ⭐", "Imagina. ⭐", "De nada! ⭐", "Com prazer. ⭐",
+            "Que bom que ajudou. ⭐", "Valeu! ⭐", "Tranquilo. ⭐",
+            "Sem problema. ⭐", "Boa! ⭐", "Fechado. ⭐",
         ),
         (
-            "Se isso resolveu, perfeito", "O importante é ter sido útil",
-            "Gosto quando a resposta encaixa no que você precisava",
-            "Bom saber que funcionou", "Seguimos melhorando",
-            "A ideia é deixar tudo mais simples", "Fico contente que tenha servido",
-            "Missão cumprida nessa parte", "Seguimos em frente", "Essa parte está resolvida",
+            "Que bom que funcionou", "Perfeito então", "Ótimo saber disso",
+            "Fico feliz que tenha resolvido", "Boa, essa parte fechou",
+            "Legal que serviu", "Então deu certo", "Ótimo", "Boa notícia",
+            "É isso que importa",
         ),
         (
-            "Quando quiser, seguimos.", "Pode mandar a próxima.", "Continuamos daqui.",
-            "Vamos para o próximo ponto.", "Estou por aqui.", "Pode seguir.", "Bora.",
-            "Sem problema.", "Próxima missão.", "É só chamar.",
+            "Seguimos.", "Bora para a próxima.", "Fechado.", "Certo.",
+            "Vamos adiante.", "Boa.", "Perfeito.", "Tranquilo.",
+            "Vamos continuar.", "Combinado.",
         ),
     ),
     "casual": (
         (
             "Entendi. ⭐", "Faz sentido. ⭐", "Boa observação. ⭐",
-            "Interessante você notar isso. ⭐", "Sim, peguei a ideia. ⭐",
-            "Estou acompanhando. ⭐", "Certo, entendi o clima da conversa. ⭐",
-            "Boa. ⭐", "Saquei. ⭐", "Percebi o ponto. ⭐",
+            "Interessante. ⭐", "Peguei a ideia. ⭐", "Certo. ⭐",
+            "Boa. ⭐", "Saquei. ⭐", "Percebi. ⭐", "Uhum. ⭐",
         ),
         (
-            "Esse tipo de detalhe muda bastante como a gente percebe o dia",
-            "Pequenas coisas acabam dando o tom do momento", "O contexto faz diferença",
-            "Dá para conversar sobre isso sem pressa",
-            "Essas observações são ótimas para manter a conversa natural",
-            "O jeito como o dia está influencia mesmo o ritmo",
-            "É um bom ponto para puxar assunto", "Esse detalhe ajuda a situar o momento",
-            "Dá para explorar isso por vários lados",
-            "Esse tipo de comentário deixa a conversa mais humana",
+            "O contexto muda bastante isso", "Esse detalhe faz diferença",
+            "Dá para olhar por outro ângulo", "Isso muda a leitura da situação",
+            "Tem mais coisa aí", "Esse ponto é interessante",
+            "Vale separar as partes", "Dá para aprofundar isso",
+            "Isso explica bastante", "Tem uma nuance importante aí",
         ),
         (
-            "Querendo continuar, eu acompanho.", "Pode desenvolver.", "Estou com você.",
-            "Manda mais.", "Seguimos daqui.", "Pode continuar a ideia.", "Vamos nessa.",
-            "Estou ouvindo.", "Sem pressa.", "Pode falar.",
+            "Me conta mais.", "Como assim?", "E depois?", "O que você acha disso?",
+            "Continua.", "Quero entender.", "Uhum.", "Certo.",
+            "E aí?", "O que aconteceu?",
         ),
     ),
     "support": (
@@ -138,21 +127,20 @@ _RESPONSE_FAMILIES = {
     ),
     "farewell": (
         (
-            "Até mais! ⭐", "Tchau! ⭐", "Até logo! ⭐", "Falou! ⭐", "Nos vemos depois. ⭐",
-            "Até a próxima. ⭐", "Boa continuação por aí. ⭐", "Vou ficando por aqui. ⭐",
+            "Até mais! ⭐", "Tchau! ⭐", "Até logo! ⭐", "Falou! ⭐", "Até depois. ⭐",
+            "Até a próxima. ⭐", "Boa continuação! ⭐", "Nos vemos. ⭐",
             "Até daqui a pouco. ⭐", "Fechou, até mais. ⭐",
         ),
         (
-            "Foi bom conversar", "Quando voltar, continuamos",
-            "A conversa fica por aqui por enquanto", "Estarei disponível quando precisar",
-            "Pode voltar quando quiser", "Seguimos na próxima",
-            "Fico pronta para quando você chamar", "Depois a gente retoma",
-            "Quando quiser continuar, estou por aqui", "Encerramos essa parte por agora",
+            "Foi bom conversar", "Depois continuamos", "A gente retoma depois",
+            "Fechamos por hoje", "Até a próxima parte", "Seguimos depois",
+            "Boa pausa", "Ficamos por aqui então", "Combinado, retomamos depois",
+            "Encerramos essa parte",
         ),
         (
-            "Se cuida.", "Até a próxima conversa.", "Bom resto de dia.",
-            "Boa noite quando chegar a hora.", "Nos falamos.", "Valeu pela conversa.",
-            "Até breve.", "Tudo de bom por aí.", "Pode contar comigo depois.", "Fui. ⭐",
+            "Se cuida.", "Até a próxima.", "Bom resto de dia.",
+            "Boa noite.", "Nos falamos.", "Valeu pela conversa.",
+            "Até breve.", "Tudo de bom.", "Bom descanso.", "Fui. ⭐",
         ),
     ),
 }
@@ -257,9 +245,15 @@ class ConversationEngine:
             return self._finalize(text, self._weather_response(plain), intent="weather")
 
         if plain in GREETING_PHRASES or any(plain.startswith(item + " ") for item in GREETING_PHRASES):
-            response = _compose("greeting", plain)
+            greetings = (
+                "Oi! ⭐",
+                "Olá! ⭐",
+                "Oie! Como você está?",
+                "Ei! Tudo bem?",
+            )
+            response = _pick(greetings, plain, "short-greeting")
             if user_name:
-                response = f"{response} {user_name}, estou por aqui."
+                response = f"{response} {user_name}."
             return self._finalize(text, response)
 
         if _has_any(plain, WELLBEING_PHRASES):

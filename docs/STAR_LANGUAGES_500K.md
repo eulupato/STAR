@@ -155,7 +155,7 @@ Dentro de **IDIOMA**:
 - pressionar confirma e volta;
 - ordem: 🇧🇷 `pt-BR` → 🇺🇸 `en-US` → 🇬🇧 `en-GB` → 🇪🇸 `es-ES` → 🇮🇹 `it-IT` → 🇫🇷 `fr-FR`.
 
-O launcher `INICIAR_STAR_WATCH_APP.bat` abre essa camada. Estados, cores, núcleo, anéis e navegação Plasma Orbit continuam herdados do visual V0.4.
+O launcher `INICIAR_WATCH.bat` abre essa camada. Estados, cores, núcleo, anéis e navegação Plasma Orbit continuam herdados do visual V0.4.
 
 ## Fontes verificadas em setembro de 2026
 

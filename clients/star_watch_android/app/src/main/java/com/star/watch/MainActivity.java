@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -27,6 +28,7 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -66,6 +68,7 @@ public class MainActivity extends Activity {
     private WatchSensorBridge sensorBridge;
     private boolean recording = false;
     private TextToSpeech tts;
+    private MediaPlayer remotePlayer;
     private volatile String runtimeRevision = "";
     private volatile boolean spokenRepliesEnabled = true;
     private volatile boolean sensorTransportEnabled = true;
@@ -206,7 +209,7 @@ public class MainActivity extends Activity {
                 JSONObject response = postJson(base + "/v1/text", body, true);
                 String answer = response.optString("response", "Sem resposta.");
                 runOnUiThread(() -> {
-                    statusText.setText("● ONLINE"); responseText.setText(answer); messageInput.setText(""); speak(answer);
+                    statusText.setText("● ONLINE"); responseText.setText(answer); messageInput.setText(""); speakFromCore(answer);
                 });
             } catch (Exception exception) { showError(exception); }
         });
@@ -214,6 +217,7 @@ public class MainActivity extends Activity {
 
     private void toggleRecording() {
         if (recording) { stopRecordingAndUpload(); return; }
+        stopSpokenReply();
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_AUDIO); return;
         }
@@ -241,7 +245,7 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> statusText.setText("● TRANSCRIBINDO NO PC..."));
                 JSONObject response = postBytes(base + "/v1/audio", data, "audio/wav");
                 String transcript = response.optString("transcript", ""); String answer = response.optString("response", "Sem resposta.");
-                runOnUiThread(() -> { statusText.setText("● ONLINE"); responseText.setText("Você: " + transcript + "\n\nSTAR: " + answer); speak(answer); });
+                runOnUiThread(() -> { statusText.setText("● ONLINE"); responseText.setText("Você: " + transcript + "\n\nSTAR: " + answer); speakFromCore(answer); });
             } catch (Exception exception) { activeRecorder.cancel(); showError(exception); }
         });
     }
@@ -372,9 +376,73 @@ public class MainActivity extends Activity {
         } catch (Exception exception) { runOnUiThread(() -> statusText.setText("● SEM CONEXÃO")); }
     }
 
-    private void speak(String text) {
+    private void stopSpokenReply() {
+        MediaPlayer player = remotePlayer; remotePlayer = null;
+        if (player != null) {
+            try { if (player.isPlaying()) player.stop(); } catch (Exception ignored) { }
+            try { player.release(); } catch (Exception ignored) { }
+        }
+        if (tts != null) tts.stop();
+    }
+
+    private void speakLocalFallback(String text) {
         if (!spokenRepliesEnabled || text == null || text.trim().isEmpty() || tts == null) return;
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "star-reply");
+        stopSpokenReply();
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "star-reply-fallback");
+    }
+
+    private void speakFromCore(String text) {
+        if (!spokenRepliesEnabled || text == null || text.trim().isEmpty()) return;
+        executor.execute(() -> {
+            try {
+                byte[] wav = requestSpeech(text);
+                File file = new File(getCacheDir(), "star_reply_" + System.currentTimeMillis() + ".wav");
+                try (FileOutputStream output = new FileOutputStream(file)) { output.write(wav); }
+                runOnUiThread(() -> playRemoteSpeech(file, text));
+            } catch (Exception exception) {
+                runOnUiThread(() -> speakLocalFallback(text));
+            }
+        });
+    }
+
+    private void playRemoteSpeech(File file, String fallbackText) {
+        try {
+            stopSpokenReply();
+            MediaPlayer player = new MediaPlayer(); remotePlayer = player;
+            player.setDataSource(file.getAbsolutePath());
+            player.setOnCompletionListener(done -> {
+                if (remotePlayer == done) remotePlayer = null;
+                done.release(); file.delete();
+            });
+            player.setOnErrorListener((failed, what, extra) -> {
+                if (remotePlayer == failed) remotePlayer = null;
+                failed.release(); file.delete(); speakLocalFallback(fallbackText); return true;
+            });
+            player.prepare(); player.start();
+        } catch (Exception exception) {
+            file.delete(); speakLocalFallback(fallbackText);
+        }
+    }
+
+    private byte[] requestSpeech(String text) throws Exception {
+        JSONObject body = new JSONObject(); body.put("text", text);
+        HttpURLConnection connection = (HttpURLConnection) new URL(storedServer() + "/v1/speech").openConnection();
+        connection.setRequestMethod("POST"); connection.setConnectTimeout(10000); connection.setReadTimeout(300000);
+        connection.setRequestProperty("Accept", "audio/wav");
+        connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        connection.setRequestProperty("Authorization", "Bearer " + token());
+        connection.setRequestProperty("X-STAR-Device", deviceId());
+        if (!runtimeRevision.isEmpty()) connection.setRequestProperty("X-STAR-Runtime", runtimeRevision);
+        connection.setDoOutput(true);
+        try (OutputStream output = connection.getOutputStream()) {
+            output.write(body.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        int status = connection.getResponseCode();
+        InputStream input = status >= 200 && status < 300 ? connection.getInputStream() : connection.getErrorStream();
+        byte[] data = readBytes(input); connection.disconnect();
+        if (status < 200 || status >= 300) throw new IllegalStateException("Voz do Core indisponível (HTTP " + status + ")");
+        if (data.length == 0) throw new IllegalStateException("O Core devolveu áudio vazio.");
+        return data;
     }
 
     private JSONObject postJson(String url, JSONObject body, boolean authenticated) throws Exception {
@@ -408,17 +476,23 @@ public class MainActivity extends Activity {
         }
     }
 
-    private static String readStream(InputStream input) throws Exception {
-        if (input == null) return "";
+    private static byte[] readBytes(InputStream input) throws Exception {
+        if (input == null) return new byte[0];
         try (InputStream source = input; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[8192]; int count; while ((count = source.read(buffer)) != -1) output.write(buffer, 0, count);
-            return new String(output.toByteArray(), StandardCharsets.UTF_8);
+            byte[] buffer = new byte[8192]; int count;
+            while ((count = source.read(buffer)) != -1) output.write(buffer, 0, count);
+            return output.toByteArray();
         }
+    }
+
+    private static String readStream(InputStream input) throws Exception {
+        return new String(readBytes(input), StandardCharsets.UTF_8);
     }
 
     @Override
     protected void onDestroy() {
         releaseAudioRecorder();
+        stopSpokenReply();
         if (sensorBridge != null) sensorBridge.close();
         executor.shutdownNow(); syncExecutor.shutdownNow();
         if (tts != null) { tts.stop(); tts.shutdown(); }

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import queue
 import sys
 import threading
@@ -10,37 +9,32 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import scrolledtext
 
-from PIL import Image, ImageTk, UnidentifiedImageError
-
-LOGGER = logging.getLogger(__name__)
+from PIL import Image, ImageTk
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import APP_NAME, VERSION, WINDOW_HEIGHT, WINDOW_WIDTH, MENU_HEIGHT, MENU_WIDTH, STT_MODEL, VOICE_CHAT_MODE
+from config import APP_NAME, VERSION, WINDOW_HEIGHT, WINDOW_WIDTH, MENU_HEIGHT, MENU_WIDTH, VOICE_CHAT_MODE
 from core.avatar import AvatarManager
 from core.emotion import EmotionManager
 from database.memory import Memory
-from voice.audio_input import AudioRecorder, VoiceActivityDetector, VoiceTurnAssembler
+from voice.audio_input import AudioRecorder
 from voice.manager import VoiceManager
 
 
 class StarApp:
-    def __init__(self, brain):
+    def __init__(self, brain, profile="pc"):
         self.brain = brain
-        self.memory = Memory()
+        self.profile = "mobile" if str(profile).lower() == "mobile" else "pc"
+        surface_memory = getattr(brain, "surface_memory", None)
+        self.memory = surface_memory if surface_memory is not None else Memory()
         self.avatar = AvatarManager()
         self.emotion = EmotionManager()
-        self.voice = VoiceManager()
+        surface_voice = getattr(brain, "surface_voice", None)
+        self.voice = surface_voice if surface_voice is not None else VoiceManager()
         self.voice.set_voice_mode(self._load_voice_mode())
         self.recorder = AudioRecorder()
-        self.vad = VoiceActivityDetector()
-        self.turn_assembler = VoiceTurnAssembler(
-            lambda text: self.response_queue.put(("vad_utterance", text))
-        )
-        self.hands_free = False
-        self._pending_voice_transcript = None
         self.online_mode = False
         self.processing = False
         self.recording = False
@@ -58,16 +52,24 @@ class StarApp:
         self.star = "#8fd0ff"; self.user = "#c9b8ff"; self.green = "#76e2a0"; self.red = "#ff7c87"; self.gold = "#ffd36e"
 
         self.window = tk.Tk()
-        self.window.title(f"{APP_NAME} V{VERSION}")
-        self.window.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
-        self.window.minsize(900, 600)
+        title_suffix = " Mobile" if self.profile == "mobile" else ""
+        self.window.title(f"{APP_NAME}{title_suffix} V{VERSION}")
+        if self.profile == "mobile":
+            self.window.geometry("430x820")
+            self.window.minsize(390, 680)
+        else:
+            self.window.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
+            self.window.minsize(900, 600)
         self.window.configure(bg=self.bg)
         self.window.protocol("WM_DELETE_WINDOW", self.close)
         self.window.bind("<F11>", self.toggle_maximize)
         self.window.bind("<Escape>", self.restore_normal_size)
         self.is_maximized = False
-        self.normal_size = (WINDOW_WIDTH, WINDOW_HEIGHT)
-        self.show_menu()
+        self.normal_size = (430, 820) if self.profile == "mobile" else (WINDOW_WIDTH, WINDOW_HEIGHT)
+        if self.profile == "mobile":
+            self.show_chat()
+        else:
+            self.show_menu()
         self.window.after(60, self._check_response_queue)
         # Pré-carrega somente o STT. O Chatterbox oficial leva minutos em CPU e
         # não deve atrasar nem sobrecarregar a abertura da interface.
@@ -78,36 +80,21 @@ class StarApp:
         return PROJECT_ROOT / "user_settings.json"
 
     def _read_user_settings(self):
-        path = self._user_settings_path
-        if not path.exists():
-            return {}
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-            LOGGER.warning("Não foi possível ler %s: %s", path, exc)
+            return json.loads(self._user_settings_path.read_text(encoding="utf-8"))
+        except Exception:
             return {}
-        if not isinstance(data, dict):
-            LOGGER.warning("Configuração ignorada porque %s não contém um objeto JSON.", path)
-            return {}
-        return data
 
     def _write_user_settings(self, **values):
-        path = self._user_settings_path
-        temp = path.with_name(path.name + ".tmp")
-        data = self._read_user_settings()
-        data.update(values)
         try:
-            temp.write_text(
+            data = self._read_user_settings()
+            data.update(values)
+            self._user_settings_path.write_text(
                 json.dumps(data, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
-            temp.replace(path)
-        except (OSError, TypeError) as exc:
-            LOGGER.error("Falha ao salvar configurações em %s: %s", path, exc)
-            try:
-                temp.unlink(missing_ok=True)
-            except OSError:
-                pass
+        except Exception:
+            pass
 
     def _load_voice_mode(self):
         mode = str(self._read_user_settings().get("voice_mode", VOICE_CHAT_MODE)).lower()
@@ -117,12 +104,9 @@ class StarApp:
         local = self._read_user_settings().get("skin")
         if local:
             return str(local)
-        path = PROJECT_ROOT / "config_skin.json"
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-            return str(data.get("skin", "original.jpeg")) if isinstance(data, dict) else "original.jpeg"
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-            LOGGER.warning("Falha ao ler skin padrão de %s: %s", path, exc)
+            return json.loads((PROJECT_ROOT / "config_skin.json").read_text(encoding="utf-8")).get("skin", "original.jpeg")
+        except Exception:
             return "original.jpeg"
 
     def _save_skin_selection(self):
@@ -132,16 +116,6 @@ class StarApp:
         self._write_user_settings(voice_mode=self.voice.mode)
 
     def clear_screen(self):
-        # Mãos-livres só existe enquanto a superfície de chat está visível.
-        # Navegar para outra tela encerra o stream para manter consentimento
-        # observável e evitar um microfone ativo sem indicador na interface.
-        if getattr(self, "hands_free", False):
-            try:
-                self.vad.stop()
-            except Exception as exc:
-                LOGGER.warning("Falha ao encerrar VAD ao trocar de tela: %s", exc)
-            self.turn_assembler.cancel()
-            self.hands_free = False
         for widget in self.window.winfo_children():
             widget.destroy()
         self.chat = None
@@ -150,11 +124,14 @@ class StarApp:
 
     def _header(self, parent):
         header = tk.Frame(parent, bg="#172231", height=56); header.pack(fill="x"); header.pack_propagate(False)
-        tk.Label(header, text="⭐  STAR", fg=self.star, bg="#172231", font=("Segoe UI", 20, "bold")).pack(side="left", padx=18)
+        title_size = 15 if self.profile == "mobile" else 20
+        tk.Label(header, text="⭐  STAR", fg=self.star, bg="#172231", font=("Segoe UI", title_size, "bold")).pack(side="left", padx=12 if self.profile == "mobile" else 18)
         status = "ONLINE" if self.online_mode else "OFFLINE"; color = self.green if self.online_mode else self.red
-        self.status_label = tk.Label(header, text=f"● V{VERSION} • {status}", fg=color, bg="#172231", font=("Segoe UI", 9, "bold")); self.status_label.pack(side="right", padx=18)
-        for text, cmd in (("⚙", self.show_settings), ("◈ ILHAS", self.show_islands), ("CHAT", self.show_chat), ("MENU", self.show_menu)):
-            self._button(header, text, cmd, small=True).pack(side="right", padx=4, pady=8)
+        status_text = f"● {status}" if self.profile == "mobile" else f"● V{VERSION} • {status}"
+        self.status_label = tk.Label(header, text=status_text, fg=color, bg="#172231", font=("Segoe UI", 8 if self.profile == "mobile" else 9, "bold")); self.status_label.pack(side="right", padx=10 if self.profile == "mobile" else 18)
+        controls = (("⚙", self.show_settings), ("CHAT", self.show_chat)) if self.profile == "mobile" else (("⚙", self.show_settings), ("◈ ILHAS", self.show_islands), ("CHAT", self.show_chat), ("MENU", self.show_menu))
+        for text, cmd in controls:
+            self._button(header, text, cmd, small=True).pack(side="right", padx=2 if self.profile == "mobile" else 4, pady=8)
 
     def _gradient(self, parent):
         canvas = tk.Canvas(parent, bg=self.bg, highlightthickness=0); canvas.place(x=0,y=0,relwidth=1,relheight=1); canvas.tk.call("lower", str(canvas))
@@ -180,13 +157,13 @@ class StarApp:
         self.avatar_label=tk.Label(self.center,bg=self.bg); self.avatar_label.pack(); self._load_display_avatar(); self._build_input(root); self.entry.focus_set()
 
     def _build_input(self,root):
-        bottom=tk.Frame(root,bg=self.bg,height=92); bottom.pack(fill="x",side="bottom",padx=22,pady=(0,18)); bottom.pack_propagate(False)
-        box=tk.Frame(bottom,bg="#cbd9e8",padx=1,pady=1); box.place(relx=.5,rely=.5,anchor="center",relwidth=.64,height=62); inner=tk.Frame(box,bg="#25364b"); inner.pack(fill="both",expand=True)
+        side_pad = 10 if self.profile == "mobile" else 22
+        box_width = .95 if self.profile == "mobile" else .64
+        bottom=tk.Frame(root,bg=self.bg,height=92); bottom.pack(fill="x",side="bottom",padx=side_pad,pady=(0,12 if self.profile == "mobile" else 18)); bottom.pack_propagate(False)
+        box=tk.Frame(bottom,bg="#cbd9e8",padx=1,pady=1); box.place(relx=.5,rely=.5,anchor="center",relwidth=box_width,height=62); inner=tk.Frame(box,bg="#25364b"); inner.pack(fill="both",expand=True)
         tk.Label(inner,text="+",fg="#d8e7f5",bg="#25364b",font=("Segoe UI",23)).pack(side="left",padx=(16,8)); self.entry=tk.Entry(inner,bg="#25364b",fg=self.text,insertbackground=self.text,relief=tk.FLAT,font=("Segoe UI",12)); self.entry.pack(side="left",fill="both",expand=True,pady=7); self.entry.insert(0,"Pergunte algo à STAR..."); self.entry.config(fg="#aebdcd")
         self.entry.bind("<FocusIn>",self._clear_placeholder); self.entry.bind("<FocusOut>",self._restore_placeholder); self.entry.bind("<Return>",self._on_enter)
-        self.mic=tk.Button(inner,text="🎤",command=self.toggle_microphone,bg="#25364b",fg="#d8e7f5",relief=tk.FLAT,borderwidth=0,font=("Segoe UI",14),cursor="hand2"); self.mic.pack(side="right",padx=4)
-        self.hands_free_button=tk.Button(inner,text="◉",command=self.toggle_hands_free,bg="#25364b",fg="#9aa8bb",relief=tk.FLAT,borderwidth=0,font=("Segoe UI",13,"bold"),cursor="hand2"); self.hands_free_button.pack(side="right",padx=4)
-        self.send_button=tk.Button(inner,text="➜",command=self.send_message,bg="#395574",fg="white",relief=tk.FLAT,borderwidth=0,font=("Segoe UI",16,"bold"),width=3,cursor="hand2"); self.send_button.pack(side="right",padx=(2,8),pady=7)
+        self.mic=tk.Button(inner,text="🎤",command=self.toggle_microphone,bg="#25364b",fg="#d8e7f5",relief=tk.FLAT,borderwidth=0,font=("Segoe UI",14),cursor="hand2"); self.mic.pack(side="right",padx=4); self.send_button=tk.Button(inner,text="➜",command=self.send_message,bg="#395574",fg="white",relief=tk.FLAT,borderwidth=0,font=("Segoe UI",16,"bold"),width=3,cursor="hand2"); self.send_button.pack(side="right",padx=(2,8),pady=7)
 
     def _clear_placeholder(self,_event=None):
         if self.entry.get()=="Pergunte algo à STAR...":self.entry.delete(0,tk.END);self.entry.config(fg=self.text)
@@ -195,11 +172,7 @@ class StarApp:
     def _on_enter(self,_event=None):self.send_message();return "break"
 
     def toggle_microphone(self):
-        if self.hands_free:
-            self._activate_conversation()
-            self._append_system("🎙️ O modo mãos-livres está ativo. Desative o botão ◉ para usar a gravação manual.")
-            return
-        self.voice.cancel_speech(reason="manual_microphone")
+        self.voice.cancel_speech()
         if not self.voice.stt_configured:self._activate_conversation();self._append_system("🎤 Reconhecimento local ainda não está instalado. Execute INSTALAR_VOZ.bat.");return
         if not self.recorder.available:self._activate_conversation();self._append_system("🎤 Não consegui acessar o microfone. Verifique as configurações de áudio do Windows.");return
         if not self.recording:
@@ -208,104 +181,21 @@ class StarApp:
         else:
             self.recording=False;self.mic.config(text="🎤",bg="#25364b",fg="#d8e7f5");self._set_status("TRANSCRIVENDO",self.gold);threading.Thread(target=self._finish_recording,daemon=True).start()
 
-    def toggle_hands_free(self):
-        """Ativa escuta contínua somente após uma ação explícita do usuário."""
-        if self.hands_free:
-            try:
-                self.vad.stop()
-            finally:
-                self.hands_free = False
-                if hasattr(self, "hands_free_button"):
-                    self.hands_free_button.config(text="◉", bg="#25364b", fg="#9aa8bb")
-                if self.current_screen == "chat":
-                    self._set_status("OFFLINE" if not self.online_mode else "ONLINE", self.red if not self.online_mode else self.green)
-                    self._activate_conversation()
-                    self._append_system("🎙️ Modo mãos-livres desativado.")
-            return
-
-        if self.recording:
-            self._activate_conversation()
-            self._append_system("🎙️ Finalize a gravação manual antes de ativar o modo mãos-livres.")
-            return
-        if not self.voice.stt_configured:
-            self._activate_conversation()
-            self._append_system("🎙️ O STT local ainda não está instalado. Execute INSTALAR_VOZ.bat.")
-            return
-        if not self.vad.available:
-            self._activate_conversation()
-            self._append_system("🎙️ VAD local indisponível. Verifique sounddevice/soundfile e o microfone.")
-            return
-
-        try:
-            self.vad.start(
-                on_start=self._vad_on_start,
-                on_end=self._vad_on_end,
-                on_error=self._vad_on_error,
-                guard_provider=lambda: self.voice.is_speaking,
-            )
-            self.hands_free = True
-            if hasattr(self, "hands_free_button"):
-                self.hands_free_button.config(text="●", bg="#1f5a3a", fg="white")
-            self._activate_conversation()
-            self._append_system(
-                "🎙️ Mãos-livres ativo. A detecção é local; somente trechos de fala viram WAV temporário e são apagados após a transcrição. Fale por cima da STAR para interrompê-la."
-            )
-            self._set_status("MÃOS-LIVRES", self.green)
-        except Exception as exc:
-            self.hands_free = False
-            self._activate_conversation()
-            self._append_system(f"🎙️ Não consegui iniciar mãos-livres: {exc}")
-
-    def _vad_on_start(self):
-        self.turn_assembler.speech_started()
-        interrupted = self.voice.barge_in()
-        self.response_queue.put(("vad_start", interrupted))
-
-    def _vad_on_end(self, path, duration_ms):
-        threading.Thread(
-            target=self._transcribe_vad_segment,
-            args=(path, duration_ms),
-            daemon=True,
-            name="STAR-VAD-STT",
-        ).start()
-
-    def _vad_on_error(self, message):
-        self.response_queue.put(("vad_error", str(message)))
-
-    def _transcribe_vad_segment(self, path, duration_ms):
-        try:
-            text = self.voice.transcribe(path)
-            self.response_queue.put(("vad_transcript", (text, float(duration_ms))))
-        except Exception as exc:
-            self.response_queue.put(("vad_error", f"{type(exc).__name__}: {exc}"))
-        finally:
-            try:
-                Path(path).unlink(missing_ok=True)
-            except OSError as exc:
-                LOGGER.warning("Falha ao remover WAV temporário %s: %s", path, exc)
-
-    def _flush_pending_voice_transcript(self):
-        if self.processing or not self._pending_voice_transcript or self.current_screen != "chat":
-            return
-        text = self._pending_voice_transcript
-        self._pending_voice_transcript = None
-        self.voice.cancel_speech(reason="new_voice_turn")
-        self.entry.config(state=tk.NORMAL)
-        self.entry.delete(0, tk.END)
-        self.entry.insert(0, text)
-        self.entry.config(fg=self.text)
-        self.send_message()
-
     def _finish_recording(self):
         path=None
-        try:path=self.recorder.stop_to_wav();text=self.voice.transcribe(path);self.response_queue.put(("transcript",text))
+        try:
+            path=self.recorder.stop_to_wav()
+            if getattr(self.brain, "is_remote_endpoint", False):
+                transcript,answer=self.brain.process_audio(path)
+                self.response_queue.put(("remote_voice_response",(transcript,answer)))
+            else:
+                text=self.voice.transcribe(path)
+                self.response_queue.put(("transcript",text))
         except Exception as exc:self.response_queue.put(("voice_error",str(exc)))
         finally:
             if path:
-                try:
-                    path.unlink(missing_ok=True)
-                except OSError as exc:
-                    LOGGER.warning("Falha ao remover gravação temporária %s: %s", path, exc)
+                try:path.unlink(missing_ok=True)
+                except Exception:pass
 
     def _activate_conversation(self):
         if self.has_messages or not hasattr(self,"stage"):return
@@ -313,7 +203,8 @@ class StarApp:
         if hasattr(self,"center"):
             try:self.center.place_forget()
             except tk.TclError:pass
-        self.chat=scrolledtext.ScrolledText(self.stage,wrap=tk.WORD,bg="#0e151f",fg=self.text,insertbackground=self.text,relief=tk.FLAT,borderwidth=0,font=("Segoe UI",11),padx=28,pady=22);self.chat.pack(fill="both",expand=True,padx=80,pady=(25,12));self.chat.configure(state=tk.DISABLED)
+        chat_pad = 12 if self.profile == "mobile" else 80
+        self.chat=scrolledtext.ScrolledText(self.stage,wrap=tk.WORD,bg="#0e151f",fg=self.text,insertbackground=self.text,relief=tk.FLAT,borderwidth=0,font=("Segoe UI",11),padx=18 if self.profile == "mobile" else 28,pady=18 if self.profile == "mobile" else 22);self.chat.pack(fill="both",expand=True,padx=chat_pad,pady=(14 if self.profile == "mobile" else 25,12));self.chat.configure(state=tk.DISABLED)
         for tag,fg,font in (("user",self.user,("Segoe UI",10,"bold")),("star",self.star,("Segoe UI",10,"bold")),("message",self.text,("Segoe UI",11)),("system",self.muted,("Segoe UI",10))):self.chat.tag_configure(tag,foreground=fg,font=font)
 
     def send_message(self):
@@ -322,10 +213,8 @@ class StarApp:
         text=self.entry.get().strip()
         if not text or text=="Pergunte algo à STAR...":return
         self.entry.delete(0,tk.END);self._activate_conversation();self._append_user(text)
-        try:
-            self.memory.save("Você", text)
-        except Exception as exc:
-            LOGGER.warning("Falha ao persistir mensagem do usuário: %s", exc)
+        try:self.memory.save("Você",text)
+        except Exception:pass
         self.processing=True;self.entry.config(state=tk.DISABLED);self.send_button.config(state=tk.DISABLED);self._set_status("PROCESSANDO",self.gold);self._load_avatar("thinking");threading.Thread(target=self._process_message,args=(text,),daemon=True).start()
 
     def _process_message(self,text):
@@ -337,31 +226,17 @@ class StarApp:
         try:
             while True:
                 kind,result=self.response_queue.get_nowait()
-                if kind=="vad_start":
-                    self._load_avatar("listening")
-                    self._set_status("OUVINDO", self.green)
-                    if result and self.current_screen=="chat":
-                        self._activate_conversation();self._append_system("🎙️ Interrompi minha fala para ouvir você.")
-                elif kind=="vad_transcript":
-                    text,duration_ms=result
-                    if self.current_screen=="chat":
-                        self._set_status("INTERPRETANDO FALA", self.gold)
-                    self.turn_assembler.feed(str(text))
-                elif kind=="vad_utterance":
-                    text=str(result).strip()
-                    if text and self.current_screen=="chat":
-                        if self.processing:
-                            self._pending_voice_transcript=text
-                            self._append_system("🎙️ Entendi seu próximo turno. Vou responder assim que concluir o processamento atual.")
-                        else:
-                            self.entry.config(state=tk.NORMAL);self.entry.delete(0,tk.END);self.entry.insert(0,text);self.entry.config(fg=self.text);self.send_message()
-                elif kind=="vad_error":
-                    if self.current_screen=="chat":
-                        self._activate_conversation();self._append_system(f"🎙️ Falha no modo mãos-livres: {result}")
-                    self._set_status("ATENÇÃO", self.red)
-                elif kind=="transcript":
+                if kind=="transcript":
                     if self.current_screen=="chat":
                         self.entry.config(state=tk.NORMAL);self.entry.delete(0,tk.END);self.entry.insert(0,str(result));self.entry.config(fg=self.text);self.send_message()
+                elif kind=="remote_voice_response":
+                    transcript,response=result
+                    self._activate_conversation();self._append_user(str(transcript));self._append_star(str(response))
+                    self._load_avatar("speaking")
+                    self.voice.speak_async(str(response),lambda ok,error:self.response_queue.put(("speech_result",(ok,error))))
+                    self.processing=False
+                    if self.current_screen=="chat":
+                        self.entry.config(state=tk.NORMAL);self.send_button.config(state=tk.NORMAL);self._set_status("FALANDO",self.green);self.entry.focus_set()
                 elif kind=="voice_error":
                     self._activate_conversation();self._append_system(f"🎤 Falha no reconhecimento: {result}");self.processing=False
                     if self.current_screen=="chat":self.entry.config(state=tk.NORMAL);self.send_button.config(state=tk.NORMAL)
@@ -371,18 +246,13 @@ class StarApp:
                     ok,error=result
                     if not ok and self.current_screen=="chat":self._append_system(f"🔊 A resposta foi gerada, mas a voz falhou: {error}")
                     self._load_avatar("neutral")
-                    if self.current_screen=="chat":
-                        if self.hands_free:self._set_status("MÃOS-LIVRES",self.green)
-                        else:self._set_status("OFFLINE" if not self.online_mode else "ONLINE",self.red if not self.online_mode else self.green)
+                    if self.current_screen=="chat":self._set_status("OFFLINE" if not self.online_mode else "ONLINE",self.red if not self.online_mode else self.green)
                 elif kind=="success":
                     response=str(result);self._append_star(response)
-                    try:
-                        self.memory.save("STAR", response)
-                    except Exception as exc:
-                        LOGGER.warning("Falha ao persistir resposta da STAR: %s", exc)
+                    try:self.memory.save("STAR",response)
+                    except Exception:pass
                     self._load_avatar("speaking");self.voice.speak_async(response,lambda ok,error:self.response_queue.put(("speech_result",(ok,error))));self.processing=False
                     if self.current_screen=="chat":self.entry.config(state=tk.NORMAL);self.send_button.config(state=tk.NORMAL);self._set_status("FALANDO",self.green);self.entry.focus_set()
-                    if self._pending_voice_transcript:self.window.after(10,self._flush_pending_voice_transcript)
                 elif kind=="error":
                     self._append_system(f"Erro ao processar: {result}");self._load_avatar("neutral");self.processing=False
                     if self.current_screen=="chat":self.entry.config(state=tk.NORMAL);self.send_button.config(state=tk.NORMAL)
@@ -410,31 +280,16 @@ class StarApp:
     def _load_display_avatar(self):
         skin=PROJECT_ROOT/"SKINS"/self.selected_skin
         if skin.exists():
-            try:
-                with Image.open(skin) as source:
-                    image = source.convert("RGBA")
-                image.thumbnail((300,330),Image.Resampling.LANCZOS)
-                self.avatar_photo=ImageTk.PhotoImage(image)
-                self.avatar_label.config(image=self.avatar_photo,text="")
-                return
-            except (OSError, ValueError, UnidentifiedImageError) as exc:
-                LOGGER.warning("Skin inválida ou ilegível %s: %s", skin, exc)
+            try:image=Image.open(skin).convert("RGBA");image.thumbnail((300,330),Image.Resampling.LANCZOS);self.avatar_photo=ImageTk.PhotoImage(image);self.avatar_label.config(image=self.avatar_photo,text="");return
+            except Exception:pass
         self._load_avatar("neutral")
     def _load_avatar(self,emotion="neutral"):
         path=self.avatar.avatar_dir/f"{emotion}.png"
         if not path.exists() or path.stat().st_size == 0:path=self.avatar.avatar_dir/"neutral.png"
-        try:
-            with Image.open(path) as source:
-                image = source.convert("RGBA")
-            image.thumbnail((250,250),Image.Resampling.LANCZOS)
-            self.avatar_photo=ImageTk.PhotoImage(image)
-            self.avatar_label.config(image=self.avatar_photo,text="")
-        except (OSError, ValueError, UnidentifiedImageError) as exc:
-            LOGGER.warning("Avatar inválido ou ilegível %s: %s", path, exc)
-            try:
-                self.avatar_label.config(text="⭐\nSTAR",fg=self.star,font=("Segoe UI",28,"bold"))
-            except tk.TclError:
-                pass
+        try:image=Image.open(path).convert("RGBA");image.thumbnail((250,250),Image.Resampling.LANCZOS);self.avatar_photo=ImageTk.PhotoImage(image);self.avatar_label.config(image=self.avatar_photo,text="")
+        except Exception:
+            try:self.avatar_label.config(text="⭐\nSTAR",fg=self.star,font=("Segoe UI",28,"bold"))
+            except tk.TclError:pass
     def _set_status(self,text,color):
         label=getattr(self,"status_label",None)
         if label:
@@ -446,12 +301,14 @@ class StarApp:
         mode=tk.Frame(body,bg=self.panel,padx=22,pady=18);mode.pack(fill="x",pady=(18,12));tk.Label(mode,text="MODO DE FUNCIONAMENTO",fg=self.text,bg=self.panel,font=("Segoe UI",12,"bold")).pack(anchor="w");row=tk.Frame(mode,bg=self.panel);row.pack(anchor="w",pady=12);self.online_btn=self._button(row,"🟢 ONLINE",lambda:self._set_mode(True));self.online_btn.pack(side="left",padx=(0,10));self.offline_btn=self._button(row,"🔴 OFFLINE",lambda:self._set_mode(False));self.offline_btn.pack(side="left");self._refresh_mode_buttons();tk.Label(mode,text="O modo online controla recursos de internet. A voz da STAR é local nos dois modos.",fg=self.muted,bg=self.panel).pack(anchor="w")
         voicebox=tk.Frame(body,bg=self.panel,padx=22,pady=18);voicebox.pack(fill="x",pady=12)
         tk.Label(voicebox,text="🎙️ VOZ DA STAR",fg=self.star,bg=self.panel,font=("Segoe UI",13,"bold")).pack(anchor="w")
-        tk.Label(voicebox,text=f"Entrada: faster-whisper {STT_MODEL} PT-BR • Conversa: {self.voice.tts_description}",fg=self.text,bg=self.panel).pack(anchor="w",pady=(8,6))
+        tk.Label(voicebox,text=f"Entrada: faster-whisper tiny • Conversa: {self.voice.tts_description}",fg=self.text,bg=self.panel).pack(anchor="w",pady=(8,6))
         voice_row=tk.Frame(voicebox,bg=self.panel);voice_row.pack(anchor="w",pady=(2,8))
         self._button(voice_row,"⚡ CONVERSA RÁPIDA",lambda:self._set_voice_mode("fast"),small=True).pack(side="left",padx=(0,8))
         self._button(voice_row,"⭐ VOZ OFICIAL",lambda:self._set_voice_mode("official"),small=True).pack(side="left")
-        tk.Label(voicebox,text="O modo rápido responde imediatamente usando uma voz local do Windows quando disponível. O modo oficial usa a referência Chatterbox e pode levar minutos neste computador.",fg=self.muted,bg=self.panel,wraplength=760,justify="left").pack(anchor="w")
-        self._button(voicebox,"TESTAR VOZ OFICIAL",self._test_voice).pack(anchor="w",pady=(12,4))
+        tk.Label(voicebox,text="O modo rápido usa Piper PT-BR e segue a saída de áudio configurada para a STAR. O modo oficial usa a referência Chatterbox e pode levar minutos em CPU.",fg=self.muted,bg=self.panel,wraplength=760,justify="left").pack(anchor="w")
+        test_row=tk.Frame(voicebox,bg=self.panel);test_row.pack(anchor="w",pady=(12,4))
+        self._button(test_row,"TESTAR VOZ ATUAL",self._test_voice,small=True).pack(side="left",padx=(0,8))
+        self._button(test_row,"TESTAR VOZ OFICIAL",self._test_official_voice,small=True).pack(side="left")
         self.voice_test_label=tk.Label(voicebox,text="Pronto para testar.",fg=self.muted,bg=self.panel,wraplength=760,justify="left");self.voice_test_label.pack(anchor="w")
         info=tk.Frame(body,bg=self.panel,padx=22,pady=16);info.pack(fill="x",pady=12)
         for name,value in (("Versão",f"V{VERSION}"),("Conhecimento local","ATIVO"),("Modo de voz",self.voice.mode.upper()),("Reconhecimento local","PRONTO" if self.voice.stt_configured else "INSTALAÇÃO PENDENTE")):
@@ -459,29 +316,52 @@ class StarApp:
         self._button(body,"VOLTAR AO CHAT",self.show_chat).pack(anchor="w",pady=10)
 
     def _test_voice(self):
-        self._set_voice_test_message("🔊 Preparando teste da voz oficial...",True);self._set_status("TESTANDO VOZ",self.gold);self.voice.test_official_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
+        self._set_voice_test_message("🔊 Testando a voz selecionada...",True);self._set_status("TESTANDO VOZ",self.gold);self.voice.test_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
+    def _test_official_voice(self):
+        self._set_voice_test_message("🔊 Preparando a voz oficial; em CPU isso pode demorar...",True);self._set_status("TESTANDO VOZ OFICIAL",self.gold);self.voice.test_official_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
     def _set_voice_mode(self,mode):
         self.voice.set_voice_mode(mode);self._save_voice_mode();self.show_settings()
     def _set_mode(self,online):
         self.online_mode=bool(online)
-        self.brain.network_enabled = self.online_mode
+        try:self.brain.network_enabled=self.online_mode
+        except Exception:pass
         self._refresh_mode_buttons();self._set_status("ONLINE" if self.online_mode else "OFFLINE",self.green if self.online_mode else self.red)
     def _refresh_mode_buttons(self):
         if hasattr(self,"online_btn"):self.online_btn.config(bg="#1f5a3a" if self.online_mode else "#24313f")
         if hasattr(self,"offline_btn"):self.offline_btn.config(bg="#5a2630" if not self.online_mode else "#24313f")
 
     def show_islands(self):
-        self.clear_screen();self.current_screen="islands";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True,padx=35,pady=20);tk.Label(body,text="HUB • STAR WORLD",fg=self.star,bg=self.bg,font=("Segoe UI",24,"bold")).pack(anchor="w",pady=(0,12))
+        self.clear_screen()
+        self.current_screen="islands"
+        root=tk.Frame(self.window,bg=self.bg)
+        root.pack(fill="both",expand=True)
+        self._header(root)
+        body=tk.Frame(root,bg=self.bg)
+        body.pack(fill="both",expand=True,padx=35,pady=20)
+        tk.Label(body,text="HUB • STAR WORLD",fg=self.star,bg=self.bg,font=("Segoe UI",24,"bold")).pack(anchor="w",pady=(0,12))
+
+        # pack() organiza a tela; grid() fica isolado neste subcontainer.
+        # Tkinter não permite misturar os dois geometry managers no mesmo pai.
+        cards=tk.Frame(body,bg=self.bg)
+        cards.pack(fill="both",expand=True)
+        for column in range(3):
+            cards.grid_columnconfigure(column,weight=1)
+
         try:
             from core.islands import get_islands
-            data = get_islands()
-        except Exception as exc:
-            LOGGER.error("Falha ao carregar ilhas da STAR: %s", exc)
-            data = {}
+            data=get_islands()
+        except Exception:
+            data={}
+
         for i,(key,item) in enumerate(data.items()):
-            card=tk.Frame(body,bg=self.panel,padx=16,pady=14);card.grid(row=i//3,column=i%3,sticky="nsew",padx=6,pady=6);tk.Label(card,text=f"{item.get('icon','🏝️')} {item.get('name',key)}",fg=self.star,bg=self.panel,font=("Segoe UI",14,"bold")).pack(anchor="w");tk.Label(card,text=item.get('description',''),fg=self.text,bg=self.panel,wraplength=270,justify="left").pack(anchor="w",pady=7)
-            if key.lower() in {"house","casa"}:self._button(card,"ENTRAR NA CASA",self.show_house,small=True).pack(anchor="w")
-            else:tk.Label(card,text="🟢 DISPONÍVEL" if item.get('status')=='installed' else "🔒 AGUARDANDO CONHECIMENTO",fg=self.green if item.get('status')=='installed' else self.gold,bg=self.panel,font=("Segoe UI",8,"bold")).pack(anchor="w")
+            card=tk.Frame(cards,bg=self.panel,padx=16,pady=14)
+            card.grid(row=i//3,column=i%3,sticky="nsew",padx=6,pady=6)
+            tk.Label(card,text=f"{item.get('icon','🏝️')} {item.get('name',key)}",fg=self.star,bg=self.panel,font=("Segoe UI",14,"bold")).pack(anchor="w")
+            tk.Label(card,text=item.get('description',''),fg=self.text,bg=self.panel,wraplength=270,justify="left").pack(anchor="w",pady=7)
+            if key.lower() in {"house","casa"}:
+                self._button(card,"ENTRAR NA CASA",self.show_house,small=True).pack(anchor="w")
+            else:
+                tk.Label(card,text="🟢 DISPONÍVEL" if item.get('status')=='installed' else "🔒 AGUARDANDO CONHECIMENTO",fg=self.green if item.get('status')=='installed' else self.gold,bg=self.panel,font=("Segoe UI",8,"bold")).pack(anchor="w")
 
     def show_house(self):
         self.clear_screen();self.current_screen="house";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True,padx=70,pady=45);tk.Label(body,text="🏠 CASA",fg=self.star,bg=self.bg,font=("Segoe UI",28,"bold")).pack(anchor="w");tk.Label(body,text="O espaço pessoal da STAR dentro do STAR WORLD.",fg=self.muted,bg=self.bg).pack(anchor="w",pady=(4,24));grid=tk.Frame(body,bg=self.bg);grid.pack(fill="x")
@@ -498,15 +378,8 @@ class StarApp:
     def _change_closet_skin(self,step):self.closet_index=(self.closet_index+step)%len(self.closet_files);self._render_closet_skin()
     def _render_closet_skin(self):
         p=self.closet_files[self.closet_index]
-        try:
-            with Image.open(p) as source:
-                im = source.convert("RGBA")
-            im.thumbnail((360,330),Image.Resampling.LANCZOS)
-            self.closet_photo=ImageTk.PhotoImage(im)
-            self.closet_image.config(image=self.closet_photo,text="")
-        except (OSError, ValueError, UnidentifiedImageError) as exc:
-            LOGGER.warning("Skin do closet inválida ou ilegível %s: %s", p, exc)
-            self.closet_image.config(image="",text="Não foi possível abrir esta skin",fg=self.red)
+        try:im=Image.open(p).convert("RGBA");im.thumbnail((360,330),Image.Resampling.LANCZOS);self.closet_photo=ImageTk.PhotoImage(im);self.closet_image.config(image=self.closet_photo,text="")
+        except Exception:self.closet_image.config(image="",text="Não foi possível abrir esta skin",fg=self.red)
         self.closet_name.config(text=p.stem.replace("_"," ").title());active=p.name==self.selected_skin;self.closet_state.config(text="✓ SKIN ATUALMENTE SELECIONADA" if active else f"{self.closet_index+1} de {len(self.closet_files)}");self.select_skin_button.config(text="SKIN SELECIONADA" if active else "SELECIONAR ESTA SKIN",bg="#1f5a3a" if active else "#243247")
     def _confirm_closet_skin(self):self.selected_skin=self.closet_files[self.closet_index].name;self._save_skin_selection();self._render_closet_skin()
     def _button(self,parent,text,command,small=False):return tk.Button(parent,text=text,command=command,bg="#243247",fg=self.text,activebackground="#38516f",activeforeground=self.text,relief=tk.FLAT,borderwidth=0,cursor="hand2",font=("Segoe UI",9 if small else 10,"bold"),padx=14,pady=7)
@@ -514,28 +387,25 @@ class StarApp:
         if self.is_maximized:self.restore_normal_size()
         else:self.normal_size=(self.window.winfo_width(),self.window.winfo_height());self.window.state("zoomed");self.is_maximized=True
     def restore_normal_size(self,_event=None):
-        if self.is_maximized:self.window.state("normal");self.window.geometry(f"{max(900,self.normal_size[0])}x{max(600,self.normal_size[1])}");self.is_maximized=False
-    @staticmethod
-    def _cleanup(label, callback):
-        try:
-            callback()
-        except Exception as exc:
-            LOGGER.warning("Falha de cleanup em %s: %s", label, exc)
-
+        if self.is_maximized:
+            self.window.state("normal")
+            min_w, min_h = ((390, 680) if self.profile == "mobile" else (900, 600))
+            self.window.geometry(f"{max(min_w,self.normal_size[0])}x{max(min_h,self.normal_size[1])}")
+            self.is_maximized=False
     def close(self):
-        if self._closing:
-            return
-        self._closing = True
-        self._cleanup("vad", self.vad.stop)
-        self._cleanup("turn_assembler", self.turn_assembler.cancel)
-        if self.recording:
-            self._cleanup("recorder", self.recorder.stop_to_wav)
-        self._cleanup("voice", self.voice.close)
-        self._cleanup("memory", self.memory.close)
+        if self._closing:return
+        self._closing=True
         try:
-            self.window.destroy()
-        except tk.TclError:
-            pass
-
-    def run(self):
-        self.window.mainloop()
+            if self.recording:self.recorder.stop_to_wav()
+        except Exception:pass
+        try:self.voice.close()
+        except Exception:pass
+        try:self.memory.close()
+        finally:
+            close_surface=getattr(self.brain,"close_surface",None)
+            if callable(close_surface):
+                try:close_surface()
+                except Exception:pass
+            try:self.window.destroy()
+            except Exception:pass
+    def run(self):self.window.mainloop()

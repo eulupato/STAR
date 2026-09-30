@@ -55,10 +55,10 @@ Exemplos atuais:
 Na raiz da STAR:
 
 ```powershell
-.\INICIAR_STAR_DEVICES.bat
+.\INICIAR_PC.bat
 ```
 
-`INICIAR_STAR_WATCH.bat` continua existindo como alias compatível.
+`INICIAR_WATCH.bat` continua existindo como alias compatível.
 
 ## 2. Gerar o APK
 

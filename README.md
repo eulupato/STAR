@@ -8,17 +8,24 @@ cloud são recursos utilizados pela STAR; nenhum modelo isolado é a STAR.
 
 ## Direção atual do projeto
 
-A prioridade prática passa a ser o **STAR Watch App**.
+A Foundation V1.9 continua preservada como base estável do Core. PC, Mobile e Watch
+são superfícies da mesma STAR: compartilham identidade, raciocínio, memória,
+conhecimento e capacidades do `StarCore`. Nenhum endpoint possui um cérebro paralelo.
 
-```text
-1. construir e validar a experiência do relógio no PC;
-2. portar o shell validado para Android/smartwatch real;
-3. integrar sensores e hardware reais por providers;
-4. depois construir a nova experiência principal para PC.
-```
+As diferenças são de apresentação e hardware:
 
-A Foundation V1.9 continua preservada como base estável do Core. Ela não está sendo
-reconstruída nem descartada; o Watch reutiliza o que já funciona.
+- **PC** — experiência completa, incluindo STAR World/Ilhas e Device Gateway LAN;
+- **Mobile** — experiência compacta baseada na skin/identidade visual do PC, sem Ilhas;
+- **Watch** — experiência minimalista circular Plasma Orbit, voltada a voz e ações rápidas.
+
+No PC existem três entradas oficiais e somente elas devem ser usadas para iniciar
+as superfícies do produto: `INICIAR_PC.bat`, `INICIAR_MOBILE.bat` e
+`INICIAR_WATCH.bat`.
+
+`INICIAR_PC.bat` sobe o único STAR Core e o Device Gateway. Os simuladores
+Mobile e Watch não constroem outro cérebro: conectam-se ao Core do PC pela sessão
+local do Gateway. Portanto, para testar as três superfícies juntas, inicie primeiro
+o PC e depois Mobile/Watch. Em hardware real, o mesmo contrato usa a LAN privada.
 
 ## 🧠 Knowledge Foundation
 
@@ -35,7 +42,16 @@ A expansão curricular canônica adiciona uma camada granular sobre o mesmo Core
 - **1.000.000** de variações endereçáveis por tema;
 - **1.000.000** de variações endereçáveis por conceito único;
 - **941.000.000** de conteúdos/visões curriculares endereçáveis no total,
-  materializados sob demanda.
+  materializados sob demanda;
+- uma **fundação factual real para os 56 temas**, com resumos e três fundamentos
+  por tema (168 afirmações temáticas curadas), além de uma fundação temática real
+  para os **885 conceitos canônicos**, sem voltar a respostas de metadados;
+- **100 registros factuais diretos** de alta frequência e **76 entradas/aliases de
+  capitais**, incluindo anatomia/fisiologia humana, biologia, neurociência, química,
+  física, computação, geografia, Ciências da Terra, astronomia, cultura e história;
+- **29 referências factuais registradas**, incluindo NIST, OpenStax, NASA,
+  NIH/NHLBI, NCBI Bookshelf, IUPAC, PubChem, USGS, NOAA, IPCC, IETF, UN/UNGEGN,
+  Nobel Prize, Natural History Museum e Recording Academy.
 
 Os 941M curriculares **não são 941M novos fatos independentes** e permanecem como
 métrica separada dos 22,15M factuais legados. Um conceito existe uma vez e pode
@@ -46,6 +62,7 @@ Arquivos principais:
 
 ```text
 core/curriculum_taxonomy.py
+core/curriculum_foundations.py
 core/curriculum_knowledge.py
 STAR_CURRICULUM_MANIFEST.json
 docs/STAR_CURRICULUM_EXPANSION.md
@@ -64,7 +81,7 @@ com a interface oficial **Plasma Orbit**.
 Para abrir:
 
 ```bat
-INICIAR_STAR_WATCH_APP.bat
+INICIAR_WATCH.bat
 ```
 
 ou:
@@ -142,7 +159,8 @@ Ela fornece:
 - texto;
 - microfone PCM 16-bit mono/WAV;
 - STT no Core;
-- resposta falada pelo TTS do endpoint;
+- voz oficial gerada pelo `VoiceManager` do PC e transmitida em WAV pelo `/v1/speech`;
+- TTS do endpoint apenas como fallback degradado quando a voz do Core estiver indisponível;
 - câmera;
 - heartbeat;
 - runtime adaptativo;
@@ -164,11 +182,22 @@ faster-whisper local PT-BR
     ↓
 STAR Core
     ↓
-Chatterbox oficial / modo rápido local
+VoiceManager único no PC
+    ├── Chatterbox oficial
+    └── Piper → SAPI fallback no modo rápido
     ↓
-Alto-falante
+PC: saída local resolvida por `voice/audio_devices.py`
+Mobile/Watch: `/v1/speech` → WAV → alto-falante do endpoint
 ```
 
+A STAR não fica presa ao primeiro endpoint que o PortAudio reportar (por exemplo,
+HDMI/TV). A entrada e a saída podem ser fixadas em `user_settings.json` por
+`audio_input_device`/`audio_output_device`, ou temporariamente por
+`STAR_AUDIO_INPUT_DEVICE`/`STAR_AUDIO_OUTPUT_DEVICE`. Sem override, o Windows usa
+o driver primário do sistema.
+
+PC, Mobile e Watch usam a mesma fonte de voz sempre que o Core está acessível. O TTS
+nativo de Mobile/Watch permanece somente como fallback explícito de disponibilidade.
 A referência da voz oficial continua privada e local. Não deve ser enviada ao Git.
 Seed-VC permanece opcional e separado do ambiente principal.
 
@@ -283,10 +312,11 @@ geral**, navegador, Spotify ou pesquisa arbitrária. Veja
 ```text
 STAR/
 ├── clients/
+│   ├── star_mobile_app.py      # simulador Mobile, mesmo Core/GUI funcional
+│   ├── star_mobile_ios/        # cliente iOS experimental
 │   ├── star_watch_visual.py    # shell oficial Plasma Orbit no PC
 │   ├── star_watch_app.py       # base funcional reutilizada pelo renderer
-│   ├── star_watch_android/     # transporte Android V0.3
-│   └── star_mobile_ios/        # cliente iOS experimental
+│   └── star_watch_android/     # transporte Android V0.3
 ├── core/                       # identidade, Core, comandos, conversa e capacidades
 ├── database/                   # persistência
 ├── gui/                        # interface PC anterior preservada
@@ -296,8 +326,9 @@ STAR/
 ├── tests/                      # testes automatizados
 ├── docs/                       # documentação
 ├── STAR_MANIFEST.json          # capacidades/versões declaradas
-├── INICIAR_STAR_WATCH_APP.bat
-├── INICIAR_STAR.bat
+├── INICIAR_PC.bat              # PC completo + Gateway LAN
+├── INICIAR_MOBILE.bat          # simulador Mobile no PC
+├── INICIAR_WATCH.bat           # simulador Watch no PC
 └── main.py
 ```
 
@@ -306,7 +337,7 @@ STAR/
 A interface desktop anterior continua disponível e pode ser iniciada por:
 
 ```bat
-INICIAR_STAR.bat
+INICIAR_PC.bat
 ```
 
 ou:
@@ -315,19 +346,15 @@ ou:
 .\.venv\Scripts\python.exe main.py
 ```
 
-Ela permanece preservada enquanto a nova experiência Watch-first é desenvolvida.
-A nova versão principal para PC será construída depois que o shell do relógio estiver
-estável.
+O PC continua sendo a fonte central de processamento. Mobile e Watch reutilizam
+esse mesmo Core e evoluem como interfaces/endpoints especializados, sem duplicar
+identidade, memória ou raciocínio.
 
 ## STAR Device Gateway
 
-A ponte LAN permanece experimental e desligada por padrão.
-
-Para testes de dispositivos:
-
-```bat
-INICIAR_STAR_DEVICES.bat
-```
+A ponte LAN continua experimental no Core e permanece desligada quando `main.py`
+é iniciado isoladamente. O launcher oficial `INICIAR_PC.bat` a ativa para que
+Mobile e Watch usem o mesmo processamento, identidade e raciocínio do PC.
 
 O Gateway possui pareamento local, token por dispositivo, runtime adaptativo e rate
 limits. Deve permanecer em rede privada; não exponha a porta experimental à Internet.

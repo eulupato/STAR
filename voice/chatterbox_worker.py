@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_REF = ROOT / "voice" / "reference" / "star_reference.mp3"
 OUT = ROOT / "voice" / "output"
 LOG = OUT / "chatterbox_worker.log"
+_LOG_STREAM = None
 
 
 def reference_path() -> Path:
@@ -35,15 +36,25 @@ def emit(payload: dict) -> None:
     )
 
 
-def quiet_call(func, *args, **kwargs):
+def _log_stream():
+    global _LOG_STREAM
     OUT.mkdir(parents=True, exist_ok=True)
-    with LOG.open("a", encoding="utf-8") as log:
-        with contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):
-            return func(*args, **kwargs)
+    if _LOG_STREAM is None or _LOG_STREAM.closed:
+        _LOG_STREAM = LOG.open("a", encoding="utf-8", buffering=1)
+    return _LOG_STREAM
+
+
+def quiet_call(func, *args, **kwargs):
+    # Alguns backends guardam sys.stderr em handlers internos. Manter o mesmo
+    # stream vivo durante todo o worker evita "I/O operation on closed file".
+    log = _log_stream()
+    with contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):
+        return func(*args, **kwargs)
 
 
 def main() -> int:
     os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+    os.environ.setdefault("TQDM_DISABLE", "1")
 
     ref = reference_path()
 

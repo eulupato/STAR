@@ -29,7 +29,7 @@ executa o raciocínio principal. Ele captura entradas e apresenta/execute saída
 O gateway fica desligado por padrão. Para iniciar a STAR com a ponte do relógio:
 
 ```powershell
-.\INICIAR_STAR_WATCH.bat
+.\INICIAR_WATCH.bat
 ```
 
 O terminal mostrará:

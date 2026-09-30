@@ -465,6 +465,10 @@ class SemanticFileSearch:
             """), {"limit": max(1, min(int(scan_limit), 50000))}).mappings().all()
         scored = []
         for row in rows:
+            # Índice persistente pode conter arquivos removidos/movidos. Eles nunca
+            # devem vencer resultados reais só porque conservam um vetor antigo.
+            if not Path(row["path"]).exists():
+                continue
             try:
                 vector = json.loads(row["vector_json"])
             except json.JSONDecodeError:
@@ -476,8 +480,14 @@ class SemanticFileSearch:
                 "path": row["path"], "title": row["title"], "suffix": row["suffix"],
                 "size_bytes": int(row["size_bytes"]), "score": score,
                 "snippet": _clean(row["sample_text"])[:300], "backend": row["vector_backend"],
+                "indexed_at": row["indexed_at"],
             })
-        scored.sort(key=lambda x: (-x["score"], x["path"]))
+        # Similaridade é o critério principal; em empate, a indexação mais recente
+        # vence. Os sorts estáveis preservam essa ordem sem alterar o modelo vetorial.
+        scored.sort(key=lambda x: x["indexed_at"], reverse=True)
+        scored.sort(key=lambda x: x["score"], reverse=True)
+        for item in scored:
+            item.pop("indexed_at", None)
         return scored[:max(1, min(int(limit), 50))]
 
     def status(self) -> dict:

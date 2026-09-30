@@ -2,10 +2,19 @@
 setlocal
 cd /d "%~dp0"
 chcp 65001 >nul
+set "LEGACY_PATH=C:\Development\Projects\STAR\.voice_venv"
 
 echo ==========================================
 echo STAR VOICE ENGINE - CHATTERBOX 0.1.7
 echo ==========================================
+
+if exist ".voice_venv\pyvenv.cfg" (
+    findstr /i /c:"%LEGACY_PATH%" ".voice_venv\pyvenv.cfg" >nul
+    if not errorlevel 1 (
+        echo Ambiente .voice_venv em caminho legado detectado. Recriando em D:\STAR...
+        rmdir /s /q ".voice_venv"
+    )
+)
 
 if not exist ".voice_venv\Scripts\python.exe" (
     echo Criando ambiente Python 3.11...
