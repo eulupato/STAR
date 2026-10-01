@@ -1,4 +1,4 @@
-# STAR Watch — Plasma Orbit Visual System
+# STAR Watch — Cosmic Crystal Visual System
 
 ## Objetivo
 
@@ -13,18 +13,18 @@ modelo + funções + providers
         ↓
 clients/star_watch_visual.py
         ↓
-Plasma Orbit UI
+Cosmic Crystal UI
 ```
 
 O renderer visual herda `StarWatchApp`; portanto ele não cria outra STAR e não duplica a lógica funcional.
 
 ## Estados visuais ligados ao runtime
 
-- `idle` → **PRONTA** — triângulo invertido, plasma calmo, órbitas lentas.
-- `listening` → **OUVINDO** — triângulo invertido, ondas laterais, órbitas mais ativas.
-- `thinking` → **PENSANDO** — estrela, plasma rosa/violeta, órbitas aceleradas.
-- `speaking` → **RESPONDENDO** — estrela, plasma rosa/ciano, movimento fluido.
-- `error` → **ATENÇÃO** — vermelho/rosa, arco de alerta e movimento mais intenso.
+- `idle` → **PRONTA** — orb violeta calmo, filamentos lentos e estrela cristalina.
+- `listening` → **OUVINDO** — pulsação e filamentos mais ativos.
+- `thinking` → **PENSANDO** — órbitas reorganizadas/aceleradas em violeta e lilás.
+- `speaking` → **RESPONDENDO** — pulsos fluidos sincronizados com a resposta.
+- `error` → **ATENÇÃO** — vermelho/rosa e distorção breve de alerta.
 
 Esses estados são os mesmos utilizados pelo fluxo real de voz/Core da Watch App. Não são telas decorativas desconectadas.
 
@@ -58,7 +58,10 @@ Funções dependentes de hardware continuam honestamente marcadas como simuladas
 
 A cena estática é reconstruída apenas quando a tela, modo ou conteúdo muda. A animação normal redesenha somente a camada procedural marcada como `dynamic`, em aproximadamente 30 FPS.
 
-O Plasma Orbit não depende de GIF, vídeo ou asset externo: o núcleo, órbitas, partículas e halos são gerados pelo Canvas em runtime, reduzindo dependências e facilitando a futura adaptação para diferentes resoluções de smartwatch.
+O Cosmic Crystal não depende de GIF, vídeo ou asset externo: orb, filamentos, estrela de 8 pontas, partículas e halos são gerados proceduralmente no Canvas em runtime, reduzindo dependências e facilitando a adaptação para diferentes resoluções de smartwatch.
+
+O valor legado `plasma-orbit` permanece no manifesto/testes como identificador de
+compatibilidade da V0.4; ele não descreve mais a paleta/aparência atual.
 
 ## Inicialização
 

@@ -3,6 +3,10 @@
 ## Objetivo
 A V1.9 é a fundação congelada da STAR antes da abertura da geração V2.0 MIND.
 
+> **Nota pós-baseline:** a lista de componentes congelados abaixo descreve o estado
+> visual no fechamento da V1.9. A camada de apresentação evoluiu posteriormente
+> para **Cosmic Crystal** sem substituir o Core V1.9 nem criar outro cérebro.
+
 ## Pipeline de voz definitivo da V1.9
 
 ```text
@@ -67,7 +71,7 @@ Isso evita respostas antigas aparecendo depois de uma nova pergunta.
 - memória persistente básica;
 - matemática natural;
 - Knowledge Packs atuais;
-- interface 2D atual;
+- interface 2D da baseline V1.9 (posteriormente evoluída para Cosmic Crystal);
 - HUB, ilhas, Casa, Closet e skins;
 - STT local;
 - voz oficial local;

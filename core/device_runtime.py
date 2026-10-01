@@ -17,8 +17,10 @@ _DEFAULT_ECOSYSTEM = {
     "schema": 1,
     "sync_interval_seconds": 30,
     "theme": {
-        "background": "#080B12", "surface": "#111827", "primary": "#F6D35F",
-        "secondary": "#F18ACB", "accent": "#6CC8FF", "text": "#FFFFFF", "muted": "#A8B0C0",
+        "background": "#05030D", "surface": "#160F2E", "border": "#3A2467",
+        "primary": "#7E58B3", "secondary": "#A192C6", "accent": "#C49EE0",
+        "text": "#F3EEFF", "muted": "#A99CC9", "ok": "#76E2A0",
+        "warn": "#FFD36E", "error": "#FF7C87",
     },
     "labels": {
         "title": "STAR", "pair": "PAREAR", "send": "ENVIAR", "speak": "FALAR",

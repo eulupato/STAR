@@ -495,11 +495,6 @@ class StarApp:
                     self._activate_conversation();self._append_user(str(transcript));self._append_star(str(response))
                     self._load_avatar("speaking")
                     self.voice.speak_async(str(response),lambda ok,error:self.response_queue.put(("speech_result",(ok,error))))
-                elif kind=="remote_voice_response":
-                    transcript,response=result
-                    self._activate_conversation();self._append_user(str(transcript));self._append_star(str(response))
-                    self._load_avatar("speaking")
-                    self.voice.speak_async(str(response),lambda ok,error:self.response_queue.put(("speech_result",(ok,error))))
                     self.processing=False
                     if self.current_screen=="chat":
                         self.entry.config(state=tk.NORMAL);self.send_button.config(state=tk.NORMAL);self._set_status("FALANDO",self.green);self.entry.focus_set()
@@ -587,7 +582,7 @@ class StarApp:
             except tk.TclError:pass
 
     def show_settings(self):
-        self.clear_screen();self.current_screen="settings";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True,padx=80,pady=35);tk.Label(body,text="CONFIGURAÇÕES",fg=self.star,bg=self.bg,font=("Segoe UI",27,"bold")).pack(anchor="w")
+        self.clear_screen();self.current_screen="settings";root=tk.Frame(self.window,bg=self.bg);root.pack(fill="both",expand=True);self._header(root);settings_pad = 20 if self.profile == "mobile" else 80;body=tk.Frame(root,bg=self.bg);body.pack(fill="both",expand=True,padx=settings_pad,pady=24 if self.profile == "mobile" else 35);tk.Label(body,text="CONFIGURAÇÕES",fg=self.star,bg=self.bg,font=("Segoe UI",22 if self.profile == "mobile" else 27,"bold")).pack(anchor="w")
         mode=tk.Frame(body,bg=self.panel,padx=22,pady=18);mode.pack(fill="x",pady=(18,12));tk.Label(mode,text="MODO DE FUNCIONAMENTO",fg=self.text,bg=self.panel,font=("Segoe UI",12,"bold")).pack(anchor="w");row=tk.Frame(mode,bg=self.panel);row.pack(anchor="w",pady=12);self.online_btn=self._button(row,"🟢 ONLINE",lambda:self._set_mode(True));self.online_btn.pack(side="left",padx=(0,10));self.offline_btn=self._button(row,"🔴 OFFLINE",lambda:self._set_mode(False));self.offline_btn.pack(side="left");self._refresh_mode_buttons();tk.Label(mode,text="O modo online controla recursos de internet. A voz da STAR é local nos dois modos.",fg=self.muted,bg=self.panel).pack(anchor="w")
         voicebox=tk.Frame(body,bg=self.panel,padx=22,pady=18);voicebox.pack(fill="x",pady=12)
         tk.Label(voicebox,text="🎙️ VOZ DA STAR",fg=self.star,bg=self.panel,font=("Segoe UI",13,"bold")).pack(anchor="w")
@@ -595,8 +590,10 @@ class StarApp:
         voice_row=tk.Frame(voicebox,bg=self.panel);voice_row.pack(anchor="w",pady=(2,8))
         self._button(voice_row,"⚡ CONVERSA RÁPIDA",lambda:self._set_voice_mode("fast"),small=True).pack(side="left",padx=(0,8))
         self._button(voice_row,"⭐ VOZ OFICIAL",lambda:self._set_voice_mode("official"),small=True).pack(side="left")
-        tk.Label(voicebox,text="O modo rápido responde imediatamente usando uma voz local do Windows quando disponível. O modo oficial usa a referência Chatterbox e pode levar minutos neste computador.",fg=self.muted,bg=self.panel,wraplength=760,justify="left").pack(anchor="w")
-        self._button(voicebox,"TESTAR VOZ OFICIAL",self._test_voice).pack(anchor="w",pady=(12,4))
+        tk.Label(voicebox,text="O modo rápido usa o backend local configurado; o modo oficial usa a referência Chatterbox e pode levar mais tempo em CPU.",fg=self.muted,bg=self.panel,wraplength=760,justify="left").pack(anchor="w")
+        test_row=tk.Frame(voicebox,bg=self.panel);test_row.pack(anchor="w",pady=(12,4))
+        self._button(test_row,"TESTAR VOZ ATUAL",self._test_voice,small=True).pack(side="left",padx=(0,8))
+        self._button(test_row,"TESTAR VOZ OFICIAL",self._test_official_voice,small=True).pack(side="left")
         self.voice_test_label=tk.Label(voicebox,text="Pronto para testar.",fg=self.muted,bg=self.panel,wraplength=760,justify="left");self.voice_test_label.pack(anchor="w")
         info=tk.Frame(body,bg=self.panel,padx=22,pady=16);info.pack(fill="x",pady=12)
         for name,value in (("Versão",f"V{VERSION}"),("Conhecimento local","ATIVO"),("Modo de voz",self.voice.mode.upper()),("Reconhecimento local","PRONTO" if self.voice.stt_configured else "INSTALAÇÃO PENDENTE")):
@@ -604,12 +601,15 @@ class StarApp:
         self._button(body,"VOLTAR AO CHAT",self.show_chat).pack(anchor="w",pady=10)
 
     def _test_voice(self):
-        self._set_voice_test_message("🔊 Preparando teste da voz oficial...",True);self._set_status("TESTANDO VOZ",self.gold);self.voice.test_official_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
+        self._set_voice_test_message("🔊 Testando a voz selecionada...",True);self._set_status("TESTANDO VOZ",self.gold);self.voice.test_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
+    def _test_official_voice(self):
+        self._set_voice_test_message("🔊 Preparando a voz oficial; em CPU isso pode demorar...",True);self._set_status("TESTANDO VOZ OFICIAL",self.gold);self.voice.test_official_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
     def _set_voice_mode(self,mode):
         self.voice.set_voice_mode(mode);self._save_voice_mode();self.show_settings()
     def _set_mode(self,online):
         self.online_mode=bool(online)
-        self.brain.network_enabled = self.online_mode
+        try:self.brain.network_enabled = self.online_mode
+        except Exception as exc:LOGGER.warning("Falha ao alterar modo de rede da superfície: %s", exc)
         self._refresh_mode_buttons();self._set_status("ONLINE" if self.online_mode else "OFFLINE",self.green if self.online_mode else self.red)
     def _refresh_mode_buttons(self):
         if hasattr(self,"online_btn"):self.online_btn.config(bg=theme.TOGGLE_ON if self.online_mode else theme.PANEL_EDGE)
@@ -623,8 +623,10 @@ class StarApp:
         except Exception as exc:
             LOGGER.error("Falha ao carregar ilhas da STAR: %s", exc)
             data = {}
+        cards=tk.Frame(body,bg=self.bg);cards.pack(fill="both",expand=True)
+        for column in range(3):cards.grid_columnconfigure(column,weight=1)
         for i,(key,item) in enumerate(data.items()):
-            card=tk.Frame(body,bg=self.panel,padx=16,pady=14);card.grid(row=i//3,column=i%3,sticky="nsew",padx=6,pady=6);tk.Label(card,text=f"{item.get('icon','🏝️')} {item.get('name',key)}",fg=self.star,bg=self.panel,font=("Segoe UI",14,"bold")).pack(anchor="w");tk.Label(card,text=item.get('description',''),fg=self.text,bg=self.panel,wraplength=270,justify="left").pack(anchor="w",pady=7)
+            card=tk.Frame(cards,bg=self.panel,padx=16,pady=14);card.grid(row=i//3,column=i%3,sticky="nsew",padx=6,pady=6);tk.Label(card,text=f"{item.get('icon','🏝️')} {item.get('name',key)}",fg=self.star,bg=self.panel,font=("Segoe UI",14,"bold")).pack(anchor="w");tk.Label(card,text=item.get('description',''),fg=self.text,bg=self.panel,wraplength=270,justify="left").pack(anchor="w",pady=7)
             if key.lower() in {"house","casa"}:self._button(card,"ENTRAR NA CASA",self.show_house,small=True).pack(anchor="w")
             else:tk.Label(card,text="🟢 DISPONÍVEL" if item.get('status')=='installed' else "🔒 AGUARDANDO CONHECIMENTO",fg=self.green if item.get('status')=='installed' else self.gold,bg=self.panel,font=("Segoe UI",8,"bold")).pack(anchor="w")
 

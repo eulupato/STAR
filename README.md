@@ -14,9 +14,14 @@ conhecimento e capacidades do `StarCore`. Nenhum endpoint possui um cérebro par
 
 As diferenças são de apresentação e hardware:
 
-- **PC** — experiência completa, incluindo STAR World/Ilhas e Device Gateway LAN;
-- **Mobile** — experiência compacta baseada na skin/identidade visual do PC, sem Ilhas;
-- **Watch** — experiência minimalista circular Plasma Orbit, voltada a voz e ações rápidas.
+- **PC** — experiência completa Cosmic Crystal, incluindo STAR World/Ilhas e Device Gateway LAN;
+- **Mobile** — experiência compacta Cosmic Crystal baseada na mesma identidade visual do PC, sem Ilhas;
+- **Watch** — experiência minimalista circular Cosmic Crystal, voltada a voz e ações rápidas.
+
+A camada visual **Cosmic Crystal** usa fundo espacial escuro, violeta/lilás, orb de
+filamentos e a estrela cristalina de 8 pontas como núcleo visual compartilhado. O
+identificador legado `plasma-orbit` permanece apenas onde é necessário para
+compatibilidade com contratos V0.4 já versionados.
 
 No PC existem três entradas oficiais e somente elas devem ser usadas para iniciar
 as superfícies do produto: `INICIAR_PC.bat`, `INICIAR_MOBILE.bat` e
@@ -76,7 +81,9 @@ matemática, e uma tradução parcial insegura é rejeitada em vez de alterar in
 ## ⌚ STAR Watch App V0.4
 
 A V0.4 inaugura a abordagem **Watch-first** e roda atualmente como simulador no PC,
-com a interface oficial **Plasma Orbit**.
+com a interface oficial **Cosmic Crystal**. O renderer preserva o identificador
+`plasma-orbit` como contrato de compatibilidade, mas a aparência atual é violeta,
+tridimensional e usa a estrela cristalina de 8 pontas.
 
 Para abrir:
 
@@ -314,12 +321,12 @@ STAR/
 ├── clients/
 │   ├── star_mobile_app.py      # simulador Mobile, mesmo Core/GUI funcional
 │   ├── star_mobile_ios/        # cliente iOS experimental
-│   ├── star_watch_visual.py    # shell oficial Plasma Orbit no PC
+│   ├── star_watch_visual.py    # shell oficial Cosmic Crystal no PC
 │   ├── star_watch_app.py       # base funcional reutilizada pelo renderer
 │   └── star_watch_android/     # transporte Android V0.3
 ├── core/                       # identidade, Core, comandos, conversa e capacidades
 ├── database/                   # persistência
-├── gui/                        # interface PC anterior preservada
+├── gui/                        # interface PC Cosmic Crystal em Tkinter/Pillow
 ├── knowledge/                  # Knowledge Packs
 ├── modules/                    # ferramentas
 ├── voice/                      # STT/TTS/Seed-VC opcional
@@ -334,7 +341,7 @@ STAR/
 
 ## STAR Core no PC
 
-A interface desktop anterior continua disponível e pode ser iniciada por:
+A interface desktop Cosmic Crystal continua usando a base funcional existente e pode ser iniciada por:
 
 ```bat
 INICIAR_PC.bat
@@ -404,10 +411,12 @@ caches, fotos pessoais ou arquivos temporários.
 - **voz:** 27.804 variações auditáveis de comandos no catálogo atual;
 - **conversa local:** 6.000 combinações auditáveis;
 - **clima contextual:** provider online sob demanda integrado ao Core;
-- **STAR Watch App:** V0.4 functional simulator + Plasma Orbit;
+- **camada visual compartilhada:** Cosmic Crystal no PC, Mobile e Watch;
+- **STAR Watch App:** V0.4 functional simulator + Cosmic Crystal (`plasma-orbit` como ID compatível);
 - **STAR Watch Android transport:** V0.3 experimental;
 - **STAR Mobile iOS:** experimental;
 - **hardware STAR próprio:** conceito/futuro.
 
-A prioridade atual é transformar o STAR Watch V0.4 em um aplicativo de relógio sólido,
-rápido e coerente antes de iniciar a nova experiência principal de PC.
+A prioridade atual é validar a camada Cosmic Crystal nas três superfícies sem regredir
+o Core V1.9: PC responsivo, Mobile conectado ao mesmo Core e Watch V0.4 fluido. Builds
+nativos e hardware real continuam exigindo validação no ambiente de cada plataforma.

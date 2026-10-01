@@ -374,3 +374,20 @@ def test_gateway_lazy_voice_manager_uses_chat_mode(tmp_path):
         assert manager.mode == VOICE_CHAT_MODE
     finally:
         gateway.stop()
+
+
+def test_remote_voice_adapter_matches_gui_voice_contract(monkeypatch):
+    fake_sd = type("FakeSoundDevice", (), {"stop": staticmethod(lambda: None)})
+    monkeypatch.setitem(sys.modules, "sounddevice", fake_sd)
+    adapter = device_client.RemoteVoiceAdapter(object())
+
+    adapter._speaking = True
+    assert adapter.is_speaking is True
+    assert adapter.cancel_speech(reason="test") is True
+    assert adapter.is_speaking is False
+
+    adapter._speaking = True
+    assert adapter.barge_in() is True
+    assert adapter.is_speaking is False
+    assert callable(adapter.test_audio_async)
+    assert callable(adapter.test_official_audio_async)

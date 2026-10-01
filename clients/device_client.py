@@ -173,6 +173,7 @@ class RemoteVoiceAdapter:
         self.last_tts_engine = "STAR Core"
         self.last_error = None
         self._generation = 0
+        self._speaking = False
         self._lock = threading.Lock()
 
     @property
@@ -196,14 +197,28 @@ class RemoteVoiceAdapter:
     def warmup_stt_async(self):
         return None
 
-    def cancel_speech(self):
+    @property
+    def is_speaking(self):
         with self._lock:
+            return bool(self._speaking)
+
+    def cancel_speech(self, reason: str = "manual"):
+        with self._lock:
+            was_speaking = bool(self._speaking)
             self._generation += 1
+            self._speaking = False
         try:
             import sounddevice as sd
             sd.stop()
         except Exception:
             pass
+        return was_speaking
+
+    def barge_in(self):
+        if not self.is_speaking:
+            return False
+        self.cancel_speech(reason="barge_in")
+        return True
 
     def _play(self, wav: bytes, generation: int):
         try:
@@ -213,6 +228,7 @@ class RemoteVoiceAdapter:
             with self._lock:
                 if generation != self._generation:
                     return
+                self._speaking = True
             sd.play(
                 audio,
                 rate,
@@ -222,6 +238,10 @@ class RemoteVoiceAdapter:
         except Exception as exc:
             self.last_error = str(exc)
             raise
+        finally:
+            with self._lock:
+                if generation == self._generation:
+                    self._speaking = False
 
     def speak_async(self, text: str, callback=None):
         self.cancel_speech()
@@ -242,6 +262,9 @@ class RemoteVoiceAdapter:
                 callback(ok, error)
 
         threading.Thread(target=worker, daemon=True, name="STAR-RemoteSpeech").start()
+
+    def test_audio_async(self, callback=None):
+        self.speak_async("Olá! Eu sou a STAR. Este é o teste da minha voz.", callback)
 
     def test_official_audio_async(self, callback=None):
         self.speak_async("Teste da voz oficial da STAR.", callback)
