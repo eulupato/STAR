@@ -11,6 +11,7 @@ import threading
 import tkinter as tk
 from tkinter import filedialog
 
+from gui import theme
 from gui.app import StarApp
 
 LOGGER = logging.getLogger(__name__)
@@ -138,8 +139,8 @@ class LocalizedStarApp(StarApp):
                 if isinstance(child, tk.Label) and child.cget("text") == "+":
                     child.destroy(); break
             self.attach_button = tk.Button(
-                inner, text="+", command=self.attach_image, bg="#25364b", fg="#d8e7f5",
-                activebackground="#304760", activeforeground="white", relief=tk.FLAT,
+                inner, text="+", command=self.attach_image, bg=theme.INPUT_BG, fg=theme.CRYSTAL_HI,
+                activebackground=theme.PANEL_HOVER, activeforeground=theme.TEXT, relief=tk.FLAT,
                 borderwidth=0, font=("Segoe UI", 23), cursor="hand2",
             )
             self.attach_button.pack(side="left", padx=(16, 8), before=self.entry)

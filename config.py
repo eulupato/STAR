@@ -47,3 +47,9 @@ STT_MODEL = "base"
 STT_LANGUAGE = "pt"
 STT_INITIAL_PROMPT = "Conversa em português brasileiro com a assistente STAR."
 PIPER_VOICE = "pt_BR-faber-medium"
+
+# Camada visual 3D procedural (orb de filamentos + estrela cristalina).
+# Desative ou use "low" em computadores mais fracos.
+VISUAL_3D_ENABLED = True
+VISUAL_3D_FPS = 30
+VISUAL_3D_QUALITY = "high"  # "high" | "low"
