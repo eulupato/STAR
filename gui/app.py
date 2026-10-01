@@ -269,8 +269,10 @@ class StarApp:
         self.center=tk.Frame(self.stage,bg=center_bg); self.center.place(relx=.5,rely=.47,anchor="center")
         self._orb=self._make_visual(StarOrb3D,self.center,size=orb_size,bg=self.bg,quality=VISUAL_3D_QUALITY,fps=VISUAL_3D_FPS,radius=.4)
         self.avatar_label=tk.Label(self.center,bg=center_bg,borderwidth=0,highlightthickness=0)
-        if self._orb is not None:self._orb.pack();self.avatar_label.place(relx=.5,rely=.5,anchor="center");self._orb.start()
-        else:self.avatar_label.pack()
+        if self._orb is not None:
+            self._orb.pack();self._orb.start()
+        else:
+            self.avatar_label.pack()
         self._load_display_avatar(); self._build_input(root); self.entry.focus_set()
 
     def _orb_size(self):
@@ -545,6 +547,10 @@ class StarApp:
 
     def _load_display_avatar(self):
         skin=PROJECT_ROOT/"SKINS"/self.selected_skin
+        orb=getattr(self,"_orb",None)
+        if skin.exists() and orb is not None and hasattr(orb,"set_portrait"):
+            orb.set_portrait(skin)
+            return
         if skin.exists():
             try:
                 with Image.open(skin) as source:
@@ -559,6 +565,11 @@ class StarApp:
     def _load_avatar(self,emotion="neutral"):
         path=self.avatar.avatar_dir/f"{emotion}.png"
         if not path.exists() or path.stat().st_size == 0:path=self.avatar.avatar_dir/"neutral.png"
+        orb=getattr(self,"_orb",None)
+        if orb is not None and hasattr(orb,"set_portrait"):
+            if path.exists():orb.set_portrait(path)
+            self._orb_state(emotion)
+            return
         try:
             with Image.open(path) as source:
                 image = source.convert("RGBA")
@@ -571,8 +582,7 @@ class StarApp:
                 self.avatar_label.config(text="⭐\nSTAR",fg=self.star,font=("Segoe UI",28,"bold"))
             except tk.TclError:
                 pass
-        if hasattr(self, "_orb"):
-            self._orb_state(emotion)
+        self._orb_state(emotion)
     def _set_status(self,text,color):
         label=getattr(self,"status_label",None)
         if label:

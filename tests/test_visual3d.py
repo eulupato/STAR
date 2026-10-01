@@ -4,6 +4,8 @@ from __future__ import annotations
 import math
 import re
 import sys
+
+import numpy as np
 from pathlib import Path
 
 import pytest
@@ -141,6 +143,33 @@ def test_state_aliases_cover_avatar_emotions():
     assert normalize_state(None) == "neutral"
 
 
+def test_raster_renderers_produce_volumetric_frames():
+    from gui.widgets3d import _state_params, render_crystal_frame, render_orb_frame
+
+    params = _state_params("neutral")
+    orb = render_orb_frame(180, 1.25, params, quality="high", phase=0.8)
+    star = render_crystal_frame(160, 1.25, params, quality="high", phase=0.8)
+
+    assert orb.mode == "RGBA" and orb.size == (180, 180)
+    assert star.mode == "RGBA" and star.size == (160, 160)
+    orb_arr = np.asarray(orb, dtype=np.int16)
+    star_arr = np.asarray(star, dtype=np.int16)
+    assert orb_arr[..., :3].std() > 12
+    assert star_arr[..., :3].std() > 10
+    assert orb_arr[90, 90, :3].mean() > orb_arr[5, 5, :3].mean()
+
+
+def test_crystal_software_zbuffer_keeps_nearest_triangle():
+    from gui.widgets3d import _raster_triangle
+
+    points = [(2.0, 2.0), (13.0, 2.0), (7.5, 13.0)]
+    target = np.zeros((16, 16, 3), dtype=np.float32)
+    zbuffer = np.full((16, 16), np.inf, dtype=np.float32)
+    _raster_triangle(target, zbuffer, points, [2.0, 2.0, 2.0], (0, 0, 255), 1.0)
+    _raster_triangle(target, zbuffer, points, [-1.0, -1.0, -1.0], (255, 0, 0), 1.0)
+    assert tuple(target[7, 7].astype(int)) == (255, 0, 0)
+
+
 @pytest.fixture
 def tk_root():
     tk = pytest.importorskip("tkinter")
@@ -168,12 +197,12 @@ def test_widgets_instantiate_render_and_stop(tk_root):
     assert not orb.running
 
     low = StarOrb3D(tk_root, size=48, quality="low", fps=60)
-    assert low.fps <= 20 and low.n_circles == 5
+    assert low.fps <= 20 and low.n_circles == 6
     low.render_once()
 
     star = CrystalStar3D(tk_root, size=120)
     star.pack(); star.start(); star._tick()
-    visible = [i for i in star.find_all() if star.type(i) == "polygon" and star.itemcget(i, "state") != "hidden"]
+    visible = [i for i in star.find_all() if star.type(i) == "image"]
     assert visible
     star.destroy(); star.destroy()  # destroy seguro/idempotente
     orb.destroy(); low.destroy()

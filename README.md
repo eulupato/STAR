@@ -19,7 +19,9 @@ As diferenças são de apresentação e hardware:
 - **Watch** — experiência minimalista circular Cosmic Crystal, voltada a voz e ações rápidas.
 
 A camada visual **Cosmic Crystal** usa fundo espacial escuro, violeta/lilás, orb de
-filamentos e a estrela cristalina de 8 pontas como núcleo visual compartilhado. O
+filamentos e a estrela cristalina de 8 pontas como núcleo visual compartilhado. No
+PC, o núcleo é rasterizado em framebuffer por Pillow/numpy com iluminação por pixel,
+profundidade/oclusão, z-buffer no cristal e bloom, sem abrir uma segunda janela. O
 identificador legado `plasma-orbit` permanece apenas onde é necessário para
 compatibilidade com contratos V0.4 já versionados.
 
