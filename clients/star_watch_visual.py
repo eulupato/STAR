@@ -25,6 +25,24 @@ from clients.star_watch_app import (  # noqa: E402
     WATCH_MODES,
 )
 
+try:  # Motor 3D procedural (stdlib pura); fallback 2D se indisponível.
+    from gui.visual3d import (  # noqa: E402
+        crystal_star_geometry,
+        orb_filaments,
+        particle_field,
+        project,
+    )
+
+    VISUAL_3D_AVAILABLE = True
+except Exception:  # pragma: no cover - depende do ambiente
+    crystal_star_geometry = orb_filaments = particle_field = project = None
+    VISUAL_3D_AVAILABLE = False
+
+# Paleta "Cosmic Crystal" das facetas da estrela.
+CRYSTAL_BLUE = "#3B4FA8"
+CRYSTAL_HI = "#E9D8FF"
+CRYSTAL_EDGE = "#1A1440"
+
 VISUAL_SYSTEM_VERSION = "1.0.0"
 VISUAL_STYLE = "plasma-orbit"
 TARGET_FRAME_MS = 33  # ~30 FPS no simulador, redesenhando só a camada dinâmica.
@@ -43,45 +61,45 @@ class StateTheme:
 
 STATE_THEMES = {
     "idle": StateTheme(
-        primary="#70E9FF",
-        secondary="#866CFF",
-        tertiary="#F06AD8",
+        primary="#9B7BD4",
+        secondary="#3A2467",
+        tertiary="#C49EE0",
         icon="triangle",
         orbit_speed=0.55,
         pulse_speed=1.30,
         label="PRONTA",
     ),
     "listening": StateTheme(
-        primary="#68EAFF",
-        secondary="#4D8BFF",
-        tertiary="#B066FF",
+        primary="#8FA8FF",
+        secondary="#3B4FA8",
+        tertiary="#B79CFF",
         icon="triangle",
         orbit_speed=1.00,
         pulse_speed=2.00,
         label="OUVINDO",
     ),
     "thinking": StateTheme(
-        primary="#FF79CF",
-        secondary="#9C6DFF",
-        tertiary="#65DFFF",
+        primary="#C49EE0",
+        secondary="#5B3A99",
+        tertiary="#8FA8FF",
         icon="star",
         orbit_speed=1.45,
         pulse_speed=2.35,
         label="PENSANDO",
     ),
     "speaking": StateTheme(
-        primary="#F68BE6",
-        secondary="#71E8FF",
-        tertiary="#8B6CFF",
+        primary="#F0A6E0",
+        secondary="#7E58B3",
+        tertiary="#A9C4FF",
         icon="star",
         orbit_speed=1.10,
         pulse_speed=1.75,
         label="RESPONDENDO",
     ),
     "error": StateTheme(
-        primary="#FF5F86",
-        secondary="#FF70C7",
-        tertiary="#9C6DFF",
+        primary="#FF7C87",
+        secondary="#7A2B5A",
+        tertiary="#9B7BD4",
         icon="triangle",
         orbit_speed=1.65,
         pulse_speed=2.70,
@@ -100,18 +118,30 @@ class StarWatchVisualApp(StarWatchApp):
     RING_RADIUS = 294
 
     COLORS = {
-        "bg": "#01030A",
-        "surface": "#080C18",
-        "surface_2": "#0D1424",
-        "text": "#F5FBFF",
-        "muted": "#8190A9",
-        "muted_2": "#4A5770",
-        "cyan": "#70E9FF",
-        "blue": "#557DFF",
-        "violet": "#946DFF",
-        "pink": "#F475D2",
-        "gold": "#F5D76E",
-        "danger": "#FF5F86",
+        # Tokens "Cosmic Crystal"
+        "bg": "#05030D",
+        "void": "#0E0923",
+        "dim": "#160F2E",
+        "primary": "#7E58B3",
+        "secondary": "#3A2467",
+        "glow": "#C49EE0",
+        "accent": "#A192C6",
+        "highlight": "#E6DCEA",
+        "ok": "#76E2A0",
+        "warn": "#FFD36E",
+        "err": "#FF7C87",
+        "muted": "#A99CC9",
+        "muted_2": "#6B5F8A",
+        # Chaves legadas (mantidas para compatibilidade com subclasses)
+        "surface": "#0E0923",
+        "surface_2": "#160F2E",
+        "text": "#F3EEFA",
+        "cyan": "#A192C6",
+        "blue": "#5B6FD0",
+        "violet": "#7E58B3",
+        "pink": "#E6A6E0",
+        "gold": "#FFD36E",
+        "danger": "#FF7C87",
     }
 
     def __init__(self):
@@ -182,7 +212,7 @@ class StarWatchVisualApp(StarWatchApp):
             self.CY - self.RING_RADIUS - 8,
             self.CX + self.RING_RADIUS + 8,
             self.CY + self.RING_RADIUS + 8,
-            outline="#0A1020",
+            outline="#0C0820",
             width=8,
             tags=("chrome",),
         )
@@ -191,7 +221,7 @@ class StarWatchVisualApp(StarWatchApp):
             self.CY - self.RING_RADIUS,
             self.CX + self.RING_RADIUS,
             self.CY + self.RING_RADIUS,
-            outline="#303B57",
+            outline="#3A2E5C",
             width=2,
             tags=("chrome",),
         )
@@ -200,8 +230,8 @@ class StarWatchVisualApp(StarWatchApp):
             self.CY - self.FACE_RADIUS,
             self.CX + self.FACE_RADIUS,
             self.CY + self.FACE_RADIUS,
-            fill="#030711",
-            outline="#151F35",
+            fill="#07041A",
+            outline="#1E1540",
             width=2,
             tags=("chrome",),
         )
@@ -245,7 +275,7 @@ class StarWatchVisualApp(StarWatchApp):
                 y1,
                 x2,
                 y2,
-                fill="#283550" if major else "#172238",
+                fill="#4A3A78" if major else "#251B48",
                 width=2 if major else 1,
                 tags=("chrome",),
             )
@@ -346,7 +376,7 @@ class StarWatchVisualApp(StarWatchApp):
         for i, _mode_index in enumerate(nearby):
             active = i == 1
             radius = 4 if active else 3
-            color = self._theme().primary if active else "#27324A"
+            color = self._theme().primary if active else "#2E2450"
             x = start_x + i * 28
             c.create_oval(
                 x - radius,
@@ -372,7 +402,7 @@ class StarWatchVisualApp(StarWatchApp):
             self.CX,
             586,
             text="GIRE  •  PRESSIONE  •  FALE",
-            fill="#56637C",
+            fill="#6B5F8A",
             font=("Segoe UI", 8),
             tags=("hud",),
         )
@@ -473,7 +503,7 @@ class StarWatchVisualApp(StarWatchApp):
             self.CX,
             574,
             text="BACKSPACE  •  VOLTAR     RODA/SETAS  •  GIRAR",
-            fill="#56637C",
+            fill="#6B5F8A",
             font=("Segoe UI", 8),
             tags=("hud",),
         )
@@ -509,6 +539,15 @@ class StarWatchVisualApp(StarWatchApp):
             tags=("hud",),
         )
 
+    def _advance_clock3d(self, speed: float) -> float:
+        """Relógio contínuo para o motor 3D (sem saltos quando ``phase`` dá a volta)."""
+        now = time.monotonic()
+        last = getattr(self, "_t3d_last", None)
+        dt = 0.0 if last is None else max(0.0, min(0.25, now - last))
+        self._t3d_last = now
+        self._t3d = getattr(self, "_t3d", 0.0) + dt * (0.45 + 0.55 * speed)
+        return self._t3d
+
     def _draw_dynamic_layer(self):
         c = self.canvas
         c.delete("dynamic")
@@ -519,12 +558,14 @@ class StarWatchVisualApp(StarWatchApp):
         now = time.monotonic()
         pulse = 0.5 + 0.5 * math.sin(now * theme.pulse_speed)
         phase = self.phase * math.tau
+        use_3d = VISUAL_3D_AVAILABLE
+        t3d = self._advance_clock3d(theme.orbit_speed)
 
         for idx, color in enumerate(
             (
-                self._blend(self.COLORS["bg"], theme.secondary, 0.18),
-                self._blend(self.COLORS["bg"], theme.primary, 0.28),
-                self._blend(self.COLORS["bg"], theme.tertiary, 0.18),
+                self._blend(self.COLORS["bg"], theme.secondary, 0.22),
+                self._blend(self.COLORS["bg"], theme.primary, 0.26),
+                self._blend(self.COLORS["bg"], theme.tertiary, 0.16),
             )
         ):
             rr = radius + 24 - idx * 8 + pulse * (5 - idx)
@@ -538,9 +579,10 @@ class StarWatchVisualApp(StarWatchApp):
                 tags=("dynamic",),
             )
 
+        # Núcleo nebuloso (fundo do orb).
         points = []
         count = 48
-        blob_radius = radius * 0.62
+        blob_radius = radius * (0.70 if use_3d else 0.62)
         for i in range(count):
             angle = math.tau * i / count
             wobble = (
@@ -552,33 +594,35 @@ class StarWatchVisualApp(StarWatchApp):
             points.extend((cx + math.cos(angle) * rr, cy + math.sin(angle) * rr))
         c.create_polygon(
             points,
-            fill=self._blend("#17102B", theme.secondary, 0.38),
-            outline=self._blend(theme.primary, "#FFFFFF", 0.24),
+            fill=self._blend(self.COLORS["void"], theme.secondary, 0.42),
+            outline="" if use_3d else self._blend(theme.primary, "#FFFFFF", 0.24),
             width=2,
             smooth=True,
             tags=("dynamic",),
         )
 
-        orbit_specs = (
-            (1.02, 0.58, 0.0, theme.primary),
-            (1.20, 0.42, 1.9, theme.secondary),
-            (0.94, 0.70, 3.7, theme.tertiary),
-        )
-        speed_phase = phase * theme.orbit_speed
-        for scale, squash, offset, color in orbit_specs:
-            orbit_r = radius * scale
-            angle = speed_phase + offset
-            self._draw_orbit(
-                cx,
-                cy,
-                orbit_r,
-                squash,
-                angle,
-                color,
+        drawn_3d = False
+        if use_3d:
+            try:
+                self._draw_orbit_3d(cx, cy, radius * 0.86, t3d, theme)
+                drawn_3d = True
+            except Exception:
+                drawn_3d = False
+        if not drawn_3d:
+            orbit_specs = (
+                (1.02, 0.58, 0.0, theme.primary),
+                (1.20, 0.42, 1.9, theme.secondary),
+                (0.94, 0.70, 3.7, theme.tertiary),
             )
+            speed_phase = phase * theme.orbit_speed
+            for scale, squash, offset, color in orbit_specs:
+                self._draw_orbit(
+                    cx, cy, radius * scale, squash, speed_phase + offset, color
+                )
 
         if theme.icon == "star":
-            self._draw_star(cx, cy, radius * 0.30, theme.primary)
+            star_r = radius * (0.62 if use_3d else 0.30)
+            self._draw_star(cx, cy, star_r, theme.primary)
         else:
             self._draw_triangle(cx, cy, radius * 0.28, theme.primary)
 
@@ -600,6 +644,71 @@ class StarWatchVisualApp(StarWatchApp):
 
         c.tag_raise("dynamic")
         c.tag_raise("hud")
+
+    def _depth_color(self, base: str, near: float) -> str:
+        """``near`` 0 = fundo (escuro/opaco) … 1 = frente (claro/brilhante)."""
+        if near < 0.5:
+            return self._blend(self.COLORS["void"], base, 0.30 + near * 1.2)
+        return self._blend(base, self.COLORS["highlight"], (near - 0.5) * 1.1)
+
+    def _draw_orbit_3d(self, cx: float, cy: float, radius: float, t: float, theme):
+        """Orb de filamentos 3D: great circles projetados em perspectiva.
+
+        Profundidade (convenção do motor: z maior = mais longe) controla largura
+        (1px fundo → 2px frente) e cor (escuro atrás → brilhante na frente).
+        Segmentos consecutivos de mesma faixa de profundidade são agrupados numa
+        única linha para manter o custo por frame baixo.
+        """
+        canvas = self.canvas
+        palette = (theme.primary, theme.secondary, theme.tertiary)
+        filaments = orb_filaments(t, n_circles=7, n_pts=36)
+        for f_idx, filament in enumerate(filaments):
+            base = palette[f_idx % len(palette)]
+            if base == theme.secondary:
+                base = self._blend(base, self.COLORS["glow"], 0.45)
+            proj = [
+                project((x * radius, y * radius, z * radius), cx, cy, fov=300)
+                for x, y, z in filament
+            ]
+            n = len(proj)
+            run: list[float] = []
+            run_bucket = None
+            for k in range(n + 1):
+                p0 = proj[k % n]
+                p1 = proj[(k + 1) % n]
+                near = max(0.0, min(1.0, 0.5 - (p0[2] + p1[2]) / (4.0 * radius)))
+                bucket = 0 if near < 0.38 else (1 if near < 0.68 else 2)
+                if k == n or (run_bucket is not None and bucket != run_bucket):
+                    if len(run) >= 4:
+                        mid = (0.2, 0.53, 0.88)[run_bucket]
+                        canvas.create_line(
+                            *run,
+                            fill=self._depth_color(base, mid),
+                            width=(1, 1.5, 2)[run_bucket],
+                            capstyle="round",
+                            tags=("dynamic",),
+                        )
+                    run = [p0[0], p0[1]] if k < n else []
+                if k == n:
+                    break
+                if not run:
+                    run = [p0[0], p0[1]]
+                run.extend((p1[0], p1[1]))
+                run_bucket = bucket
+
+            # Faísca viajando pelo filamento (maior/mais clara quando na frente).
+            spark = proj[int((self.phase * 1.3 + f_idx / 7.0) * n) % n]
+            near = max(0.0, min(1.0, 0.5 - spark[2] / (2.0 * radius)))
+            sr = 1.2 + 2.0 * near
+            canvas.create_oval(
+                spark[0] - sr,
+                spark[1] - sr,
+                spark[0] + sr,
+                spark[1] + sr,
+                fill=self._depth_color(base, near),
+                outline="",
+                tags=("dynamic",),
+            )
 
     def _draw_orbit(
         self,
@@ -660,6 +769,12 @@ class StarWatchVisualApp(StarWatchApp):
         )
 
     def _draw_star(self, cx: float, cy: float, radius: float, color: str):
+        if VISUAL_3D_AVAILABLE:
+            try:
+                self._draw_crystal_star(cx, cy, radius, color)
+                return
+            except Exception:
+                pass
         points = []
         inner = radius * 0.46
         for index in range(10):
@@ -673,6 +788,45 @@ class StarWatchVisualApp(StarWatchApp):
             width=4,
             tags=("dynamic",),
         )
+
+    def _draw_crystal_star(self, cx: float, cy: float, radius: float, color: str):
+        """Estrela cristalina de 8 pontas (bipirâmides) girando lentamente em Y."""
+        canvas = self.canvas
+        t = getattr(self, "_t3d", 0.0) * 0.55
+        crystals = crystal_star_geometry(t)
+        for crystal in crystals:  # já ordenados do mais distante ao mais próximo
+            for face in crystal["faces"]:
+                pts = []
+                for x, y, z in face["verts"]:
+                    px, py, _ = project(
+                        (x * radius, y * radius, z * radius), cx, cy, fov=300
+                    )
+                    pts.extend((px, py))
+                lit = max(0.0, face["normal_z"]) * 0.55 + face["light"] * 0.45
+                fill = self._blend(CRYSTAL_BLUE, CRYSTAL_HI, 0.15 + 0.80 * lit)
+                fill = self._blend(fill, color, 0.18)
+                canvas.create_polygon(
+                    pts,
+                    fill=fill,
+                    outline=self._blend(CRYSTAL_EDGE, fill, 0.35),
+                    width=1,
+                    tags=("dynamic",),
+                )
+
+        # Partículas cintilantes ao redor da estrela.
+        span = radius * 2.4
+        for p in particle_field(time.monotonic(), n=12, seed=7):
+            px = cx + (p["x"] - 0.5) * span
+            py = cy + (p["y"] - 0.5) * span
+            col = self._blend(self.COLORS["void"], CRYSTAL_HI, p["alpha"])
+            r = p["r"] * 0.9
+            if p["alpha"] > 0.85:
+                arm = r * 2.6
+                canvas.create_line(px - arm, py, px + arm, py, fill=col, tags=("dynamic",))
+                canvas.create_line(px, py - arm, px, py + arm, fill=col, tags=("dynamic",))
+            canvas.create_oval(
+                px - r, py - r, px + r, py + r, fill=col, outline="", tags=("dynamic",)
+            )
 
     def _draw_listening_waves(
         self, cx: float, cy: float, radius: float, color: str
@@ -714,7 +868,7 @@ class StarWatchVisualApp(StarWatchApp):
             self.CX,
             y,
             text=now,
-            fill="#AEB8CA",
+            fill="#C9BEE3",
             font=("Segoe UI Light", 12),
             tags=("clock", "hud"),
         )
@@ -723,10 +877,10 @@ class StarWatchVisualApp(StarWatchApp):
         tk = self.tk
         self.input_widget = tk.Entry(
             self.root,
-            bg="#0B1324",
+            bg="#0E0923",
             fg=self.COLORS["text"],
             insertbackground=self.COLORS["cyan"],
-            highlightbackground="#273451",
+            highlightbackground="#3A2E5C",
             highlightcolor=self.COLORS["violet"],
             highlightthickness=1,
             relief="flat",
@@ -744,9 +898,9 @@ class StarWatchVisualApp(StarWatchApp):
             self.root,
             text=text,
             command=command,
-            bg="#101A30",
+            bg="#160F2E",
             fg=self._theme().primary,
-            activebackground="#172642",
+            activebackground="#24184A",
             activeforeground=self.COLORS["text"],
             relief="flat",
             bd=0,
@@ -764,9 +918,9 @@ class StarWatchVisualApp(StarWatchApp):
             command=self._toggle_simulation,
             relief="flat",
             bd=0,
-            bg="#101A30",
+            bg="#160F2E",
             fg=self.COLORS["cyan"],
-            activebackground="#172642",
+            activebackground="#24184A",
             activeforeground=self.COLORS["text"],
         )
         second = tk.Button(
@@ -775,9 +929,9 @@ class StarWatchVisualApp(StarWatchApp):
             command=self._toggle_voice_output,
             relief="flat",
             bd=0,
-            bg="#101A30",
+            bg="#160F2E",
             fg=self.COLORS["pink"],
-            activebackground="#172642",
+            activebackground="#24184A",
             activeforeground=self.COLORS["text"],
         )
         first.place(x=195, y=482, width=116, height=38)
