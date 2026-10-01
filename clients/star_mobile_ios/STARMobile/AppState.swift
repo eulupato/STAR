@@ -16,8 +16,9 @@ final class AppState: NSObject, ObservableObject {
         "stop_and_send": "ENVIAR ÁUDIO", "camera": "MOSTRAR À STAR", "sensors": "SENSORES", "measure": "MEDIR"
     ]
     @Published var theme: [String: String] = [
-        "background": "#080B12", "surface": "#111827", "primary": "#F6D35F",
-        "secondary": "#F18ACB", "accent": "#6CC8FF", "text": "#FFFFFF", "muted": "#A8B0C0"
+        "background": "#05030D", "surface": "#160F2E", "border": "#3A2467", "primary": "#7E58B3",
+        "secondary": "#A192C6", "accent": "#C49EE0", "text": "#F3EEFF", "muted": "#A99CC9",
+        "ok": "#76E2A0", "warn": "#FFD36E", "error": "#FF7C87"
     ]
     @Published var features: [String: Bool] = [
         "text": true, "voice_input": true, "spoken_reply": true, "camera_transport": true,
@@ -65,6 +66,17 @@ final class AppState: NSObject, ObservableObject {
     }
 
     var isPaired: Bool { !token.isEmpty }
+
+    /// Visual state for StarOrbView, derived from the existing status text (no new network state).
+    var currentState: String? {
+        if isRecording { return "listening" }
+        let value = status.uppercased()
+        if value.contains("ERRO") || value.contains("SEM CONEXÃO") || value.contains("OFFLINE") { return "error" }
+        if value.contains("OUVINDO") { return "listening" }
+        if value.contains("PENSANDO") || value.contains("TRANSCRIBINDO") || value.contains("ENVIANDO")
+            || value.contains("PAREANDO") || value.contains("MEDINDO") { return "thinking" }
+        return "neutral"
+    }
     func label(_ key: String, fallback: String) -> String { labels[key] ?? fallback }
     func feature(_ key: String, fallback: Bool = false) -> Bool { features[key] ?? fallback }
 

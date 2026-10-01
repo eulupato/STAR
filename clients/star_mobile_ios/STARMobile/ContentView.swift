@@ -11,21 +11,32 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: state.theme["background"] ?? "#080B12")
+            Color(hex: "#05030D")
                 .ignoresSafeArea()
+            Color(hex: state.theme["background"] ?? "#05030D")
+                .ignoresSafeArea()
+            RadialGradient(
+                colors: [primary.opacity(0.22), Color.clear],
+                center: .top, startRadius: 10, endRadius: 420
+            )
+            .ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: 14) {
-                    Text("⭐ \(state.label("title", fallback: "STAR"))")
+                    StarOrbView(state: state.currentState ?? "neutral", size: 160)
+                        .padding(.top, 4)
+
+                    Text("✦ \(state.label("title", fallback: "STAR"))")
                         .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .foregroundColor(Color(hex: state.theme["text"] ?? "#FFFFFF"))
+                        .foregroundColor(textColor)
 
                     Text(state.status)
                         .font(.footnote.weight(.semibold))
-                        .foregroundColor(Color(hex: state.theme["accent"] ?? "#6CC8FF"))
+                        .foregroundColor(accent)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
                         .background(surface.opacity(0.9))
+                        .overlay(Capsule().stroke(border, lineWidth: 1))
                         .clipShape(Capsule())
 
                     connectionCard
@@ -84,14 +95,14 @@ struct ContentView: View {
 
             actionButton(
                 title: state.label("pair", fallback: "PAREAR"),
-                color: Color(hex: state.theme["primary"] ?? "#F6D35F"),
-                foreground: .black,
+                emphasis: "primary",
                 action: state.pair
             )
         }
         .padding(14)
         .background(surface)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(border, lineWidth: 1))
     }
 
     private var interactionCard: some View {
@@ -106,8 +117,7 @@ struct ContentView: View {
             if state.feature("text", fallback: true) {
                 actionButton(
                     title: "💬 " + state.label("send", fallback: "ENVIAR"),
-                    color: Color(hex: state.theme["accent"] ?? "#6CC8FF"),
-                    foreground: .black,
+                    emphasis: "accent",
                     action: state.sendText
                 )
             }
@@ -117,8 +127,7 @@ struct ContentView: View {
                     title: state.isRecording
                         ? "■ " + state.label("stop_and_send", fallback: "ENVIAR ÁUDIO")
                         : "🎙 " + state.label("speak", fallback: "FALAR"),
-                    color: Color(hex: state.theme["secondary"] ?? "#F18ACB"),
-                    foreground: .black,
+                    emphasis: "secondary",
                     action: state.toggleVoiceCommand
                 )
             }
@@ -126,8 +135,7 @@ struct ContentView: View {
             if state.feature("camera_transport", fallback: true) {
                 actionButton(
                     title: "📷 " + state.label("camera", fallback: "MOSTRAR À STAR"),
-                    color: Color(hex: state.theme["primary"] ?? "#F6D35F"),
-                    foreground: .black,
+                    emphasis: "primary",
                     action: { showCamera = true }
                 )
             }
@@ -137,15 +145,13 @@ struct ContentView: View {
                     title: state.sensorsActive
                         ? "■ SENSORES ATIVOS"
                         : "🛰 " + state.label("sensors", fallback: "SENSORES"),
-                    color: Color(hex: state.theme["accent"] ?? "#6CC8FF"),
-                    foreground: .black,
+                    emphasis: "accent",
                     action: state.toggleSensors
                 )
 
                 actionButton(
                     title: "📏 " + state.label("measure", fallback: "MEDIR"),
-                    color: Color(hex: state.theme["secondary"] ?? "#F18ACB"),
-                    foreground: .black,
+                    emphasis: "secondary",
                     action: state.measurePhysical
                 )
             }
@@ -153,37 +159,42 @@ struct ContentView: View {
         .padding(14)
         .background(surface)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(border, lineWidth: 1))
     }
 
+    /// Crystal-gradient button: primary → secondary tokens, with `emphasis` choosing which token leads.
     private func actionButton(
         title: String,
-        color: Color,
-        foreground: Color,
+        emphasis: String = "primary",
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        let lead = Color(hex: state.theme[emphasis] ?? "#7E58B3")
+        return Button(action: action) {
             Text(title)
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
-                .foregroundColor(foreground)
-                .background(color)
+                .foregroundColor(textColor)
+                .background(
+                    LinearGradient(colors: [lead, primary, secondary], startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .stroke(accent.opacity(0.55), lineWidth: 1)
+                )
                 .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .shadow(color: primary.opacity(0.45), radius: 8, x: 0, y: 2)
         }
         .buttonStyle(.plain)
     }
 
-    private var surface: Color {
-        Color(hex: state.theme["surface"] ?? "#111827")
-    }
-
-    private var textColor: Color {
-        Color(hex: state.theme["text"] ?? "#FFFFFF")
-    }
-
-    private var muted: Color {
-        Color(hex: state.theme["muted"] ?? "#A8B0C0")
-    }
+    private var surface: Color { Color(hex: state.theme["surface"] ?? "#160F2E") }
+    private var border: Color { Color(hex: state.theme["border"] ?? "#3A2467") }
+    private var primary: Color { Color(hex: state.theme["primary"] ?? "#7E58B3") }
+    private var secondary: Color { Color(hex: state.theme["secondary"] ?? "#A192C6") }
+    private var accent: Color { Color(hex: state.theme["accent"] ?? "#C49EE0") }
+    private var textColor: Color { Color(hex: state.theme["text"] ?? "#F3EEFF") }
+    private var muted: Color { Color(hex: state.theme["muted"] ?? "#A99CC9") }
 }
 
 private struct CameraPicker: UIViewControllerRepresentable {
@@ -240,9 +251,9 @@ private extension Color {
             g = (value >> 8) & 0xFF
             b = value & 0xFF
         } else {
-            r = 8
-            g = 11
-            b = 18
+            r = 5
+            g = 3
+            b = 13
         }
         self.init(
             .sRGB,

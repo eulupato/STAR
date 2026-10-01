@@ -615,13 +615,17 @@
     "schema": 1,
     "sync_interval_seconds": 30,
     "theme": {
-      "background": "#03050A",
-      "surface": "#0B1220",
-      "primary": "#72E8FF",
-      "secondary": "#A276FF",
-      "accent": "#FF79C8",
-      "text": "#FFFFFF",
-      "muted": "#8B96A8"
+      "background": "#05030D",
+      "surface": "#160F2E",
+      "border": "#3A2467",
+      "primary": "#7E58B3",
+      "secondary": "#A192C6",
+      "accent": "#C49EE0",
+      "text": "#F3EEFF",
+      "muted": "#A99CC9",
+      "ok": "#76E2A0",
+      "warn": "#FFD36E",
+      "error": "#FF7C87"
     },
     "labels": {
       "title": "STAR",

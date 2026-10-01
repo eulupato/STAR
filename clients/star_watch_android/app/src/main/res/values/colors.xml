@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="star_bg">#05030D</color>
+    <color name="star_surface">#160F2E</color>
+    <color name="star_border">#3A2467</color>
+    <color name="star_primary">#7E58B3</color>
+    <color name="star_secondary">#A192C6</color>
+    <color name="star_accent">#C49EE0</color>
+    <color name="star_text">#F3EEFF</color>
+    <color name="star_muted">#A99CC9</color>
+    <color name="star_ok">#76E2A0</color>
+    <color name="star_warn">#FFD36E</color>
+    <color name="star_error">#FF7C87</color>
+</resources>

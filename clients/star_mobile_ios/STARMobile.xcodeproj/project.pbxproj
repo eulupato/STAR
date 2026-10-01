@@ -10,6 +10,7 @@
 		A10000000000000000000001 /* STARMobileApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* STARMobileApp.swift */; };
 		A10000000000000000000002 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* AppState.swift */; };
 		A10000000000000000000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* ContentView.swift */; };
+		A1000000000000000000F0B1 /* StarOrbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000F0B1 /* StarOrbView.swift */; };
 		A10000000000000000000004 /* DeviceSensorBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* DeviceSensorBridge.swift */; };
 /* End PBXBuildFile section */
 
@@ -17,6 +18,7 @@
 		B10000000000000000000001 /* STARMobileApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = STARMobileApp.swift; sourceTree = "<group>"; };
 		B10000000000000000000002 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		B10000000000000000000003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B1000000000000000000F0B1 /* StarOrbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarOrbView.swift; sourceTree = "<group>"; };
 		B10000000000000000000004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10000000000000000000005 /* STARMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = STARMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000006 /* DeviceSensorBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSensorBridge.swift; sourceTree = "<group>"; };
@@ -48,6 +50,7 @@
 				B10000000000000000000001 /* STARMobileApp.swift */,
 				B10000000000000000000002 /* AppState.swift */,
 				B10000000000000000000003 /* ContentView.swift */,
+				B1000000000000000000F0B1 /* StarOrbView.swift */,
 				B10000000000000000000006 /* DeviceSensorBridge.swift */,
 				B10000000000000000000004 /* Info.plist */,
 				B10000000000000000000007 /* STARMobile.entitlements */,
@@ -139,6 +142,7 @@
 				A10000000000000000000001 /* STARMobileApp.swift in Sources */,
 				A10000000000000000000002 /* AppState.swift in Sources */,
 				A10000000000000000000003 /* ContentView.swift in Sources */,
+				A1000000000000000000F0B1 /* StarOrbView.swift in Sources */,
 				A10000000000000000000004 /* DeviceSensorBridge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

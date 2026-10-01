@@ -3,6 +3,7 @@
     android:id="@+id/rootScroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/star_bg"
     android:fillViewport="true">
 
     <LinearLayout
@@ -11,11 +12,18 @@
         android:orientation="vertical"
         android:padding="12dp">
 
+        <com.star.watch.StarOrbView
+            android:id="@+id/starOrbView"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:contentDescription="Orbe da STAR" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="⭐ STAR"
+            android:text="✦ STAR"
+            android:textColor="@color/star_text"
             android:textSize="24sp"
             android:textStyle="bold" />
 
@@ -25,7 +33,8 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:padding="6dp"
-            android:text="DESCONECTADO" />
+            android:text="DESCONECTADO"
+            android:textColor="@color/star_accent" />
 
         <EditText
             android:id="@+id/serverInput"

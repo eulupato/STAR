@@ -12,6 +12,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.graphics.Color;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.speech.tts.TextToSpeech;
 import android.util.DisplayMetrics;
 import android.view.InputDevice;
@@ -62,6 +65,7 @@ public class MainActivity extends Activity {
     private Button cameraButton;
     private Button sensorButton;
     private ScrollView rootScroll;
+    private StarOrbView starOrbView;
 
     private SharedPreferences preferences;
     private WatchAudioRecorder audioRecorder;
@@ -91,9 +95,17 @@ public class MainActivity extends Activity {
         cameraButton = findViewById(R.id.cameraButton);
         sensorButton = findViewById(R.id.sensorButton);
         rootScroll = findViewById(R.id.rootScroll);
+        starOrbView = findViewById(R.id.starOrbView);
+        // Every status change (busy, listening, error...) drives the orb state from one place.
+        statusText.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void afterTextChanged(Editable s) { if (starOrbView != null) starOrbView.setState(orbStateFor(s.toString())); }
+        });
 
         sensorBridge = new WatchSensorBridge(this, this::uploadSensorBatch);
         serverInput.setText(preferences.getString("server", ""));
+        applyThemeColors(new JSONObject());
         updateStatus();
 
         pairButton.setOnClickListener(v -> pair());
@@ -143,6 +155,39 @@ public class MainActivity extends Activity {
     private String serverBase() { return normalizeServer(serverInput.getText().toString()); }
     private String storedServer() { return normalizeServer(preferences.getString("server", "")); }
     private String token() { return preferences.getString("token", ""); }
+
+    private String orbStateFor(String status) {
+        String v = status == null ? "" : status.toUpperCase(Locale.ROOT);
+        if (recording || v.contains("OUVINDO")) return "listening";
+        if (v.contains("ERRO") || v.contains("SEM CONEXÃO") || v.contains("OFFLINE")) return "error";
+        if (v.contains("PENSANDO") || v.contains("TRANSCRIBINDO") || v.contains("ENVIANDO")
+                || v.contains("PREPARANDO") || v.contains("PAREANDO") || v.contains("MEDINDO")) return "thinking";
+        return "neutral";
+    }
+
+    private static int themeColor(JSONObject theme, String key, String fallback) {
+        try { return Color.parseColor(theme.optString(key, fallback)); }
+        catch (IllegalArgumentException ignored) { return Color.parseColor(fallback); }
+    }
+
+    private void applyThemeColors(JSONObject theme) {
+        int bg = themeColor(theme, "background", "#05030D");
+        int surface = themeColor(theme, "surface", "#160F2E");
+        int primary = themeColor(theme, "primary", "#7E58B3");
+        int accent = themeColor(theme, "accent", "#C49EE0");
+        int text = themeColor(theme, "text", "#F3EEFF");
+        int muted = themeColor(theme, "muted", "#A99CC9");
+        rootScroll.setBackgroundColor(bg);
+        statusText.setTextColor(accent);
+        responseText.setTextColor(text); responseText.setBackgroundColor(surface);
+        for (EditText input : new EditText[]{serverInput, pairCodeInput, messageInput}) {
+            input.setTextColor(text); input.setHintTextColor(muted);
+        }
+        for (Button button : new Button[]{pairButton, sendButton, voiceButton, cameraButton, sensorButton}) {
+            button.setTextColor(text); button.setBackgroundTintList(android.content.res.ColorStateList.valueOf(primary));
+        }
+        if (starOrbView != null) starOrbView.applyTheme(theme);
+    }
 
     private void updateStatus() { statusText.setText(token().isEmpty() ? "● DESCONECTADO" : "● PAREADO"); }
     private void setBusy(String text) { statusText.setText(text); }
@@ -342,6 +387,8 @@ public class MainActivity extends Activity {
     private void applyRuntime(JSONObject runtime) {
         runtimeRevision = runtime.optString("revision", runtimeRevision);
         JSONObject labels = runtime.optJSONObject("labels"); JSONObject features = runtime.optJSONObject("features");
+        JSONObject theme = runtime.optJSONObject("theme");
+        final JSONObject finalTheme = theme == null ? new JSONObject() : theme;
         if (labels == null) labels = new JSONObject(); if (features == null) features = new JSONObject();
         final JSONObject finalLabels = labels; final JSONObject finalFeatures = features;
         spokenRepliesEnabled = finalFeatures.optBoolean("spoken_reply", true);
@@ -357,6 +404,8 @@ public class MainActivity extends Activity {
             voiceButton.setVisibility(finalFeatures.optBoolean("voice_input", true) ? View.VISIBLE : View.GONE);
             cameraButton.setVisibility(finalFeatures.optBoolean("camera_transport", true) ? View.VISIBLE : View.GONE);
             sensorButton.setVisibility(sensorTransportEnabled ? View.VISIBLE : View.GONE);
+            applyThemeColors(finalTheme);
+            if (starOrbView != null) starOrbView.setState(orbStateFor(statusText.getText().toString()));
         });
     }
 

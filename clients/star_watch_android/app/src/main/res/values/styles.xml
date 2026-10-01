@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Native Material parent kept: the Gradle build has no com.google.android.material dependency. -->
     <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:windowActionModeOverlay">true</item>
-        <item name="android:colorAccent">#FFFFFF</item>
+        <item name="android:windowBackground">@color/star_bg</item>
+        <item name="android:colorBackground">@color/star_bg</item>
+        <item name="android:colorPrimary">@color/star_primary</item>
+        <item name="android:colorPrimaryDark">@color/star_bg</item>
+        <item name="android:colorAccent">@color/star_accent</item>
+        <item name="android:textColor">@color/star_text</item>
+        <item name="android:textColorHint">@color/star_muted</item>
+        <item name="android:statusBarColor">@color/star_bg</item>
     </style>
 </resources>
