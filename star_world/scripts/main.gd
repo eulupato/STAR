@@ -28,7 +28,7 @@ var core_client: StarCoreClient
 var ui_root: Control
 var menu_ui: Control
 var hud_ui: Control
-var hub_click_surface: Control
+var hub_ui_blockers: Array[Control] = []
 var settings_panel: Control
 var chat_panel: Control
 var wardrobe_panel: Control
@@ -57,6 +57,7 @@ var menu_star: CrystalStar3D
 var player: StarWorldPlayer
 var star_avatar: Node3D
 var hub_islands := {}
+var hub_input_armed := false
 var hub_angle := 0.18
 var hub_distance := 31.0
 var hub_height := 15.5
@@ -104,6 +105,22 @@ func _process(delta: float) -> void:
 			if local_target.length() > 1.0:
 				var target_angle := atan2(local_target.x, local_target.z)
 				star_avatar.rotation.y = lerp_angle(star_avatar.rotation.y, star_avatar.rotation.y + target_angle, min(1.0, delta * 1.6))
+
+func _input(event: InputEvent) -> void:
+	if mode != MODE_HUB or _has_modal():
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if not hub_input_armed:
+			return
+		if _hub_event_over_ui(event.position):
+			return
+		_pick_hub_island(event.position)
+
+func _hub_event_over_ui(position: Vector2) -> bool:
+	for control in hub_ui_blockers:
+		if control and is_instance_valid(control) and control.visible and control.get_global_rect().has_point(position):
+			return true
+	return false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
@@ -267,21 +284,13 @@ func _build_hud_ui() -> void:
 	_full_rect(hud_ui)
 	ui_root.add_child(hud_ui)
 
-	# O HUD cobre a tela inteira. Se o clique do mundo dependesse de
-	# _unhandled_input(), o Control consumiria o evento antes do raycast.
-	# Esta superfície fica atrás dos botões e encaminha apenas o fundo 3D.
-	hub_click_surface = Control.new()
-	hub_click_surface.name = "HubClickSurface"
-	_full_rect(hub_click_surface)
-	hub_click_surface.mouse_filter = Control.MOUSE_FILTER_STOP
-	hub_click_surface.gui_input.connect(_on_hub_surface_input)
-	hub_click_surface.visible = false
-	hud_ui.add_child(hub_click_surface)
+	hub_ui_blockers.clear()
 
 	var info := PanelContainer.new()
 	_anchor_rect(info, 0.02, 0.025, 0.34, 0.16)
 	info.add_theme_stylebox_override("panel", StarTheme.glass_style())
 	hud_ui.add_child(info)
+	hub_ui_blockers.append(info)
 
 	var info_box := VBoxContainer.new()
 	info_box.add_theme_constant_override("separation", 3)
@@ -309,11 +318,13 @@ func _build_hud_ui() -> void:
 	_anchor_rect(back, 0.025, 0.88, 0.09, 0.965)
 	back.pressed.connect(_navigate_back)
 	hud_ui.add_child(back)
+	hub_ui_blockers.append(back)
 
 	var chat := _make_button("CHAT  ✦", StarTheme.CYAN)
 	_anchor_rect(chat, 0.86, 0.88, 0.975, 0.965)
 	chat.pressed.connect(_open_chat)
 	hud_ui.add_child(chat)
+	hub_ui_blockers.append(chat)
 
 	interaction_label = Label.new()
 	_anchor_rect(interaction_label, 0.32, 0.885, 0.68, 0.955)
@@ -324,6 +335,7 @@ func _build_hud_ui() -> void:
 	interaction_label.add_theme_font_size_override("font_size", 15)
 	interaction_label.text = ""
 	hud_ui.add_child(interaction_label)
+	hub_ui_blockers.append(interaction_label)
 
 	hud_ui.visible = false
 
@@ -711,8 +723,7 @@ func _build_tv_ui() -> void:
 func _show_menu() -> void:
 	_close_all_modals(false)
 	mode = MODE_MENU
-	if hub_click_surface:
-		hub_click_surface.visible = false
+	hub_input_armed = false
 	_apply_day_phase(str(current_world.get("day_phase", "night")))
 	hud_ui.visible = false
 	menu_ui.visible = true
@@ -747,8 +758,6 @@ func _start_world_transition() -> void:
 func _show_hub() -> void:
 	_close_all_modals(false)
 	mode = MODE_HUB
-	if hub_click_surface:
-		hub_click_surface.visible = true
 	_apply_day_phase(str(current_world.get("day_phase", "night")))
 	menu_ui.visible = false
 	hud_ui.visible = true
@@ -760,6 +769,19 @@ func _show_hub() -> void:
 	camera.current = true
 	hub_islands = StarWorldBuilder.build_hub(content_root)
 	_update_hub_camera()
+	hub_input_armed = false
+	call_deferred("_arm_hub_input")
+
+func _arm_hub_input() -> void:
+	# Impede que o clique que acionou INICIAR atravesse a transição e
+	# selecione a ilha que estiver sob o cursor quando o Hub aparecer.
+	await get_tree().create_timer(0.25).timeout
+	while mode == MODE_HUB and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		await get_tree().process_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if mode == MODE_HUB:
+		hub_input_armed = true
 
 func _update_hub_camera() -> void:
 	if mode != MODE_HUB:
@@ -767,13 +789,15 @@ func _update_hub_camera() -> void:
 	camera.position = Vector3(sin(hub_angle) * hub_distance, hub_height, cos(hub_angle) * hub_distance)
 	camera.look_at(Vector3(0, 0.8, 0), Vector3.UP)
 
-func _on_hub_surface_input(event: InputEvent) -> void:
-	if mode != MODE_HUB or _has_modal():
-		return
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_pick_hub_island(event.position)
-
 func _pick_hub_island(mouse_position: Vector2) -> void:
+	var collider := _raycast_hub_island(mouse_position)
+	if collider == null:
+		collider = _screen_pick_hub_island(mouse_position)
+	if collider == null:
+		return
+	_activate_hub_island(collider)
+
+func _raycast_hub_island(mouse_position: Vector2) -> Node3D:
 	var origin := camera.project_ray_origin(mouse_position)
 	var direction := camera.project_ray_normal(mouse_position)
 	var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * 120.0)
@@ -781,8 +805,34 @@ func _pick_hub_island(mouse_position: Vector2) -> void:
 	query.collide_with_bodies = true
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if hit.is_empty():
-		return
-	var collider: Object = hit.get("collider")
+		return null
+	var collider := hit.get("collider") as Node3D
+	if collider == null or not collider.has_meta("island_id"):
+		return null
+	return collider
+
+func _screen_pick_hub_island(mouse_position: Vector2) -> Node3D:
+	var best: Node3D = null
+	var best_distance := INF
+	for island_value in hub_islands.values():
+		var collider := island_value as Node3D
+		if collider == null or not is_instance_valid(collider):
+			continue
+		var target_world := collider.global_position + Vector3(0, 1.65, 0)
+		if camera.is_position_behind(target_world):
+			continue
+		var target_screen := camera.unproject_position(target_world)
+		var radius_world := float(collider.get_meta("click_radius", 3.0))
+		var edge_world := target_world + camera.global_transform.basis.x.normalized() * radius_world
+		var edge_screen := camera.unproject_position(edge_world)
+		var radius_screen := clampf(target_screen.distance_to(edge_screen) * 1.20, 48.0, 190.0)
+		var distance := mouse_position.distance_to(target_screen)
+		if distance <= radius_screen and distance < best_distance:
+			best = collider
+			best_distance = distance
+	return best
+
+func _activate_hub_island(collider: Node3D) -> void:
 	if collider == null or not collider.has_meta("island_id"):
 		return
 	var island_id := str(collider.get_meta("island_id"))
@@ -796,8 +846,7 @@ func _pick_hub_island(mouse_position: Vector2) -> void:
 func _enter_house() -> void:
 	_close_all_modals(false)
 	mode = MODE_HOUSE
-	if hub_click_surface:
-		hub_click_surface.visible = false
+	hub_input_armed = false
 	_apply_day_phase(str(current_world.get("day_phase", "night")))
 	menu_ui.visible = false
 	hud_ui.visible = true
@@ -1201,20 +1250,29 @@ func _run_smoke_sequence() -> void:
 		push_error("STAR WORLD smoke: Hub incompleto")
 		get_tree().quit(2)
 		return
-	if hub_click_surface == null or not hub_click_surface.visible:
-		push_error("STAR WORLD smoke: superfície clicável do Hub indisponível")
-		get_tree().quit(3)
-		return
 	var house_collider: Node3D = hub_islands.get("casa")
 	if house_collider == null:
 		push_error("STAR WORLD smoke: collider da Casa ausente")
-		get_tree().quit(4)
+		get_tree().quit(3)
 		return
+	var click_position := camera.unproject_position(house_collider.global_position + Vector3(0, 1.65, 0))
 	var click_event := InputEventMouseButton.new()
 	click_event.button_index = MOUSE_BUTTON_LEFT
 	click_event.pressed = true
-	click_event.position = camera.unproject_position(house_collider.global_position + Vector3(0, 0.85, 0))
-	hub_click_surface.emit_signal("gui_input", click_event)
+	click_event.position = click_position
+
+	# O clique que abriu INICIAR não pode atravessar para a Casa.
+	_input(click_event)
+	if mode != MODE_HUB:
+		push_error("STAR WORLD smoke: clique residual atravessou a transição para o Hub")
+		get_tree().quit(4)
+		return
+
+	while mode == MODE_HUB and not hub_input_armed:
+		await get_tree().process_frame
+
+	# Depois de armado, um novo clique na Casa precisa abrir a STAR House.
+	_input(click_event)
 	await get_tree().process_frame
 	if mode != MODE_HOUSE or player == null or star_avatar == null:
 		push_error("STAR WORLD smoke: clique na Casa não abriu a STAR House")

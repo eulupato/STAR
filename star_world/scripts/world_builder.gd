@@ -203,7 +203,12 @@ static func build_hub(parent: Node3D) -> Dictionary:
 			float(spec.r),
 			spec.surface,
 			spec.rock,
-			{"island_id":spec.id, "island_name":spec.name, "status":spec.status}
+			{
+				"island_id":spec.id,
+				"island_name":spec.name,
+				"status":spec.status,
+				"click_radius":float(spec.r),
+			}
 		)
 		_build_island_landmark(island, spec.id, float(spec.r), spec.status)
 		_add_island_label(island, spec.name, spec.status, float(spec.r))
