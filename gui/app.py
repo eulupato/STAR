@@ -22,6 +22,7 @@ from config import APP_NAME, VERSION, WINDOW_HEIGHT, WINDOW_WIDTH, MENU_HEIGHT, 
 from core.avatar import AvatarManager
 from core.emotion import EmotionManager
 from database.memory import Memory
+from voice.audio_devices import audio_device_info
 from voice.audio_input import AudioRecorder, VoiceActivityDetector, VoiceTurnAssembler
 from voice.manager import VoiceManager
 from gui import theme
@@ -66,6 +67,8 @@ class StarApp:
         self.has_messages = False
         self.chat = None
         self.voice_test_label = None
+        self.voice_test_buttons = []
+        self.voice_test_stop_button = None
         self.avatar_photo = None
         self.closet_photo = None
         self.selected_skin = self._load_skin_selection()
@@ -173,6 +176,8 @@ class StarApp:
         self.chat = None
         self.has_messages = False
         self.voice_test_label = None
+        self.voice_test_buttons = []
+        self.voice_test_stop_button = None
 
     def _header(self, parent):
         header = tk.Frame(parent, bg=theme.PANEL, height=56); header.pack(fill="x"); header.pack_propagate(False)
@@ -504,7 +509,18 @@ class StarApp:
                     self._activate_conversation();self._append_system(f"🎤 Falha no reconhecimento: {result}");self.processing=False
                     if self.current_screen=="chat":self.entry.config(state=tk.NORMAL);self.send_button.config(state=tk.NORMAL)
                 elif kind=="voice_test":
-                    ok,error=result;self._set_voice_test_message(f"🔊 Voz da STAR funcionando ({self.voice.last_tts_engine})." if ok else f"🔊 Falha na voz: {error}",ok)
+                    if isinstance(result, tuple) and len(result) == 3:
+                        backend,ok,error=result
+                    else:
+                        backend="current";ok,error=result
+                    self._set_voice_test_busy(False)
+                    if error == "Fala cancelada.":
+                        self._set_voice_test_message("⏹ Teste de voz interrompido.",None)
+                    elif ok:
+                        self._set_voice_test_message(f"🔊 Voz funcionando: {self.voice.last_tts_engine}.",True)
+                    else:
+                        self._set_voice_test_message(f"🔊 Falha em {backend}: {error or 'erro desconhecido'}",False)
+                    self._set_status("ONLINE" if self.online_mode else "OFFLINE",self.green if self.online_mode else self.red)
                 elif kind=="speech_result":
                     ok,error=result
                     if not ok and self.current_screen=="chat":self._append_system(f"🔊 A resposta foi gerada, mas a voz falhou: {error}")
@@ -531,11 +547,37 @@ class StarApp:
 
     def _set_voice_test_message(self,message,ok):
         label=self.voice_test_label
+        color=self.green if ok is True else self.red if ok is False else self.gold
         if label is not None:
             try:
-                if label.winfo_exists():label.config(text=message,fg=self.green if ok else self.red);return
+                if label.winfo_exists():label.config(text=message,fg=color);return
             except tk.TclError:pass
         if self.current_screen=="chat":self._append_system(message)
+
+    def _set_voice_test_busy(self,busy):
+        state=tk.DISABLED if busy else tk.NORMAL
+        for button in getattr(self,"voice_test_buttons",[]):
+            try:
+                if button.winfo_exists():button.config(state=state)
+            except tk.TclError:pass
+        stop=getattr(self,"voice_test_stop_button",None)
+        if stop is not None:
+            try:
+                if stop.winfo_exists():stop.config(state=tk.NORMAL if busy else tk.DISABLED)
+            except tk.TclError:pass
+
+    def _voice_output_description(self):
+        if self.profile == "mobile":
+            return "saída remota pelo Core do PC"
+        try:
+            info=audio_device_info("output")
+            name=info.get("name") or "dispositivo de áudio"
+            if "primário" in name.casefold() or "primary" in name.casefold():
+                return f"{name} (acompanha o padrão do Windows)"
+            return f"{name} (índice {info.get('index')})"
+        except Exception as exc:
+            LOGGER.warning("Não foi possível resolver a saída de áudio: %s",exc)
+            return "saída do sistema não resolvida"
 
     def _append(self,name,text,tag):
         if not self.chat:return
@@ -596,24 +638,76 @@ class StarApp:
         mode=tk.Frame(body,bg=self.panel,padx=22,pady=18);mode.pack(fill="x",pady=(18,12));tk.Label(mode,text="MODO DE FUNCIONAMENTO",fg=self.text,bg=self.panel,font=("Segoe UI",12,"bold")).pack(anchor="w");row=tk.Frame(mode,bg=self.panel);row.pack(anchor="w",pady=12);self.online_btn=self._button(row,"🟢 ONLINE",lambda:self._set_mode(True));self.online_btn.pack(side="left",padx=(0,10));self.offline_btn=self._button(row,"🔴 OFFLINE",lambda:self._set_mode(False));self.offline_btn.pack(side="left");self._refresh_mode_buttons();tk.Label(mode,text="O modo online controla recursos de internet. A voz da STAR é local nos dois modos.",fg=self.muted,bg=self.panel).pack(anchor="w")
         voicebox=tk.Frame(body,bg=self.panel,padx=22,pady=18);voicebox.pack(fill="x",pady=12)
         tk.Label(voicebox,text="🎙️ VOZ DA STAR",fg=self.star,bg=self.panel,font=("Segoe UI",13,"bold")).pack(anchor="w")
-        tk.Label(voicebox,text=f"Entrada: faster-whisper {STT_MODEL} PT-BR • Conversa: {self.voice.tts_description}",fg=self.text,bg=self.panel).pack(anchor="w",pady=(8,6))
+        tk.Label(voicebox,text=f"Entrada: faster-whisper {STT_MODEL} PT-BR • Conversa: {self.voice.tts_description}",fg=self.text,bg=self.panel).pack(anchor="w",pady=(8,3))
+        tk.Label(voicebox,text=f"Saída: {self._voice_output_description()}",fg=self.muted,bg=self.panel,wraplength=760,justify="left").pack(anchor="w",pady=(0,7))
         voice_row=tk.Frame(voicebox,bg=self.panel);voice_row.pack(anchor="w",pady=(2,8))
-        self._button(voice_row,"⚡ CONVERSA RÁPIDA",lambda:self._set_voice_mode("fast"),small=True).pack(side="left",padx=(0,8))
-        self._button(voice_row,"⭐ VOZ OFICIAL",lambda:self._set_voice_mode("official"),small=True).pack(side="left")
-        tk.Label(voicebox,text="O modo rápido usa o backend local configurado; o modo oficial usa a referência Chatterbox e pode levar mais tempo em CPU.",fg=self.muted,bg=self.panel,wraplength=760,justify="left").pack(anchor="w")
+        self._button(voice_row,"⚡ USAR RÁPIDA",lambda:self._set_voice_mode("fast"),small=True).pack(side="left",padx=(0,8))
+        self._button(voice_row,"⭐ USAR OFICIAL",lambda:self._set_voice_mode("official"),small=True).pack(side="left")
+        tk.Label(voicebox,text="Seleção e teste são separados. A voz oficial Chatterbox pode levar vários minutos no primeiro carregamento em CPU.",fg=self.muted,bg=self.panel,wraplength=760,justify="left").pack(anchor="w")
         test_row=tk.Frame(voicebox,bg=self.panel);test_row.pack(anchor="w",pady=(12,4))
-        self._button(test_row,"TESTAR VOZ ATUAL",self._test_voice,small=True).pack(side="left",padx=(0,8))
-        self._button(test_row,"TESTAR VOZ OFICIAL",self._test_official_voice,small=True).pack(side="left")
-        self.voice_test_label=tk.Label(voicebox,text="Pronto para testar.",fg=self.muted,bg=self.panel,wraplength=760,justify="left");self.voice_test_label.pack(anchor="w")
+        self.voice_test_buttons=[]
+        if hasattr(self.voice,"test_backend_async"):
+            sapi_name=getattr(getattr(self.voice,"fallback",None),"voice_name",None) or "Windows SAPI"
+            for text,backend in (("▶ PIPER PT-BR","piper"),(f"▶ {sapi_name[:22]}","sapi"),("▶ OFICIAL STAR","official")):
+                button=self._button(test_row,text,lambda b=backend:self._test_voice_backend(b),small=True)
+                button.pack(side="left",padx=(0,8));self.voice_test_buttons.append(button)
+        else:
+            button=self._button(test_row,"▶ TESTAR SAÍDA REMOTA",self._test_voice,small=True)
+            button.pack(side="left",padx=(0,8));self.voice_test_buttons.append(button)
+        self.voice_test_stop_button=self._button(test_row,"■ PARAR TESTE",self._stop_voice_test,small=True)
+        self.voice_test_stop_button.pack(side="left");self.voice_test_stop_button.config(state=tk.DISABLED)
+        self.voice_test_label=tk.Label(voicebox,text="Escolha uma voz acima para testar.",fg=self.muted,bg=self.panel,wraplength=760,justify="left");self.voice_test_label.pack(anchor="w")
         info=tk.Frame(body,bg=self.panel,padx=22,pady=16);info.pack(fill="x",pady=12)
         for name,value in (("Versão",f"V{VERSION}"),("Conhecimento local","ATIVO"),("Modo de voz",self.voice.mode.upper()),("Reconhecimento local","PRONTO" if self.voice.stt_configured else "INSTALAÇÃO PENDENTE")):
             line=tk.Frame(info,bg=self.panel);line.pack(fill="x",pady=4);tk.Label(line,text=name,fg=self.muted,bg=self.panel).pack(side="left");tk.Label(line,text=value,fg=self.green if value in {"ATIVO","PRONTO","Piper PT-BR (rápido)"} else self.gold,bg=self.panel,font=("Segoe UI",10,"bold")).pack(side="right")
         self._button(body,"VOLTAR AO CHAT",self.show_chat).pack(anchor="w",pady=10)
 
     def _test_voice(self):
-        self._set_voice_test_message("🔊 Testando a voz selecionada...",True);self._set_status("TESTANDO VOZ",self.gold);self.voice.test_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
+        self._set_voice_test_busy(True)
+        self._set_voice_test_message("🔊 Testando a saída de voz selecionada...",None)
+        self._set_status("TESTANDO VOZ",self.gold)
+        self.voice.test_audio_async(
+            lambda ok,error:self.response_queue.put(("voice_test",("current",ok,error)))
+        )
+
+    def _test_voice_backend(self,backend):
+        names={"piper":"Piper PT-BR","sapi":"Windows SAPI","official":"voz oficial STAR"}
+        label=names.get(backend,backend)
+        self._set_voice_test_busy(True)
+        if backend=="official":
+            message="⭐ Carregando a voz oficial STAR. Em CPU, o primeiro teste pode levar vários minutos; use PARAR TESTE para cancelar."
+        else:
+            message=f"🔊 Testando {label}..."
+        self._set_voice_test_message(message,None)
+        self._set_status("TESTANDO VOZ",self.gold)
+        try:
+            tester=getattr(self.voice,"test_backend_async")
+            tester(
+                backend,
+                lambda ok,error,b=backend:self.response_queue.put(("voice_test",(b,ok,error))),
+            )
+        except Exception as exc:
+            self._set_voice_test_busy(False)
+            self._set_voice_test_message(f"🔊 Não foi possível iniciar {label}: {exc}",False)
+
     def _test_official_voice(self):
-        self._set_voice_test_message("🔊 Preparando a voz oficial; em CPU isso pode demorar...",True);self._set_status("TESTANDO VOZ OFICIAL",self.gold);self.voice.test_official_audio_async(lambda ok,error:self.response_queue.put(("voice_test",(ok,error))))
+        if hasattr(self.voice,"test_backend_async"):
+            self._test_voice_backend("official")
+            return
+        self._set_voice_test_busy(True)
+        self._set_voice_test_message("⭐ Preparando a voz oficial...",None)
+        self.voice.test_official_audio_async(
+            lambda ok,error:self.response_queue.put(("voice_test",("official",ok,error)))
+        )
+
+    def _stop_voice_test(self):
+        try:
+            self.voice.cancel_speech(reason="voice_test_stop")
+        except Exception as exc:
+            LOGGER.warning("Falha ao interromper teste de voz: %s",exc)
+        self._set_voice_test_busy(False)
+        self._set_voice_test_message("⏹ Teste de voz interrompido.",None)
+        self._set_status("ONLINE" if self.online_mode else "OFFLINE",self.green if self.online_mode else self.red)
     def _set_voice_mode(self,mode):
         self.voice.set_voice_mode(mode);self._save_voice_mode();self.show_settings()
     def _set_mode(self,online):

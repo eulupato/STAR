@@ -1161,6 +1161,74 @@ class VoiceManager:
         thread.start()
         return thread
 
+    def test_backend_async(self, backend: str, callback=None):
+        """Testa um backend TTS específico, sem fallback silencioso."""
+        backend = str(backend or "").strip().lower()
+        if backend not in {"piper", "sapi", "official"}:
+            raise ValueError("Backend de voz deve ser 'piper', 'sapi' ou 'official'.")
+
+        self.cancel_speech(reason="voice_test")
+        event = self._current_cancel_event()
+
+        def run():
+            self._speaking.set()
+            ok = False
+            error = None
+            try:
+                with self._tts_lock:
+                    if backend == "piper":
+                        engine = self.piper
+                        configured = engine.configured
+                        phrase = "Teste da voz Piper da STAR."
+                        label = "Piper — teste direto"
+                        missing = "Piper PT-BR não configurado."
+                    elif backend == "sapi":
+                        engine = self.fallback
+                        configured = engine.configured
+                        phrase = "Teste da voz do Windows da STAR."
+                        label = f"Windows SAPI — {engine.voice_name or 'voz local'}"
+                        missing = "Windows SAPI não configurado."
+                    else:
+                        engine = self.official
+                        configured = engine.configured
+                        phrase = "Olá! Eu sou a STAR. Este é o teste da minha voz oficial."
+                        label = "Chatterbox — voz oficial STAR"
+                        missing = "Voz oficial não configurada: " + engine.status_message
+
+                    if not configured:
+                        error = missing
+                    elif event.is_set():
+                        error = "Fala cancelada."
+                    else:
+                        ok = engine.speak(phrase, event)
+                        error = engine.last_error
+                        if ok:
+                            if backend == "sapi":
+                                label = f"Windows SAPI — {engine.voice_name or 'voz local'}"
+                            self.last_tts_engine = label
+                            error = None
+                        elif event.is_set() or error == "cancelled":
+                            error = "Fala cancelada."
+            except Exception as exc:
+                error = f"{type(exc).__name__}: {exc}"
+            finally:
+                self._speaking.clear()
+                self.last_error = error
+                with self._metrics_lock:
+                    self._last_speech_ok = bool(ok)
+                    self._last_speech_finished_at = time.time()
+
+            if callback:
+                callback(ok, error)
+
+        thread = threading.Thread(
+            target=run,
+            daemon=True,
+            name=f"STAR-VoiceTest-{backend}",
+        )
+        thread.start()
+        return thread
+
     def test_audio_async(self, callback=None):
         """Testa o modo atualmente selecionado."""
         return self.speak_async(
@@ -1169,40 +1237,8 @@ class VoiceManager:
         )
 
     def test_official_audio_async(self, callback=None):
-        """Testa explicitamente o Chatterbox, mesmo se o chat estiver em modo rápido."""
-        self.cancel_speech(reason="voice_test")
-        event = self._current_cancel_event()
-
-        def run():
-            self._speaking.set()
-            try:
-                with self._tts_lock:
-                    if not self.official.configured:
-                        ok = False
-                        error = "Voz oficial não configurada: " + self.official.status_message
-                        self.last_tts_engine = "voz oficial indisponível"
-                    else:
-                        ok = self.official.speak(
-                            "Olá! Eu sou a STAR. Este é o teste da minha voz oficial.",
-                            event,
-                        )
-                        error = self.official.last_error
-                        if ok:
-                            self.last_tts_engine = "Chatterbox — voz oficial STAR"
-            finally:
-                self._speaking.clear()
-
-            self.last_error = error
-            if callback:
-                callback(ok, error)
-
-        thread = threading.Thread(
-            target=run,
-            daemon=True,
-            name="STAR-OfficialVoiceTest",
-        )
-        thread.start()
-        return thread
+        """Compatibilidade: testa explicitamente o backend oficial."""
+        return self.test_backend_async("official", callback)
 
     def close(self):
         self.cancel_speech(reason="shutdown")

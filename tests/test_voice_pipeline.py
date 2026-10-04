@@ -1,5 +1,8 @@
 import sys
+import threading
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -85,6 +88,37 @@ def test_fast_mode_prefers_routable_piper(monkeypatch):
     assert manager.fast_preference == "piper"
     if manager.piper.configured:
         assert manager.tts_description.startswith("Piper PT-BR")
+    manager.close()
+
+
+def test_backend_voice_test_reports_selected_engine(monkeypatch):
+    manager = VoiceManager()
+    done = threading.Event()
+    result = {}
+
+    class FakePiper:
+        configured = True
+        last_error = None
+        def speak(self, text, event):
+            assert "Piper" in text
+            assert not event.is_set()
+            return True
+
+    monkeypatch.setattr(manager, "piper", FakePiper())
+    manager.test_backend_async(
+        "piper",
+        lambda ok, error: (result.update(ok=ok, error=error), done.set()),
+    )
+    assert done.wait(2)
+    assert result == {"ok": True, "error": None}
+    assert manager.last_tts_engine == "Piper — teste direto"
+    manager.close()
+
+
+def test_backend_voice_test_rejects_unknown_backend():
+    manager = VoiceManager()
+    with pytest.raises(ValueError):
+        manager.test_backend_async("cloud")
     manager.close()
 
 
