@@ -1278,6 +1278,53 @@ func _run_smoke_sequence() -> void:
 		push_error("STAR WORLD smoke: clique na Casa não abriu a STAR House")
 		get_tree().quit(5)
 		return
+
+	var house_root := content_root.get_node_or_null("STARHouse")
+	if house_root == null:
+		push_error("STAR WORLD smoke: raiz da STAR House ausente")
+		get_tree().quit(6)
+		return
+
+	var required_rooms := {
+		"LivingRoom": 12,
+		"Kitchen": 18,
+		"Bathroom": 12,
+		"Bedroom": 24,
+	}
+	for room_name in required_rooms:
+		var room_node := house_root.get_node_or_null(str(room_name))
+		if room_node == null:
+			push_error("STAR WORLD smoke: cômodo ausente: " + str(room_name))
+			get_tree().quit(7)
+			return
+		if room_node.get_child_count() < int(required_rooms[room_name]):
+			push_error("STAR WORLD smoke: cômodo incompleto: " + str(room_name))
+			get_tree().quit(8)
+			return
+
+	var fp_state := player.first_person_state()
+	if not bool(fp_state.get("active", false)) or not bool(fp_state.get("camera_current", false)) or not bool(fp_state.get("ray_parent_is_camera", false)):
+		push_error("STAR WORLD smoke: câmera em primeira pessoa não está operacional")
+		get_tree().quit(9)
+		return
+
+	var yaw_before := player.rotation.y
+	var pitch_before := player.look_pitch
+	player.apply_look_delta(Vector2(32.0, -24.0))
+	if is_equal_approx(player.rotation.y, yaw_before) or is_equal_approx(player.look_pitch, pitch_before):
+		push_error("STAR WORLD smoke: mouse-look não altera yaw/pitch")
+		get_tree().quit(10)
+		return
+
+	var body_triangles := int(star_avatar.get_meta("body_triangle_count", 0))
+	var total_triangles := int(star_avatar.get_meta("triangle_count", 0))
+	if body_triangles < 5000 or total_triangles < 10000:
+		push_error("STAR WORLD smoke: STAR 3D simplificada demais (%d corpo / %d total)" % [body_triangles, total_triangles])
+		get_tree().quit(11)
+		return
+
+	print("STAR_WORLD_SMOKE_METRICS rooms=4 body_triangles=", body_triangles, " total_triangles=", total_triangles)
+
 	_open_wardrobe()
 	await get_tree().process_frame
 	_preview_wardrobe_skin("rich_red", "RICH RED")

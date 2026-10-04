@@ -101,12 +101,14 @@ Escopo antecipado já integrado à V2.0:
 - Godot 4 como superfície 3D padrão do PC, preservando o mesmo `StarCore`;
 - launcher único `INICIAR_PC.bat` → `star_world_launcher.py`, com fallback clássico;
 - Hub 3D com ilhas distintas e bloqueio explícito das ainda indisponíveis;
-- Casa 3D navegável com sala, cozinha, banheiro e quarto;
+- Casa 3D navegável em primeira pessoa com sala, cozinha, banheiro, escada, quarto e varanda;
 - TV local compartilhada, chat da mesma STAR e roupeiro/seletor de skins;
 - estado global compartilhado de fuso, fase do dia, cenário e skin;
 - ciclo visual Hub/Casa coerente com o mesmo estado temporal;
-- avatar 3D funcional de fundação, mantendo identidade/skin sem criar outro cérebro;
-- smoke test headless do mundo e integração local via Device Gateway.
+- avatar 3D procedural de alta densidade baseado nas referências visuais existentes,
+  mantendo identidade e seis skins sem criar outro cérebro;
+- smoke test headless cobrindo Hub, cômodos, câmera yaw/pitch, interação, densidade
+  geométrica e integração local via Device Gateway.
 
 Isso **não antecipa nem conclui** o escopo maduro de V6: rig completo, lip sync,
 animação procedural avançada, olhar/piscar/gestos maduros, Digital Twin completo,

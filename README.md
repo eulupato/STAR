@@ -48,23 +48,34 @@ O Hub apresenta as ilhas como espaços 3D distintos dentro do mesmo cosmos. A
 Ateliê, Jardim, Observatório, Correio e Heróis aparecem bloqueados e não são
 declarados como funcionais.
 
-A STAR House é caminhável e contém **sala, cozinha, banheiro e quarto**. O estado
-funcional atual é deliberadamente limitado e honesto:
+A STAR House é caminhável em primeira pessoa e possui uma arquitetura interna
+contínua com **sala, cozinha, banheiro, escada, quarto e varanda**. Sala, cozinha,
+banheiro e quarto são construídos como ambientes próprios, com paredes/aberturas,
+pisos, mobiliário, iluminação e decoração específicos — não como marcadores vazios.
+
+O estado funcional atual continua deliberadamente honesto:
 
 - a TV da sala e a TV do quarto usam o mesmo sistema local da STAR TV;
 - o roupeiro do quarto abre o seletor de skins e persiste `world_skin` sem destruir
   a preferência visual legada;
 - as miniaturas do seletor reutilizam os arquivos canônicos de `SKINS/`, sem cópias;
-- o PC do quarto, livros, quadros e objetos geek permanecem cenário/preparação futura;
+- o PC do quarto, livros, quadros e objetos geek já existem fisicamente no cenário,
+  mas permanecem não interativos enquanto suas funções futuras não forem implementadas;
+- a STAR usa um avatar procedural de alta densidade baseado nas referências visuais
+  existentes, com rosto, cabelo, corpo suavizado, mãos e seis conjuntos de roupa
+  geometricamente distintos; rig avançado, lip sync e animação corporal madura
+  continuam pertencendo à evolução futura;
 - o botão **CHAT** abre a conversa da mesma STAR/Core; não existe um cérebro separado
   dentro do mundo 3D;
-- o céu do Hub e da Casa compartilha o mesmo estado de ambiente;
+- o céu do Hub, Casa e varanda compartilha o mesmo estado de ambiente;
 - o ciclo dia/noite usa o fuso IANA salvo em `user_settings.json` e continua
   disponível offline com o último valor persistido.
 
-Controles atuais: `WASD` para movimento, mouse para câmera, `Shift` para correr e
-`E` para interagir. O diagnóstico headless do mundo pode ser executado com
-`STAR_WORLD_SMOKE=1`.
+Controles atuais: `WASD` para movimento, mouse para câmera em primeira pessoa,
+`Shift` para correr e `E` para interagir. O ray de interação acompanha a câmera
+verticalmente. O diagnóstico headless do mundo (`STAR_WORLD_SMOKE=1`) valida Hub,
+Casa, quatro cômodos mobiliados, câmera yaw/pitch, interação e densidade mínima do
+avatar.
 
 ## 🧠 Knowledge Foundation
 
