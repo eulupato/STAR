@@ -28,6 +28,7 @@ var core_client: StarCoreClient
 var ui_root: Control
 var menu_ui: Control
 var hud_ui: Control
+var hub_click_surface: Control
 var settings_panel: Control
 var chat_panel: Control
 var wardrobe_panel: Control
@@ -119,9 +120,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	if mode == MODE_HOUSE and event.is_action_pressed("interact") and not _has_modal():
 		_interact_house()
 		return
-
-	if mode == MODE_HUB and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and not _has_modal():
-		_pick_hub_island(event.position)
 
 func _ensure_input_actions() -> void:
 	_add_key_action("move_forward", KEY_W)
@@ -268,6 +266,17 @@ func _build_hud_ui() -> void:
 	hud_ui = Control.new()
 	_full_rect(hud_ui)
 	ui_root.add_child(hud_ui)
+
+	# O HUD cobre a tela inteira. Se o clique do mundo dependesse de
+	# _unhandled_input(), o Control consumiria o evento antes do raycast.
+	# Esta superfície fica atrás dos botões e encaminha apenas o fundo 3D.
+	hub_click_surface = Control.new()
+	hub_click_surface.name = "HubClickSurface"
+	_full_rect(hub_click_surface)
+	hub_click_surface.mouse_filter = Control.MOUSE_FILTER_STOP
+	hub_click_surface.gui_input.connect(_on_hub_surface_input)
+	hub_click_surface.visible = false
+	hud_ui.add_child(hub_click_surface)
 
 	var info := PanelContainer.new()
 	_anchor_rect(info, 0.02, 0.025, 0.34, 0.16)
@@ -702,6 +711,8 @@ func _build_tv_ui() -> void:
 func _show_menu() -> void:
 	_close_all_modals(false)
 	mode = MODE_MENU
+	if hub_click_surface:
+		hub_click_surface.visible = false
 	_apply_day_phase(str(current_world.get("day_phase", "night")))
 	hud_ui.visible = false
 	menu_ui.visible = true
@@ -736,6 +747,8 @@ func _start_world_transition() -> void:
 func _show_hub() -> void:
 	_close_all_modals(false)
 	mode = MODE_HUB
+	if hub_click_surface:
+		hub_click_surface.visible = true
 	_apply_day_phase(str(current_world.get("day_phase", "night")))
 	menu_ui.visible = false
 	hud_ui.visible = true
@@ -753,6 +766,12 @@ func _update_hub_camera() -> void:
 		return
 	camera.position = Vector3(sin(hub_angle) * hub_distance, hub_height, cos(hub_angle) * hub_distance)
 	camera.look_at(Vector3(0, 0.8, 0), Vector3.UP)
+
+func _on_hub_surface_input(event: InputEvent) -> void:
+	if mode != MODE_HUB or _has_modal():
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_pick_hub_island(event.position)
 
 func _pick_hub_island(mouse_position: Vector2) -> void:
 	var origin := camera.project_ray_origin(mouse_position)
@@ -777,6 +796,8 @@ func _pick_hub_island(mouse_position: Vector2) -> void:
 func _enter_house() -> void:
 	_close_all_modals(false)
 	mode = MODE_HOUSE
+	if hub_click_surface:
+		hub_click_surface.visible = false
 	_apply_day_phase(str(current_world.get("day_phase", "night")))
 	menu_ui.visible = false
 	hud_ui.visible = true
@@ -1175,15 +1196,29 @@ func _run_smoke_sequence() -> void:
 	await get_tree().process_frame
 	_show_hub()
 	await get_tree().process_frame
+	await get_tree().physics_frame
 	if hub_islands.size() < 5:
 		push_error("STAR WORLD smoke: Hub incompleto")
 		get_tree().quit(2)
 		return
-	_enter_house()
-	await get_tree().process_frame
-	if player == null or star_avatar == null:
-		push_error("STAR WORLD smoke: Casa/avatar não construídos")
+	if hub_click_surface == null or not hub_click_surface.visible:
+		push_error("STAR WORLD smoke: superfície clicável do Hub indisponível")
 		get_tree().quit(3)
+		return
+	var house_collider: Node3D = hub_islands.get("casa")
+	if house_collider == null:
+		push_error("STAR WORLD smoke: collider da Casa ausente")
+		get_tree().quit(4)
+		return
+	var click_event := InputEventMouseButton.new()
+	click_event.button_index = MOUSE_BUTTON_LEFT
+	click_event.pressed = true
+	click_event.position = camera.unproject_position(house_collider.global_position + Vector3(0, 0.85, 0))
+	hub_click_surface.emit_signal("gui_input", click_event)
+	await get_tree().process_frame
+	if mode != MODE_HOUSE or player == null or star_avatar == null:
+		push_error("STAR WORLD smoke: clique na Casa não abriu a STAR House")
+		get_tree().quit(5)
 		return
 	_open_wardrobe()
 	await get_tree().process_frame
