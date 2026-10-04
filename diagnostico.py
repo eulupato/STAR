@@ -1,4 +1,4 @@
-"""Diagnóstico geral e leve da instalação da STAR V1.9 + MIND V2 alpha.
+"""Diagnóstico geral e leve da instalação da STAR V2.0 + MIND alpha.
 
 Não carrega o Chatterbox pesado nem força o carregamento do modelo conversacional
 local. Para síntese real use DIAGNOSTICO_VOZ.bat.

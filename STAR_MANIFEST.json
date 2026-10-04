@@ -1,6 +1,6 @@
 {
   "name": "STAR",
-  "version": "1.9",
+  "version": "2.0",
   "release_status": "final",
   "release_channel": "stable",
   "mode": "offline-first",

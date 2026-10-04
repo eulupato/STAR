@@ -1,4 +1,4 @@
-"""Diagnóstico detalhado da voz local da STAR V1.9 FINAL."""
+"""Diagnóstico detalhado da voz local da STAR V2.0."""
 from __future__ import annotations
 
 import sys
@@ -20,7 +20,7 @@ def flag(value: bool) -> str:
 
 def main() -> int:
     print("=" * 64)
-    print("⭐ STAR V1.9 FINAL — DIAGNÓSTICO DE VOZ")
+    print("⭐ STAR V2.0 — DIAGNÓSTICO DE VOZ")
     print("=" * 64)
 
     manager = VoiceManager()

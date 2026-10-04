@@ -2,7 +2,7 @@
 
 A referência oficial é **local, privada e não versionada**.
 
-A V1.9 resolve a referência na seguinte ordem:
+A V2.0 resolve a referência na seguinte ordem:
 
 1. caminho definido por `STAR_VOICE_REFERENCE`, quando existir;
 2. caminho padrão definido em `config.py`;

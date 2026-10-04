@@ -1,6 +1,6 @@
 # STAR + Seed-VC
 
-Integração opcional de conversão de voz para a STAR V1.9.
+Integração opcional de conversão de voz para a STAR V2.0.
 
 ## Decisão arquitetural
 
@@ -94,7 +94,7 @@ Seed-VC é uma capacidade de transformação, não a identidade da STAR.
 
 A referência oficial continua em `voice/reference/` e não é versionada. Ao converter áudio para a voz da STAR, a camada chamadora deve fornecer essa referência como `target`.
 
-O TTS oficial continua sendo Chatterbox enquanto o roadmap V1.9 não decidir o contrário.
+O TTS oficial continua sendo Chatterbox enquanto a arquitetura oficial atual não decidir o contrário.
 
 ## Licença
 

@@ -1,4 +1,4 @@
-"""Gerenciador de voz local da STAR V1.9 FINAL.
+"""Gerenciador de voz local da STAR V2.0.
 
 Objetivo do hotfix:
 - modo "official" usa SOMENTE a voz oficial Chatterbox;

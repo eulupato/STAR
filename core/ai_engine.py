@@ -19,7 +19,7 @@ class AIEngine:
 
     def _ensure_enabled(self):
         if not self.enabled:
-            raise RuntimeError("AIEngine está desativado na STAR V1.9 Foundation.")
+            raise RuntimeError("AIEngine está desativado na STAR V2.0.")
 
     def is_available(self, *, timeout=3.0):
         self._ensure_enabled()

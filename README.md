@@ -406,7 +406,7 @@ caches, fotos pessoais ou arquivos temporários.
 
 ## Estado atual
 
-- **STAR Core/Foundation:** V1.9 stable;
+- **STAR release:** V2.0 stable (**Foundation V1.9 preservada como base histórica**);
 - **conhecimento factual endereçável legado:** 22,15M variações composicionais;
 - **currículo canônico:** 56 temas + 885 conceitos únicos = 941M variações curriculares on-demand;
 - **idiomas:** 6 locales de apresentação sobre uma fonte canônica única;
@@ -419,6 +419,6 @@ caches, fotos pessoais ou arquivos temporários.
 - **STAR Mobile iOS:** experimental;
 - **hardware STAR próprio:** conceito/futuro.
 
-A prioridade atual é validar a camada Cosmic Crystal nas três superfícies sem regredir
-o Core V1.9: PC responsivo, Mobile conectado ao mesmo Core e Watch V0.4 fluido. Builds
+A prioridade atual é validar a camada Cosmic Crystal nas três superfícies na release V2.0 sem regredir
+a Foundation V1.9: PC responsivo, Mobile conectado ao mesmo Core e Watch V0.4 fluido. Builds
 nativos e hardware real continuam exigindo validação no ambiente de cada plataforma.

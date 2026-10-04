@@ -1,6 +1,6 @@
 # STAR Voice Engine — Voz Local
 
-A arquitetura de voz da STAR V1.9 é totalmente local e separada do Core.
+A arquitetura de voz da STAR V2.0 é totalmente local e separada do Core.
 
 - Entrada: `sounddevice` grava o microfone.
 - STT: `faster-whisper` local, com idioma fixado em português (`pt`).

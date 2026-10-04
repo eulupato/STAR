@@ -10,7 +10,7 @@ if not exist ".venv\Scripts\python.exe" (
 )
 
 echo ============================================
-echo       STAR V1.9 - TESTE DE VOZ LOCAL
+echo       STAR V2.0 - TESTE DE VOZ LOCAL
 echo ============================================
 echo.
 echo O diagnostico usa o mesmo resolvedor de referencia da interface.

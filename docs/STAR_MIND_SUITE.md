@@ -1,6 +1,6 @@
 # STAR MIND — Cognitive Suite alpha
 
-A STAR continua oficialmente na release **V1.9 stable**. Este conjunto é uma camada **experimental/alpha** alinhada ao roadmap V2 MIND, V2.1 Memory, V2.2 Knowledge Graph e a componentes antecipados de V3/V3.3.
+A STAR está oficialmente na release **V2.0 stable**. Este conjunto MIND continua uma camada **experimental/alpha**; a promoção da release não significa que toda a suíte cognitiva esteja concluída. Ela permanece alinhada às etapas MIND, Memory, Knowledge Graph e a componentes antecipados de gerações posteriores.
 
 ## Objetivo
 

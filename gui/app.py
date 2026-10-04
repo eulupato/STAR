@@ -1,4 +1,4 @@
-"""Interface gráfica da STAR V1.9."""
+"""Interface gráfica da STAR V2.0."""
 from __future__ import annotations
 
 import json

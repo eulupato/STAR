@@ -23,7 +23,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
-USER_AGENT = "STAR/1.9 weather-context"
+USER_AGENT = "STAR/2.0 weather-context"
 OPEN_METEO_GEOCODING = "https://geocoding-api.open-meteo.com/v1/search"
 OPEN_METEO_FORECAST = "https://api.open-meteo.com/v1/forecast"
 IP_LOCATION = "https://ipwho.is/"

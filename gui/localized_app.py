@@ -35,7 +35,7 @@ def localize_ui_text(manager, text: str) -> str:
 
 
 class LocalizedStarApp(StarApp):
-    """A mesma GUI V1.9, com localização, percepção e eventos temporais."""
+    """A mesma GUI V2.0, com localização, percepção e eventos temporais."""
 
     IMAGE_TYPES = (
         ("Imagens", "*.jpg *.jpeg *.png *.webp *.bmp"),

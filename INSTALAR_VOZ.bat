@@ -4,7 +4,7 @@ cd /d "%~dp0"
 chcp 65001 >nul
 
 echo =====================================================
-echo        STAR V1.9 FINAL - INSTALACAO DE VOZ
+echo        STAR V2.0 - INSTALACAO DE VOZ
 echo =====================================================
 echo.
 echo ENTRADA : faster-whisper base (PT-BR, local)
@@ -62,7 +62,7 @@ echo e execute DIAGNOSTICO_VOZ.bat.
 echo O arquivo sera mantido apenas na sua maquina.
 echo.
 echo =====================================================
-echo        INSTALACAO V1.9 FINAL CONCLUIDA
+echo        INSTALACAO V2.0 CONCLUIDA
 echo =====================================================
 echo Depois execute DIAGNOSTICO_VOZ.bat.
 echo.
