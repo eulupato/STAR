@@ -18,6 +18,7 @@ import time
 from urllib.parse import urlparse
 
 from core.device_runtime import DeviceRuntime
+from core.world_state import WorldStateService
 
 MAX_JSON_BYTES = 64 * 1024
 MAX_MEDIA_BYTES = 16 * 1024 * 1024
@@ -179,12 +180,18 @@ class _GatewayHandler(BaseHTTPRequestHandler):
                              "runtime_revision": self.gateway.runtime.revision, "mode": "lan",
                              "sensor_transport": self.gateway.sensor_hub is not None, "speech_transport": True})
             return
-        if path in {"/v1/device", "/v1/runtime"}:
+        if path in {"/v1/device", "/v1/runtime", "/v1/world"}:
             device_id = self._auth()
             if not device_id: self._json(401, {"error": "unauthorized"}); return
             if self._rate_limited(device_id): return
-            record = self.gateway.registry.public_record(device_id)
-            self._json(200, {"device_id": device_id, "device": record} if path == "/v1/device" else self.gateway.runtime.profile_for(record))
+            if path == "/v1/device":
+                record = self.gateway.registry.public_record(device_id)
+                self._json(200, {"device_id": device_id, "device": record})
+            elif path == "/v1/runtime":
+                record = self.gateway.registry.public_record(device_id)
+                self._json(200, self.gateway.runtime.profile_for(record))
+            else:
+                self._json(200, self.gateway.world_state.snapshot(online=bool(getattr(self.gateway.star, "network_enabled", False))))
             return
         self._json(404, {"error": "not_found"})
 
@@ -207,6 +214,9 @@ class _GatewayHandler(BaseHTTPRequestHandler):
             elif path == "/v1/audio": self._audio(device_id)
             elif path == "/v1/speech": self._speech(device_id)
             elif path == "/v1/voice-mode": self._voice_mode(device_id)
+            elif path == "/v1/world/timezone": self._world_timezone(device_id)
+            elif path == "/v1/world/scenario": self._world_scenario(device_id)
+            elif path == "/v1/world/skin": self._world_skin(device_id)
             elif path == "/v1/image": self._image(device_id)
             elif path == "/v1/sensors": self._sensors(device_id)
             else: self._json(404, {"error": "not_found"})
@@ -228,7 +238,53 @@ class _GatewayHandler(BaseHTTPRequestHandler):
     def _text(self, device_id: str):
         payload = self._read_json(); value = str(payload.get("text") or "").strip()
         if not value: raise ValueError("Texto vazio.")
-        self._json(200, {"ok": True, "device_id": device_id, "response": self.gateway.process_text(value)})
+        client_ip = self.client_address[0] if self.client_address else ""
+        allow_actions = self.gateway.is_trusted_local_surface(device_id, client_ip)
+        response = self.gateway.process_text(value, allow_actions=allow_actions)
+        voice_started = False
+        if bool(payload.get("speak", False)):
+            manager = self.gateway._get_voice_manager()
+            manager.speak_async(response)
+            voice_started = True
+        self._json(200, {
+            "ok": True,
+            "device_id": device_id,
+            "response": response,
+            "voice_started": voice_started,
+        })
+
+    def _world_timezone(self, device_id: str):
+        payload = self._read_json()
+        timezone_id = str(payload.get("timezone") or "").strip()
+        if not timezone_id:
+            raise ValueError("Fuso horário vazio.")
+        self._json(200, {
+            "ok": True,
+            "device_id": device_id,
+            "world": self.gateway.world_state.set_timezone(timezone_id),
+        })
+
+    def _world_scenario(self, device_id: str):
+        payload = self._read_json()
+        scenario_id = str(payload.get("scenario") or "").strip()
+        if not scenario_id:
+            raise ValueError("Cenário vazio.")
+        self._json(200, {
+            "ok": True,
+            "device_id": device_id,
+            "world": self.gateway.world_state.set_scenario(scenario_id),
+        })
+
+    def _world_skin(self, device_id: str):
+        payload = self._read_json()
+        skin_id = str(payload.get("skin") or "").strip()
+        if not skin_id:
+            raise ValueError("Skin vazia.")
+        self._json(200, {
+            "ok": True,
+            "device_id": device_id,
+            "world": self.gateway.world_state.set_skin(skin_id),
+        })
 
     def _audio(self, device_id: str):
         body = self._read_body(MAX_MEDIA_BYTES)
@@ -305,12 +361,13 @@ class DeviceGateway:
                  manifest_path: Path | None = None, pairing_code: str | None = None, verbose: bool = False,
                  pairing_rate_limit: int = PAIRING_RATE_LIMIT, pairing_rate_window_seconds: float = PAIRING_RATE_WINDOW_SECONDS,
                  device_rate_limit: int = DEVICE_RATE_LIMIT, device_rate_window_seconds: float = DEVICE_RATE_WINDOW_SECONDS,
-                 voice_manager=None):
+                 voice_manager=None, world_state=None):
         self.star = star; self.host = host; self.port = int(port)
         self.runtime_dir = Path(runtime_dir or Path.cwd() / "runtime" / "oni"); self.runtime_dir.mkdir(parents=True, exist_ok=True)
         self.registry = DeviceRegistry(self.runtime_dir / "devices.json")
         self.runtime = DeviceRuntime(Path(manifest_path or Path.cwd() / "STAR_MANIFEST.json"))
         self.sensor_hub = getattr(star, "device_sensors", None)
+        self.world_state = world_state or WorldStateService()
         self.pairing_code = pairing_code or f"{secrets.randbelow(1_000_000):06d}"
         self.verbose = verbose; self.last_error = None
         self._pair_limiter = _RateLimiter(pairing_rate_limit, pairing_rate_window_seconds)
@@ -339,6 +396,12 @@ class DeviceGateway:
     def url(self) -> str: return f"http://{self.lan_host}:{self.port}"
     def allow_pair_attempt(self, client_ip: str) -> bool: return self._pair_limiter.allow(client_ip)
     def allow_device_request(self, device_id: str) -> bool: return self._device_limiter.allow(_safe_device_id(device_id))
+
+    def is_trusted_local_surface(self, device_id: str, client_ip: str) -> bool:
+        return (
+            _safe_device_id(device_id) == "star-world-pc"
+            and str(client_ip or "") in {"127.0.0.1", "::1"}
+        )
 
     def _write_local_session(self) -> None:
         payload = {
@@ -376,8 +439,9 @@ class DeviceGateway:
             try: manager.close()
             except Exception: pass
 
-    def process_text(self, text_value: str) -> str:
-        with self._star_lock: return str(self.star.process(text_value, allow_actions=False))
+    def process_text(self, text_value: str, *, allow_actions: bool = False) -> str:
+        with self._star_lock:
+            return str(self.star.process(text_value, allow_actions=bool(allow_actions)))
 
     def _get_voice_manager(self):
         with self._voice_lock:

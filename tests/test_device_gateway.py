@@ -67,6 +67,12 @@ class FakeVoiceManager:
         self.mode = mode
         return mode
 
+    def speak_async(self, text, callback=None):
+        self.last_spoken = str(text)
+        if callback:
+            callback(True, None)
+        return None
+
     def synthesize_to_wav(self, text, path):
         import wave
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -147,7 +153,20 @@ def test_gateway_pairs_routes_and_returns_adaptive_runtime(tmp_path):
             headers=headers,
         )
         assert result["response"] == "STAR:olá"
+        assert result["voice_started"] is False
         assert star.last_allow_actions is False
+
+        _, world = _request(base + "/v1/world", headers=headers)
+        assert world["scenario"] == "cosmic_crystal"
+        assert world["day_phase"] in {"dawn", "day", "sunset", "night"}
+
+        _, timezone_result = _request(
+            base + "/v1/world/timezone",
+            method="POST",
+            payload={"timezone": "America/Sao_Paulo"},
+            headers=headers,
+        )
+        assert timezone_result["world"]["timezone"] == "America/Sao_Paulo"
 
         registry = json.loads((tmp_path / "devices.json").read_text(encoding="utf-8"))
         record = registry["watch-test"]
@@ -155,6 +174,32 @@ def test_gateway_pairs_routes_and_returns_adaptive_runtime(tmp_path):
         assert "token_sha256" in record
         assert len(record["token_sha256"]) == 64
         assert "token" not in record
+    finally:
+        gateway.stop()
+
+
+def test_local_star_world_surface_keeps_local_pc_actions(tmp_path):
+    star = FakeStar()
+    gateway = DeviceGateway(
+        star,
+        host="127.0.0.1",
+        port=0,
+        runtime_dir=tmp_path,
+        manifest_path=ROOT / "STAR_MANIFEST.json",
+        pairing_code="123456",
+    ).start()
+    try:
+        base = f"http://127.0.0.1:{gateway.port}"
+        paired = _pair(base, device_id="star-world-pc")
+        headers = _auth_headers(paired["token"], device_id="star-world-pc")
+        _, result = _request(
+            base + "/v1/text",
+            method="POST",
+            payload={"text": "ação local"},
+            headers=headers,
+        )
+        assert result["response"] == "STAR:ação local"
+        assert star.last_allow_actions is True
     finally:
         gateway.stop()
 
@@ -185,6 +230,16 @@ def test_gateway_streams_core_voice_and_cleans_audio_files(tmp_path):
         assert wav[:4] == b"RIFF"
         speech_dir = tmp_path / "outbox" / "speech"
         assert not list(speech_dir.glob("*.wav"))
+
+        _, spoken = _request(
+            base + "/v1/text",
+            method="POST",
+            payload={"text": "fale comigo", "speak": True},
+            headers=headers,
+        )
+        assert spoken["response"] == "STAR:fale comigo"
+        assert spoken["voice_started"] is True
+        assert gateway._voice_manager.last_spoken == "STAR:fale comigo"
 
         _, audio = _request(
             base + "/v1/audio",

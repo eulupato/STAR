@@ -8,7 +8,8 @@ cloud são recursos utilizados pela STAR; nenhum modelo isolado é a STAR.
 
 ## Direção atual do projeto
 
-A Foundation V1.9 continua preservada como base estável do Core. PC, Mobile e Watch
+A release atual é a **STAR V2.0**. A Foundation V1.9 permanece apenas como base
+histórica preservada do Core; não é a versão atual do produto. PC, Mobile e Watch
 são superfícies da mesma STAR: compartilham identidade, raciocínio, memória,
 conhecimento e capacidades do `StarCore`. Nenhum endpoint possui um cérebro paralelo.
 
@@ -18,21 +19,52 @@ As diferenças são de apresentação e hardware:
 - **Mobile** — experiência compacta Cosmic Crystal baseada na mesma identidade visual do PC, sem Ilhas;
 - **Watch** — experiência minimalista circular Cosmic Crystal, voltada a voz e ações rápidas.
 
-A camada visual **Cosmic Crystal** usa fundo espacial escuro, violeta/lilás, orb de
-filamentos e a estrela cristalina de 8 pontas como núcleo visual compartilhado. No
-PC, o núcleo é rasterizado em framebuffer por Pillow/numpy com iluminação por pixel,
-profundidade/oclusão, z-buffer no cristal e bloom, sem abrir uma segunda janela. O
-identificador legado `plasma-orbit` permanece apenas onde é necessário para
-compatibilidade com contratos V0.4 já versionados.
+A camada visual **Cosmic Crystal** usa cosmos azul/violeta, brilho lilás/ciano e a
+estrela cristalina de 8 pontas como símbolo principal da STAR. No PC, a experiência
+padrão agora é um mundo 3D real em **Godot 4**, com menu, Hub, ilhas e STAR House.
+O renderer Tkinter/Pillow anterior continua preservado como fallback clássico. No
+Watch, o orb continua sendo a presença visual principal no uso cotidiano e a estrela
+cristalina funciona como símbolo/ícone da STAR. O identificador legado
+`plasma-orbit` permanece apenas onde é necessário para compatibilidade com contratos
+V0.4 já versionados.
 
 No PC existem três entradas oficiais e somente elas devem ser usadas para iniciar
 as superfícies do produto: `INICIAR_PC.bat`, `INICIAR_MOBILE.bat` e
 `INICIAR_WATCH.bat`.
 
-`INICIAR_PC.bat` sobe o único STAR Core e o Device Gateway. Os simuladores
-Mobile e Watch não constroem outro cérebro: conectam-se ao Core do PC pela sessão
-local do Gateway. Portanto, para testar as três superfícies juntas, inicie primeiro
-o PC e depois Mobile/Watch. Em hardware real, o mesmo contrato usa a LAN privada.
+`INICIAR_PC.bat` chama `star_world_launcher.py`, abre o STAR WORLD 3D e sobe o
+único STAR Core + Device Gateway. O cliente Godot conecta ao Core exclusivamente pelo
+loopback local. Se o Godot não estiver disponível, o launcher retorna automaticamente
+à interface clássica Tkinter/Pillow; `STAR_PC_CLASSIC=1` força esse fallback de forma
+explícita. Os simuladores Mobile e Watch não constroem outro cérebro: conectam-se ao
+Core do PC pela sessão local do Gateway. Portanto, para testar as três superfícies
+juntas, inicie primeiro o PC e depois Mobile/Watch. Em hardware real, o mesmo contrato
+usa a LAN privada.
+
+### STAR WORLD 3D no PC
+
+O Hub apresenta as ilhas como espaços 3D distintos dentro do mesmo cosmos. A
+**Casa** é a ilha disponível nesta etapa; Laboratório, Biblioteca, Estúdio de Música,
+Ateliê, Jardim, Observatório, Correio e Heróis aparecem bloqueados e não são
+declarados como funcionais.
+
+A STAR House é caminhável e contém **sala, cozinha, banheiro e quarto**. O estado
+funcional atual é deliberadamente limitado e honesto:
+
+- a TV da sala e a TV do quarto usam o mesmo sistema local da STAR TV;
+- o roupeiro do quarto abre o seletor de skins e persiste `world_skin` sem destruir
+  a preferência visual legada;
+- as miniaturas do seletor reutilizam os arquivos canônicos de `SKINS/`, sem cópias;
+- o PC do quarto, livros, quadros e objetos geek permanecem cenário/preparação futura;
+- o botão **CHAT** abre a conversa da mesma STAR/Core; não existe um cérebro separado
+  dentro do mundo 3D;
+- o céu do Hub e da Casa compartilha o mesmo estado de ambiente;
+- o ciclo dia/noite usa o fuso IANA salvo em `user_settings.json` e continua
+  disponível offline com o último valor persistido.
+
+Controles atuais: `WASD` para movimento, mouse para câmera, `Shift` para correr e
+`E` para interagir. O diagnóstico headless do mundo pode ser executado com
+`STAR_WORLD_SMOKE=1`.
 
 ## 🧠 Knowledge Foundation
 
@@ -328,7 +360,8 @@ STAR/
 │   └── star_watch_android/     # transporte Android V0.3
 ├── core/                       # identidade, Core, comandos, conversa e capacidades
 ├── database/                   # persistência
-├── gui/                        # interface PC Cosmic Crystal em Tkinter/Pillow
+├── gui/                        # interface PC clássica preservada como fallback
+├── star_world/                 # superfície oficial PC 3D em Godot
 ├── knowledge/                  # Knowledge Packs
 ├── modules/                    # ferramentas
 ├── voice/                      # STT/TTS/Seed-VC opcional
@@ -338,26 +371,31 @@ STAR/
 ├── INICIAR_PC.bat              # PC completo + Gateway LAN
 ├── INICIAR_MOBILE.bat          # simulador Mobile no PC
 ├── INICIAR_WATCH.bat           # simulador Watch no PC
-└── main.py
+├── star_world_launcher.py      # orquestra Core + Gateway + Godot + fallback
+└── main.py                     # Core e superfície clássica/fallback
 ```
 
 ## STAR Core no PC
 
-A interface desktop Cosmic Crystal continua usando a base funcional existente e pode ser iniciada por:
+A superfície oficial do PC é iniciada por:
 
 ```bat
 INICIAR_PC.bat
 ```
 
-ou:
+O launcher detecta o Godot pelo `STAR_GODOT_EXE`, pelo `PATH` ou por uma instalação
+WinGet. Se o runtime 3D não estiver disponível, ele preserva a operação abrindo a
+interface clássica. Para abrir deliberadamente apenas o fallback clássico:
 
 ```powershell
-.\.venv\Scripts\python.exe main.py
+$env:STAR_PC_CLASSIC="1"
+.\INICIAR_PC.bat
 ```
 
-O PC continua sendo a fonte central de processamento. Mobile e Watch reutilizam
-esse mesmo Core e evoluem como interfaces/endpoints especializados, sem duplicar
-identidade, memória ou raciocínio.
+`main.py` continua válido como entrypoint técnico do Core/superfície clássica, mas
+não é mais a experiência padrão do PC. O PC continua sendo a fonte central de
+processamento. Mobile e Watch reutilizam esse mesmo Core e evoluem como
+interfaces/endpoints especializados, sem duplicar identidade, memória ou raciocínio.
 
 ## STAR Device Gateway
 

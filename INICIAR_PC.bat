@@ -13,11 +13,13 @@ if not exist "%PY%" (
   exit /b 1
 )
 
-"%PY%" main.py
+"%PY%" star_world_launcher.py
 set "RC=%ERRORLEVEL%"
 if not "%RC%"=="0" (
   echo.
-  echo [ERRO] STAR PC encerrou com codigo %RC%.
+  echo [ERRO] STAR WORLD encerrou com codigo %RC%.
+  echo Para forcar temporariamente a interface classica:
+  echo   set STAR_PC_CLASSIC=1
   pause
 )
 exit /b %RC%

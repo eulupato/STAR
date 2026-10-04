@@ -91,6 +91,29 @@ Inclui:
 - memória episódica, semântica, conversa, projetos e preferências;
 - Model Router.
 
+### Decisão aprovada em 2026-10-04 — fundação STAR WORLD 3D antecipada
+
+O repositório atual permanece versionado como **STAR V2.0**, mas a decisão mais
+recente do projeto antecipou a **fundação visual/operacional do STAR WORLD 3D no PC**
+sem declarar o marco V6 concluído.
+
+Escopo antecipado já integrado à V2.0:
+- Godot 4 como superfície 3D padrão do PC, preservando o mesmo `StarCore`;
+- launcher único `INICIAR_PC.bat` → `star_world_launcher.py`, com fallback clássico;
+- Hub 3D com ilhas distintas e bloqueio explícito das ainda indisponíveis;
+- Casa 3D navegável com sala, cozinha, banheiro e quarto;
+- TV local compartilhada, chat da mesma STAR e roupeiro/seletor de skins;
+- estado global compartilhado de fuso, fase do dia, cenário e skin;
+- ciclo visual Hub/Casa coerente com o mesmo estado temporal;
+- avatar 3D funcional de fundação, mantendo identidade/skin sem criar outro cérebro;
+- smoke test headless do mundo e integração local via Device Gateway.
+
+Isso **não antecipa nem conclui** o escopo maduro de V6: rig completo, lip sync,
+animação procedural avançada, olhar/piscar/gestos maduros, Digital Twin completo,
+todas as ilhas funcionais e acabamento visual final continuam pertencendo ao marco
+V6. O objetivo desta antecipação é substituir a superfície 2D do PC sem duplicar
+arquitetura cognitiva nem impedir a evolução posterior.
+
 ### BLOCO 1 — Princípios invioláveis e modelos fundamentais
 
 O BLOCO 1 é a fundação normativa/cognitiva do V2.0. Pode existir como camada
@@ -1774,6 +1797,10 @@ Event Bus / API
 STAR WORLD 3D
 ```
 
+**Estado de transição:** a fundação do STAR WORLD 3D foi antecipada para a V2.0
+por decisão aprovada em 2026-10-04. V6 permanece o marco de maturidade/completude
+do sistema 3D, não o primeiro ponto em que qualquer superfície 3D pode existir.
+
 Inclui:
 - avatar 3D;
 - rig;
@@ -1962,4 +1989,5 @@ Cada geração segue:
 7. freeze.
 
 # Próximo marco
-**V1.9 FINAL → estabilizar a ponte Watch-first → abrir V2.0 MIND.**
+**V2.0 → estabilizar MIND + fundação STAR WORLD 3D, preservar Watch/Mobile e
+continuar a implementação incremental sem antecipar a completude de V6.**

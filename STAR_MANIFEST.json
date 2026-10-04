@@ -4,12 +4,91 @@
   "release_status": "final",
   "release_channel": "stable",
   "mode": "offline-first",
-  "entrypoint": "main.py",
+  "entrypoint": "star_world_launcher.py",
   "launcher": "INICIAR_PC.bat",
   "launchers": {
     "pc": "INICIAR_PC.bat",
     "mobile": "INICIAR_MOBILE.bat",
     "watch": "INICIAR_WATCH.bat"
+  },
+  "star_pc_app": {
+    "version": "2.0",
+    "status": "functional-3d-default",
+    "launcher": "INICIAR_PC.bat",
+    "entrypoint": "star_world_launcher.py",
+    "engine": "Godot 4",
+    "project": "star_world/project.godot",
+    "core_source": "main.py -> StarCore",
+    "shares_core": true,
+    "creates_parallel_core": false,
+    "classic_fallback": "main.py / gui",
+    "force_classic_env": "STAR_PC_CLASSIC=1",
+    "godot_optional_with_fallback": true,
+    "device_gateway": true,
+    "local_world_client": "star-world-pc",
+    "local_world_transport": "127.0.0.1 only",
+    "visual_identity": {
+      "style": "Cosmic Crystal",
+      "symbol": "8-point crystalline star",
+      "cosmic_background": true,
+      "procedural_nebula": true,
+      "procedural_starfield": true
+    },
+    "world": {
+      "hub_3d": true,
+      "available_islands": [
+        "casa"
+      ],
+      "planned_locked_islands": [
+        "laboratorio",
+        "biblioteca",
+        "estudio_musica",
+        "atelie",
+        "jardim",
+        "observatorio",
+        "correio",
+        "herois"
+      ],
+      "shared_day_night_cycle": true,
+      "timezone_source": "IANA timezone persisted in user_settings.json"
+    },
+    "house": {
+      "walkable": true,
+      "rooms": [
+        "sala",
+        "cozinha",
+        "banheiro",
+        "quarto"
+      ],
+      "functional_interactions": [
+        "sala_tv",
+        "quarto_tv",
+        "quarto_wardrobe_skin_selector",
+        "star_chat"
+      ],
+      "scenery_or_future": [
+        "quarto_pc",
+        "geek_books",
+        "geek_frames",
+        "decorative_objects"
+      ]
+    },
+    "skins": {
+      "state_key": "world_skin",
+      "legacy_skin_preserved": true,
+      "reference_directory": "SKINS",
+      "catalog": [
+        "casual",
+        "cypher_system",
+        "rock_simple",
+        "brazil",
+        "elegant_blue",
+        "rich_red"
+      ]
+    },
+    "diagnostics": {
+      "headless_smoke_env": "STAR_WORLD_SMOKE=1"
+    }
   },
   "features_active": [
     "identity",
@@ -28,6 +107,12 @@
     "executive",
     "persistent_memory",
     "visual_menu",
+    "star_world_3d_pc",
+    "godot_cosmic_crystal_renderer",
+    "star_house_3d_walkable",
+    "shared_world_state",
+    "timezone_synced_cosmic_cycle",
+    "local_skin_reference_previews",
     "chat",
     "natural_conversation_catalog",
     "natural_interaction_runtime",
