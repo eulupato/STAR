@@ -107,8 +107,10 @@ Escopo antecipado já integrado à V2.0:
 - ciclo visual Hub/Casa coerente com o mesmo estado temporal;
 - **STAR Bot** como presença física principal da STAR na Casa, baseada no concept
   aprovado, mantendo o mesmo Core/identidade e usando skins como paleta/acabamento;
-- House texturizada e densificada com materiais locais, microgeometria, paisagismo,
-  iluminação indireta e pós-processamento leve;
+- House densificada com mais de 700 mil triângulos no smoke atual, materiais PBR
+  locais (albedo/normal/roughness), microgeometria arquitetônica, props por cômodo,
+  paisagismo texturizado, iluminação indireta e pós-processamento compatível com
+  o renderer GL Compatibility;
 - HUD mínimo com hora + mira, interação contextual somente quando houver alvo,
   pulo curto e chat lateral com blur sem abandonar a cena;
 - smoke test headless cobrindo Hub, cômodos, câmera yaw/pitch, pulo, mira,

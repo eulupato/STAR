@@ -71,9 +71,14 @@ O estado funcional atual continua deliberadamente honesto:
   `E` abre o chat lateral sobre a própria cena, com blur local, sem sair do mundo 3D;
 - o HUD permanente foi reduzido para hora discreta no canto superior esquerdo e mira
   central `+`; a tarja de interação desaparece completamente quando não há alvo;
-- a House usa materiais/texturas locais para madeira, pedra/mármore, tecido, metal,
-  reboco, piso e azulejo, além de ripados, iluminação indireta, spots, plantas e
-  microgeometria arquitetônica;
+- a House usa materiais locais PBR com albedo + normal + roughness para madeira,
+  pedra/mármore, tecido, metal, reboco, piso, azulejo, grama, solo/rocha, folhagem
+  e tapetes STAR; o cenário inclui sancas, soleiras, peitoris, ripados, revestimento
+  externo, backsplash modular, louças, utensílios, frutas, metais de banheiro,
+  livros, figuras, teclado com teclas, PC com fans, mobiliário de varanda,
+  iluminação indireta, spots, paisagismo e microgeometria arquitetônica;
+- o smoke 3D atual exige densidade premium e mede mais de 700 mil triângulos apenas
+  no ambiente da STAR House, mantendo colisões simples separadas da malha visual;
 - o céu do Hub, Casa e varanda compartilha o mesmo estado de ambiente;
 - o ciclo dia/noite usa o fuso IANA salvo em `user_settings.json` e continua
   disponível offline com o último valor persistido.

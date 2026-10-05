@@ -185,11 +185,15 @@ func _build_universe() -> void:
 	environment.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	environment.ssao_enabled = true
-	environment.ssao_radius = 1.8
-	environment.ssao_intensity = 1.25
+	environment.ssao_radius = 2.15
+	environment.ssao_intensity = 1.42
+	environment.adjustment_enabled = true
+	environment.adjustment_brightness = 1.015
+	environment.adjustment_contrast = 1.055
+	environment.adjustment_saturation = 1.035
 	environment.glow_enabled = true
-	environment.glow_intensity = 0.72
-	environment.glow_bloom = 0.08
+	environment.glow_intensity = 0.68
+	environment.glow_bloom = 0.065
 
 	var sky := Sky.new()
 	sky_material = ProceduralSkyMaterial.new()
@@ -200,8 +204,11 @@ func _build_universe() -> void:
 
 	sun = DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-52, -28, 0)
-	sun.light_energy = 1.1
+	sun.light_energy = 1.08
+	sun.light_angular_distance = 0.42
 	sun.shadow_enabled = true
+	sun.shadow_blur = 1.35
+	sun.directional_shadow_max_distance = 72.0
 	add_child(sun)
 
 	_apply_day_phase("night")
@@ -1421,10 +1428,23 @@ func _run_smoke_sequence() -> void:
 		return
 
 	var environment_triangles := int(house_root.get_meta("environment_triangle_count", 0))
-	if environment_triangles < 50000:
-		push_error("STAR WORLD smoke: cenário 3D abaixo da densidade mínima (%d triângulos)" % environment_triangles)
+	if environment_triangles < 650000:
+		push_error("STAR WORLD smoke: cenário 3D abaixo da densidade premium (%d triângulos)" % environment_triangles)
 		get_tree().quit(13)
 		return
+	for pbr_resource in [
+		"res://assets/textures/materials/wood_warm_normal.png",
+		"res://assets/textures/materials/stone_marble_normal.png",
+		"res://assets/textures/materials/fabric_dark_roughness.png",
+		"res://assets/textures/materials/brushed_metal_roughness.png",
+		"res://assets/textures/materials/grass_normal.png",
+		"res://assets/textures/materials/leaf_roughness.png",
+		"res://assets/textures/materials/rug_cosmic_normal.png",
+	]:
+		if not ResourceLoader.exists(str(pbr_resource)):
+			push_error("STAR WORLD smoke: mapa PBR ausente: " + str(pbr_resource))
+			get_tree().quit(20)
+			return
 
 	var body_triangles := int(star_avatar.get_meta("body_triangle_count", 0))
 	var total_triangles := int(star_avatar.get_meta("triangle_count", 0))

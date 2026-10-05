@@ -26,18 +26,35 @@ static func material(color: Color, emission: Color = Color(0, 0, 0, 1), energy: 
 		mat.emission_energy_multiplier = energy
 	return mat
 
-static func textured_material(texture_name: String, tint: Color = Color.WHITE, metallic: float = 0.0, roughness: float = 0.55, uv_scale: float = 1.0) -> StandardMaterial3D:
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = tint
-	mat.metallic = metallic
-	mat.roughness = roughness
+static func _cached_texture(texture_name: String) -> Texture2D:
 	var texture: Texture2D = _texture_cache.get(texture_name)
 	if texture == null:
 		texture = load(TEXTURE_ROOT + texture_name) as Texture2D
 		if texture != null:
 			_texture_cache[texture_name] = texture
+	return texture
+
+static func textured_material(texture_name: String, tint: Color = Color.WHITE, metallic: float = 0.0, roughness: float = 0.55, uv_scale: float = 1.0) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = tint
+	mat.metallic = metallic
+	mat.roughness = roughness
+
+	var texture := _cached_texture(texture_name)
 	if texture != null:
 		mat.albedo_texture = texture
+
+	var stem := texture_name.get_basename()
+	var normal_texture := _cached_texture(stem + "_normal.png")
+	if normal_texture != null:
+		mat.normal_enabled = true
+		mat.normal_texture = normal_texture
+		mat.normal_scale = 0.82
+
+	var roughness_texture := _cached_texture(stem + "_roughness.png")
+	if roughness_texture != null:
+		mat.roughness_texture = roughness_texture
+
 	mat.uv1_scale = Vector3(uv_scale, uv_scale, uv_scale)
 	return mat
 
@@ -87,9 +104,9 @@ static func add_box(parent: Node, name: String, position: Vector3, size: Vector3
 	# Subdivisão moderada em toda a geometria-base. Mesmo objetos simples deixam
 	# de ser caixas de 12 triângulos e recebem malha densa o bastante para luz,
 	# materiais e evolução posterior sem explodir custo de colisão.
-	mesh.subdivide_width = 3
-	mesh.subdivide_height = 3
-	mesh.subdivide_depth = 3
+	mesh.subdivide_width = 5
+	mesh.subdivide_height = 5
+	mesh.subdivide_depth = 5
 	mesh_instance.mesh = mesh
 	mesh_instance.material_override = material(color)
 	holder.add_child(mesh_instance)
@@ -120,7 +137,7 @@ static func add_cylinder(parent: Node, name: String, position: Vector3, radius: 
 	mesh.top_radius = radius
 	mesh.bottom_radius = radius * 0.82
 	mesh.height = height
-	mesh.radial_segments = 48
+	mesh.radial_segments = 64
 	mesh_instance.mesh = mesh
 	mesh_instance.material_override = material(color)
 	holder.add_child(mesh_instance)
@@ -436,16 +453,18 @@ static func _build_island_landmark(parent: Node3D, id: String, _radius: float, _
 			add_cylinder(parent, "HeroesBeacon", Vector3(0, 2.8, 0), 0.22, 1.7, Color("#B9A0E8"))
 
 static func _add_tree(parent: Node3D, position: Vector3, scale_value: float) -> void:
-	add_cylinder(parent, "Trunk", position + Vector3(0, 0.45 * scale_value, 0), 0.12 * scale_value, 0.9 * scale_value, Color("#74513D"))
+	var trunk := add_cylinder(parent, "Trunk", position + Vector3(0, 0.45 * scale_value, 0), 0.12 * scale_value, 0.9 * scale_value, Color("#74513D"))
+	set_holder_material(trunk, textured_material("wood_warm.png", Color("#74513D"), 0.0, 0.86, 5.0))
 	var crown := MeshInstance3D.new()
+	crown.name = "TreeCrown"
 	var sphere := SphereMesh.new()
 	sphere.radius = 0.55 * scale_value
 	sphere.height = 1.0 * scale_value
-	sphere.radial_segments = 36
-	sphere.rings = 18
+	sphere.radial_segments = 48
+	sphere.rings = 24
 	crown.mesh = sphere
 	crown.position = position + Vector3(0, 1.25 * scale_value, 0)
-	crown.material_override = material(Color("#3D704B"))
+	crown.material_override = textured_material("leaf.png", Color("#477D53"), 0.0, 0.78, 4.0)
 	parent.add_child(crown)
 
 static func _add_room_light(parent: Node3D, name: String, position: Vector3, color: Color, energy: float, light_range: float) -> OmniLight3D:
@@ -846,7 +865,13 @@ static func _apply_house_materials(node: Node) -> void:
 			or "star" in n
 		)
 		if not preserve:
-			if "wall" in n or "ceiling" in n or "header" in n:
+			if "housegarden" in n:
+				_set_node_material(child, textured_material("grass.png", Color("#6E9669"), 0.0, 0.88, 8.0))
+			elif "houseisland" in n:
+				_set_node_material(child, textured_material("rock_ground.png", Color("#81796C"), 0.0, 0.84, 5.0))
+			elif "livingrug" in n or "bedroomrug" in n:
+				_set_node_material(child, textured_material("rug_cosmic.png", Color("#6E7190"), 0.0, 0.94, 3.0))
+			elif "wall" in n or "ceiling" in n or "header" in n:
 				_set_node_material(child, textured_material("plaster.png", Color("#F0EEEB"), 0.0, 0.78, 2.4))
 			elif "bathfloor" in n or "showertray" in n:
 				_set_node_material(child, textured_material("tile_light.png", Color("#E8E8E5"), 0.0, 0.42, 2.2))
@@ -902,6 +927,7 @@ static func _add_recessed_light(parent: Node3D, name: String, position: Vector3,
 static func _add_potted_plant(parent: Node3D, name: String, position: Vector3, scale_value: float = 1.0) -> void:
 	var pot := add_cylinder(parent, name + "_Pot", position + Vector3(0, 0.22 * scale_value, 0), 0.22 * scale_value, 0.42 * scale_value, Color("#C6B9A7"), false)
 	set_holder_material(pot, textured_material("stone_marble.png", Color("#D8D0C3"), 0.0, 0.62, 2.0))
+	var leaf_mat := textured_material("leaf.png", Color("#4E855C"), 0.0, 0.76, 5.0)
 	for i in range(10):
 		var angle := TAU * float(i) / 10.0
 		var leaf := _add_ellipsoid(
@@ -911,6 +937,7 @@ static func _add_potted_plant(parent: Node3D, name: String, position: Vector3, s
 			Vector3(0.075, 0.28, 0.035) * scale_value,
 			Color("#4A7D57")
 		)
+		leaf.material_override = leaf_mat
 		leaf.rotation.y = -angle
 		leaf.rotation.z = sin(angle) * 0.28
 
@@ -985,6 +1012,7 @@ static func _add_house_microdetail(house: Node3D) -> void:
 		var glow := add_box(house, "FacadeSconceGlow", Vector3(x, 1.55, 6.30), Vector3(0.09, 0.24, 0.03), Color("#FFD7A7"), false)
 		set_holder_material(glow, emissive_material(Color("#FFD7A7"), Color("#FFD0A0"), 2.3))
 
+	var shrub_leaf_mat := textured_material("leaf.png", Color("#456F4E"), 0.0, 0.80, 6.0)
 	for i in range(18):
 		var angle := TAU * float(i) / 18.0
 		var radius := 10.8 + float(i % 3) * 0.55
@@ -997,7 +1025,292 @@ static func _add_house_microdetail(house: Node3D) -> void:
 				Vector3(0.30, 0.34, 0.30),
 				Color("#3F6C49").lightened(float(leaf_i) * 0.04)
 			)
+			leaf.material_override = shrub_leaf_mat
 			leaf.rotation.y = angle
+
+static func _add_house_ultradetail(house: Node3D) -> void:
+	var wood_mat := textured_material("wood_warm.png", Color("#8A624A"), 0.0, 0.46, 3.2)
+	var pale_wood_mat := textured_material("wood_warm.png", Color("#C39A78"), 0.0, 0.52, 3.0)
+	var stone_mat := textured_material("stone_marble.png", Color("#E6DED2"), 0.02, 0.30, 3.0)
+	var metal_mat := textured_material("brushed_metal.png", Color("#C5CBD2"), 0.76, 0.20, 3.2)
+	var dark_metal := textured_material("brushed_metal.png", Color("#555B66"), 0.68, 0.24, 3.0)
+	var tech_mat := textured_material("tech_panel.png", Color("#444A58"), 0.30, 0.30, 4.0)
+	var fabric_mat := textured_material("fabric_dark.png", Color("#444754"), 0.0, 0.92, 5.0)
+	var plaster_mat := textured_material("plaster.png", Color("#EEECEA"), 0.0, 0.82, 3.0)
+	var tile_mat := textured_material("tile_light.png", Color("#ECEBE8"), 0.0, 0.36, 3.0)
+	var cyan_glow := emissive_material(Color("#8DE8FF"), Color("#72D9FF"), 2.1)
+	var warm_glow := emissive_material(Color("#FFD6A1"), Color("#FFC98C"), 2.0)
+
+	# Arquitetura fina: sancas, soleiras, peitoris e molduras.
+	for data in [
+		[Vector3(-4.85, 2.78, 5.72), Vector3(6.15, 0.10, 0.12)],
+		[Vector3(-4.85, 2.78, -5.72), Vector3(6.15, 0.10, 0.12)],
+		[Vector3(4.75, 2.78, -5.72), Vector3(6.35, 0.10, 0.12)],
+		[Vector3(7.72, 2.78, -1.15), Vector3(0.12, 0.10, 8.80)],
+		[Vector3(-7.72, 2.78, 1.55), Vector3(0.12, 0.10, 8.10)],
+		[Vector3(-4.80, 5.82, -5.72), Vector3(6.20, 0.10, 0.12)],
+		[Vector3(4.55, 5.82, -5.72), Vector3(6.55, 0.10, 0.12)],
+		[Vector3(-7.72, 5.82, -0.20), Vector3(0.12, 0.10, 10.70)],
+		[Vector3(7.72, 5.82, -0.20), Vector3(0.12, 0.10, 10.70)],
+	]:
+		var crown := add_box(house, "CrownMolding", data[0], data[1], Color("#E7E3DE"), false)
+		set_holder_material(crown, plaster_mat)
+
+	for data in [
+		[Vector3(2.70, 0.035, 5.92), Vector3(1.45, 0.045, 0.22)],
+		[Vector3(-5.25, 0.035, -1.90), Vector3(1.58, 0.045, 0.22)],
+		[Vector3(2.30, 3.035, 5.95), Vector3(3.72, 0.045, 0.22)],
+	]:
+		var threshold := add_box(house, "Threshold", data[0], data[1], Color("#BDA98F"), false)
+		set_holder_material(threshold, stone_mat)
+
+	for data in [
+		[Vector3(-4.90, 0.68, 5.92), Vector3(3.95, 0.11, 0.30)],
+		[Vector3(7.91, 0.77, -1.45), Vector3(0.30, 0.11, 5.38)],
+	]:
+		var sill := add_box(house, "WindowSill", data[0], data[1], Color("#D5CEC4"), false)
+		set_holder_material(sill, stone_mat)
+
+	# Interruptores e tomadas discretos nos pontos úteis da casa.
+	for data in [
+		[Vector3(2.02, 1.25, 5.91), Vector3(0.13, 0.20, 0.035)],
+		[Vector3(-2.88, 1.18, -1.78), Vector3(0.13, 0.20, 0.035)],
+		[Vector3(6.95, 1.12, -5.85), Vector3(0.13, 0.20, 0.035)],
+		[Vector3(6.90, 4.22, 5.86), Vector3(0.13, 0.20, 0.035)],
+		[Vector3(-2.25, 0.35, 4.95), Vector3(0.16, 0.10, 0.035)],
+		[Vector3(5.55, 3.34, -5.83), Vector3(0.16, 0.10, 0.035)],
+	]:
+		var plate := add_box(house, "ElectricalPlate", data[0], data[1], Color("#E4E1DD"), false)
+		set_holder_material(plate, plaster_mat)
+
+	# Sala: speakers, mesa lateral, luminária, livros, controles e quadros em camadas.
+	for z_value in [0.15, 2.72]:
+		var speaker := add_box(house, "LivingSpeaker", Vector3(-7.05, 1.18, float(z_value)), Vector3(0.42, 1.55, 0.46), Color("#20232B"), false)
+		set_holder_material(speaker, tech_mat)
+		for driver_y in [0.82, 1.22, 1.62]:
+			var driver := add_cylinder(house, "SpeakerDriver", Vector3(-6.81, float(driver_y), float(z_value)), 0.115, 0.035, Color("#7D8795"), false)
+			driver.rotation.z = PI * 0.5
+			set_holder_material(driver, dark_metal)
+
+	var side_table := add_cylinder(house, "LivingSideTable", Vector3(-2.05, 0.36, 4.12), 0.42, 0.08, Color("#725443"), false)
+	set_holder_material(side_table, wood_mat)
+	add_cylinder(house, "LivingSideTableStem", Vector3(-2.05, 0.18, 4.12), 0.055, 0.34, Color("#5D6068"), false)
+	var lamp_stem := add_cylinder(house, "LivingLampStem", Vector3(-2.05, 0.93, 4.12), 0.035, 0.92, Color("#747983"), false)
+	set_holder_material(lamp_stem, metal_mat)
+	var lamp_shade := _add_ellipsoid(house, "LivingLampShade", Vector3(-2.05, 1.42, 4.12), Vector3(0.28, 0.20, 0.28), Color("#D7CFCA"), Color("#FFD8AD"), 0.55)
+	lamp_shade.material_override = textured_material("fabric_dark.png", Color("#BDB5B3"), 0.0, 0.86, 4.0)
+
+	for shelf_row in range(2):
+		for book_i in range(12):
+			var bx: float = -7.18
+			var by: float = 2.28 + float(shelf_row) * 0.34
+			var bz: float = -0.33 + float(book_i) * 0.27
+			var book_color: Color = [Color("#744A58"), Color("#425D78"), Color("#92734E"), Color("#4B6F62"), Color("#665383")][book_i % 5]
+			var book := add_box(house, "LivingBook_%02d_%02d" % [shelf_row, book_i], Vector3(bx, by, bz), Vector3(0.13, 0.28 + float(book_i % 3) * 0.025, 0.20), book_color, false)
+			set_holder_material(book, textured_material("fabric_dark.png", book_color, 0.0, 0.80, 6.0))
+
+	for controller_i in range(2):
+		var cx: float = -7.02
+		var cz: float = 0.95 + float(controller_i) * 0.52
+		var controller := _add_ellipsoid(house, "GameController_%d" % controller_i, Vector3(cx, 0.90, cz), Vector3(0.15, 0.055, 0.11), Color("#222630"))
+		controller.material_override = tech_mat
+		for stick_offset in [-0.045, 0.045]:
+			var stick := add_cylinder(house, "ControllerStick", Vector3(cx + 0.02, 0.955, cz + float(stick_offset)), 0.022, 0.025, Color("#8A94A2"), false)
+			set_holder_material(stick, dark_metal)
+
+	for frame_i in range(5):
+		var fz: float = -0.10 + float(frame_i) * 0.72
+		var outer := add_box(house, "LivingFrameOuter_%d" % frame_i, Vector3(-7.69, 2.23, fz), Vector3(0.055, 0.58, 0.48), Color("#171A21"), false)
+		set_holder_material(outer, tech_mat)
+		var inner_color: Color = [Color("#6B4B8E"), Color("#2F6681"), Color("#894B5A"), Color("#4A6C5A"), Color("#75633A")][frame_i]
+		var inner := add_box(house, "LivingFrameArt_%d" % frame_i, Vector3(-7.655, 2.23, fz), Vector3(0.018, 0.47, 0.37), inner_color, false)
+		set_holder_material(inner, emissive_material(inner_color.darkened(0.35), inner_color, 0.24))
+
+	# Cozinha: backsplash modular, gavetas, louças, facas, tábuas e frutas.
+	for tile_y in range(4):
+		for tile_x in range(14):
+			var tx: float = 1.85 + float(tile_x) * 0.39
+			var ty: float = 1.48 + float(tile_y) * 0.25
+			var tile := add_box(house, "Backsplash_%02d_%02d" % [tile_y, tile_x], Vector3(tx, ty, -5.78), Vector3(0.355, 0.215, 0.025), Color("#E8E4DF"), false)
+			set_holder_material(tile, tile_mat)
+
+	for drawer_i in range(5):
+		var dx: float = 2.10 + float(drawer_i) * 1.15
+		for row_i in range(2):
+			var dy: float = 0.39 + float(row_i) * 0.45
+			var drawer := add_box(house, "KitchenDrawer_%02d_%d" % [drawer_i, row_i], Vector3(dx, dy, -5.08), Vector3(1.02, 0.38, 0.055), Color("#9C694A"), false)
+			set_holder_material(drawer, wood_mat)
+			var handle := add_box(house, "KitchenDrawerHandle", Vector3(dx, dy + 0.08, -5.045), Vector3(0.36, 0.035, 0.035), Color("#C8CFD5"), false)
+			set_holder_material(handle, metal_mat)
+
+	for plate_i in range(7):
+		var plate := add_cylinder(house, "PlateStack_%02d" % plate_i, Vector3(6.75, 1.37 + float(plate_i) * 0.028, -4.98), 0.22 - float(plate_i) * 0.006, 0.022, Color("#ECEBE9"), false)
+		set_holder_material(plate, tile_mat)
+
+	var knife_block := add_box(house, "KnifeBlock", Vector3(2.70, 1.47, -5.12), Vector3(0.42, 0.42, 0.32), Color("#805B42"), false)
+	set_holder_material(knife_block, wood_mat)
+	for knife_i in range(5):
+		var kx: float = 2.55 + float(knife_i) * 0.075
+		var blade := add_box(house, "KnifeBlade_%d" % knife_i, Vector3(kx, 1.78 + float(knife_i % 2) * 0.04, -5.12), Vector3(0.022, 0.36, 0.11), Color("#CBD2D8"), false)
+		blade.rotation.z = -0.10 + float(knife_i) * 0.035
+		set_holder_material(blade, metal_mat)
+
+	for board_i in range(2):
+		var board := add_box(house, "CuttingBoard_%d" % board_i, Vector3(5.50 + float(board_i) * 0.40, 1.39, -5.12), Vector3(0.32, 0.55, 0.055), Color("#A87958"), false)
+		board.rotation.x = 0.12
+		set_holder_material(board, pale_wood_mat)
+
+	var fruit_bowl := add_cylinder(house, "FruitBowl", Vector3(4.35, 1.40, -2.55), 0.42, 0.13, Color("#D1CBC2"), false)
+	set_holder_material(fruit_bowl, stone_mat)
+	for fruit_i in range(12):
+		var fa: float = TAU * float(fruit_i) / 12.0
+		var fr: float = 0.14 + float(fruit_i % 3) * 0.055
+		var fruit_color: Color = [Color("#D95A3F"), Color("#E6AD36"), Color("#79A84C"), Color("#B34A55")][fruit_i % 4]
+		_add_ellipsoid(house, "Fruit_%02d" % fruit_i, Vector3(4.35 + cos(fa) * fr, 1.54 + float(fruit_i % 2) * 0.07, -2.55 + sin(fa) * fr), Vector3(0.095, 0.105, 0.095), fruit_color)
+
+	# Banheiro: paginação de azulejos, metais, nicho, frascos e acessórios.
+	for tile_y in range(6):
+		for tile_z in range(7):
+			var bz: float = -2.45 - float(tile_z) * 0.43
+			var by: float = 0.35 + float(tile_y) * 0.43
+			var bath_tile := add_box(house, "BathWallTile_%02d_%02d" % [tile_y, tile_z], Vector3(-7.96, by, bz), Vector3(0.028, 0.395, 0.395), Color("#E5E7E7"), false)
+			set_holder_material(bath_tile, tile_mat)
+
+	var shower_head := add_cylinder(house, "ShowerHead", Vector3(-7.36, 2.02, -3.12), 0.14, 0.055, Color("#BCC4CB"), false)
+	shower_head.rotation.z = PI * 0.5
+	set_holder_material(shower_head, metal_mat)
+	var shower_arm := add_cylinder(house, "ShowerArm", Vector3(-7.48, 2.02, -3.12), 0.025, 0.28, Color("#BCC4CB"), false)
+	shower_arm.rotation.z = PI * 0.5
+	set_holder_material(shower_arm, metal_mat)
+	for control_y in [1.18, 1.40]:
+		var control := add_cylinder(house, "ShowerControl", Vector3(-7.50, float(control_y), -3.12), 0.085, 0.035, Color("#BFC7CE"), false)
+		control.rotation.z = PI * 0.5
+		set_holder_material(control, metal_mat)
+
+	var niche := add_box(house, "ShowerNiche", Vector3(-7.90, 1.28, -3.88), Vector3(0.06, 0.58, 0.75), Color("#C9CBCD"), false)
+	set_holder_material(niche, stone_mat)
+	for bottle_i in range(5):
+		var bottle_color: Color = [Color("#97B6A6"), Color("#C6A97D"), Color("#A99BC2"), Color("#7FA6BD"), Color("#C58D91")][bottle_i]
+		var bottle := add_cylinder(house, "BathBottle_%d" % bottle_i, Vector3(-7.82, 1.08, -4.12 + float(bottle_i) * 0.13), 0.035, 0.22 + float(bottle_i % 2) * 0.06, bottle_color, false)
+		set_holder_material(bottle, material(bottle_color, Color.BLACK, 0.0, 0.05, 0.34))
+
+	for drawer_i in range(3):
+		var vanity_drawer := add_box(house, "VanityDrawer_%d" % drawer_i, Vector3(-5.70, 0.42 + float(drawer_i) * 0.26, -4.97), Vector3(1.96, 0.20, 0.055), Color("#80604D"), false)
+		set_holder_material(vanity_drawer, wood_mat)
+		var vanity_handle := add_box(house, "VanityHandle_%d" % drawer_i, Vector3(-5.70, 0.42 + float(drawer_i) * 0.26, -4.93), Vector3(0.48, 0.028, 0.028), Color("#C5CCD2"), false)
+		set_holder_material(vanity_handle, metal_mat)
+
+	# Quarto: teclado detalhado, mouse, PC com fans, speakers, livros e figuras.
+	var keyboard_base := add_box(house, "DeskKeyboard", Vector3(4.15, 3.72, -4.62), Vector3(1.15, 0.055, 0.42), Color("#20232A"), false)
+	set_holder_material(keyboard_base, tech_mat)
+	for key_row in range(4):
+		for key_col in range(12):
+			var key_x: float = 3.68 + float(key_col) * 0.085
+			var key_z: float = -4.76 + float(key_row) * 0.085
+			var keycap := add_box(house, "Key_%02d_%02d" % [key_row, key_col], Vector3(key_x, 3.765, key_z), Vector3(0.065, 0.022, 0.065), Color("#343844"), false)
+			set_holder_material(keycap, tech_mat)
+			if (key_col + key_row) % 7 == 0:
+				var key_glow := add_box(house, "KeyGlow", Vector3(key_x, 3.779, key_z), Vector3(0.040, 0.006, 0.040), Color("#72D9FF"), false)
+				set_holder_material(key_glow, cyan_glow)
+
+	var mouse := _add_ellipsoid(house, "DeskMouse", Vector3(4.93, 3.77, -4.57), Vector3(0.09, 0.045, 0.13), Color("#252832"))
+	mouse.material_override = tech_mat
+	var mouse_glow := add_box(house, "MouseGlow", Vector3(4.93, 3.812, -4.57), Vector3(0.015, 0.008, 0.14), Color("#72D9FF"), false)
+	set_holder_material(mouse_glow, cyan_glow)
+
+	for fan_i in range(3):
+		var fy: float = 3.78 + float(fan_i) * 0.38
+		var fan_ring := add_cylinder(house, "PCFanRing_%d" % fan_i, Vector3(6.53, fy, -4.82), 0.145, 0.035, Color("#657080"), false)
+		fan_ring.rotation.z = PI * 0.5
+		set_holder_material(fan_ring, dark_metal)
+		var fan_glow := add_cylinder(house, "PCFanGlow_%d" % fan_i, Vector3(6.51, fy, -4.82), 0.105, 0.018, Color("#8A65E7"), false)
+		fan_glow.rotation.z = PI * 0.5
+		set_holder_material(fan_glow, emissive_material(Color("#7A5CD1"), Color("#9B79F3"), 1.5))
+
+	for speaker_side in [-1.0, 1.0]:
+		var sx: float = 4.25 + float(speaker_side) * 1.32
+		var desk_speaker := add_box(house, "DeskSpeaker", Vector3(sx, 4.02, -5.08), Vector3(0.30, 0.58, 0.28), Color("#1C1F26"), false)
+		set_holder_material(desk_speaker, tech_mat)
+		for sy in [3.92, 4.14]:
+			var cone := add_cylinder(house, "DeskSpeakerCone", Vector3(sx, float(sy), -4.92), 0.075, 0.025, Color("#697485"), false)
+			cone.rotation.x = PI * 0.5
+			set_holder_material(cone, dark_metal)
+
+	for book_i in range(24):
+		var row: int = int(book_i / 12)
+		var bx: float = -1.46 + float(book_i % 12) * 0.245
+		var by: float = 4.28 + float(row) * 0.56
+		var book_color: Color = [Color("#724052"), Color("#3E6482"), Color("#887244"), Color("#536B58"), Color("#5D4D7E"), Color("#875B3E")][book_i % 6]
+		var book := add_box(house, "BedroomBook_%02d" % book_i, Vector3(bx, by, -5.57), Vector3(0.18, 0.30 + float(book_i % 3) * 0.04, 0.24), book_color, false)
+		set_holder_material(book, textured_material("fabric_dark.png", book_color, 0.0, 0.78, 6.0))
+
+	for figure_i in range(6):
+		var fx: float = -1.25 + float(figure_i) * 0.50
+		var fy: float = 5.18
+		var figure_color: Color = [Color("#9A4D55"), Color("#486C92"), Color("#6C4D8F"), Color("#4B765E"), Color("#92733F"), Color("#626773")][figure_i]
+		var head := _add_ellipsoid(house, "GeekFigureHead_%d" % figure_i, Vector3(fx, fy, -5.55), Vector3(0.085, 0.085, 0.075), figure_color)
+		head.material_override = material(figure_color, Color.BLACK, 0.0, 0.02, 0.48)
+		var figure_body := add_cylinder(house, "GeekFigureBody_%d" % figure_i, Vector3(fx, fy - 0.15, -5.55), 0.055, 0.20, figure_color.darkened(0.12), false)
+		set_holder_material(figure_body, material(figure_color.darkened(0.12), Color.BLACK, 0.0, 0.03, 0.46))
+
+	for door_i in range(2):
+		var z: float = 0.38 + float(door_i) * 1.42
+		for inset_i in range(3):
+			var iy: float = 3.70 + float(inset_i) * 0.78
+			var inset := add_box(house, "WardrobeInset_%d_%d" % [door_i, inset_i], Vector3(7.015, iy, z), Vector3(0.018, 0.58, 1.05), Color("#D8D7DB"), false)
+			set_holder_material(inset, plaster_mat)
+	var wardrobe_led := add_box(house, "WardrobeLED", Vector3(7.00, 5.75, 1.10), Vector3(0.025, 0.025, 2.78), Color("#B8EFFF"), false)
+	set_holder_material(wardrobe_led, cyan_glow)
+
+	# Varanda: mobiliário real, mesa e pergolado.
+	for chair_i in range(2):
+		var cx: float = 1.30 + float(chair_i) * 2.00
+		var seat := add_box(house, "BalconyChairSeat_%d" % chair_i, Vector3(cx, 3.34, 7.25), Vector3(0.85, 0.14, 0.90), Color("#4D5059"), false)
+		set_holder_material(seat, fabric_mat)
+		var back := add_box(house, "BalconyChairBack_%d" % chair_i, Vector3(cx, 3.78, 7.62), Vector3(0.85, 0.85, 0.14), Color("#4D5059"), false)
+		back.rotation.x = -0.18
+		set_holder_material(back, fabric_mat)
+		for leg_x in [-0.32, 0.32]:
+			for leg_z in [-0.30, 0.30]:
+				var leg := add_box(house, "BalconyChairLeg", Vector3(cx + float(leg_x), 3.17, 7.25 + float(leg_z)), Vector3(0.055, 0.34, 0.055), Color("#777D87"), false)
+				set_holder_material(leg, metal_mat)
+
+	var balcony_table := add_cylinder(house, "BalconyTable", Vector3(2.30, 3.44, 6.75), 0.48, 0.08, Color("#D9D2C9"), false)
+	set_holder_material(balcony_table, stone_mat)
+	add_cylinder(house, "BalconyTableStem", Vector3(2.30, 3.20, 6.75), 0.055, 0.44, Color("#8D949E"), false)
+
+	for slat_i in range(9):
+		var px: float = 0.10 + float(slat_i) * 0.55
+		var pergola := add_box(house, "BalconyPergola_%02d" % slat_i, Vector3(px, 5.95, 7.20), Vector3(0.10, 0.12, 2.10), Color("#7A5842"), false)
+		set_holder_material(pergola, wood_mat)
+
+	# Fachada: revestimento em placas de pedra e luzes de jardim.
+	for row_i in range(8):
+		for col_i in range(4):
+			var px: float = -7.88 + float(col_i) * 0.31
+			var py: float = 0.25 + float(row_i) * 0.34
+			var offset_z: float = 6.245 + (0.012 if (row_i + col_i) % 2 == 0 else 0.0)
+			var stone_panel := add_box(house, "FacadeStone_%02d_%02d" % [row_i, col_i], Vector3(px, py, offset_z), Vector3(0.28, 0.30, 0.055), Color("#B8B0A5"), false)
+			set_holder_material(stone_panel, textured_material("stone_marble.png", Color("#B9B0A5").lightened(float((row_i + col_i) % 3) * 0.025), 0.0, 0.58, 4.0))
+
+	for light_i in range(12):
+		var angle: float = TAU * float(light_i) / 12.0
+		var radius: float = 9.4 + float(light_i % 2) * 0.85
+		var gx: float = cos(angle) * radius
+		var gz: float = sin(angle) * radius + 1.4
+		var garden_post := add_cylinder(house, "GardenLightPost_%02d" % light_i, Vector3(gx, 0.28, gz), 0.045, 0.54, Color("#4A4E57"), false)
+		set_holder_material(garden_post, dark_metal)
+		var garden_glow := _add_ellipsoid(house, "GardenLightGlow_%02d" % light_i, Vector3(gx, 0.58, gz), Vector3(0.09, 0.11, 0.09), Color("#FFD6A1"), Color("#FFC98C"), 2.0)
+		garden_glow.material_override = warm_glow
+
+	# Filetes emissivos discretos reforçam a identidade STAR sem transformar a casa em neon.
+	for data in [
+		[Vector3(-4.45, 0.055, 5.68), Vector3(5.20, 0.012, 0.018), Color("#7FD8FF")],
+		[Vector3(4.55, 0.055, -5.67), Vector3(5.60, 0.012, 0.018), Color("#E5A7FF")],
+		[Vector3(4.55, 3.055, -5.67), Vector3(5.60, 0.012, 0.018), Color("#826DDF")],
+	]:
+		var accent := add_box(house, "STARAccentLine", data[0], data[1], data[2], false)
+		set_holder_material(accent, emissive_material(data[2], data[2], 1.25))
 
 static func scene_triangle_count(node: Node) -> int:
 	var total := 0
@@ -1029,6 +1342,7 @@ static func build_house(parent: Node3D) -> Dictionary:
 	# Direção de arte do cenário: materiais texturizados e microgeometria.
 	_apply_house_materials(house)
 	_add_house_microdetail(house)
+	_add_house_ultradetail(house)
 	var environment_triangles := scene_triangle_count(house)
 	house.set_meta("environment_triangle_count", environment_triangles)
 
