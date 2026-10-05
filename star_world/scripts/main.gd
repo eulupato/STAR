@@ -38,7 +38,11 @@ var modal_panel: Control
 var core_status_label: Label
 var hud_title_label: Label
 var time_label: Label
-var interaction_label: Label
+var crosshair_label: Label
+var interaction_button: Button
+var status_label: Label
+var hud_back_button: Button
+var hub_chat_button: Button
 var chat_messages: VBoxContainer
 var chat_scroll: ScrollContainer
 var chat_input: LineEdit
@@ -144,6 +148,7 @@ func _ensure_input_actions() -> void:
 	_add_key_action("move_left", KEY_A)
 	_add_key_action("move_right", KEY_D)
 	_add_key_action("sprint", KEY_SHIFT)
+	_add_key_action("jump", KEY_SPACE)
 	_add_key_action("interact", KEY_E)
 
 func _add_key_action(action: StringName, keycode: Key) -> void:
@@ -179,6 +184,12 @@ func _build_universe() -> void:
 	environment.ambient_light_energy = 0.72
 	environment.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	environment.ssao_enabled = true
+	environment.ssao_radius = 1.8
+	environment.ssao_intensity = 1.25
+	environment.glow_enabled = true
+	environment.glow_intensity = 0.72
+	environment.glow_bloom = 0.08
 
 	var sky := Sky.new()
 	sky_material = ProceduralSkyMaterial.new()
@@ -282,63 +293,81 @@ func _build_menu_ui() -> void:
 func _build_hud_ui() -> void:
 	hud_ui = Control.new()
 	_full_rect(hud_ui)
+	hud_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui_root.add_child(hud_ui)
 
 	hub_ui_blockers.clear()
 
-	var info := PanelContainer.new()
-	_anchor_rect(info, 0.02, 0.025, 0.34, 0.16)
-	info.add_theme_stylebox_override("panel", StarTheme.glass_style())
-	hud_ui.add_child(info)
-	hub_ui_blockers.append(info)
-
-	var info_box := VBoxContainer.new()
-	info_box.add_theme_constant_override("separation", 3)
-	info.add_child(info_box)
-
-	hud_title_label = Label.new()
-	hud_title_label.text = "STAR WORLD"
-	hud_title_label.add_theme_color_override("font_color", StarTheme.TEXT)
-	hud_title_label.add_theme_font_size_override("font_size", 21)
-	info_box.add_child(hud_title_label)
-
+	# Hora mínima no canto superior esquerdo. Sem painel gigante.
 	time_label = Label.new()
-	time_label.text = "Sincronizando ambiente…"
-	time_label.add_theme_color_override("font_color", StarTheme.LILAC)
-	time_label.add_theme_font_size_override("font_size", 13)
-	info_box.add_child(time_label)
+	_anchor_rect(time_label, 0.018, 0.018, 0.28, 0.062)
+	time_label.text = "--:--"
+	time_label.add_theme_color_override("font_color", Color(0.93, 0.95, 1.0, 0.94))
+	time_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.75))
+	time_label.add_theme_constant_override("shadow_offset_x", 1)
+	time_label.add_theme_constant_override("shadow_offset_y", 2)
+	time_label.add_theme_font_size_override("font_size", 17)
+	hud_ui.add_child(time_label)
 
-	var hint := Label.new()
-	hint.text = "WASD • mouse • E interagir"
-	hint.add_theme_color_override("font_color", StarTheme.MUTED)
-	hint.add_theme_font_size_override("font_size", 11)
-	info_box.add_child(hint)
+	# Mantido apenas como estado interno para não quebrar fluxos legados.
+	hud_title_label = Label.new()
+	hud_title_label.visible = false
+	hud_ui.add_child(hud_title_label)
 
-	var back := _make_button("←", StarTheme.VIOLET)
-	_anchor_rect(back, 0.025, 0.88, 0.09, 0.965)
-	back.pressed.connect(_navigate_back)
-	hud_ui.add_child(back)
-	hub_ui_blockers.append(back)
+	# Mira central discreta.
+	crosshair_label = Label.new()
+	_anchor_rect(crosshair_label, 0.487, 0.474, 0.513, 0.526)
+	crosshair_label.text = "+"
+	crosshair_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	crosshair_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	crosshair_label.add_theme_color_override("font_color", Color(0.92, 0.96, 1.0, 0.92))
+	crosshair_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	crosshair_label.add_theme_constant_override("shadow_offset_x", 1)
+	crosshair_label.add_theme_constant_override("shadow_offset_y", 1)
+	crosshair_label.add_theme_font_size_override("font_size", 23)
+	crosshair_label.visible = false
+	crosshair_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_ui.add_child(crosshair_label)
 
-	var chat := _make_button("CHAT  ✦", StarTheme.CYAN)
-	_anchor_rect(chat, 0.86, 0.88, 0.975, 0.965)
-	chat.pressed.connect(_open_chat)
-	hud_ui.add_child(chat)
-	hub_ui_blockers.append(chat)
+	# Mensagens de estado transitórias sem tarja.
+	status_label = Label.new()
+	_anchor_rect(status_label, 0.30, 0.035, 0.70, 0.075)
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status_label.add_theme_color_override("font_color", Color(0.90, 0.92, 1.0, 0.92))
+	status_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	status_label.add_theme_constant_override("shadow_offset_x", 1)
+	status_label.add_theme_constant_override("shadow_offset_y", 2)
+	status_label.add_theme_font_size_override("font_size", 13)
+	status_label.visible = false
+	status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_ui.add_child(status_label)
 
-	interaction_label = Label.new()
-	_anchor_rect(interaction_label, 0.32, 0.885, 0.68, 0.955)
-	interaction_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	interaction_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	interaction_label.add_theme_stylebox_override("normal", StarTheme.glass_style(Color(0.04,0.025,0.08,0.70), Color(0.38,0.25,0.58,0.75), 12, 1))
-	interaction_label.add_theme_color_override("font_color", StarTheme.TEXT)
-	interaction_label.add_theme_font_size_override("font_size", 15)
-	interaction_label.text = ""
-	hud_ui.add_child(interaction_label)
-	hub_ui_blockers.append(interaction_label)
+	# Botão de interação aparece somente quando há alvo real.
+	interaction_button = _make_button("E  ·  INTERAGIR", StarTheme.CYAN)
+	_anchor_rect(interaction_button, 0.395, 0.865, 0.605, 0.925)
+	interaction_button.add_theme_font_size_override("font_size", 14)
+	interaction_button.visible = false
+	interaction_button.pressed.connect(_interact_house)
+	hud_ui.add_child(interaction_button)
+	hub_ui_blockers.append(interaction_button)
+
+	# Navegação mínima: apenas seta discreta.
+	hud_back_button = _make_button("←", StarTheme.VIOLET)
+	_anchor_rect(hud_back_button, 0.018, 0.915, 0.055, 0.965)
+	hud_back_button.add_theme_font_size_override("font_size", 18)
+	hud_back_button.pressed.connect(_navigate_back)
+	hud_ui.add_child(hud_back_button)
+	hub_ui_blockers.append(hud_back_button)
+
+	# Chat direto no Hub preservado como ícone mínimo. Na Casa, fale com a STAR Bot.
+	hub_chat_button = _make_button("✦", StarTheme.CYAN)
+	_anchor_rect(hub_chat_button, 0.945, 0.915, 0.982, 0.965)
+	hub_chat_button.add_theme_font_size_override("font_size", 17)
+	hub_chat_button.pressed.connect(_open_chat)
+	hud_ui.add_child(hub_chat_button)
+	hub_ui_blockers.append(hub_chat_button)
 
 	hud_ui.visible = false
-
 func _build_settings_ui() -> void:
 	settings_panel = Control.new()
 	_full_rect(settings_panel)
@@ -440,11 +469,36 @@ func _build_chat_ui() -> void:
 	chat_panel = Control.new()
 	_full_rect(chat_panel)
 	chat_panel.visible = false
+	chat_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui_root.add_child(chat_panel)
 
+	# Blur somente no painel lateral. A cena 3D continua renderizando ao fundo.
+	var blur := ColorRect.new()
+	blur.name = "ChatBlur"
+	_anchor_rect(blur, 0.605, 0.018, 0.988, 0.982)
+	blur.color = Color.WHITE
+	blur.mouse_filter = Control.MOUSE_FILTER_STOP
+	var blur_shader := Shader.new()
+	blur_shader.code = """
+shader_type canvas_item;
+uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_linear_mipmap;
+void fragment() {
+	vec4 scene = textureLod(screen_texture, SCREEN_UV, 3.6);
+	vec3 tint = vec3(0.025, 0.030, 0.060);
+	vec3 mixed = mix(scene.rgb, tint, 0.46);
+	COLOR = vec4(mixed, 0.96);
+}
+"""
+	var blur_material := ShaderMaterial.new()
+	blur_material.shader = blur_shader
+	blur.material = blur_material
+	chat_panel.add_child(blur)
+
 	var panel := PanelContainer.new()
-	_anchor_rect(panel, 0.62, 0.035, 0.985, 0.965)
-	panel.add_theme_stylebox_override("panel", StarTheme.glass_style(Color(0.025,0.018,0.065,0.94), StarTheme.VIOLET, 18, 1))
+	panel.name = "ChatSidePanel"
+	_anchor_rect(panel, 0.615, 0.028, 0.978, 0.972)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.add_theme_stylebox_override("panel", StarTheme.glass_style(Color(0.02,0.025,0.055,0.54), Color(0.38,0.50,0.82,0.62), 16, 1))
 	chat_panel.add_child(panel)
 
 	var layout := VBoxContainer.new()
@@ -457,10 +511,11 @@ func _build_chat_ui() -> void:
 	icon.text = "✦  STAR"
 	icon.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	icon.add_theme_color_override("font_color", StarTheme.CRYSTAL)
-	icon.add_theme_font_size_override("font_size", 22)
+	icon.add_theme_font_size_override("font_size", 20)
 	header.add_child(icon)
+
 	var close := _make_button("×", StarTheme.VIOLET)
-	close.custom_minimum_size = Vector2(48, 42)
+	close.custom_minimum_size = Vector2(42, 38)
 	close.pressed.connect(_close_all_modals)
 	header.add_child(close)
 
@@ -474,21 +529,22 @@ func _build_chat_ui() -> void:
 	chat_messages.add_theme_constant_override("separation", 8)
 	chat_scroll.add_child(chat_messages)
 
-	_add_chat_message("STAR", "Estou conectando ao meu Core local. O mundo 3D continua disponível mesmo enquanto isso.", false)
+	_add_chat_message("STAR", "Estou aqui. A cena continua ao fundo enquanto conversamos.", false)
 
 	var input_row := HBoxContainer.new()
 	input_row.add_theme_constant_override("separation", 8)
 	layout.add_child(input_row)
+
 	chat_input = LineEdit.new()
 	chat_input.placeholder_text = "Converse com a STAR…"
 	chat_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	chat_input.add_theme_color_override("font_color", StarTheme.TEXT)
 	chat_input.text_submitted.connect(func(_value): _send_chat())
 	input_row.add_child(chat_input)
+
 	var send := _make_button("ENVIAR", StarTheme.CYAN)
 	send.pressed.connect(_send_chat)
 	input_row.add_child(send)
-
 func _build_wardrobe_ui() -> void:
 	wardrobe_panel = Control.new()
 	_full_rect(wardrobe_panel)
@@ -602,7 +658,7 @@ func _build_wardrobe_ui() -> void:
 	preview_root.add_child(preview_pedestal)
 
 	wardrobe_info = Label.new()
-	wardrobe_info.text = "Selecione uma skin. A mesma STAR permanece; apenas roupa e materiais mudam."
+	wardrobe_info.text = "Selecione um acabamento. A mesma STAR Bot permanece; paleta, luzes e materiais visuais mudam."
 	wardrobe_info.custom_minimum_size = Vector2(0, 108)
 	wardrobe_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	wardrobe_info.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -762,7 +818,12 @@ func _show_hub() -> void:
 	menu_ui.visible = false
 	hud_ui.visible = true
 	hud_title_label.text = "STAR WORLD"
-	interaction_label.text = "Clique em uma ilha • A/D girar • W/S aproximar"
+	if crosshair_label:
+		crosshair_label.visible = false
+	if interaction_button:
+		interaction_button.visible = false
+	if hub_chat_button:
+		hub_chat_button.visible = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	_clear_content()
 
@@ -851,7 +912,12 @@ func _enter_house() -> void:
 	menu_ui.visible = false
 	hud_ui.visible = true
 	hud_title_label.text = "STAR HOUSE"
-	interaction_label.text = ""
+	if crosshair_label:
+		crosshair_label.visible = true
+	if interaction_button:
+		interaction_button.visible = false
+	if hub_chat_button:
+		hub_chat_button.visible = false
 	_clear_content()
 
 	var built := StarWorldBuilder.build_house(content_root)
@@ -880,7 +946,7 @@ func _navigate_back() -> void:
 func _interact_house() -> void:
 	if player == null:
 		return
-	var target := player.interaction_target()
+	var target := _current_house_interaction_target()
 	if target == null or not target.has_meta("action"):
 		return
 	var action := str(target.get_meta("action"))
@@ -894,19 +960,42 @@ func _interact_house() -> void:
 		"future_pc":
 			_show_locked_feature("PC DA STAR", "O computador já existe fisicamente no quarto, mas sua interação completa está planejada para uma próxima etapa.")
 
+func _star_interaction_target_nearby() -> Object:
+	if player == null or star_avatar == null or not is_instance_valid(star_avatar):
+		return null
+	if player.global_position.distance_to(star_avatar.global_position) > 2.65:
+		return null
+	var star_area := star_avatar.get_node_or_null("STARInteraction")
+	if star_area != null and star_area.has_meta("action"):
+		return star_area
+	return null
+
+func _current_house_interaction_target() -> Object:
+	var star_target := _star_interaction_target_nearby()
+	if star_target != null:
+		return star_target
+	return player.interaction_target() if player != null else null
+
 func _update_interaction_prompt() -> void:
-	if player == null or _has_modal():
-		interaction_label.text = ""
+	if interaction_button == null:
 		return
-	var target := player.interaction_target()
+	if player == null or _has_modal():
+		interaction_button.visible = false
+		return
+	var target := _current_house_interaction_target()
 	if target != null and target.has_meta("action"):
-		interaction_label.text = "E  •  " + str(target.get_meta("label", "INTERAGIR"))
+		interaction_button.text = "E  ·  " + str(target.get_meta("label", "INTERAGIR"))
+		interaction_button.visible = true
 	else:
-		interaction_label.text = ""
+		interaction_button.visible = false
 
 func _open_chat() -> void:
 	if player and mode == MODE_HOUSE:
 		player.set_active(false)
+	if crosshair_label:
+		crosshair_label.visible = false
+	if interaction_button:
+		interaction_button.visible = false
 	chat_panel.visible = true
 	chat_input.grab_focus()
 
@@ -980,14 +1069,14 @@ func _preview_wardrobe_skin(skin_id: String, display_name: String) -> void:
 
 func _update_wardrobe_info(display_name: String, skin_id: String) -> void:
 	var descriptions := {
-		"casual": "Roupa-base casual: regata clara e shorts cinza. Referência canônica do corpo.",
-		"cypher_system": "Traje tecnológico azul e branco com linhas ciano. Identidade principal do STAR WORLD.",
-		"rock_simple": "Jaqueta de couro preta, gola escura e calça cargo cinza.",
-		"brazil": "Camisa amarela do Brasil, parte inferior preta e tênis claro.",
-		"elegant_blue": "Vestido formal azul-marinho com acabamento brilhante.",
-		"rich_red": "Conjunto vinho/bordô de aparência aveludada."
+		"casual": "Acabamento claro e neutro para a STAR Bot, com metais suaves e luz discreta.",
+		"cypher_system": "Acabamento principal branco/azulado com detalhes escuros e iluminação ciano.",
+		"rock_simple": "Acabamento grafite e metálico, mais escuro e sóbrio.",
+		"brazil": "Paleta amarela, verde e escura aplicada à carcaça e aos pontos luminosos.",
+		"elegant_blue": "Acabamento azul profundo com reflexos frios e iluminação cristalina.",
+		"rich_red": "Acabamento vinho/bordô com detalhes metálicos e iluminação rosada."
 	}
-	wardrobe_info.text = display_name + "\n\n" + str(descriptions.get(skin_id, "")) + "\n\nA mesma STAR permanece: rosto, corpo, memória, identidade e rig não mudam."
+	wardrobe_info.text = display_name + "\n\n" + str(descriptions.get(skin_id, "")) + "\n\nA mesma STAR Bot permanece: Core, memória, identidade, geometria e presença não mudam."
 	equip_button.text = "EQUIPAR" if skin_id != current_skin else "EQUIPADA"
 
 func _equip_preview_skin() -> void:
@@ -1121,8 +1210,13 @@ func _close_all_modals(reactivate: bool = true) -> void:
 		if wardrobe_panel and preview_skin != current_skin and star_avatar:
 			StarWorldBuilder.apply_skin(star_avatar, current_skin)
 		player.set_active(true)
+		if crosshair_label:
+			crosshair_label.visible = true
+		_update_interaction_prompt()
 	else:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		if interaction_button:
+			interaction_button.visible = false
 
 func _has_modal() -> bool:
 	return (
@@ -1155,7 +1249,8 @@ func _on_world_state_received(state: Dictionary) -> void:
 	var timezone := str(state.get("timezone", "local"))
 	var phase := str(state.get("day_phase", "night"))
 	var scenario := str(state.get("scenario", "cosmic_crystal"))
-	time_label.text = "%s  •  %s  •  %s" % [local_time, timezone, scenario]
+	time_label.text = local_time.substr(0, 5)
+	time_label.tooltip_text = "%s • %s" % [timezone, scenario]
 	if timezone_input and not timezone_input.has_focus():
 		timezone_input.text = timezone
 	_apply_day_phase(phase)
@@ -1221,15 +1316,16 @@ func _apply_day_phase(phase: String) -> void:
 		sun.light_energy = energy
 
 func _show_status_message(text: String) -> void:
-	if interaction_label:
-		interaction_label.text = text
-		var timer := get_tree().create_timer(3.5)
-		timer.timeout.connect(func():
-			if mode == MODE_HUB:
-				interaction_label.text = "Clique em uma ilha • A/D girar • W/S aproximar"
-			elif mode == MODE_HOUSE:
-				interaction_label.text = ""
-		)
+	if status_label == null:
+		return
+	status_label.text = text
+	status_label.visible = true
+	var expected := text
+	var timer := get_tree().create_timer(3.5)
+	timer.timeout.connect(func():
+		if status_label and status_label.text == expected:
+			status_label.visible = false
+	)
 
 func _clear_content() -> void:
 	if player and is_instance_valid(player):
@@ -1307,23 +1403,66 @@ func _run_smoke_sequence() -> void:
 		push_error("STAR WORLD smoke: câmera em primeira pessoa não está operacional")
 		get_tree().quit(9)
 		return
+	if not InputMap.has_action("jump") or float(fp_state.get("jump_velocity", 0.0)) < 3.0 or float(fp_state.get("floor_snap_length", 0.0)) < 0.2:
+		push_error("STAR WORLD smoke: pulo curto ou assistência de degraus indisponível")
+		get_tree().quit(10)
+		return
+	if crosshair_label == null or not crosshair_label.visible or crosshair_label.text != "+":
+		push_error("STAR WORLD smoke: mira central ausente")
+		get_tree().quit(11)
+		return
 
 	var yaw_before := player.rotation.y
 	var pitch_before := player.look_pitch
 	player.apply_look_delta(Vector2(32.0, -24.0))
 	if is_equal_approx(player.rotation.y, yaw_before) or is_equal_approx(player.look_pitch, pitch_before):
 		push_error("STAR WORLD smoke: mouse-look não altera yaw/pitch")
-		get_tree().quit(10)
+		get_tree().quit(12)
+		return
+
+	var environment_triangles := int(house_root.get_meta("environment_triangle_count", 0))
+	if environment_triangles < 50000:
+		push_error("STAR WORLD smoke: cenário 3D abaixo da densidade mínima (%d triângulos)" % environment_triangles)
+		get_tree().quit(13)
 		return
 
 	var body_triangles := int(star_avatar.get_meta("body_triangle_count", 0))
 	var total_triangles := int(star_avatar.get_meta("triangle_count", 0))
-	if body_triangles < 5000 or total_triangles < 10000:
-		push_error("STAR WORLD smoke: STAR 3D simplificada demais (%d corpo / %d total)" % [body_triangles, total_triangles])
-		get_tree().quit(11)
+	if str(star_avatar.get_meta("physical_form", "")) != "star_bot":
+		push_error("STAR WORLD smoke: forma física não é STAR Bot")
+		get_tree().quit(14)
+		return
+	if body_triangles < 50000 or total_triangles < 50000:
+		push_error("STAR WORLD smoke: STAR Bot simplificada demais (%d triângulos)" % total_triangles)
+		get_tree().quit(15)
 		return
 
-	print("STAR_WORLD_SMOKE_METRICS rooms=4 body_triangles=", body_triangles, " total_triangles=", total_triangles)
+	if interaction_button == null or interaction_button.visible:
+		push_error("STAR WORLD smoke: botão de interação deveria iniciar oculto")
+		get_tree().quit(16)
+		return
+
+	player.global_position = star_avatar.global_position + Vector3(1.45, 0.0, 0.15)
+	_update_interaction_prompt()
+	if not interaction_button.visible or "STAR" not in interaction_button.text:
+		push_error("STAR WORLD smoke: proximidade da STAR Bot não oferece conversa")
+		get_tree().quit(17)
+		return
+
+	_interact_house()
+	await get_tree().process_frame
+	if not chat_panel.visible or chat_panel.get_node_or_null("ChatBlur") == null or chat_panel.get_node_or_null("ChatSidePanel") == null:
+		push_error("STAR WORLD smoke: chat lateral com blur não abriu sobre a cena")
+		get_tree().quit(18)
+		return
+	if crosshair_label.visible:
+		push_error("STAR WORLD smoke: mira permaneceu sobre o chat")
+		get_tree().quit(19)
+		return
+	_close_all_modals()
+	await get_tree().process_frame
+
+	print("STAR_WORLD_SMOKE_METRICS rooms=4 environment_triangles=", environment_triangles, " starbot_triangles=", total_triangles)
 
 	_open_wardrobe()
 	await get_tree().process_frame

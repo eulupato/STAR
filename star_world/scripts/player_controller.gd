@@ -5,6 +5,7 @@ class_name StarWorldPlayer
 @export var sprint_speed := 6.6
 @export var mouse_sensitivity := 0.0022
 @export var gravity := 18.0
+@export var jump_velocity := 4.05
 @export var eye_height := 1.62
 
 var active := false
@@ -14,6 +15,11 @@ var interaction_ray: RayCast3D
 var look_pitch := 0.0
 
 func _ready() -> void:
+	floor_snap_length = 0.38
+	floor_max_angle = deg_to_rad(50.0)
+	floor_stop_on_slope = true
+	safe_margin = 0.035
+
 	var collision := CollisionShape3D.new()
 	collision.name = "PlayerCollision"
 	var shape := CapsuleShape3D.new()
@@ -36,8 +42,6 @@ func _ready() -> void:
 	camera.far = 180.0
 	head.add_child(camera)
 
-	# O ray nasce da própria câmera. Assim olhar para cima/baixo também move
-	# o ponto de interação; visão e interação nunca ficam dessincronizadas.
 	interaction_ray = RayCast3D.new()
 	interaction_ray.name = "InteractionRay"
 	interaction_ray.target_position = Vector3(0, 0, -3.4)
@@ -75,11 +79,16 @@ func _physics_process(delta: float) -> void:
 	if not active:
 		return
 
-	if not is_on_floor():
-		velocity.y -= gravity * delta
+	var grounded := is_on_floor()
+	if grounded:
+		if Input.is_action_just_pressed("jump"):
+			velocity.y = jump_velocity
+		else:
+			# Pressão mínima para manter aderência no piso e na rampa invisível
+			# da escada sem impedir o pulo curto.
+			velocity.y = -0.45
 	else:
-		# Mantém contato estável com chão/rampas sem produzir salto.
-		velocity.y = -0.5
+		velocity.y -= gravity * delta
 
 	var input_vector := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := (transform.basis * Vector3(input_vector.x, 0, input_vector.y)).normalized()
@@ -104,4 +113,6 @@ func first_person_state() -> Dictionary:
 		"yaw": rotation.y,
 		"pitch": look_pitch,
 		"ray_parent_is_camera": interaction_ray != null and interaction_ray.get_parent() == camera,
+		"jump_velocity": jump_velocity,
+		"floor_snap_length": floor_snap_length,
 	}

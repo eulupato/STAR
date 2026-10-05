@@ -105,10 +105,14 @@ Escopo antecipado já integrado à V2.0:
 - TV local compartilhada, chat da mesma STAR e roupeiro/seletor de skins;
 - estado global compartilhado de fuso, fase do dia, cenário e skin;
 - ciclo visual Hub/Casa coerente com o mesmo estado temporal;
-- avatar 3D procedural de alta densidade baseado nas referências visuais existentes,
-  mantendo identidade e seis skins sem criar outro cérebro;
-- smoke test headless cobrindo Hub, cômodos, câmera yaw/pitch, interação, densidade
-  geométrica e integração local via Device Gateway.
+- **STAR Bot** como presença física principal da STAR na Casa, baseada no concept
+  aprovado, mantendo o mesmo Core/identidade e usando skins como paleta/acabamento;
+- House texturizada e densificada com materiais locais, microgeometria, paisagismo,
+  iluminação indireta e pós-processamento leve;
+- HUD mínimo com hora + mira, interação contextual somente quando houver alvo,
+  pulo curto e chat lateral com blur sem abandonar a cena;
+- smoke test headless cobrindo Hub, cômodos, câmera yaw/pitch, pulo, mira,
+  proximidade/chat da STAR Bot, densidade geométrica e integração local via Device Gateway.
 
 Isso **não antecipa nem conclui** o escopo maduro de V6: rig completo, lip sync,
 animação procedural avançada, olhar/piscar/gestos maduros, Digital Twin completo,

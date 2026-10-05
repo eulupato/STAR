@@ -61,21 +61,29 @@ O estado funcional atual continua deliberadamente honesto:
 - as miniaturas do seletor reutilizam os arquivos canônicos de `SKINS/`, sem cópias;
 - o PC do quarto, livros, quadros e objetos geek já existem fisicamente no cenário,
   mas permanecem não interativos enquanto suas funções futuras não forem implementadas;
-- a STAR usa um avatar procedural de alta densidade baseado nas referências visuais
-  existentes, com rosto, cabelo, corpo suavizado, mãos e seis conjuntos de roupa
-  geometricamente distintos; rig avançado, lip sync e animação corporal madura
-  continuam pertencendo à evolução futura;
-- o botão **CHAT** abre a conversa da mesma STAR/Core; não existe um cérebro separado
-  dentro do mundo 3D;
+- a presença física da STAR dentro da Casa é a **STAR Bot**, baseada no concept
+  visual oficial: cabeça-tela escura, olhos emissivos, cabelo loiro estilizado,
+  carcaça branca/azulada, estrela no peito, módulos laterais, braços articulados e
+  base iluminada. O bot usa a mesma identidade/Core e não cria outro cérebro;
+- as skins legadas continuam existindo como fonte de paleta/acabamentos sem trocar a
+  identidade da STAR Bot;
+- ao se aproximar da STAR Bot aparece somente o botão contextual de conversa;
+  `E` abre o chat lateral sobre a própria cena, com blur local, sem sair do mundo 3D;
+- o HUD permanente foi reduzido para hora discreta no canto superior esquerdo e mira
+  central `+`; a tarja de interação desaparece completamente quando não há alvo;
+- a House usa materiais/texturas locais para madeira, pedra/mármore, tecido, metal,
+  reboco, piso e azulejo, além de ripados, iluminação indireta, spots, plantas e
+  microgeometria arquitetônica;
 - o céu do Hub, Casa e varanda compartilha o mesmo estado de ambiente;
 - o ciclo dia/noite usa o fuso IANA salvo em `user_settings.json` e continua
   disponível offline com o último valor persistido.
 
 Controles atuais: `WASD` para movimento, mouse para câmera em primeira pessoa,
-`Shift` para correr e `E` para interagir. O ray de interação acompanha a câmera
-verticalmente. O diagnóstico headless do mundo (`STAR_WORLD_SMOKE=1`) valida Hub,
-Casa, quatro cômodos mobiliados, câmera yaw/pitch, interação e densidade mínima do
-avatar.
+`Shift` para correr, `Space` para pulo curto e `E` para interagir. O player usa
+floor snap e a escada mantém rampa de colisão contínua para subir degraus sem prender.
+O diagnóstico headless do mundo (`STAR_WORLD_SMOKE=1`) valida Hub, quatro cômodos,
+câmera yaw/pitch, pulo, mira, proximidade da STAR Bot, chat lateral com blur,
+densidade geométrica e integração local.
 
 ## 🧠 Knowledge Foundation
 
